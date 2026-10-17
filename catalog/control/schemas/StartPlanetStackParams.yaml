@@ -1,0 +1,37 @@
+title: start_planet_stack params
+type: object
+required:
+- file
+properties:
+  file:
+    type: string
+    description: Input video or image file to stack. Missing, null or non-string gives 102.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_planet_stack @0xe2120, key literal @0x745c90 (64-bit
+      build)
+  mode:
+    type: string
+    description: 'One of lunar (alias moon), solar (alias sun), planet; exact-match names map to modes
+      2, 3 and 4. Empty or unrecognized: the device tries a case-insensitive match of those names against
+      the file name and fails with 102 if none is found. A non-string is ignored (treated as empty).'
+    default: ''
+    x-default: empty (detect from file name)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_planet_stack @0xe2120, GetPlanetStackMode @0x3320b0,
+      key literal @0x944b18 (64-bit build)
+  rect:
+    type: array
+    description: Region of interest as four integers [x, y, width, height]; all four required if rect
+      is given, extra elements ignored, no range check. A null or non-array rect gives 102. Integers are
+      signed 32-bit.
+    minItems: 4
+    items:
+      type: integer
+    x-default: absent; all four values -1 (no region)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_planet_stack @0xe2120, key literal @0x730188 (64-bit
+      build)
+description: 'Object-only: any other params container yields an empty map and 102. Unknown members are
+  unused. Firmware 9.75: the planet-stack start routine also references a member named direction_true; whether the RPC reads it, and its type and meaning, are unresolved (existence only).'
+x-basis: static analysis of firmware 9.31, handler @0xe2120, Params constructor @0xff780 (64-bit build)
+x-confidence: READ

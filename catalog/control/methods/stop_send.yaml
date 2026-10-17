@@ -1,0 +1,68 @@
+kind: method
+name: stop_send
+summary: Set the stop flag that ends the image-sending loop on the secondary image service.
+description: Takes no parameters and always replies with integer result 0. The handler stores a per-process
+  stop flag and logs; it does not join a worker or wait. The flag aborts an image transfer in progress
+  on the 4800 socket, so that payload may be truncated (READ). It does not end begin_streaming, whose
+  registrations are untouched (READ), and the next request on the image socket clears the flag (READ).
+  It has no effect on 4804, which is served by another process (INFERRED). The app is not known to send
+  this method (no emitter found; generic forwarding not excluded).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: 'static analysis of firmware 9.31, handler @0xce6d0, StopSend4800 @0x116910 (64-bit build); stop
+  flag bStopSending, cleared by the image-socket dispatcher before each handler; chunked writer my_write_canstop
+  (512 KiB chunks, 5000 ms POLLOUT wait, abort after more than 5 timeouts); per-process port split (findings
+  #344, #328)'
+side_effects: Sets the per-process stop-sending flag to true, aborting a 4800 transfer in progress (READ).
+  Stream registrations are untouched. The flag is cleared by the image-socket dispatcher before the next
+  handler runs. No camera or mount precondition and no timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_send request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_send
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xce6d0, StopSend4800 @0x116910 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 31
+    method: stop_send
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_send
+    result: 0
+    code: 0
+    id: 31
+see_also: []
+spec:
+- spec/media/image-sockets.md#streaming-start-and-stop

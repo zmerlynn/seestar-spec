@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: get_verify_str result
+type: object
+description: The per-socket challenge to be signed and returned in verify_client.
+required:
+- str
+properties:
+  str:
+    type: string
+    minLength: 32
+    maxLength: 32
+    description: >-
+      Fresh 32-character challenge, generated with the C library rand() from a fixed internal character
+      set and stored for this socket only, replacing any earlier challenge. Treat it as opaque. Firmware 9.31 only: its
+      unpredictability is not established (generator seeding unresolved). Firmware 9.75: base64 of 24
+      bytes from a cryptographic random generator, still 32 characters.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, cli_verify_get_randstr @0x6b2550, preprocessClientAuth
+      @0x6b6bb0 (64-bit imager build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (64-bit imager build)

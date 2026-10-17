@@ -1,0 +1,28 @@
+title: get_photometry_stars result
+type: object
+required:
+- stars
+description: Stars of one cached image. The image id is not echoed. The cached star JSON already carries
+  name, and the handler adds a name member again, so a reply can hold duplicate name members; a client
+  must tolerate its decoder's duplicate policy.
+properties:
+  stars:
+    type: array
+    items:
+      allOf:
+      - $ref: PhotometryStar.yaml
+      - type: object
+        required:
+        - save
+        properties:
+          save:
+            type: boolean
+            description: Saved flag from the plot entry; false when none exists.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe2d10 (64-bit build)
+    description: Cached star records, each augmented with save and name from the saved plot entry (save
+      false and the original star name when no plot entry exists).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe2d10 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe2d10 (64-bit build)

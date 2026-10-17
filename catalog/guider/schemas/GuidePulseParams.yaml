@@ -1,0 +1,41 @@
+title: guide_pulse params
+description: Either a named object or a positional array [direction, amount, which].
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+oneOf:
+- type: object
+  required:
+  - direction
+  - amount
+  properties:
+    direction:
+      type: string
+      description: 'Pulse direction, case-insensitive: north, south, east, west or up, down, left, right,
+        mapped to n, s, e, w. Behaviour for other strings is unresolved.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+    amount:
+      type: integer
+      description: Pulse duration in milliseconds (passed to the Mount::Move path). No range check or
+        clamp in the handler.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+    which:
+      description: Optional selector between mount and adaptive-optics pulses. Default is the mount; the
+        accepted type and other values are unresolved.
+      x-default: mount
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+- type: array
+  minItems: 2
+  maxItems: 3
+  description: Positional form [direction, amount, which]; which optional.
+  prefixItems:
+  - type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+  - type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+  - x-confidence: unresolved
+    x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build); selector acceptance unresolved

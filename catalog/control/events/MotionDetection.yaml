@@ -1,0 +1,76 @@
+kind: event
+name: MotionDetection
+summary: State of the standalone motion detector (firmware 9.75, 64-bit only).
+description: New in firmware 9.75, app 3.4.0, 64-bit build only. The function name is MotionDetection, registered when the detector is started alone (set_motion_detection) and by the smart-follow and motion-monitor workers. The detector worker sends function-state events (READ); its state printer reports the image size and the detected points. It is sent through the shared function-state envelope; the envelope details and the shape of points are unresolved. A receiver MUST NOT depend on seeing every transition.
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ; envelope INFERRED
+basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: MotionDetection event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: MotionDetection
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name; INFERRED to follow the shared function-state formatter.
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build); state set assumed from the shared function-state formatter
+    width:
+      type: integer
+      description: Detection image width (unit INFERRED pixels).
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build)
+    height:
+      type: integer
+      description: Detection image height (unit INFERRED pixels).
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build)
+    points:
+      type: array
+      description: Detected moving points; the element shape is unresolved.
+      x-confidence: READ; element shape unresolved
+      x-basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build)
+  x-confidence: READ; envelope INFERRED
+  x-basis: static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build)
+examples:
+- name: example
+  summary: INFERRED envelope, not captured; values invented
+  of: payload
+  payload:
+    Event: MotionDetection
+    Timestamp: '1234.123456789'
+    state: working
+    width: 640
+    height: 360
+    points: []
+see_also:
+- set_motion_detection
+- start_motion_monitor
+- MotionMonitor
+- SmartFollow
+spec:
+- spec/control/function-states.md#motion-monitor

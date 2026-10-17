@@ -1,0 +1,32 @@
+title: set_focuser_value params
+description: Object form {name, val} or positional array [name, val]; both members required, no defaults.
+  A scalar, missing or empty params gives 105. name matching is a case-insensitive substring search within
+  max_step, backlash, reset_step (first match wins).
+anyOf:
+- type: object
+  required:
+  - name
+  - val
+  properties:
+    name:
+      type: string
+      description: 'Control name: backlash or reset_step are settable; max_step is not (210).'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe7e10 (64-bit build)
+    val:
+      type:
+      - integer
+      - boolean
+      description: New value. Boolean is taken as raw 0 or 1. No numeric bound is checked before the driver;
+        reset_step additionally needs positive UI and hardware maxima.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe7e10 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe7e10 (64-bit build)
+- type: array
+  minItems: 2
+  description: Positional form [name, val]; extra elements ignored.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe7e10 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe7e10 (64-bit build)

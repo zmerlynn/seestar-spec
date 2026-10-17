@@ -1,0 +1,105 @@
+kind: method
+name: ota_retry_upgrade
+summary: 'Updater (firmware 9.75): retry the upgrade after a failed OTA session.'
+description: 'Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the
+  64-bit and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The
+  handler clears the thread error code and calls the updater''s single OTA manager. The OTA methods do
+  not use the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350
+  is wrapped is not established. Firmware update is a high-risk operation; do not send this to a real
+  device to test it. Allowed only when the session stage is fail; in any other stage the reply is 524.
+  The device rechecks that each package file exists with the expected size and SHA-256 (error 255 if a
+  module package is missing or not received), then starts the upgrade again. The reply includes the stage.
+  The release app does not send this method: its retry restarts from ota_get_session.'
+grade: MUTATOR / probable
+side_effect_tier: C
+confidence: READ (firmware 9.75); partly INFERRED, see description
+basis: static analysis of firmware 9.75, updater RPC handler @0x264d0 (64-bit build), OTA manager; app
+  3.3.2 OtaService DTOs
+side_effects: Restarts the upgrade of already received packages.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: ota_retry_upgrade request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: ota_retry_upgrade
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater dispatcher table, handler @0x264d0 (64-bit build)
+    params:
+      description: Not read by the handler. The app omits it. Clients SHOULD omit it.
+      x-confidence: READ (app 3.3.2 emitter); firmware handler reads no params INFERRED
+      x-basis: app 3.3.2 OtaService; firmware 9.75 handler @0x264d0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        properties:
+          stage:
+            type: string
+            description: 'OTA session stage: idle, pending, receiving, upgrading, complete or fail (firmware
+              9.75 stage names; a value outside them is reported as "unknown").'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            enum:
+            - idle
+            - pending
+            - receiving
+            - upgrading
+            - complete
+            - fail
+        required:
+        - stage
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 255
+  trigger: A module package is missing or was not received
+  label: package missing
+- code: 525
+  trigger: Package size or SHA-256 does not match
+  label: package mismatch
+- code: 524
+  trigger: 'Stage conflict or busy: the call is not allowed in the current OTA stage (text names the stage
+    and, where relevant, asks the caller to ota_abort first)'
+  label: stage conflict
+errors_note: Upgrade-time failures are reported through the session (ota_get_session) and OtaUpdate events,
+  not in this reply.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: ota_retry_upgrade
+  summary: Shape READ; params omitted
+- name: ok
+  of: reply_success
+  summary: Shape READ; all values invented
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: ota_retry_upgrade
+    result:
+      stage: upgrading
+    code: 0
+    id: 100
+see_also:
+- ota_get_current_manifest
+- ota_get_session
+- ota_begin
+- ota_prepare_module
+- ota_abort
+- begin_recv
+- OtaUpdate
+spec:
+- spec/updater/index.md#ota-methods-firmware-975
+- spec/updater/ota-package-handling.md#ota-package-handling

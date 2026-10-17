@@ -1,0 +1,14 @@
+title: fits_to_jpg result
+type: object
+required:
+- jpg_name
+properties:
+  jpg_name:
+    type: string
+    description: 'Output JPEG path: the FITS name with its suffix replaced by .jpg, passed through the
+      relative-path helper. If image-root detection fails the full path is left in place, so the value
+      is not guaranteed to be relative.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd430, Fit2Jpg @0x121de0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbd430, Fit2Jpg @0x121de0 (64-bit build)

@@ -1,0 +1,46 @@
+title: get_stack_info result
+type: object
+description: Either the dimensions branch (width and height) or the header branch (fit_header, save_fit_header
+  and base_name). The two sets are never mixed.
+properties:
+  width:
+    type: integer
+    description: Stack image width. Dimensions branch only. Unit INFERRED pixels. Taken from the light
+      stack, otherwise from the calibration frame; no positive-frame precondition.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+      @0x191ef0 (64-bit build)
+  height:
+    type: integer
+    description: Stack image height. Dimensions branch only. Unit INFERRED pixels.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+      @0x191ef0 (64-bit build)
+  fit_header:
+    $ref: GetStackInfoFitHeader.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+      @0x191ef0 (64-bit build)
+  save_fit_header:
+    $ref: GetStackInfoSaveFitHeader.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+      @0x191ef0 (64-bit build)
+  base_name:
+    type: string
+    description: Base file name the stack would be saved under. Header branch only. The exact naming rule
+      is not established; INFERRED to be generated from the header.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+      @0x191ef0 (64-bit build)
+oneOf:
+- required:
+  - width
+  - height
+- required:
+  - fit_header
+  - save_fit_header
+  - base_name
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+  @0x191ef0 (64-bit build)

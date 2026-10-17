@@ -1,0 +1,9 @@
+title: select_serial_dev params
+type:
+- string
+- integer
+description: A bare string selects the serial device by name; a bare integer selects by the id in the
+  enumerated serial list. Unlike most guider handlers an array is not unwrapped and is not equivalent.
+  An unmatched name or id gives 209. Wrong shape gives 105 or 102 (which type triggers which is not established).
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x829c0 (64-bit build)

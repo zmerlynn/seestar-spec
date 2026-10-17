@@ -1,0 +1,89 @@
+kind: method
+name: get_user_location
+summary: Return the stored user location as [lon, lat] in degrees.
+description: 'Reads the persisted user location through a loader that also refreshes a pair of global
+  location caches and a configuration timestamp. Despite the name it is not a pure observation: configuration
+  helpers may create lock files. The loader rejects out-of-range values instead of clamping them. Params
+  are not consumed.'
+grade: MUTATOR / established (strict; native handler, 64-bit build)
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x78710 (64-bit build); cache stores at 0x141ad0, 0x141ad4,
+  0x141ae0
+side_effects: Refreshes the global geographic cache pair and configuration timestamp; configuration/XML
+  read helpers may create lock files. Observer tier is kept at D (candidate B) because the guider XML
+  virtual/native closure is not fully reconciled.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_user_location request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_user_location
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x78710 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_user_location reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetUserLocationResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x78710 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 204
+  trigger: Stored longitude or latitude outside the accepted range (INFERRED label from the shared error
+    table; whether and how the handler forwards this loader failure is unresolved)
+  label: out of limit
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No explicit numeric error branch was recovered in the direct handler; loader failures are
+  forwarded through the shared thread-local error path and are not exhausted by this table.
+examples:
+- name: query
+  summary: Params omitted
+  of: request
+  payload:
+    id: 21
+    method: get_user_location
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_user_location
+    result:
+    - 12.5
+    - 45.25
+    code: 0
+    id: 21
+  summary: Invented values
+see_also: []
+spec:
+- spec/guider/index.md#method-groups

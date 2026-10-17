@@ -1,0 +1,63 @@
+kind: method
+name: close_wheel
+summary: Stop the wheel movement thread and deselect the wheel.
+description: Reads no parameters. If a wheel is selected, stops the movement thread (the stop can join
+  the worker with no bounded timeout) and sets the selected id to -1. An already closed wheel succeeds.
+  The 64-bit CloseWheel returns true on every ordinary branch, so no local error reply is established.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xce7a0, CloseWheel @0x301930 (64-bit build)
+side_effects: Stops the wheel movement thread and clears the selected-wheel id; an in-flight move is abandoned.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: close_wheel request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: close_wheel
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xce7a0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The handler has a forwarded-error branch, but CloseWheel never fails in the inspected build.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 161
+    method: close_wheel
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: close_wheel
+    result: 0
+    code: 0
+    id: 161
+see_also:
+- open_wheel
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position

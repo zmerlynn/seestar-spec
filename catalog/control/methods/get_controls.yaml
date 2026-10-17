@@ -1,0 +1,108 @@
+kind: method
+name: get_controls
+summary: List the camera controls with their limits and read-only flags.
+description: Returns a copy of the device's control table under the camera lock. Requires an open camera.
+  The table is the device's own, built when the camera opens, with imager control ids 0, 1, 4, 19, 20,
+  23, 24 and 25 always and 5, 6, 7, 8 and 22 on cooled cameras (22 on the 64-bit build only); see the result
+  schema and the spec (READ). Limits are fixed in the firmware except the maximum gain and, on the 64-bit build,
+  the maximum exposure, which come from the camera at open; their per-camera values are unresolved on the
+  64-bit build. The 32-bit build fixes Exposure at 30..2000000000 and its compiled-in camera library sets
+  the Gain maximum to 400 (600 for the secondary camera on the S30 Pro and S50 Pro branches) (READ). A client SHOULD use this reply,
+  not an assumed static range, to learn the limits for set_control_value. Units (READ, camera library, except
+  exposure) are exposure microseconds (INFERRED); gain tenths of a dB on multiplicative-gain sensors, raw
+  analogue gain otherwise; target temperature degrees C, clamped to -40..30; cooler power percent; cooler on
+  boolean; red/blue white balance gain with 100 as unity, affecting only pixel format 3.
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls @0x1537d0,
+  OpenCamera table build @0x1526f0 (64-bit build); 32-bit GetControls @0xabf1c, OpenCamera @0xdaeb0; camera
+  library control caps from its debug information
+side_effects: None beyond taking the camera lock to copy the map; no shared state is written.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_controls request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_controls
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+        @0x1537d0 (64-bit build)
+reply_success:
+  title: get_controls success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetControlsResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+          @0x1537d0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Camera absent, closed, or camera id negative
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No parameter errors. The 64-bit build's camera-supplied maximum gain and exposure are unresolved per camera; read them from this reply.
+examples:
+- name: list
+  of: request
+  payload:
+    id: 40
+    method: get_controls
+- name: ok
+  summary: Shape and names READ; Gain and Exposure maxima invented
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_controls
+    result:
+    - name: Gain
+      min: 0
+      max: 300
+      read_only: false
+    - name: Exposure
+      min: 30
+      max: 2000000000
+      read_only: false
+    - name: Temperature
+      min: 30
+      max: 2000000000
+      read_only: true
+    code: 0
+    id: 40
+- name: closed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_controls
+    error: device not connected
+    code: 318
+    id: 41
+see_also:
+- get_control_value
+- set_control_value
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

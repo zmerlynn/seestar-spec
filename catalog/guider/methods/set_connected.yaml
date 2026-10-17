@@ -1,0 +1,91 @@
+kind: method
+name: set_connected
+summary: Connect or disconnect the camera, mount and auxiliary mount individually.
+description: For each member present as a JSON boolean the corresponding equipment is connected or disconnected
+  through the equipment dialog logic. Changes are applied in turn, so a failure part-way can leave earlier
+  changes in place. Connection checks may give 201 (not in the explicit error list), a missing control
+  object 300, and a member already in the requested state 202. Via the imager command port (4700) the
+  request reaches this handler only as a forwarded unknown method; see the control service for the relay.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x74360 (64-bit build)
+side_effects: Connects or closes camera, mount and auxiliary equipment connections.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_connected request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_connected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/SetConnectedParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x74360 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Parameter is not an object (or array whose first element is an object)
+  label: expected object param
+- code: 202
+  trigger: Equipment is already connected
+  label: already connected
+- code: 300
+  trigger: Control object missing
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 54
+    method: set_connected
+    params:
+      camera: true
+      mount: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_connected
+    result: 0
+    code: 0
+    id: 54
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_connected
+    error: already connected
+    code: 202
+    id: 55
+see_also:
+- set_all_connected
+spec:
+- spec/guider/index.md#method-groups

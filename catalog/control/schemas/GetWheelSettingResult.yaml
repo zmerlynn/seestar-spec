@@ -1,0 +1,28 @@
+title: get_wheel_setting result
+type: object
+required:
+- names
+- exp_sec
+description: Both members are always emitted, possibly as empty arrays.
+properties:
+  names:
+    type: array
+    description: Slot names in ascending slot-key order.
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc2be0 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2be0, GetSlotName @0x301110 (64-bit build)
+  exp_sec:
+    type: array
+    description: Per-slot exposure values in ascending slot-key order; unit seconds (INFERRED from the
+      member name).
+    items:
+      type: number
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0xc2be0, GetSlotExp @0x301120 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2be0, GetSlotExp @0x301120 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc2be0 (64-bit build)

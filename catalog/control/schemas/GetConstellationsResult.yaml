@@ -1,0 +1,35 @@
+title: get_constellations result
+type: object
+description: Annotation data for the last solved image. image_id is never emitted by this method (the
+  handler passes a sentinel), unlike other callers of the same helper.
+required:
+- image_size
+properties:
+  image_size:
+    type: array
+    description: '[IMAGEW, IMAGEH] integer keywords of the last plate solve''s WCS file, both positive or the
+      reply is 207 with the message "bad IMAGEW/IMAGEH %dx%d" (READ); unit pixels (INFERRED). Confirmed
+      unchanged in firmware 9.75, both the 64-bit and 32-bit builds.'
+    minItems: 2
+    maxItems: 2
+    items:
+      type: integer
+      minimum: 1
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc3180, GetConstellations @0x201aa0, img_size_from_wcs
+      @0x69db10 (IMAGEW/IMAGEH via integer header reads; check @0x201cb8) (64-bit build); confirmed
+      unchanged in firmware 9.75 on both the 64-bit and 32-bit builds
+  annotations:
+    type: array
+    description: Raw substring of the external annotation command output, copied through the last closing
+      bracket without JSON validation. Present only when the output contains an annotations key followed
+      by a closing bracket; otherwise absent while the call still succeeds. Elements are objects passed
+      through verbatim from the device's sky-annotation tool; the vendor app reads type and name (strings),
+      names (list), pixelx, pixely and radius (numbers), and bounds, matrix and points (lists). Pixel members
+      refer to image_size (INFERRED). Per-member presence and the meaning of bounds, matrix and points are
+      unresolved; a client MUST tolerate missing members and SHOULD ignore unknown ones.
+    items:
+      type: object
+    x-confidence: READ (pass-through; element members from the app consumer); unresolved (per-member presence)
+    x-basis: static analysis of firmware 9.31, handler @0xc3180, GetConstellations @0x201aa0 (64-bit build);
+      APK 3.3.2 annotation data classes

@@ -1,0 +1,115 @@
+kind: method
+name: pi_set_ap
+summary: Set the SSID and/or key of the device access point and restart the access point.
+description: Runs the packaged network script to write the AP SSID and, when a nonempty key is given,
+  the AP key, then restarts the access point (stops the AP daemon, waits one second, starts it). On NFC-capable
+  models a first SSID change additionally records an ap_changed flag and may broadcast a Setting event
+  carrying ap_changed. A success reply means the script output contained no error text; it does not show
+  the AP came back up. Firmware 9.75 (64-bit build, app 3.4.0) the key member (key, not inside any wifi object)
+  is an enc1 token that is decoded with the connection's crypto session (secure-communication chapter);
+  a decode failure or inactive session returns 570 to 573, and 105 is the wrong-type branch. A
+  text-validation failure is 102 (not re-confirmed). Because the restart can drop the client's own link, the reply may never arrive.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf2800, ns_net::pi_set_AP_ID @0x6fb410 (64-bit build);
+  pi_openAP @0x6fb7f0; firmware 9.75 handler @0x10ff90 (decode call @0x110120)
+side_effects: Writes AP network configuration via synchronous shell commands (no timeout), restarts the
+  AP daemon (about 1 s pause), may set a persistent ap_changed flag and notify a Setting event with ap_changed
+  on NFC-capable models, and may report the new Wi-Fi name to a remote-control component.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_set_ap request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_set_ap
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiSetApParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf2800, ns_net::pi_set_AP_ID @0x6fb410 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: ssid or key present but not a string
+  label: expected string param
+- code: 570
+  trigger: 'Firmware 9.75: no active crypto session, or the key token fails to decode (571 to 573 for the other decode statuses)'
+  label: encrypted session required
+- code: 102
+  trigger: 'Firmware 9.75: text-validation failure'
+  label: unresolved
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 207
+  trigger: Script output contains the text error
+  label: fail to operate
+- code: 204
+  trigger: The script reports that the key is too short (fewer than 8 characters)
+  label: out of limit
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Further script-level failures are not established. Handler error branches add no result member.
+  The earlier setter evidence disagreed on whether an explicitly empty key reaches 207; the assembly reading
+  used here is that an empty key is skipped and succeeds.
+examples:
+- name: object-form
+  summary: Change SSID and key
+  of: request
+  payload:
+    id: 31
+    method: pi_set_ap
+    params:
+      ssid: ExampleAP
+      key: example-key-1
+- name: array-form
+  summary: Positional form
+  of: request
+  payload:
+    id: 32
+    method: pi_set_ap
+    params:
+    - ExampleAP
+    - example-key-1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_set_ap
+    result: 0
+    code: 0
+    id: 31
+- name: key-too-short
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_set_ap
+    error: out of limit
+    code: 204
+    id: 33
+see_also:
+- pi_get_ap
+- pi_set_5g
+- pi_get_ap_channel
+spec:
+- spec/control/network.md#access-point
+- spec/control/secure-communication.md#encrypted-wi-fi-strings

@@ -1,0 +1,82 @@
+kind: method
+name: stop_smart_follow
+summary: Stop smart follow (firmware 9.75).
+description: 'New in firmware 9.75, app 3.4.0. Signals the smart-follow worker to stop and replies success;
+  idempotent. wide_cam routing follows set_motion_detection: process type 0 with wide_cam true gives 210,
+  type 1 relays to the other camera (a failed relay is logged and produces no error reply), type 2 handles
+  only wide_cam true.'
+grade: MUTATOR / READ
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xef870 (64-bit build), @0x68228 (32-bit build)
+side_effects: Stops the smart-follow worker.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_smart_follow request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_smart_follow
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      description: params is optional; a non-object gives 107.
+      properties:
+        wide_cam:
+          type: boolean
+          description: Address the wide camera. Wrong type 106.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xef870 (64-bit build), @0x68228 (32-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0xef870 (64-bit build), @0x68228 (32-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params is not an object
+  label: expected object
+- code: 106
+  trigger: wide_cam is not a bool
+  label: expected bool
+- code: 210
+  trigger: wide_cam routing not served by this process
+  label: wrong process
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A failed relay to the other camera is not reported.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 88
+    method: stop_smart_follow
+  summary: READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_smart_follow
+    result: 0
+    code: 0
+    id: 88
+see_also:
+- start_smart_follow
+- stop_track_object
+- SmartFollow
+spec:
+- spec/control/function-states.md#smart-follow

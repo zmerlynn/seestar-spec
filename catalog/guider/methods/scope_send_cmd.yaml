@@ -1,0 +1,155 @@
+kind: method
+name: scope_send_cmd
+summary: 'Guider: forward a raw command to the mount controller (generic passthrough).'
+description: 'Guider generic command passthrough. Registered in the guider dispatcher table; on 4700 it is reached through
+  the imager method-not-found relay (mount-and-motion R1, R2). READ: params are positional [cmd, resp] or keyed
+  {cmd, resp}. cmd (string, required; missing or non-string gives 105) is written raw to the mount controller,
+  which needs a connected mount (315; a disconnected driver gives 318). resp selects how the reply is read: a
+  string reads up to the terminator given by its first character (32-byte buffer); a positive integer n reads n
+  bytes (fewer is a failure); an integer of 0 or less reads one byte and, if it is ''e'', reads on to ''#'' and
+  returns that text, else returns "0"; absent or another type reads nothing and returns "". The result is the
+  reply text as a string, or {"value": text} with ret_obj true. Write or read failures reply with the thread
+  error code (no specific code). The app uses it to read and set backlash, so it can change mount configuration
+  or move the mount; graded MUTATOR / tier C. A client SHOULD NOT send controller strings it does not understand.'
+grade: 'MUTATOR / established (64-bit build; 32-bit build matches (READ))'
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider dispatcher table, handler @0x80160 (64-bit guider build; driver SendCmd
+  @0xf1030, MethodRetSwitch<string>), @0x78438 (32-bit build); static analysis of app 3.3.2,
+  BaseDeviceViewModel.getBacklashDeg and setBacklashDeg, SetBacklashDegParams
+side_effects: 'Writes cmd raw to the mount controller and reads its reply; depending on the command this can change mount
+  configuration or move the mount. READ the write; INFERRED the possible effects.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_send_cmd request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_send_cmd
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (64-bit build, entry @0x1f1b10)
+    params:
+      description: 'Positional [cmd, resp] or keyed {cmd, resp, ret_obj}. cmd: string written raw to the
+        controller (required, 105 if missing or not a string). resp: optional; a string gives the reply
+        terminator (its first character), a positive integer a byte count, an integer of 0 or less a one-byte
+        ''e''-test read; absent or another type means no read. ret_obj true wraps the result as {"value":
+        text}. The app sends [command, "#"] for a read and {cmd, resp: 1, ret_obj: 1} for a write.'
+      oneOf:
+      - type: array
+        minItems: 1
+        maxItems: 2
+        prefixItems:
+        - type: string
+        - type:
+          - string
+          - integer
+      - type: object
+        required:
+        - cmd
+        properties:
+          cmd:
+            type: string
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, guider handler @0x80160 (64-bit guider build)
+          resp:
+            type:
+            - string
+            - integer
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, guider handler @0x80160 (64-bit guider build)
+          ret_obj:
+            type:
+            - boolean
+            - integer
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, guider handler @0x80160 (64-bit guider build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x80160 (64-bit guider build); static analysis
+        of app 3.3.2, BaseDeviceViewModel.getBacklashDeg and setBacklashDeg, SetBacklashDegParams
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        description: 'The controller reply text as a string ("" when resp asks for no read, "0" on the
+          one-byte path when the byte is not ''e''), or {"value": text} with ret_obj true.'
+        oneOf:
+        - type: string
+        - type: object
+          required:
+          - value
+          properties:
+            value:
+              type: string
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, guider handler @0x80160 (64-bit guider build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x80160, driver SendCmd @0xf1030 (64-bit guider
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: cmd missing or not a string
+  label: expected string param
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+- code: 318
+  trigger: The mount driver is not connected
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Write or read failures (including a short fixed-length read) reply with the thread error code,
+  which the driver does not set to a specific value; those codes are not exhausted by this table.
+examples:
+- name: list-form
+  summary: List form as the app builds it for a read (command text invented)
+  of: request
+  payload:
+    id: 121
+    method: scope_send_cmd
+    params:
+    - ':XX#'
+    - '#'
+- name: object-form
+  summary: Object form as the app builds it for a write (command text invented)
+  of: request
+  payload:
+    id: 122
+    method: scope_send_cmd
+    params:
+      cmd: ':XX5#'
+      resp: 1
+      ret_obj: 1
+- name: ok-string
+  summary: Reply to the list form (reply text invented)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_send_cmd
+    result: '12'
+    code: 0
+    id: 121
+see_also:
+- scope_set_slew_rate
+- scope_get_connection_para
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#position-and-connection-state

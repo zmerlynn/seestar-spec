@@ -1,0 +1,88 @@
+kind: method
+name: is_func_work
+summary: Test whether any of the named functions is currently working.
+description: 'Searches the function tree under its mutex for each string in keys and returns a single
+  boolean: true if any matching function is in the working state (stops at the first match), false for
+  no match, idle matches, an empty array or an array without strings. It is not a per-name map. The firmware
+  itself uses this request internally as a relay guard with keys set to the video-recording function name.
+  No event is emitted.'
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdb950, FindWorkFunc @0x6d8cd0 (64-bit build)
+side_effects: Reads function state; matching and skipped-element branches only update logging state.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_func_work request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: is_func_work
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/IsFuncWorkParams.yaml
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: boolean
+        description: True when any named function is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xdb950, FindWorkFunc @0x6d8cd0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: params not an object, keys missing or not an array (no explicit code is assigned, so the default
+    applies)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'Unresolved: a nonzero code left by an earlier internal step could replace 207.'
+examples:
+- name: query
+  summary: Values invented
+  of: request
+  payload:
+    id: 31
+    method: is_func_work
+    params:
+      keys:
+      - AIProcess
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_func_work
+    result: false
+    code: 0
+    id: 31
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_func_work
+    error: fail to operate
+    code: 207
+    id: 32
+see_also:
+- stop_func
+- start_func
+spec:
+- spec/control/special-modes.md#function-control-methods

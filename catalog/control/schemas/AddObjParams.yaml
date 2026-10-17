@@ -1,0 +1,43 @@
+title: add_obj params
+description: 'Object form, or a one-element array whose first element is such an object (other elements
+  ignored). Absent, null, empty array or a non-object gives 107. Members of the wrong type for list, object
+  and type are silently ignored and take their defaults. There is no range check on coordinates or type.
+  Firmware numeric storage: type is a signed 32-bit integer; coordinates are 32-bit integers or float32
+  values widened to double.'
+type: object
+properties:
+  list:
+    type: string
+    description: Display name of the target list. Empty is passed to the helper unchecked.
+    default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, add_obj @0xe84f0, key literal @0x8e1298 (64-bit build)
+  object:
+    type: string
+    description: Display name of the object. Empty is passed to the helper unchecked; an existing object
+      of the same name is replaced.
+    default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, add_obj @0xe84f0, key literal @0x9462b0 (64-bit build)
+  type:
+    type: integer
+    description: Opaque client-defined integer, stored as given and returned unchanged by get_obj; the device
+      never acts on it. The vendor app's values are unresolved. A client SHOULD preserve values it did not
+      write.
+    default: 0
+    x-confidence: READ (device opaque); unresolved (app meaning)
+    x-basis: static analysis of firmware 9.31, add_obj @0xe84f0, ObjListConfig::AddObj @0x6c4290, key literal
+      @0x944ef8; store reader ObjListConfig::Get @0x6c4a90 called only from get_list and get_obj (64-bit build)
+  coord:
+    type: array
+    description: 'Optional pair: first element is RA (hours, INFERRED), second is Dec (degrees, INFERRED);
+      extra elements ignored. A short array or a non-numeric element gives 108. An object-shaped coord
+      is ignored by this handler.'
+    minItems: 2
+    items:
+      type: number
+    x-default: '[-999, -999] (unset sentinel)'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, add_obj @0xe84f0, key literal @0x7407e8 (64-bit build)
+x-basis: static analysis of firmware 9.31, handler @0xe84f0, Params constructor @0x1003c0 (64-bit build)
+x-confidence: READ

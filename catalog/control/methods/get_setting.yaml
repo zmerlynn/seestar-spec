@@ -1,0 +1,113 @@
+kind: method
+name: get_setting
+summary: Read the full device settings object.
+description: 'No request parameters are read; the getter always formats the full settings, never a filtered
+  subset (a filter belongs to Setting events). Member presence depends on process type, camera, capabilities
+  and helper success; failed sub-queries omit their members and the reply stays a success. In process
+  type 1 the settings of the peer camera are included under second_camera, via a sequential 10,000 ms
+  peer wait. The serialized object repeats beep_volume and ae_bri_percent and may repeat effect_offset_deg;
+  see the result schema. Several members are absent on the 32-bit build. Firmware 9.75, app 3.4.0: params
+  may carry include_sensitive (boolean or integer, default true); false omits the password member, and the
+  flag is forwarded to the second camera. Firmware 9.75 members: annotation (object), sky_replay (always false), can_encrypt (constant true), comet_max_frame_num (constant 200), enable_dark_library, motion_monitor (object, 64-bit build), preview.raw_bin2, exp_ms.more_exposure, and for the wide camera stack.startrails_duration_min and stack.startrail_mode; the main-process, full-path-only and wide-camera gates are on the result schema. expert_mode is still emitted. comet_max_frame_num is the comet batch input frame limit (output only); startrail_mode 0, 1, 2 select the maximum video, the decay video or both, and startrails_duration_min is in minutes (-1 or 0 no limit). Firmware 9.31: no request member is read.'
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build); firmware
+  9.75 request member from the 9.75 reports
+side_effects: 'Refreshes shared camera info, reads GPIO heater state, network configuration and the connection
+  password, runs the Alpaca status script and queries the peer camera; conditional slave-storage synchronisation.
+  No setting is written. The tier is C because of live driver queries, though the call is routinely used
+  as a read. Asynchronous events: unresolved.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Firmware 9.31: not read; omission, null, object, scalar and array all take the same
+        path. Firmware 9.75: an object with the optional include_sensitive; clients SHOULD omit params
+        otherwise.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      properties:
+        include_sensitive:
+          type:
+          - boolean
+          - integer
+          default: true
+          description: 'Firmware 9.75, app 3.4.0: parsed as boolean or integer (nonzero is true); a failed
+            parse is ignored and the default stays. False omits the password setting. Forwarded to the
+            second camera.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, app 3.4.0 reports, get_setting path (64-bit build)
+      type: object
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_setting success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetSettingResult.yaml
+        description: Settings object.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error branch. Dynamic downstream failures omit members instead of producing
+  errors. There is no error 123 (a loaded byte 0x7b is the JSON opening brace).
+examples:
+- name: request
+  summary: No parameters
+  of: request
+  payload:
+    id: 141
+    method: get_setting
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_setting
+    result:
+      temp_unit: C
+      lang: en
+      guest_mode: false
+      dark_mode: true
+      wide_cam: false
+      stack:
+        dbe: false
+        light_duration_min: 10
+        brightness: 0.0
+        contrast: 0.0
+        saturation: 0.0
+        dbe_enable: false
+      ae_bri_percent: 50.0
+    code: 0
+    id: 141
+see_also:
+- get_device_state
+- reset_setting
+- set_setting
+spec:
+- spec/control/device-state-and-settings.md#reading-get_setting
+- spec/control/mosaic/timing-and-errors.md#duration-estimate
+- spec/control/function-states.md#sky-replay

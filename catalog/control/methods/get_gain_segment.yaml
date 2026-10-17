@@ -1,0 +1,101 @@
+kind: method
+name: get_gain_segment
+summary: Return three gain-segment integers from the camera backend.
+description: 'Reads no parameters. The 64-bit backend writes three integers into the result array: 0,
+  131, and the camera''s maximum for its first SDK control, cached when the camera opens. The first two are
+  fixed in this firmware (READ). Read as [minimum gain, segment break, maximum gain]: that the third is the
+  maximum gain (the SDK lists gain first) is INFERRED. 131 is an imager constant in both builds and in
+  firmware 9.31 and 9.75; the camera libraries switch conversion gain at other points (200 or 80 in the
+  32-bit build, driver-supplied in the 64-bit build), so whether 131 is a high-conversion-gain switch
+  point on any camera is unresolved (READ). The gain unit is unresolved. Fails with 318
+  when no camera is open.'
+grade: PURE GETTER / probable (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb34b0, MIPI backend @0x155620, OpenCamera control-caps
+  loop (64-bit build)
+side_effects: Reads constants and cached gain data into the caller output; no mode change, hardware open
+  or close, or file write in the inspected path. Locks may block; no method-specific timeout. Deeper SDK
+  behaviour is not established.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_gain_segment request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_gain_segment
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb34b0 (64-bit build)
+reply_success:
+  title: get_gain_segment reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: array
+        minItems: 3
+        maxItems: 3
+        description: 'Exactly three integers: 0, 131, then the MaxValue of the first control the SDK reported
+          at camera open, truncated to 32 bits (READ). Meaning [minimum gain, segment break (high-conversion-gain
+          point), maximum gain] INFERRED. Unit unresolved.'
+        items:
+          type: integer
+          x-confidence: READ (values and source); INFERRED (meaning)
+          x-basis: static analysis of firmware 9.31, MIPI backend @0x155620 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb34b0, MIPI backend @0x155620, OpenCamera
+          control-caps loop (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Camera is closed (other delegated errors are forwarded from thread-local state; none established)
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 51
+    method: get_gain_segment
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_gain_segment
+    result:
+    - 0
+    - 131
+    - 400
+    code: 0
+    id: 51
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_gain_segment
+    error: device not connected
+    code: 318
+    id: 52
+see_also: []
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

@@ -1,0 +1,128 @@
+kind: method
+name: iscope_get_app_state
+summary: 'Return the device''s function tree: the state of every view, stack, plan and calibration function.'
+description: No params are read. The result is an object keyed by function name; each value is a function
+  node with a state and callback-specific members. A failed function appears as a node with state fail
+  inside a successful outer reply (outer code 0). The name suggests a pure query but printing a completed
+  ViewPlan can save plan state to storage (once), and printing a stack node can close its cached output-file
+  object, hence tier C. The grade reflects the whole request/reply path, which reaches the shared diagnostic
+  logger; it does not by itself mean the method changes device settings.
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb5d70 (64-bit build), PrintFuncTree @0x6e2150
+side_effects: Holds the function-tree mutex while printing; may invoke the completed-plan callback, which
+  sets a saved flag and writes the plan file; may close the cached stack output-file object; main process
+  waits up to 10000 ms for the second camera's state. Every call also performs shared request/reply diagnostic
+  logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: iscope_get_app_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: iscope_get_app_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: iscope_get_app_state reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: object
+      properties:
+        selected_cam:
+          type: string
+          enum:
+          - View
+          - SecondView
+          - unknown
+          description: 'Main process only: the selected camera, View or SecondView; unknown if the lookup
+            fails.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb5d70, get_proc_view_name
+      additionalProperties:
+        $ref: ../schemas/IscopeGetAppStateNode.yaml
+      description: 'Object assembled from the function tree: one member per printable function, keyed
+        by its runtime name (View, SecondView, DarkLibrary, CreateHPC, ViewPlan, Demonstrate and others
+        are expected by the app; none is guaranteed), plus selected_cam on the main process. Ignored nodes
+        are omitted. On the main process the second camera''s result members are appended unreconciled
+        when its request succeeds; a failed or unmatched slave request just omits them. The member inventory
+        is open.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb5d70, PrintFuncTree @0x6e2150
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable. Plan-save and slave-query failures do not become
+  error replies. Nested node failures carry their own code and error inside the result.
+examples:
+- name: poll
+  summary: Bare request; the iOS app sends this after connecting (OBSERVED, 2026-10-12)
+  of: request
+  payload:
+    id: 51
+    method: iscope_get_app_state
+- name: ok
+  summary: Shape only; node names, members and values are invented
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: iscope_get_app_state
+    result:
+      View:
+        state: working
+        lapse_ms: 120000
+        stage: Stack
+        mode: star
+        cam_id: 0
+        lp_filter: false
+        gain: 80
+      Stack:
+        state: working
+        lapse_ms: 118000
+        stacked_frame: 12
+        dropped_frame: 1
+        can_annotate: false
+        scene_shooting: false
+        frame_errcode: 0
+      selected_cam: View
+    code: 0
+    id: 51
+see_also:
+- iscope_start_view
+- iscope_start_stack
+- iscope_stop_view
+- set_view_plan
+spec:
+- spec/control/device-state-and-settings.md#application-state
+- spec/control/session-handshake/verification-and-roles.md#guest-and-master

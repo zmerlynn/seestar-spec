@@ -1,0 +1,32 @@
+type: object
+description: Connection parameters. The mount setter is called when the resulting integer is not -1 or
+  either string is non-empty; otherwise the reply is 209.
+properties:
+  index:
+    type: integer
+    description: Connection index. Shares one native integer slot with baud_rate (initially -1); which
+      wins when both are present is not established. Meaning is subtype specific and unresolved.
+    x-default: -1 (slot unset)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+  baud_rate:
+    type: integer
+    description: Baud rate. Shares the integer slot with index. A string value is ignored.
+    x-default: -1 (slot unset)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+  address:
+    type: string
+    description: Network address string. Initially empty.
+    x-default: empty string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+  port:
+    type: string
+    description: Port as a string; an integer value is ignored. The supported mount parses it with a string-to-integer
+      conversion before setting the address; coercion edge cases are unresolved.
+    x-default: empty string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)

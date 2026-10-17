@@ -1,0 +1,15 @@
+title: pi_output_get2 result
+description: One entry for a selected output, or an array of entries in port-index order when no params
+  are given.
+anyOf:
+- $ref: PiOutputGet2Entry.yaml
+- type: array
+  description: All ports in index order.
+  items:
+    $ref: PiOutputGet2Entry.yaml
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+    Read @0x323e70 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70, Read
+  @0x323e70 (64-bit build)

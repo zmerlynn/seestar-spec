@@ -1,0 +1,77 @@
+kind: method
+name: remote_disconnect
+summary: Stop the remote P2P tunnel server without forgetting the stored join.
+description: Clears the auto-connect flag, then stops the P2P tunnel server. Unlike remote_disjoin the
+  stored join file is not removed, so the join can be resumed. Stop timing is unresolved. App 3.3.2
+  has no request for this method and never sends it (READ, app 3.3.2).
+  Firmware 9.75 (64-bit build, READ), behaviour is unchanged from firmware 9.31.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcafe0, StopP2PTunnelServer @0x1a24e0 (64-bit build); firmware 9.75 (app 3.4.0, 64-bit build) cloud-link resolver report
+side_effects: Clears auto-connect and stops the P2P tunnel server; remote sessions through it end.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: remote_disconnect request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: remote_disconnect
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcafe0, StopP2PTunnelServer @0x1a24e0 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Stopping the tunnel server returned nonzero
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 70
+    method: remote_disconnect
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remote_disconnect
+    result: 0
+    code: 0
+    id: 70
+- name: failed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remote_disconnect
+    error: fail to operate
+    code: 207
+    id: 71
+see_also:
+- remote_join
+- remote_disjoin
+spec:
+- spec/auth/account-login/boundaries.md#firmware-boundary
+- spec/control/network.md#remote-access-enrolment

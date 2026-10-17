@@ -1,0 +1,91 @@
+kind: method
+name: pi_vl805_version
+summary: Return the version string of the USB host controller firmware, read by running a vendor tool.
+description: No request parameters are read. The handler runs a fixed shell pipeline that tests for a
+  vendor firmware-update tool directory, marks the tool executable, runs it with elevated privileges and
+  trims its output. The nonempty standard output is returned verbatim as the result string. The call blocks
+  until the pipeline ends, with no timeout; a nonzero child exit status does not by itself fail the call.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd2a90 (64-bit build)
+side_effects: Runs a shell pipeline with elevated privileges that changes the permission bits of the vendor
+  tool before executing it; no firmware update is requested by the command. Blocks until the pipeline
+  ends.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_vl805_version request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_vl805_version
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd2a90 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_vl805_version success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: string
+        description: Nonempty standard output of the command (a version string; its format is unresolved).
+        minLength: 1
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd2a90 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 223
+  trigger: The command produced no output
+  label: no result from command
+- code: 214
+  trigger: The command pipeline could not be started
+  label: fail to run command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other propagated helper codes are unresolved.
+examples:
+- name: request
+  summary: No parameters
+  of: request
+  payload:
+    id: 61
+    method: pi_vl805_version
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_vl805_version
+    result: example-version-string
+    code: 0
+    id: 61
+- name: no-output
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_vl805_version
+    error: no result from command
+    code: 223
+    id: 62
+see_also: []
+spec:
+- spec/control/maintenance.md#device-section

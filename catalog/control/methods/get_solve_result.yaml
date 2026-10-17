@@ -1,0 +1,114 @@
+kind: method
+name: get_solve_result
+summary: Read the current plate-solve status or result.
+description: 'Copies the current solve data under an internal mutex and formats it; it does not wait for
+  a running solve and does not start one. The result is a status object, not always a complete solution:
+  while a solve runs or after a failure it can be a status-only object (state solving or fail with duration_ms
+  and, if known, star_number). When the data has sentinel coordinates and no star count, the formatter
+  reports failure and the call returns 215 instead.'
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes @0x200450
+  (64-bit build)
+side_effects: None; request-local formatting of a locked copy.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_solve_result request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_solve_result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+        @0x200450 (64-bit build)
+reply_success:
+  title: get_solve_result success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetSolveResultResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+          @0x200450 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 215
+  trigger: Coordinates are sentinel/invalid and star_number is -1 (formatter returns false)
+  label: no solve data
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No forwarded error code. The associated Annotate event carries a different annotation object.
+examples:
+- name: poll
+  of: request
+  payload:
+    id: 100
+    method: get_solve_result
+- name: complete
+  summary: Values invented; member set READ
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_solve_result
+    result:
+      ra_dec:
+      - 10.5
+      - 20.25
+      fov:
+      - 1.2
+      - 0.7
+      focal_len: 250.0
+      angle: 12.5
+      image_id: 42
+      state: complete
+      duration_ms: 3400
+    code: 0
+    id: 100
+- name: solving
+  summary: Status-only object
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_solve_result
+    result:
+      state: solving
+      star_number: 57
+      duration_ms: 1200
+    code: 0
+    id: 101
+- name: no-data
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_solve_result
+    error: no solve data
+    code: 215
+    id: 102
+see_also:
+- start_solve
+- stop_solve
+- get_last_solve_result
+spec:
+- spec/control/solving-and-annotation.md#plate-solving

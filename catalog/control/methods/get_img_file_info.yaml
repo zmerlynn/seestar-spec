@@ -1,0 +1,144 @@
+kind: method
+name: get_img_file_info
+summary: Read metadata (date, size, kind and FITS header fields) for an image or video file on the device.
+description: 'Checks that the file exists, then reads file metadata and, depending on the kind, FITS header
+  keys, planet-stack sharpen values, WCS solution (through a helper subprocess), precessed coordinates,
+  or MP4 duration. Only the outer existence check can fail the call: secondary read failures omit members.
+  Synchronous with no timeout. The strict-grade section reads MUTATOR / established because the inaccessible-path
+  branch writes a log entry; the methods catalog lists UNKNOWN. Observer tier D: the deeper FITS, WCS
+  and video library paths are not closed, although a native-only reading would be tier B.'
+grade: MUTATOR / established (logging branch, both builds); the methods catalog lists UNKNOWN / unknown
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+side_effects: Reads files and may spawn a WCS helper subprocess; logs when the path is inaccessible. No
+  request-visible change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_file_info request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_file_info
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+        description: File name or path. A path already under the image root is kept; otherwise the image
+          root is prefixed. No empty-string, length or extension validation.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+      - type: array
+        description: First element is the name; further elements are ignored.
+        minItems: 1
+        items:
+          type: string
+          description: File name or path.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit
+            build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+      - type: object
+        required:
+        - name
+        properties:
+          name:
+            type: string
+            description: File name or path.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit
+              build)
+      description: 'Three spellings of the file name: a bare string, an array whose first element is the
+        string, or an object with name. Missing, null, empty array, missing key or non-string fails with
+        105. The companion app sends the object form.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+reply_success:
+  title: get_img_file_info success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetImgFileInfoResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Effective name missing or not a string
+  label: expected string param
+- code: 255
+  trigger: Source file not accessible
+  label: file not exist
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No result on the error paths. Delegated secondary failures never produce an RPC error.
+examples:
+- name: object-form
+  summary: As sent by the app; path invented
+  of: request
+  payload:
+    id: 90
+    method: get_img_file_info
+    params:
+      name: Example/Stacked_example.fit
+- name: string-form
+  of: request
+  payload:
+    id: 91
+    method: get_img_file_info
+    params: Example/Stacked_example.fit
+- name: ok-fits
+  summary: Values invented
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_file_info
+    result:
+      date: '2026-01-31 21:04:05'
+      size_k: 8192
+      type: 2
+      ra_dec_j2000:
+      - 83.8
+      - -5.4
+      is_solved: true
+      header_date: '2026-01-31'
+      bayer_pat: GRBG
+      creator: example
+      size:
+      - 1080
+      - 1920
+      stack_num: 40
+      exp_sec: 10.0
+      tot_exp_sec: 400.0
+    code: 0
+    id: 90
+- name: missing
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_file_info
+    error: file not exist
+    code: 255
+    id: 92
+see_also:
+- set_img_file_info
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

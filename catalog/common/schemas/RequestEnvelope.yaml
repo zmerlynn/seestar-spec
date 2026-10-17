@@ -1,0 +1,18 @@
+title: request envelope
+type: object
+description: Every client-to-device message on the stream. Methods narrow `method` and `params`.
+required: [id, method]
+properties:
+  id:
+    $ref: './Id.yaml'
+  method:
+    type: string
+    description: Method name, exact match. Missing or non-string is rejected with code 100.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+  params:
+    description: Method-specific. Most handlers accept an object; omission is common.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, Params constructor @0xff780
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handle_request @0x6f9440

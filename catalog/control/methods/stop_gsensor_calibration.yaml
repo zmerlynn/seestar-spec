@@ -1,0 +1,62 @@
+kind: method
+name: stop_gsensor_calibration
+summary: Stop the gravity-sensor calibration worker.
+description: No parameters are read. Stops the named CalibGSensor function; the stop status is ignored,
+  so the reply is always success even when nothing was running.
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, stop_gsensor_calibration @0xc8d60, StopCalibGSen @0x124210
+side_effects: Stops the named CalibGSensor operation; may wait for the worker to shut down with no explicit
+  timeout. Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_gsensor_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_gsensor_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, stop_gsensor_calibration @0xc8d60, StopCalibGSen @0x124210
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 66
+    method: stop_gsensor_calibration
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_gsensor_calibration
+    result: 0
+    code: 0
+    id: 66
+see_also:
+- start_gsensor_calibration
+spec:
+- spec/control/polar-alignment.md#g-sensor-and-stored-calibration

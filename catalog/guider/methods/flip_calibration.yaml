@@ -1,0 +1,82 @@
+kind: method
+name: flip_calibration
+summary: Flip the active RA calibration.
+description: Params are not consumed. Calls the device layer to flip the active RA-axis calibration and
+  related configuration state. Result is integer 0 on success; failure is reported as 207. Downstream
+  subtype-specific validation and error paths are unresolved. The method is registered in the guider command
+  table (TCP 4400); a request that reaches the main imager and is relayed to the guider is a separate
+  route with its own side effects, outside this entry's tier.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x73db0 (64-bit build), MyDev::FlipRACal @0x93bb0
+side_effects: Flips the active RA calibration and calibration-related configuration state.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: flip_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: flip_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x73db0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: The flip operation reported failure
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Native error paths below the device layer are not enumerated; callee-set codes are not established.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 3
+    method: flip_calibration
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: flip_calibration
+    result: 0
+    code: 0
+    id: 3
+- name: error-207
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: flip_calibration
+    error: fail to operate
+    code: 207
+    id: 4
+see_also:
+- get_calibrated
+spec:
+- spec/guider/index.md#method-groups

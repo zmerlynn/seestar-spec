@@ -1,0 +1,62 @@
+kind: method
+name: clear_polar_align
+summary: Reset the stored polar-alignment calibration and error results.
+description: Writes sentinel values over the shared three-point calibration and error fields. It does
+  not stop workers and does not remove the saved WCS files.
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcba70 (64-bit build)
+side_effects: Resets shared polar-alignment calibration and error results.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_polar_align request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_polar_align
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcba70 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The inspected handler returns no handler-specific error code.
+examples:
+- name: call
+  of: request
+  payload:
+    id: 91
+    method: clear_polar_align
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_polar_align
+    result: 0
+    code: 0
+    id: 91
+see_also:
+- start_polar_align
+- get_polar_axis
+spec:
+- spec/control/polar-alignment.md#run-control

@@ -1,0 +1,110 @@
+kind: method
+name: get_calib_param
+summary: Read the stored calibration frame count for a frame type.
+description: Returns the stored calibration integer for the selected type as a bare integer result (no
+  object). Interpreted as a frame count (INFERRED); units and ranges are unresolved.
+grade: MUTATOR / established (the handler itself only reads state; the grade reflects the shared diagnostic
+  log writes made by every full call)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, get_calib_param @0xd2c20, GetCalibrateParam @0x1937e0
+side_effects: None beyond the shared diagnostic log writes. Reads a shared integer.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_calib_param request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_calib_param
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - type: string
+      - type: array
+        minItems: 1
+        items:
+          type: string
+      description: 'Required frame-type selector: a string (dark, bias or flat), or an array whose first
+        element is that string. Absent, null, empty array or non-string gives 105; an object is not accepted.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_calib_param @0xd2c20, GetCalibrateParam @0x1937e0
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_calib_param reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: get_calib_param
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      type: integer
+      description: The stored calibration integer for the selected type, a bare integer. Frame count by
+        inference; units and range not established.
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, get_calib_param @0xd2c20, GetCalibrateParam @0x1937e0
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Selector missing, null, empty array or not a string
+  label: expected string param
+- code: 209
+  trigger: Unknown or light type
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: dark
+  of: request
+  payload:
+    id: 47
+    method: get_calib_param
+    params: dark
+- name: positional
+  summary: Array form
+  of: request
+  payload:
+    id: 48
+    method: get_calib_param
+    params:
+    - bias
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_calib_param
+    result: 20
+    code: 0
+    id: 47
+see_also:
+- set_calib_param
+- get_calib_frame
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#selecting-frames

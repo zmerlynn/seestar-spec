@@ -1,0 +1,4 @@
+# ZWO account REST API, cloud auth and relay authorization.
+# Binary and HTTP protocols, not JSON-RPC: specified in spec/auth/cloud-auth.md and spec/auth/account-login.md.
+service: cloud
+entries: []

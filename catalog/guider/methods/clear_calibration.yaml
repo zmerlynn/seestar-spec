@@ -1,0 +1,91 @@
+kind: method
+name: clear_calibration
+summary: Clear the stored guiding calibration of the mount, the AO unit, or both.
+description: With no params both are cleared. Otherwise each child of the params container selects one
+  target (mount, ao or both, case-insensitive) and the corresponding driver clear-calibration call runs;
+  an empty container clears neither and still succeeds. An unknown or non-string child fails with 109,
+  possibly after earlier children were already processed. Which mount or AO subtype is live, and what
+  the driver does for each, is unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)
+side_effects: Calls the mount and/or AO driver's clear-calibration operation, discarding the active guiding
+  calibration.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/ClearCalibrationParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 109
+  trigger: A child of params is not a string or not one of mount, ao, both
+  label: unexpected param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Native error paths below the handler are unresolved.
+examples:
+- name: both
+  summary: 'No params: clear both'
+  of: request
+  payload:
+    id: 101
+    method: clear_calibration
+- name: mount-only
+  of: request
+  payload:
+    id: 102
+    method: clear_calibration
+    params:
+    - mount
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_calibration
+    result: 0
+    code: 0
+    id: 101
+- name: bad-selector
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_calibration
+    error: unexpected param
+    code: 109
+    id: 103
+see_also:
+- deselect_star
+- clear_ra_dec_history
+spec:
+- spec/guider/index.md#method-groups

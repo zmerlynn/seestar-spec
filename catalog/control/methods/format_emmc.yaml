@@ -1,0 +1,214 @@
+kind: method
+name: format_emmc
+summary: Reformat the internal memory (exFAT), recreate the default directories and clear the favourites
+  database.
+description: No request parameters are read and there is no confirmation parameter, mode guard or park/capture
+  guard. The handler checks that the model has internal memory, disables the file-sharing service, force-unmounts
+  the internal volume, formats it as exFAT with the volume label Seestar, remounts it, recreates the default
+  directories, takes a storage snapshot, clears the favourites database and re-enables file sharing (the
+  last step is run whenever the disable step succeeded, whatever happened in between). The shell step
+  runs to completion with no timeout. Partial destructive work can precede an error. A volume whose size
+  query fails appears in the snapshot without any of the size members. Observable storage and file-sharing
+  changes may be announced by separate hotplug events; which ones is unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage @0xb2330
+side_effects: Destroys all data on the internal memory, remounts it, recreates default directories, clears
+  the favourites database and briefly disables file sharing.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: format_emmc request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: format_emmc
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: format_emmc success reply
+    properties:
+      result:
+        title: format_emmc result
+        type: object
+        description: Storage snapshot taken after the format. Always present on success; absent on every
+          error. It describes all connected storage, not only the internal memory.
+        required:
+        - is_typec_connected
+        - connected_storage
+        - storage_volume
+        - cur_storage
+        properties:
+          is_typec_connected:
+            type: boolean
+            description: Whether an external storage device is attached on the USB-C port.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+              @0xb2330
+          connected_storage:
+            type: array
+            description: Names of the connected storage volumes. The internal volume is always included,
+              even when it is not mounted.
+            items:
+              type: string
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+              @0xb2330
+          storage_volume:
+            type: array
+            description: One entry per connected volume.
+            items:
+              type: object
+              required:
+              - name
+              - state
+              properties:
+                name:
+                  type: string
+                  description: Volume name; emmc for the internal storage.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                state:
+                  type: string
+                  description: Mount state as a string.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                total_mb:
+                  type: integer
+                  description: Total size in megabytes (unit from the key name). Present only when the
+                    disk-space query succeeded; same value as totalMB.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                totalMB:
+                  type: integer
+                  description: Duplicate of total_mb.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                free_mb:
+                  type: integer
+                  description: Free space in megabytes (unit from the key name). Present only when the
+                    disk-space query succeeded; same value as freeMB.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                freeMB:
+                  type: integer
+                  description: Duplicate of free_mb.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                disk_mb:
+                  type: integer
+                  description: Disk size in megabytes (unit from the key name). Present only when the
+                    disk-space query succeeded and the size is greater than zero; same value as diskSizeMB.
+                  minimum: 1
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                diskSizeMB:
+                  type: integer
+                  description: Duplicate of disk_mb.
+                  minimum: 1
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+                used_percent:
+                  type: integer
+                  description: Used space as a percentage. Present only together with disk_mb.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+                    @0xb2330
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+              @0xb2330
+          cur_storage:
+            type: string
+            description: Name of the storage currently selected for saving.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage
+              @0xb2330
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc2730 (64-bit build), FormatStorage @0xb2330
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: The model has no internal memory
+  label: not supported
+- code: 207
+  trigger: Disabling file sharing failed, or the captured format command output contains the substring
+    error
+  label: fail to operate
+- code: 214
+  trigger: The shell command could not be started
+  label: fail to run command
+- code: 531
+  trigger: Clearing the favourites database failed
+  label: operate database fail
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A nonzero exit status of the shell command is not itself an error. Lower-level file-sharing
+  errors beyond its boolean result are unresolved.
+examples:
+- name: format
+  of: request
+  payload:
+    id: 41
+    method: format_emmc
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: format_emmc
+    result:
+      is_typec_connected: false
+      connected_storage:
+      - emmc
+      storage_volume:
+      - name: emmc
+        state: mounted
+        total_mb: 57000
+        totalMB: 57000
+        free_mb: 56900
+        freeMB: 56900
+        disk_mb: 57000
+        diskSizeMB: 57000
+        used_percent: 1
+      cur_storage: emmc
+    code: 0
+    id: 41
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: format_emmc
+    error: not supported
+    code: 210
+    id: 42
+see_also: []
+spec:
+- spec/control/power-and-storage.md#eject-and-format

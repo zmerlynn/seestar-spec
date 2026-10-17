@@ -1,0 +1,44 @@
+title: set_control_value params
+description: Control name and value, as an object {name, val} or as a positional array [name, val] (further
+  array elements ignored). Absent, null or scalar params give an empty map and hence 105. `name` is required
+  and matched case-insensitively against the camera's exposed controls. `val` is an integer, boolean (stored
+  as 0 or 1), float (stored at single precision; rounded to the nearest integer for the camera call) or
+  string. A missing `val` is not rejected by the handler (it takes an internal sentinel); a null, object
+  or array `val` gives 109. Units are fixed per control (exposure microseconds, INFERRED; gain tenths
+  of a dB on multiplicative-gain sensors; offset raw black level; target temperature degrees C clamped
+  to -40..30; cooler power percent; red/blue gain with 100 as unity; READ, camera library). Several
+  listed controls are accepted with no effect (see set_control_value). Per-control range checking beyond
+  the target-temperature clamp is unresolved; read the limits from get_controls.
+oneOf:
+- type: object
+  required:
+  - name
+  properties:
+    name:
+      type: string
+      description: Control name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe89a0, SetControlVal @0x11dff0, camera SetControlVal
+        @0x153ac0 (64-bit build)
+    val:
+      type:
+      - integer
+      - number
+      - boolean
+      - string
+      description: New value in the control's fixed unit. Booleans become 0/1. Not rejected when missing.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe89a0, SetControlVal @0x11dff0, camera SetControlVal
+        @0x153ac0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    type:
+    - string
+    - integer
+    - number
+    - boolean
+  description: '[name, val]; elements beyond the second are ignored.'
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe89a0, SetControlVal @0x11dff0, camera SetControlVal
+  @0x153ac0 (64-bit build)

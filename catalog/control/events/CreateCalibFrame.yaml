@@ -1,0 +1,152 @@
+kind: event
+name: CreateCalibFrame
+summary: State of the calibration-frame (bias/flat) creation worker.
+description: 'Sent by the named CreateCalibFrame function started by StartCreateCalib. Function-state
+  family (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms when the timer
+  is started or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits
+  them); route optional. A null or nameless detail sends nothing, and non-working notifications can be
+  suppressed while the function cache still changes, so a receiver cannot rely on seeing every transition.
+  For custom calibration types 1-3 the status callback adds exp_us, adu and type on every formatted event;
+  the automatic type clears that callback, so those members are then absent. The same callback members also appear
+  in the function tree returned by iscope_get_app_state. Recipients: all retained 4700 sockets. No reply-before-event
+  order is established: the RPC reply that starts the worker and the worker''s events can arrive in either
+  order. No fixed cadence. A negative requested exposure selects automatic exposure, and later events report
+  the chosen value (READ). A frame whose mean is outside the requested ADU window ends the run with fail 204
+  (READ). Failure codes: 204, 238, 249, 300, 207, or a filter-wheel error (READ). No dedicated stop method
+  exists; stop_func naming CreateCalibFrame ends the run with cancel, which carries no code or error on the wire
+  (internal code 253, not sent); READ mechanism, INFERRED that a standalone run is reachable by name.
+  iscope_stop_view cannot reach it. APK consumer expectation: a DTO declares state, lapse_ms, code and type.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, StartCreateCalib @0x3bc420, PrintMakeCalibStatus @0x3bcca0, CreateCalib
+  @0x3bafa0, CreateCalibFunc @0x3bbb30, AppCreateCalibFunc @0x3bbe70 (64-bit build)
+side_effects: Observation only for the receiver. The worker captures calibration frames and writes files.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: CreateCalibFrame event
+  type: object
+  discriminator: Event
+  description: Function-state members plus custom-type calibration members.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: CreateCalibFrame
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartCreateCalib @0x3bc420
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; StartCreateCalib @0x3bc420
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    exp_us:
+      type: integer
+      description: Exposure in microseconds. When the request's exposure was negative, the automatically
+        chosen exposure is written back, so later events show the chosen value.
+      x-required-when: custom calibration types 1-3 (callback installed); absent for the automatic type
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus @0x3bcca0
+    adu:
+      type: integer
+      description: Integer mean raw pixel value (camera ADU) of the most recent frame; on the final event,
+        the mean of the master frame. Checked against the requested ADU window (outside gives fail 204).
+      x-required-when: custom calibration types 1-3 (callback installed); absent for the automatic type
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus @0x3bcca0
+    type:
+      type: string
+      enum:
+      - bias
+      - flat_IR
+      - flat_LP
+      - unknown
+      description: 'Calibration frame type name: 1=bias, 2=flat_IR, 3=flat_LP, any other internal value
+        unknown. The table is identical in the 32-bit build.'
+      x-required-when: custom calibration types 1-3 (callback installed); absent for the automatic type
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus @0x3bcca0, type table @0xaadd68 (64-bit
+        build); PrintMakeCalibStatus @0x33ba48, type table @0x8b7bc0 (32-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus @0x3bcca0, SendFuncEvent @0x6e4e20
+examples:
+- name: working-flat
+  summary: Custom flat capture (READ shape; values invented)
+  of: payload
+  payload:
+    Event: CreateCalibFrame
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 5300
+    exp_us: 20000
+    adu: 1800
+    type: flat_LP
+- name: complete-auto
+  summary: Automatic type, no custom members (READ shape; values invented)
+  of: payload
+  payload:
+    Event: CreateCalibFrame
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 64000
+see_also:
+- start_create_calib_frame
+- stop_func
+- get_calib_frame
+- iscope_get_app_state
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#bias-and-flat-frames
+- spec/control/events-overview.md

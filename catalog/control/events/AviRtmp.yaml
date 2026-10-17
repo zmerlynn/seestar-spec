@@ -1,0 +1,112 @@
+kind: event
+name: AviRtmp
+summary: State of playing a recorded AVI file out through the live-stream output.
+description: 'ReadAviFunc sends start, then complete when the frame loop ends, or fail with code and error
+  on initialisation problems (state family: code/error only when > 0). Function-state family (SendFuncEvent):
+  state is always written; stage only when non-empty; lapse_ms when the timer is started or the state
+  is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional.
+  A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function
+  cache still changes, so a receiver cannot rely on seeing every transition. No file name, result or media
+  metadata is added. Recipients: all retained 4700 sockets. No reply-before-event order is established:
+  the RPC reply that starts the worker and the worker''s events can arrive in either order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, ReadAviFunc @0x2ee7e0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AviRtmp event
+  type: object
+  discriminator: Event
+  description: State members only.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: AviRtmp
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ReadAviFunc @0x2ee7e0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      description: 'Function producer: idle, working, complete, fail, cancel. Direct (state family) producer:
+        start, complete, fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; ReadAviFunc @0x2ee7e0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: at fail even if 0. Direct fail (code > 0): 258 open failed, 220
+        not a video stream or implausible size, 283 output stream initialisation failed; 253 aborted when
+        a stop was already requested.'
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, ReadAviFunc @0x2ee7e0
+examples:
+- name: start
+  summary: Playback started (READ shape)
+  of: payload
+  payload:
+    Event: AviRtmp
+    Timestamp: '1234.123456789'
+    state: start
+- name: open-fail
+  summary: Open failure (READ code)
+  of: payload
+  payload:
+    Event: AviRtmp
+    Timestamp: '1234.123456789'
+    state: fail
+    code: 258
+    error: open file failed
+see_also:
+- start_avi_rtmp
+- stop_avi_rtmp
+spec:
+- spec/media/video.md#avi-playback-into-the-stream

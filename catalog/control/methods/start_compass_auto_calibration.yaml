@@ -1,0 +1,75 @@
+kind: method
+name: start_compass_auto_calibration
+summary: Calibrate the compass by rotating the mount automatically (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. Takes no parameters. Starts the compass calibration worker
+  together with a mount rotation thread that turns the mount through a full circle in a safe direction
+  chosen from the mount's own state. Progress and the result arrive as CompassCalibration events; in firmware
+  9.75 a fail event carries a code (560 to 565, see the error table). On success the calibration is stored
+  and the guider azimuth state is cleared. If the rotation thread fails to start, the reply may carry
+  a stale code (READ).
+grade: MUTATOR / READ
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xd6cb0 (64-bit build), @0x612ec (32-bit build)
+side_effects: Rotates the mount, samples the magnetometer, and on success stores the sensor calibration
+  and clears the guider azimuth state.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_compass_auto_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_compass_auto_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 524
+  trigger: a calibration or the rotation thread is already running
+  label: busy
+- code: 203
+  trigger: the mount is moving
+  label: mount moving
+- code: 560
+  trigger: the mount motion-state query failed
+  label: compass communication failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Rotation failures after the reply surface as CompassCalibration fail events with codes 560
+  to 565.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 90
+    method: start_compass_auto_calibration
+  summary: READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_compass_auto_calibration
+    result: 0
+    code: 0
+    id: 90
+see_also:
+- start_compass_calibration
+- stop_compass_calibration
+- CompassCalibration
+- ScopeMoveRound
+spec:
+- spec/control/polar-alignment.md#automatic-compass-calibration-firmware-975

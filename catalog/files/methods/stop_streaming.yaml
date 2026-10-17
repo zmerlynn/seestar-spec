@@ -1,0 +1,66 @@
+kind: method
+name: stop_streaming
+summary: 'Image socket: stop the requesting client''s live-view frame stream.'
+description: 'Image-socket (4800/4804) method. Removes the calling connection from the shared stream-subscriber
+  list under a lock and always replies with the text `done`. When no streaming connection remains, the
+  streaming thread is stopped. READ. It mutates the shared subscriber list (operational bookkeeping) and
+  may stop the streaming thread, but touches no hardware: MUTATOR / tier B. The 32-bit build matches
+  (READ).'
+grade: 'MUTATOR / established (64-bit build; 32-bit build matches (READ))'
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x114020
+  (64-bit build), @0xa5058 (32-bit build); static analysis of app 3.3.2, MainFileManager.stopStream; worker
+  check CMyThread::IsRun; delStreamList(mutex, map<int,int>, id, iterator)
+side_effects: Removes the client from the shared stream-subscriber list under a mutex; stops the streaming
+  thread when no subscriber remains. Request-local reply. READ.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_streaming request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_streaming
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler
+        @0x114020 (64-bit build), @0xa5058 (32-bit build)
+    params:
+      description: Not read by the handler. The app sends no params member. Clients SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x114020 (64-bit build); static analysis of
+        app 3.3.2, MainFileManager.stopStream
+reply_success:
+  title: stop_streaming success reply
+  description: Not an ordinary command reply. Always the text `done` (imgType 0, dataType 0). 80-byte
+    big-endian header (spec/media/image-sockets.md#reply-framing), then the payload; errors are text
+    replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x114020
+    (64-bit build), @0xa5058 (32-bit build)
+reply_error:
+  title: stop_streaming error reply
+  description: None from the handler, which always replies `done`. Malformed or unknown requests get the
+    dispatcher text replies (imgType 0, dataType 1). No top-level JSON code member.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x114020
+    (64-bit build), @0xa5058 (32-bit build)
+errors: []
+errors_note: 'No handler error: the reply is always `done`. Malformed or unknown requests get the dispatcher
+  text replies (spec/media/image-sockets.md#grammar, R4).'
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: stop_streaming
+see_also:
+- begin_streaming
+- control/stop_send
+spec:
+- spec/media/image-sockets.md#streaming-start-and-stop

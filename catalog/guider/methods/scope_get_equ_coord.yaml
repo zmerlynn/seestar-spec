@@ -1,0 +1,109 @@
+kind: method
+name: scope_get_equ_coord
+summary: 'Guider: query the mount for its current equatorial (RA/Dec) coordinates.'
+description: 'Guider getter for equatorial coordinates. Registered in the guider dispatcher table; on
+  4700 it is reached through the imager method-not-found relay (mount-and-motion R1, R2). READ: the handler
+  has no connection check of its own and calls the same RA/Dec reader as scope_get_ra_dec: live coordinates
+  from a connected mount, else the cached pair from the last sync, else the thread error code (207 with
+  no live mount and no cache). On success it replies with an object {ra, dec}. INFERRED units: RA in hours,
+  Dec in degrees (as scope_get_ra_dec). It shares the reader''s recovery side effects (failure counting,
+  an imager autosave query, a possible stop-capture and disconnect sequence, AutoCloseMount; mount-and-motion
+  R42), so it is graded MUTATOR / tier C. The epoch is unresolved. Mount serial (firmware 9.31, READ):
+  :GR and :GD.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider dispatcher table, handler @0x753e0 (64-bit guider build),
+  GetRaDec @0x698f0, @0x6fdf4 (32-bit build); static analysis of app 3.3.2, BaseDeviceViewModel.refreshScope
+side_effects: 'Same as scope_get_ra_dec: reads the mount controller, updates tracking state and failure
+  counters, and after repeated failures may stop capture, mark the mount disconnected (AutoCloseMount)
+  or run the communication-failure handler. READ.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_equ_coord request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_equ_coord
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (64-bit build, entry @0x1f18b0)
+    params:
+      description: Not read. The app sends no params member. Clients SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x753e0 (64-bit guider build); static
+        analysis of app 3.3.2, BaseDeviceViewModel.refreshScope
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        required:
+        - ra
+        - dec
+        properties:
+          ra:
+            type: number
+            description: Right ascension in hours (INFERRED unit).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, guider handler @0x753e0 (64-bit guider build)
+          dec:
+            type: number
+            description: Declination in degrees (INFERRED unit).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, guider handler @0x753e0 (64-bit guider build)
+        description: '{ra, dec} from the same reader as scope_get_ra_dec. Epoch unresolved.'
+        x-confidence: READ (members); INFERRED (units)
+        x-basis: static analysis of firmware 9.31, guider handler @0x753e0, GetRaDec @0x698f0 (64-bit
+          guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: No live coordinates and no valid cached pair
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Other failures of the shared reader reply with the thread error code; those codes are not
+  exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 101
+    method: scope_get_equ_coord
+- name: ok
+  summary: Position (values invented)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_equ_coord
+    result:
+      ra: 5.5
+      dec: 20.25
+    code: 0
+    id: 101
+see_also:
+- scope_get_ra_dec
+- scope_get_horiz_coord
+- scope_get_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#position-and-connection-state
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

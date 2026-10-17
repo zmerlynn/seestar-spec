@@ -1,0 +1,113 @@
+kind: event
+name: CreateHPC
+summary: State of hot-pixel correction (HPC) creation.
+description: 'Sent by the named CreateHPC function started by StartHPC. Function-state family (SendFuncEvent):
+  state is always written; stage only when non-empty; lapse_ms when the timer is started or the state
+  is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional.
+  A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function
+  cache still changes, so a receiver cannot rely on seeing every transition. The status callback adds
+  hpc_num when the camera information read succeeds. Recipients: all retained 4700 sockets. No reply-before-event
+  order is established: the RPC reply that starts the worker and the worker''s events can arrive in either
+  order. No fixed cadence. The function detail is named CreateHPC (READ); that the event carries that name is
+  INFERRED.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ (emitter and payload members); INFERRED (event name)
+basis: static analysis of firmware 9.31, StartHPC @0x3bc980, PrintMakeHPCStatus @0x3bd7c0 (64-bit build)
+side_effects: Observation only for the receiver. The worker may move the filter wheel and writes the correction
+  data.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: CreateHPC event
+  type: object
+  discriminator: Event
+  description: Function-state members plus hpc_num.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: CreateHPC
+      description: Discriminator.
+      x-confidence: INFERRED (event name not read from the emitter)
+      x-basis: static analysis of firmware 9.31, StartHPC @0x3bc980
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; StartHPC @0x3bc980
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    hpc_num:
+      type: integer
+      description: Count taken from camera information; meaning of the count beyond its name is unresolved.
+      x-required-when: camera information read (GetCamInfo) succeeds
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintMakeHPCStatus @0x3bd7c0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintMakeHPCStatus @0x3bd7c0, SendFuncEvent @0x6e4e20
+examples:
+- name: complete
+  summary: Completion with count (READ shape; values invented)
+  of: payload
+  payload:
+    Event: CreateHPC
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 15400
+    hpc_num: 120
+see_also:
+- start_create_hpc
+- iscope_get_app_state
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#hot-pixel-correction-hpc
+- spec/control/events-overview.md

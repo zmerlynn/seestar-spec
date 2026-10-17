@@ -1,0 +1,4 @@
+# RTSP and preview streams.
+# No JSON methods: RTSP framing and stream URLs are specified in spec/media/video.md.
+service: video
+entries: []

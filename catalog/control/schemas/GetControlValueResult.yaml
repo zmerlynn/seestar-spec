@@ -1,0 +1,63 @@
+title: get_control_value result
+type: object
+required:
+- name
+description: 'Always begins with `name`, copied from the request in its original spelling. The remaining
+  members depend on the control type: a numeric control gives type "number" and an integer or float value;
+  a text control gives type "text" and a string value; a radio control gives type "radio", an integer
+  value, `text` when non-empty and `items` only when the list is non-empty and requested. An unknown internal
+  type can yield the name alone. No units member is emitted; units are fixed per control (see
+  viewing-and-exposure R17b; for example Temperature in tenths of a degree C, READ, and Exposure in microseconds,
+  INFERRED).'
+properties:
+  name:
+    type: string
+    description: Control name as spelled in the request.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+      @0x1546f0 (64-bit build)
+  type:
+    type: string
+    enum:
+    - number
+    - text
+    - radio
+    description: Value kind.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+      @0x1546f0 (64-bit build)
+  value:
+    type:
+    - number
+    - string
+    description: 'Current value: integer or float for number and radio, string for text. For exact-case
+      TargetTemp on the 64-bit build the value is the cached target temperature rather than the camera
+      reading.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+      @0x1546f0 (64-bit build)
+  text:
+    type: string
+    description: 'Radio controls only: label of the current choice, present only when non-empty.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+      @0x1546f0 (64-bit build)
+  items:
+    type: array
+    items:
+      type: string
+    description: 'Radio controls only: the choice labels, present only when the list is non-empty and
+      the request asked for it.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+      @0x1546f0 (64-bit build)
+  value_wide:
+    type: number
+    description: '64-bit build, main process only, Temperature control only: the temperature reported
+      by the peer (wide-angle) processor, present only when the peer query succeeded. Absent when the
+      relay fails; a relay failure does not fail the call.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf5660, temperature relay (64-bit build only)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+  @0x1546f0 (64-bit build)

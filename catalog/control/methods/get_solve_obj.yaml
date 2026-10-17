@@ -1,0 +1,117 @@
+kind: method
+name: get_solve_obj
+summary: Read the star positions from the existing plate-solve intermediate file and return three values
+  per row.
+description: Reads the first four columns of at most 100 rows from the solver's intermediate table file
+  in the device temporary directory and returns three of the four values per row. It starts no solve;
+  with no or unsuitable file it fails with 207. The rows are stars detected in the last solve image, from
+  the solver's source-extraction table; the three values are its first, second and fourth columns, taken
+  to be x, y (pixels) and background (INFERRED).
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb2ef0, GetObjFromAxy @0x15efa0, data_from_fit @0x15d220
+  (64-bit build)
+side_effects: Reads existing FITS table data into request-local buffers. A reachable unsuitable-HDU branch
+  of the reader calls a diagnostic print routine (INFERRED to write to standard output), which is why
+  the grade is MUTATOR. The matching FITS-library bodies are not resolved, so the observer tier stays
+  D. File parsing can block; no explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_solve_obj request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_solve_obj
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb2ef0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_solve_obj success reply
+  description: Same envelope as the common success reply, except that result carries data.
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: array
+      description: Rows read from the existing solve-result file, at most 100. The handler computes the
+        row count as list length divided by the reported FITS column count while the helper copies exactly
+        four values per row, so a file wider than four columns can reduce the emitted count.
+      maxItems: 100
+      items:
+        $ref: ../schemas/GetSolveObjRow.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_solve_obj @0xb2ef0 (64-bit build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: The helper failed (needs more than 3 columns and more than 0 rows) or the reported column count
+    is below 4
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No result member is present on error.
+examples:
+- name: get
+  of: request
+  payload:
+    id: 91
+    method: get_solve_obj
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_solve_obj
+    result:
+    - - 512
+      - 384
+      - 20
+    - - 100
+      - 700
+      - 15
+    code: 0
+    id: 91
+- name: no-data
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_solve_obj
+    error: fail to operate
+    code: 207
+    id: 92
+see_also: []
+spec:
+- spec/control/solving-and-annotation.md#plate-solving
+- spec/control/solving-and-annotation.md#plate-solve

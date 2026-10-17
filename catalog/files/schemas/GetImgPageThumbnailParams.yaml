@@ -1,0 +1,21 @@
+title: get_img_page_thumbnail params
+description: Page number, as an object or as a positional array [page].
+oneOf:
+- type: object
+  required:
+  - page
+  properties:
+    page:
+      type: integer
+      description: Page number. Required; non-integer yields error 104. Numbering base and range unresolved.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)
+- type: array
+  minItems: 1
+  prefixItems:
+  - type: integer
+    description: Page number.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)

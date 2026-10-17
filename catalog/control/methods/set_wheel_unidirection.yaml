@@ -1,0 +1,92 @@
+kind: method
+name: set_wheel_unidirection
+summary: Set the wheel unidirectional-movement flag; in firmware 9.31 it always fails and applies nothing.
+description: 'Requires a boolean (or integer, nonzero is true) as a bare scalar or first array element;
+  missing, empty, null or wrong type gives 106. The parsed value is ignored in both builds: the backend
+  only tests wheel state and returns an error. The handler has a result-0 branch that is unreachable,
+  so every valid request gets an error: 318 when no wheel is selected, 203 while the movement thread runs,
+  otherwise 210.'
+grade: PURE GETTER / established (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xceb30, SetWheelUnidirection @0x3017e0 (64-bit build)
+side_effects: Reads the selected wheel and movement-thread state under a lock and sets the thread-local
+  error; the direction is never applied. No logger, setting write or worker start in the inspected path.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_wheel_unidirection request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_wheel_unidirection
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type:
+      - boolean
+      - integer
+      - array
+      description: Unidirection flag as a bare boolean or integer (nonzero is true), or the first element
+        of an array. Parsed and then ignored. No default.
+      items:
+        type:
+        - boolean
+        - integer
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xceb30 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xceb30 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+  description: 'Unreachable in firmware 9.31: no success reply is produced.'
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: Parameter missing, empty, null, or neither boolean nor integer
+  label: expected bool param
+- code: 318
+  trigger: No wheel selected
+  label: device not connected
+- code: 203
+  trigger: Wheel movement thread is running
+  label: equipment is moving
+- code: 210
+  trigger: Wheel selected and idle (the usual reply)
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Because the method always errors, no reply_success example exists.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 81
+    method: set_wheel_unidirection
+    params: true
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_unidirection
+    error: not supported
+    code: 210
+    id: 81
+see_also:
+- calibrate_wheel
+- open_wheel
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#names-and-settings

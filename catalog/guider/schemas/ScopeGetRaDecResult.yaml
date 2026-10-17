@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: scope_get_ra_dec result
+type: array
+minItems: 2
+maxItems: 3
+prefixItems:
+- type: number
+  description: Right ascension in hours.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x79040 (64-bit guider build)
+- type: number
+  description: Declination in degrees.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x79040 (64-bit guider build)
+- type: number
+  description: Third value read from the driver, present only when it is not the -999 sentinel (within
+    0.1). INFERRED to be the local sidereal time in hours; the imager's meridian-delta helper uses it as
+    LST.
+  x-confidence: READ (presence and sentinel test); INFERRED (sidereal time)
+  x-basis: static analysis of firmware 9.31, guider handler @0x79040, sentinel test and append @0x79118-0x79190
+    (64-bit guider build); imager GetRADecDegree @0x180430 parses a three-element result
+description: '[ra, dec] or [ra, dec, lst]. The third element is appended only when the driver value is
+  not the -999 sentinel. Epoch unresolved.'
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x79040 (64-bit guider build)

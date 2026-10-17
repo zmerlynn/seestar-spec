@@ -1,0 +1,115 @@
+kind: method
+name: scope_move_to_horizon
+summary: Start the guider's move-over-horizon worker, which raises the mount until its first axle coordinate
+  reaches zero or above (the app's "arm open"); the reply reports acceptance, not arrival.
+description: 'Registered in the guider dispatcher table; the name is not in the imager tables, so a request
+  on 4700 reaches it through the imager''s method-not-found relay (mount-and-motion R1, R2). The handler
+  does not read params. It checks that a mount object exists and is connected; on the null or disconnected
+  path it returns without writing a result or error, and the dispatcher adds only the id, so the client
+  gets a reply envelope with neither result nor error (no 315). A client MUST treat such a reply as a
+  failure (no mount). It then fails with 203 if the mount is moving and 210 if the driver cannot do motion.
+  Otherwise it names the function detail ScopeMoveToHorizon, stores movement type 5 in the shared movement
+  parameters and launches the movement worker; reply code 0 means the worker was launched. A launch failure
+  forwards the thread-local error. No ViewPlan check (536) is made, and the handler changes neither equatorial
+  mode nor the requested tracking state. The worker (MoveOverHoriz) first commands motion, then polls
+  the axle coordinates every 0.5 s with a 30 s deadline; a first axle coordinate of 0 or above ends it
+  with success, after which, on that normal path, it commands a stop and waits for the mount to stop;
+  an initial motion failure or an already-stopped status exits without that cleanup. Worker failures (320
+  motion or state failure, 500 axle read failure, 204 timeout) are reported asynchronously through ScopeMoveToHorizon
+  events (which also carry close when the axle position can be read), not as reply codes. Because motion
+  is commanded before the coordinate test, repeating the call with the arm already up can still move the
+  mount briefly. scope_goto admits movement type 5 and stops this worker before slewing. INFERRED: the
+  first axle coordinate is the elevation axis on alt-azimuth hardware, so a terminal complete event means
+  the arm is open. The axle-to-sky relation in equatorial mode, stopping distance and the controller''s
+  own park handling are unresolved. The app sends this method with no params for its arm-open control;
+  its arm-cancel control sends scope_move ["none"], which stops this worker (scope_abort_slew does not).
+  Mount serial: runs on a worker; its commands were not traced (unresolved).'
+grade: MUTATOR / established (64-bit and 32-bit native handler paths)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x723f0 (64-bit guider build; no-mount return
+  @0x72448, dispatcher handle_request @0x15dc10 appends only the id), MoveAxisFunc @0x6ba80, MoveOverHoriz
+  @0x68e40, driver Motion @0xf04c0; 32-bit handler @0x6ce18, MoveOverHoriz @0x66614; static analysis of
+  app 3.3.2, BaseDeviceViewModel.setArmOpen
+side_effects: Writes the shared movement type (5) and function-detail state, launches the movement worker,
+  which sends motion and stop commands to the mount controller. Emits ScopeMoveToHorizon function events
+  asynchronously.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_move_to_horizon request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_move_to_horizon
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (64-bit build, entry @0x1f1970)
+    params:
+      description: Not read by the handler. The app sends no params member. Clients SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x723f0 (64-bit guider build); static
+        analysis of app 3.3.2, BaseDeviceViewModel.setArmOpen
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 203
+  trigger: The mount reports that it is moving
+  label: equipment is moving
+- code: 210
+  trigger: The mount driver does not support motion
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No mount or a disconnected mount gives a reply with neither result nor error (no 315); a
+  client MUST treat it as a failure. A worker launch failure forwards the thread-local error code. Worker
+  codes 320, 500 and 204 arrive in ScopeMoveToHorizon events, not in the reply.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 81
+    method: scope_move_to_horizon
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_move_to_horizon
+    result: 0
+    code: 0
+    id: 81
+- name: moving
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_move_to_horizon
+    error: equipment is moving
+    code: 203
+    id: 82
+see_also:
+- ScopeMoveToHorizon
+- scope_park
+- scope_goto
+- scope_move
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#park-home-and-the-arm
+- spec/control/plan-scheduling.md#the-worker
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

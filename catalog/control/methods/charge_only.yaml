@@ -1,0 +1,80 @@
+kind: method
+name: charge_only
+summary: Simulate removal of the Type-C storage so the connection is charge-only.
+description: 'Takes no parameters and unconditionally invokes the storage object with a manual Type-C
+  removal request (not a toggle; there is no boolean parameter). The storage scanner stops any prior scan
+  and, because a result pointer is supplied, the call blocks through the stop and the scan completion.
+  Success additionally requires a valid selected storage slot with a nonempty path and state 2. INFERRED:
+  the effect is to leave only charging connected. Storage events may follow from the scanner, but no dedicated
+  completion event is established.'
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc80f0, ChargeOnly @0x316c80, StartScanSdx @0x316800
+  (64-bit build)
+side_effects: Sets manual-removal and scanner flags, stops any prior storage scan and runs a blocking
+  removal scan; USB unmount and re-enumeration effects are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: charge_only request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: charge_only
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc80f0, ChargeOnly @0x316c80, StartScanSdx
+        @0x316800 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: 'Storage removal call returned false with no code set (default). Do not assume one guaranteed
+    failure code: the scan step can set others'
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Set of codes from the scan step is unresolved.
+examples:
+- name: charge-only
+  of: request
+  payload:
+    id: 71
+    method: charge_only
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: charge_only
+    result: 0
+    code: 0
+    id: 71
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: charge_only
+    error: fail to operate
+    code: 207
+    id: 72
+see_also: []
+spec:
+- spec/control/power-and-storage.md#shutdown-reboot-and-sleep

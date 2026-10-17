@@ -1,0 +1,18 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: GetAlgoParamNamesParams
+description: Axis as an object {axis} or a one-element array [axis]. Scalars are not bound.
+oneOf:
+- type: object
+  required:
+  - axis
+  properties:
+    axis:
+      type: string
+      description: 'Guide axis: ra or x, dec or y, matched case-insensitively.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x81e50 (64-bit build), axis_param @0x6a5e0
+- type: array
+  minItems: 1
+  prefixItems:
+  - type: string
+  description: Positional form [axis].

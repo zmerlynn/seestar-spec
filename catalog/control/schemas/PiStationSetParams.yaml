@@ -1,0 +1,28 @@
+title: pi_station_set params
+description: Required. An object, or a one-element array whose first element is the object. In either
+  case the object may itself carry a wrapper member para holding the real parameter object; when para
+  is present it replaces the effective object, and a para that is not an object is rejected with 107.
+  Unknown keys are ignored.
+anyOf:
+- $ref: PiStationSetBody.yaml
+- type: object
+  required:
+  - para
+  properties:
+    para:
+      $ref: PiStationSetBody.yaml
+      description: 'Wrapper form: the real parameter object.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+        @0x121ce0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    $ref: PiStationSetBody.yaml
+    description: First element is the parameter object; further elements are ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+      @0x121ce0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+  @0x121ce0 (64-bit build)

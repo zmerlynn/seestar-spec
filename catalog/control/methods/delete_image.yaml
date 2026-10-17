@@ -1,0 +1,104 @@
+kind: method
+name: delete_image
+summary: Delete image files (and their accessory files) by name from the image folder or a chosen storage.
+description: Params carry a required name (a string or an array of strings) and, in the object form, an
+  optional storage. Names are appended directly to the image directory path with no length, component,
+  extension or traversal check seen. Directories are enumerated for media and logs, default folders are
+  skipped and removal is tried unless the directory is a default one. A recording AVI/MP4 gives 206; ENOENT
+  and ENOTEMPTY count as removed. After each successful deletion the favourites database entry is removed
+  and the free-space checker refreshed. The first failing deletion stops the call and earlier deletions
+  stay. Access, log and default-folder skips alone are not errors. An empty array or one with no strings
+  returns success without deleting. Non-string array items are skipped silently. The call is synchronous
+  and can block on the filesystem or database. The positional form is [name] or [[name1, name2]]; a bare
+  scalar string params is not accepted and gives 100.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe5210, AddImages @0xae600, DeleteMedia @0x12da60,
+  remove_file @0x1242f0 (64-bit build)
+side_effects: Permanently deletes files and possibly directories from device storage, removes favourites
+  database entries and refreshes the free-space checker. No rollback, no timeout, no camera or mount-state
+  precondition.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: delete_image request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: delete_image
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/DeleteImageParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5210 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 100
+  trigger: 'name missing, null or of the wrong container type (also the dispatcher case: method missing
+    or not a string)'
+  label: invalid request
+- code: 204
+  trigger: storage string not recognised
+  label: out of limit
+- code: 206
+  trigger: Target is an AVI/MP4 currently being recorded
+  label: capture is active
+- code: 207
+  trigger: Other deletion failure with no code set (thread-local code otherwise forwarded)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+errors_note: Codes other than 100, 204 and 206 originate below the inspected layer and are unresolved.
+examples:
+- name: two-files
+  summary: Object form (names invented)
+  of: request
+  payload:
+    id: 171
+    method: delete_image
+    params:
+      name:
+      - M31_stack_20260131.fit
+      - M31_stack_20260131.jpg
+- name: one-file-storage
+  of: request
+  payload:
+    id: 172
+    method: delete_image
+    params:
+      name: old_frame.fit
+      storage: sd
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: delete_image
+    result: 0
+    code: 0
+    id: 171
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: delete_image
+    error: out of limit
+    code: 204
+    id: 173
+see_also:
+- remove_file
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

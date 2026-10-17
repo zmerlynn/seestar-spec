@@ -1,0 +1,21 @@
+title: del_batch_stack_file params
+type: object
+description: Object only; no positional form. Unknown members are ignored. In the 64-bit build a supplied
+  object must carry frame_type; the 32-bit build accepts an object without it and defaults to light.
+properties:
+  frame_type:
+    type: string
+    enum:
+    - light
+    - dark
+    - bias
+    - flat
+    description: Calibration frame type whose stored file list is deleted. Case-insensitive exact match
+      of light, dark, bias or flat. A non-string, or a missing member in a supplied object (64-bit build),
+      gives 105; any other string gives 207 (unknown maps to an out-of-range index). Omitting params entirely
+      selects light.
+    x-default: light when params are omitted
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe27e0, DelBatchStackFile @0x3a6760 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe27e0, DelBatchStackFile @0x3a6760 (64-bit build)

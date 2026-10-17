@@ -1,0 +1,87 @@
+kind: method
+name: scope_set_track_mode
+summary: Select the mount tracking mode by name.
+description: 'Passes the supplied mode string to the mount tracking-mode setter, which changes the tracking
+  rate or mode. The handler has no enum, range or default; the allowed names are compared by the selected
+  mount driver and are not established. Success means the call returned. Via the imager command port (4700)
+  the request reaches this handler only as a forwarded unknown method; see the control service for the
+  relay. Mount serial (firmware 9.31, READ): :TQ (sidereal), :TS (solar), :TL (lunar).'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x714d0 (64-bit build)
+side_effects: Changes the mount tracking rate or mode.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_track_mode request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_track_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetTrackModeParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x714d0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Parameter is not a string
+  label: expected string param
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 46
+    method: scope_set_track_mode
+    params: sidereal
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_track_mode
+    result: 0
+    code: 0
+    id: 46
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_track_mode
+    error: mount is not connected
+    code: 315
+    id: 47
+see_also:
+- scope_set_target_pierside
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

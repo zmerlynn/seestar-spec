@@ -1,0 +1,39 @@
+title: get_control_value params
+description: 'Control name and an optional items flag, as an object {name, items} or a positional array
+  [name, items]. `name` is required (a missing or non-string name gives 107, although the message reads
+  expected object param) and is matched case-insensitively against the camera''s controls. `items` only
+  matters for radio controls with a non-empty item list: the handler tests the raw payload for nonzero
+  without checking the JSON type, so boolean or integer 0 suppresses the list and 1 enables it; behaviour
+  for other types is not established and strict boolean validation must not be assumed. Default: items
+  absent (not emitted).'
+oneOf:
+- type: object
+  required:
+  - name
+  properties:
+    name:
+      type: string
+      description: Control name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+        @0x1546f0 (64-bit build)
+    items:
+      type:
+      - boolean
+      - integer
+      description: Request the item list for radio controls.
+      x-default: absent
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+        @0x1546f0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    type:
+    - string
+    - boolean
+    - integer
+  description: '[name, items].'
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+  @0x1546f0 (64-bit build)

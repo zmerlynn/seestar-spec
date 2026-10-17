@@ -1,0 +1,94 @@
+kind: method
+name: select_mount_list_index
+summary: Choose the active primary or auxiliary mount from the device mount list.
+description: Refused with 312 while the relevant equipment is connected. Otherwise replaces the active
+  mount selection (primary or auxiliary) through the equipment dialog logic. Mount-list membership and
+  persistence of the choice are unresolved. Via the imager command port (4700) the request reaches this
+  handler only as a forwarded unknown method; see the control service for the relay.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7bec0 (64-bit build)
+side_effects: Replaces the active primary or auxiliary mount selection.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: select_mount_list_index request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: select_mount_list_index
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/SelectMountListIndexParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7bec0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Primary selection with a non-integer index
+  label: expected int param
+- code: 109
+  trigger: aux is a string other than "aux", or the auxiliary index is neither integer nor string
+  label: unexpected param
+- code: 209
+  trigger: Index or name not found in the choice list
+  label: invalid value
+- code: 312
+  trigger: Relevant equipment is connected
+  label: cannot select if equipment are connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 47
+    method: select_mount_list_index
+    params:
+      index: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: select_mount_list_index
+    result: 0
+    code: 0
+    id: 47
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: select_mount_list_index
+    error: cannot select if equipment are connected
+    code: 312
+    id: 48
+see_also:
+- select_serial_dev
+- set_camera_idx
+- set_connected
+spec:
+- spec/guider/index.md#method-groups

@@ -1,0 +1,67 @@
+kind: method
+name: stop_solve
+summary: Stop the plate-solve worker and wait for it to end.
+description: 'Calls the synchronous stop on the solver worker thread, which signals the thread and joins
+  it; no numeric timeout is established, so the reply can be delayed. The result of the stop call is not
+  tested: success only acknowledges that the call returned. Stopping an active annotation worker can reach
+  its aborted-event path, but that is not a guaranteed completion event.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcee00, StopSolve @0x1fc640, CMyThread::Stop @0x6d98c0
+  (64-bit build)
+side_effects: Stops and joins the solver worker thread.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_solve request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_solve
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcee00, StopSolve @0x1fc640, CMyThread::Stop
+        @0x6d98c0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable. Worker exceptions and transport failures are not
+  method error replies.
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 95
+    method: stop_solve
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_solve
+    result: 0
+    code: 0
+    id: 95
+see_also:
+- start_solve
+- get_solve_result
+spec:
+- spec/control/solving-and-annotation.md#plate-solving

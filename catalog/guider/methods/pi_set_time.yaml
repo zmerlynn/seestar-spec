@@ -1,0 +1,131 @@
+kind: method
+name: pi_set_time
+summary: Set the host time zone and calendar time, then update the mount's clock; the reply does not confirm
+  any of it.
+description: Registered in the guider; the main imager relays the unknown method to the guider (command
+  traffic arrives on the control port, the relay forwards the original request text). Params are an object
+  or a one-element array holding it. If time_zone is nonempty a timezone script runs first; if all six
+  calendar members differ from -1 the host date is then set. Both host attempts happen before the mount
+  connection and capability are checked and are not rolled back. Only the timezone script's stdout is
+  scanned for a lowercase 'error'; the date command's output is not parsed and child exit statuses are
+  ignored, so a reply of code 0 does not prove the zone or calendar changed. An empty object attempts
+  only the mount update. Last, the mount time is updated unless a view function is working (then
+  that step is skipped and success is returned). No event is sent for a time or zone change; use pi_get_time
+  to read the result back. No running process refreshes its zone after the change, so local-time fields may
+  stay in the previous zone until the services restart (INFERRED). ViewPlan deadlines already computed keep
+  their old values.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build; no event-sender call),
+  main-imager relay path; host-command behaviour from static analysis of the packaged scripts (both builds)
+side_effects: Runs a host timezone script and a privileged date-set command, then writes the mount clock
+  through the driver. No rollback. Shell commands are built with fixed size-bounded buffers; the zone
+  name is not quoted.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_set_time request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_set_time
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Either a direct object or an array whose first element is the object; one array level
+        is unwrapped and later elements are ignored. The Android and iOS apps send the one-element array
+        form (OBSERVED shape, 2026-10-12).
+      anyOf:
+      - $ref: ../schemas/PiSetTimeParams.yaml
+      - type: array
+        minItems: 1
+        prefixItems:
+        - $ref: ../schemas/PiSetTimeParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+        from the main imager by relay
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Params null or not an object after unwrapping one array level
+  label: expected object param
+- code: 214
+  trigger: Output stream of a host command could not be read (thread-local error propagated)
+  label: fail to run command
+- code: 216
+  trigger: The timezone script's stdout contains the lowercase text 'error'; the date and mount stages
+    are skipped
+  label: fail to set timezone
+- code: 315
+  trigger: Mount not connected after the host attempts
+  label: mount is not connected
+- code: 210
+  trigger: No time capability on the mount
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Driver-originated codes from the mount update are unresolved.
+examples:
+- name: array-form
+  summary: One-element array form sent by the apps (shape OBSERVED 2026-10-12; values invented)
+  of: request
+  payload:
+    id: 81
+    method: pi_set_time
+    params:
+    - year: 2026
+      mon: 10
+      day: 14
+      hour: 21
+      min: 5
+      sec: 30
+      time_zone: America/Chicago
+- name: object-form
+  summary: Direct object also accepted
+  of: request
+  payload:
+    id: 82
+    method: pi_set_time
+    params:
+      time_zone: Etc/UTC
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_set_time
+    result: 0
+    code: 0
+    id: 81
+- name: bad-params
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_set_time
+    error: expected object param
+    code: 107
+    id: 83
+see_also:
+- control/pi_get_time
+spec:
+- spec/control/time-and-location.md#setting-the-time-pi_set_time

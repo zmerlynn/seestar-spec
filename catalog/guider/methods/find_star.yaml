@@ -1,0 +1,99 @@
+kind: method
+name: find_star
+summary: Automatically select a guide star and make it the guider lock position.
+description: Params are not consumed. The handler asks the guider to auto-select a star in the last stored
+  guide frame; it takes no exposure, so when not looping the frame may be old. Refused while calibrating.
+  READ. On success the selected position becomes the stored lock position and is returned as a
+  two-number array. Fails with 316 when no star could be selected or there is no stored image ("No Current Image") and 300 when the guider device is absent.
+  The method is registered in the guider command table (TCP 4400); a request that reaches the main imager
+  and is relayed to the guider is a separate route with its own side effects, outside this entry's tier.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x783d0 (64-bit build), AutoSelect @0x63dc0
+side_effects: Writes the selected-star data, clears guiding statistics and sets the guider lock position
+  (which raises the lock-position notification); may refresh the displayed guide image and log diagnostics.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: find_star request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: find_star
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x783d0 (64-bit build)
+reply_success:
+  title: find_star success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/FindStarResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x783d0 (64-bit build), AutoSelect
+          @0x63dc0
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 300
+  trigger: Guider device or guider object absent (pDev)
+  label: internal error
+- code: 316
+  trigger: No stored image ("No Current Image"), auto-selection failed, or no valid lock flag is set afterwards
+  label: could not find star
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Auto-select is refused while calibrating ("cannot auto-select star while calibrating"); the
+  code of that refusal is not stated. Complete failed-selection events and ordering are unresolved. Star::Find thresholds are unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: find_star
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: find_star
+    result:
+    - 512.5
+    - 384.25
+    code: 0
+    id: 1
+- name: error-316
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: find_star
+    error: could not find star
+    code: 316
+    id: 2
+see_also:
+- get_calibrated
+spec:
+- spec/guider/guiding.md#guiding-workflow

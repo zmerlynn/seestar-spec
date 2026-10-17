@@ -1,0 +1,10 @@
+title: id
+description: >-
+  Client-chosen request identifier, echoed in the reply as parsed (same JSON type). Required; a request
+  without one is rejected with code 200. The device accepts any JSON value: zero, negative, string, null,
+  boolean and composite ids are all treated as real requests, not notifications. Clients SHOULD use an
+  integer or a string and SHOULD keep ids unique among outstanding requests. On early dispatcher errors
+  (100, 200) the reply carries id null.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, parse_request @0x6f56c0 (no type check on id) and jrpc_id
+  @0x6f6940 (formats the parsed node generically); integer and string echo also OBSERVED (2026-10-12)

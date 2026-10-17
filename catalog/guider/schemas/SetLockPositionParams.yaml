@@ -1,0 +1,37 @@
+title: set_lock_position params
+description: Object {x, y, exact} or positional array [x, y, exact]. x and y are pixel coordinates in
+  the guide image with no bounds check in the handler. exact is optional.
+anyOf:
+- type: object
+  required:
+  - x
+  - y
+  properties:
+    x:
+      type: number
+      description: Lock X, pixels. Missing or non-numeric gives 108.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7a620 (64-bit build)
+    y:
+      type: number
+      description: Lock Y, pixels. Missing or non-numeric gives 108.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7a620 (64-bit build)
+    exact:
+      type:
+      - boolean
+      - integer
+      description: When true the lock position is set exactly at (x, y); otherwise the device selects
+        the star at that position. Integer nonzero is true. A present value of another type gives 106.
+      x-default: 'false'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7a620 (64-bit build)
+- type: array
+  minItems: 2
+  items:
+    type:
+    - number
+    - boolean
+    description: Positional form [x, y, exact]; element 3 is optional.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7a620 (64-bit build)

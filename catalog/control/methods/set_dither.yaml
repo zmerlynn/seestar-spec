@@ -1,0 +1,107 @@
+kind: method
+name: set_dither
+summary: Patch the dither settings, persist them, and push ra_only to the guider.
+description: 'Applies the supplied members over the current settings. Range validation happens after parsing:
+  any value outside its valid range is replaced by a fixed fallback, all (including the fallbacks) are
+  applied and persisted, and only then is 204 returned, so a 204 reply does not mean nothing changed.
+  The guider update is sent with a 10 s wait; its failure is logged but does not fail the call.'
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit build)
+side_effects: Changes shared dither settings, persists changed fields to the device config, and sends
+  a set_setting for ra_only to the guider. No rollback on range failure or guider failure.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_dither request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_dither
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+        build)
+      anyOf:
+      - $ref: ../schemas/SetDitherParams.yaml
+      - type: array
+        minItems: 1
+        description: 'Positional form: first element is the params object; further elements ignored.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+          build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null, not an object, or an empty array
+  label: expected object param
+- code: 106
+  trigger: wait_guide_settle is neither boolean nor integer
+  label: expected bool param
+- code: 109
+  trigger: Unknown member, or known member with the wrong type
+  label: unexpected param
+- code: 204
+  trigger: One or more values failed range validation; fallbacks were already applied and persisted
+  label: out of limit
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: enable
+  summary: Enable RA-only dithering with 10 s settle
+  of: request
+  payload:
+    id: 32
+    method: set_dither
+    params:
+      enable: true
+      ra_only: true
+      amount: 5
+      settle_time_sec: 10
+      settle_arcsec: 1.5
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_dither
+    result: 0
+    code: 0
+    id: 32
+- name: range-failed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_dither
+    error: out of limit
+    code: 204
+    id: 33
+- name: bad-type
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_dither
+    error: unexpected param
+    code: 109
+    id: 34
+see_also:
+- get_dither
+spec:
+- spec/guider/guiding.md#imager-dither-settings

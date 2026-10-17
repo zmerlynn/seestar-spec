@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: verify_client result
+description: >-
+  Result of a successful verify_client. Firmware 9.31 replies with the number 0. Firmware 9.75 replies
+  with an object holding the key envelope on the normal challenge handshake; the code also contains a
+  branch for alternate verification paths that returns the number 0, so a receiver should accept both.
+  Session creation is a condition of the object form: a creation failure gives error 207.
+oneOf:
+- type: object
+  required:
+  - key_envelope
+  properties:
+    key_envelope:
+      $ref: KeyEnvelope.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60 (outer object placed @0x72e5cc-0x72e630, passed to the result writer @0x72e654, 64-bit imager)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60 (64-bit imager)
+- type: integer
+  const: 0
+  description: Firmware 9.31 normal success; firmware 9.75 empty-envelope branch for alternate verification paths.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0; firmware 9.75 @0x72e7c8-0x72e7d4 (64-bit imager)
+x-confidence: READ
+x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60 (64-bit imager)

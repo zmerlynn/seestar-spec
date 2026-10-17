@@ -1,0 +1,86 @@
+title: set_dither params
+type: object
+description: 'Patch over the current shared dither settings: every member is optional and missing members
+  keep their current value. An unknown member, or a known member of the wrong type, gives 109 (106 for
+  wait_guide_settle); nothing is written until every member has parsed. Positional form: an array whose
+  first element is this object.'
+properties:
+  enable:
+    type: boolean
+    description: Enable dithering. JSON boolean required, otherwise 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  ra_only:
+    type: boolean
+    description: Dither in right ascension only. JSON boolean required, otherwise 109. Forwarded to the
+      guider; no separate local config write.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  amount:
+    type: integer
+    minimum: 1
+    maximum: 30
+    description: Dither amplitude (unit not established). Valid 1..30; an out-of-range value is replaced
+      by 1 and the call ends in 204. Non-integer gives 109.
+    x-default: current value; replacement 1 when out of range
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  settle_timeout_sec:
+    type: integer
+    description: Settle timeout, seconds. Must be above 0 (signed integer); otherwise replaced by 99999
+      and the call ends in 204. Non-integer gives 109.
+    x-default: current value; replacement 99999 when invalid
+    exclusiveMinimum: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  settle_arcsec:
+    type: number
+    maximum: 16
+    description: Settle threshold, arcseconds. Valid above 0 up to 16; otherwise replaced by 2 and the
+      call ends in 204. Integer or float accepted; other types give 109.
+    x-default: current value; replacement 2 when invalid
+    exclusiveMinimum: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  settle_time_sec:
+    type: integer
+    minimum: 1
+    maximum: 30
+    description: Required settled time, seconds. Valid 1..30; otherwise replaced by 5 and the call ends
+      in 204. Non-integer gives 109.
+    x-default: current value; replacement 5 when invalid
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  interval:
+    type: integer
+    minimum: 0
+    maximum: 30
+    description: Dither interval (INFERRED frames). Valid 0..30; otherwise replaced by 1 and the call
+      ends in 204. Non-integer gives 109.
+    x-default: current value; replacement 1 when invalid
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  timeout_stop:
+    type: boolean
+    description: Stop when the settle timeout expires. JSON boolean required, otherwise 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+  wait_guide_settle:
+    type:
+    - boolean
+    - integer
+    description: Wait for guiding to settle. Boolean or integer (nonzero is true); any other type gives
+      106.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcd360, SetDitherSettlePara @0x17b900 (64-bit build)

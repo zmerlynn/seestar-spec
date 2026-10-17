@@ -1,0 +1,78 @@
+kind: method
+name: get_func_state
+summary: Report the dark-library build state held by the guider.
+description: Params are not read. Returns an object with a single member dark_library describing the cached
+  progress of the dark-frame library worker. No explicit error is raised; percent is computed from stored
+  counters, so its value is only as valid as that stored state (a zero denominator is not separately handled
+  in the evidence).
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)
+side_effects: Reads cached worker status and progress; takes internal locks only.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_func_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_func_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)
+reply_success:
+  title: get_func_state success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetFuncStateResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: get_func_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_func_state
+    result:
+      dark_library:
+        is_working: false
+        percent: 0
+    code: 0
+    id: 22
+see_also: []
+spec:
+- spec/guider/index.md#method-groups

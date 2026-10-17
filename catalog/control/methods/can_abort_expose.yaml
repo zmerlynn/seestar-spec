@@ -1,0 +1,83 @@
+kind: method
+name: can_abort_expose
+summary: Report whether an exposure can be aborted (camera-open check).
+description: No parameters are read. On success the result is always true; the helper writes a constant
+  true rather than querying a per-camera capability. A closed or absent camera produces error 318, never
+  a successful false.
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd3360, CanAbortExposure @0x121520 (64-bit build);
+  tier INFERRED
+side_effects: None beyond reading camera-open state; request-local result and error state only.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: can_abort_expose request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: can_abort_expose
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd3360 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: boolean
+        const: true
+        description: Always true on success.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd3360 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: No camera is open
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: can_abort_expose
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: can_abort_expose
+    result: true
+    code: 0
+    id: 5
+- name: not-open
+  summary: Camera not open
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: can_abort_expose
+    error: device not connected
+    code: 318
+    id: 6
+see_also:
+- can_liveview
+spec:
+- spec/control/viewing-and-exposure.md#exposures

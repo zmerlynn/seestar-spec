@@ -1,0 +1,76 @@
+kind: method
+name: get_img_name_field
+summary: Read which fields go into saved image file names.
+description: Copies the shared name-field settings and reports five booleans. No request parameters are
+  read.
+grade: PURE GETTER / established (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)
+side_effects: Copies a global settings struct into request-local storage; no other effect.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_name_field request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_name_field
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb8380 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_img_name_field success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetImgNameFieldResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 141
+    method: get_img_name_field
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_name_field
+    result:
+      bin: true
+      date_time: true
+      temp: false
+      gain: true
+      camera_name: false
+    code: 0
+    id: 141
+see_also:
+- set_img_name_field
+spec:
+- spec/control/power-and-storage.md#selecting-the-save-location

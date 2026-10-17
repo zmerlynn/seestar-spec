@@ -1,0 +1,162 @@
+kind: event
+name: ScopeGoto
+summary: Mount slew worker state (guider slew, or the imager's nested goto parent).
+description: 'F family, two producers. (1) The guider (TCP 4400) names its slew worker ScopeGoto when
+  scope_goto starts an asynchronous slew; its callback may add close. The imager forwards guider event
+  lines unchanged to TCP 4700 (the auxiliary imager process does not forward guider events). (2) The imager
+  itself creates a nested ScopeGoto function under AutoGoto and wide-mosaic operations; its callbacks
+  add cur_ra_dec and dist_deg. These additions are not on every event. Both reach every retained 4700
+  socket; the guider copy also goes to 4400 clients. CheckMoveFunc handles the terminal state and may
+  switch tracking on, so a ScopeTrack event can follow. Order relative to the scope_goto reply is not
+  established. F errors describe the slew, not a guide frame. APK consumers: the legacy scope-goto handler
+  and the app-state goto handler.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, guider SlewToCoordinatesAsync @0xf52a0, PrintCloseState @0xed920;
+  imager callbacks @0x16c790, @0x18cf30 (64-bit builds); 32-bit counterparts present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ScopeGoto event
+  type: object
+  discriminator: Event
+  description: Slew transition. F fields plus producer-specific members.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: ScopeGoto
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: 'F state table: idle 0, working 1, complete 2, fail 3, cancel 4; an unknown internal
+        code falls back to idle. A formatter''s supported state is not a promise that every run visits
+        it.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: a non-empty stage string is held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or started with no end) uses
+        current monotonic minus start; other terminal states use end minus start.
+      x-required-when: state is working, or the timer was started (terminal states)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Ordered function-tree ancestry when included; a missing route is a legitimate branch.
+        Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    error:
+      type: string
+      description: Message for code; written for state fail even when the stored code is zero. Lookup
+        failure gives 'fail to operate'. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Written for state fail, including a stored zero. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    cur_ra_dec:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Current mount coordinates. Imager producer only (nested ScopeGoto under AutoGoto or
+        wide mosaic), under that callback's cached/query validity branch. Coordinate units are producer-specific.
+      x-required-when: imager producer, coordinates valid
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager AutoGoto callback @0x16c790, wide-mosaic callback
+        @0x18cf30
+    dist_deg:
+      type: number
+      description: Distance to target. Imager producer only. Degrees is inferred.
+      x-required-when: imager producer
+      x-confidence: READ; unit INFERRED (degrees)
+      x-basis: static analysis of firmware 9.31, imager AutoGoto callback @0x16c790, wide-mosaic callback
+        @0x18cf30
+    close:
+      type: boolean
+      description: Guider producer only. Written when the non-null mount query returns false; the value
+        comes from comparing a returned number with a compiled negative threshold, whose physical meaning
+        is unresolved. The true-result branch omits it.
+      x-required-when: guider producer and the mount query returns false
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider PrintCloseState @0xed920, PrintMountClose @0x15baf0
+        (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+examples:
+- name: imager-working
+  summary: Imager nested goto in progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ScopeGoto
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 4200
+    route:
+    - View
+    - AutoGoto
+    cur_ra_dec:
+    - 5.5
+    - 20.0
+    dist_deg: 12.5
+- name: guider-complete
+  summary: Guider slew finished (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ScopeGoto
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 18000
+    close: false
+- name: fail
+  summary: Slew failed (READ shape; message invented)
+  of: payload
+  payload:
+    Event: ScopeGoto
+    Timestamp: '1234.123456789'
+    state: fail
+    lapse_ms: 900
+    error: fail to operate
+    code: 0
+see_also:
+- start_auto_goto
+- guider/scope_goto
+- guider/scope_abort_slew
+- guider/scope_get_ra_dec
+- guider/get_func_state
+- iscope_get_app_state
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#raw-slew-scope_goto
+- spec/control/events-overview.md

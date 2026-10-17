@@ -1,0 +1,95 @@
+kind: method
+name: get_focuser_setting
+summary: Read the focuser and autofocus settings.
+description: 'No parameters are read. The result always carries the 14 setting members from the in-memory
+  settings (valid whether or not the focuser is open), plus position when the position read succeeds.
+  Internally the handler also tries to print the max_step and backlash controls; in the 64-bit build backlash
+  always fails and is never emitted, and per-read failures omit a member and still return code 0. The
+  strict grade is MUTATOR only because those optional reads write diagnostic log state. Units: af_temp_span
+  is degrees Celsius and af_time_span_hour hours since the last autofocus (READ); af_exp_sec seconds is
+  INFERRED from the name; step fields are UI counts (INFERRED). In a capture run, before a light frame through
+  a non-dark filter, autofocus runs for the first enabled trigger that matches, in this order: af_before_capture,
+  af_wheel_change, af_temp_change_on, af_time_change_on; af_merid_flip runs it after an automatic meridian
+  flip; a failed triggered autofocus does not stop the run (READ).'
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xba5b0 (64-bit build); setting names from handler string
+  table
+side_effects: Reads settings memory and optionally the focuser; failed reads write diagnostic log state.
+  No open, close or motion.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_focuser_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_focuser_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xba5b0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetFocuserSettingResult.yaml
+        description: Focuser settings object.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xba5b0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error branch exists; per-member failures omit the member.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 27
+    method: get_focuser_setting
+- name: ok
+  summary: All values invented
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_setting
+    result:
+      fine_step: 50
+      coarse_step: 300
+      af_exp_sec: 1.0
+      af_temp_span: 3
+      af_init_step: 100
+      af_time_span_hour: 2.0
+      af_temp_change_on: false
+      af_time_change_on: false
+      af_wheel_change: true
+      af_before_capture: false
+      af_merid_flip: true
+      af_track_on: false
+      af_only_one: false
+      af_bin: 2
+      position: 1200
+    code: 0
+    id: 27
+see_also:
+- set_focuser_setting
+- get_focuser_position
+spec:
+- spec/control/focus-and-filter.md#values-and-settings

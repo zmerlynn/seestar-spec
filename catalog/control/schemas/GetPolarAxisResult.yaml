@@ -1,0 +1,81 @@
+title: get_polar_axis result
+type: object
+description: Polar-axis error. The three distances are always present; success is documented as present
+  when a cached distance exists. On failure with a valid cache, success is false, the old distances are
+  returned and the arrays are omitted.
+required:
+- dist_arcsec
+- dist_x_arcsec
+- dist_y_arcsec
+properties:
+  dist_arcsec:
+    type: number
+    description: 'Total angular distance to the pole, arcseconds (degree error times 3600). Three-point
+      mode: from the three-point error; legacy mode: spherical separation.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+      @0x160500 (64-bit build)
+  dist_x_arcsec:
+    type: number
+    description: Azimuth-component distance, arcseconds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+      @0x160500 (64-bit build)
+  dist_y_arcsec:
+    type: number
+    description: Altitude-component distance, arcseconds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+      @0x160500 (64-bit build)
+  success:
+    type: boolean
+    description: True when the distances were freshly computed; false when the calculation failed and
+      the previous cached distances are returned.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+      @0x160500 (64-bit build)
+  centre_deg:
+    type: array
+    minItems: 2
+    maxItems: 2
+    prefixItems:
+    - type: number
+      description: Azimuth, degrees.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+        @0x160500 (64-bit build)
+    - type: number
+      description: Altitude, degrees.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+        @0x160500 (64-bit build)
+    items: false
+    description: Image centre as [azimuth, altitude] degrees in horizon coordinates (not RA/Dec). Present
+      only on the successful legacy (non-three-point) path.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+      @0x160500 (64-bit build)
+  polar_deg:
+    type: array
+    minItems: 2
+    maxItems: 2
+    prefixItems:
+    - type: number
+      description: Azimuth, degrees.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+        @0x160500 (64-bit build)
+    - type: number
+      description: Altitude, degrees.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+        @0x160500 (64-bit build)
+    items: false
+    description: Pole position as [azimuth, altitude] degrees in horizon coordinates. Present only on
+      the successful legacy (non-three-point) path.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError
+      @0x160500 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError @0x160500
+  (64-bit build)

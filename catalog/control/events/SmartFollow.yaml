@@ -1,0 +1,87 @@
+kind: event
+name: SmartFollow
+summary: State of the smart-follow worker (firmware 9.75).
+description: 'New in firmware 9.75, app 3.4.0. The function name is SmartFollow. Its state printer reports stage and track_result. It is sent through the shared function-state envelope (the common formatter with the printer attached). Both stage and track_result are strings (firmware 9.75), mapped from internal integers: the stage is detecting after motion detection starts, starting_track once a target is found, tracking after the tracker has started, and idle otherwise; track_result is running after a successful tracker start and then takes the tracker''s result when it ends (stopped, lost, init_failed, image_failed or mount_failed), after which the worker returns to detecting. The state enum is INFERRED. A receiver MUST NOT depend on seeing every transition. 64-bit build; the 32-bit build has an older worker with a different stage set.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: INFERRED
+basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: SmartFollow event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: SmartFollow
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit
+        build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name; INFERRED to follow the shared function-state formatter.
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit
+        build); state set assumed from the shared function-state formatter, envelope unresolved
+    stage:
+      type: string
+      enum:
+      - idle
+      - detecting
+      - starting_track
+      - tracking
+      description: 'Worker stage, a string. Internal 1 gives detecting, 2 starting_track, 3 tracking, anything else idle.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit
+        build)
+    track_result:
+      type: string
+      enum:
+      - running
+      - lost
+      - init_failed
+      - mount_failed
+      - image_failed
+      - stopped
+      - idle
+      description: 'Outcome of the current track, a string. Internal 1 gives running, 2 stopped, 3 lost, 4 init_failed, 5 image_failed, 6 mount_failed; 0 or any other value gives idle. The tracker returns 4 for a failed image-centre query, 5 for a failed image fetch, 6 for a failed mount command, 3 for a lost target (including a timeout) and 2 for a stop request or a target static for over 5 minutes. When a track start fails, 4 is stored before detection resumes.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit
+        build)
+  x-confidence: INFERRED
+  x-basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit build)
+examples:
+- name: tracking
+  summary: INFERRED envelope, not captured; values invented
+  of: payload
+  payload:
+    Event: SmartFollow
+    Timestamp: '1234.123456789'
+    state: working
+    stage: tracking
+    track_result: running
+see_also:
+- start_smart_follow
+- stop_smart_follow
+- start_track_object
+- ObjectTrack
+spec:
+- spec/control/function-states.md#smart-follow

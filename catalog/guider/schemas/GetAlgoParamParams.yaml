@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: GetAlgoParamParams
+description: Axis and parameter name, either as an object {axis, name} or as a positional array [axis,
+  name]. Both strings are required; a missing or non-string member gives error 105. Scalars are not bound.
+oneOf:
+- type: object
+  required:
+  - axis
+  - name
+  properties:
+    axis:
+      type: string
+      description: 'Guide axis: ra or x selects the RA algorithm, dec or y the Dec algorithm. Case handling
+        of this method is unresolved (the sibling get_algo_param_names accepts either case).'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7c240 (64-bit build)
+    name:
+      type: string
+      description: 'Algorithm parameter name; valid names are those returned by get_algo_param_names for
+        the axis: hysteresis {hysteresis, aggression, minMove}; lowpass {slopeWeight, minMove}; lowpass2
+        {aggressiveness, minMove}; resist-switch {aggression, fastSwitch, minMove}. Unknown names: behaviour
+        unresolved (the getter may fail, giving 323).'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7c240 (64-bit build)
+- type: array
+  minItems: 2
+  prefixItems:
+  - type: string
+  - type: string
+  description: Positional form [axis, name].

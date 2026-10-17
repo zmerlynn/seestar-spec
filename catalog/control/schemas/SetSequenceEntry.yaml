@@ -1,0 +1,77 @@
+title: set_sequence entry
+type: object
+description: One sequence entry. Missing members of an existing entry keep their stored values (including
+  progress); a new id takes the defaults shown. Wrong-type values are ignored except type, filter and
+  suffix, which are read without a type check (no safe rejection established). No numeric range checks.
+required:
+- id
+properties:
+  id:
+    type: integer
+    description: 'Entry id: JSON integer, not -1. Missing, wrong type or -1 gives 200.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  type:
+    type: string
+    description: 'Frame type name. Recognised names (the table, exact-match; case handling not established):
+      light, dark, bias, flat. Any other string maps to unknown. Read without a type check.'
+    x-default: light
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build), frame type
+      table @0xaacca0
+  filter:
+    type: integer
+    description: Filter wheel slot index. Read without a type check; units and valid range not established.
+    x-default: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  suffix:
+    type: string
+    description: File name suffix. Read without a type check (a non-string reaches a length call).
+    x-default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  exp:
+    type: number
+    description: Exposure; integer or float accepted. Unit not established by the parser.
+    x-default: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  gain:
+    type: integer
+    description: Camera gain; scale not established.
+    x-default: -1
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  bin:
+    type: integer
+    description: Binning factor (INFERRED).
+    x-default: 0
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  repeat:
+    type: integer
+    description: Number of frames to capture (INFERRED).
+    x-default: 0
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  capture_index:
+    type: integer
+    description: Capture-control selector (INFERRED); meaning not established.
+    x-default: 0
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  enable:
+    type: boolean
+    description: Whether the entry is active. Disabled entries bypass the free-space check.
+    x-default: true
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+  autoexp:
+    type: boolean
+    description: Auto exposure flag.
+    x-default: false
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, set_sequence handler @0xd0500 (64-bit build)

@@ -1,0 +1,95 @@
+kind: method
+name: delete_sequence
+summary: Delete a sequence entry by id.
+description: 'Erases the entry from the map and removes its stored settings child, even when no such entry
+  existed. An unknown id does not set an error code: the handler reports the stale thread error, which
+  is normally zero and becomes 207. The grade reflects the whole request/reply path, which reaches the
+  shared diagnostic logger; it does not by itself mean the method changes device settings.'
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd0390 (64-bit build)
+side_effects: Erases the id from the shared sequence map and removes its persisted settings node. Every
+  call also performs shared request/reply diagnostic logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: delete_sequence request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: delete_sequence
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: integer
+      - type: array
+        minItems: 1
+        items:
+          type: integer
+      description: 'Required entry id: an integer, or a positional array whose first element is used.
+        Object, absent, null, empty array or non-integer gives 104. Unlike get_sequence this is an id,
+        not an index.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd0390 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: params is not an integer or an array whose first element is an integer
+  label: expected int param
+- code: 224
+  trigger: 'Exposure mode 2 is active and either the capture thread is running or the total lapsed count of enabled
+    entries is neither zero nor equal to their total repeat count'
+  label: cannot edit sequence unless reset the progress
+- code: 207
+  trigger: No entry with that id (delete helper returns false without assigning a code)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The unknown-id 207 is not a deliberately assigned code (reliably 209 is not produced).
+examples:
+- name: by-id
+  summary: Delete entry 2
+  of: request
+  payload:
+    id: 91
+    method: delete_sequence
+    params: 2
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: delete_sequence
+    result: 0
+    code: 0
+    id: 91
+- name: bad-params
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: delete_sequence
+    error: expected int param
+    code: 104
+    id: 92
+see_also:
+- set_sequence
+- clear_sequence
+- get_sequence
+spec:
+- spec/control/legacy-plans-and-sequences/sequences.md#the-stand-alone-sequence-list

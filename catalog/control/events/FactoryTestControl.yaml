@@ -1,0 +1,158 @@
+kind: event
+name: FactoryTestControl
+summary: Outcome of a factory_test_control operation, sent immediately or from the deferred completion callback.
+description: 'Custom producer. The factory_test_control handler builds the event and broadcasts it before appending
+  its RPC reply (the reply is result 0 even when the operation failed). If the helper output contains the raw fragment
+  "pending":true (scopePark, delUserImages), no immediate event is sent; the deferred callbacks (user-image deletion,
+  ScopeHome completion) later send the same event name with operation, state and optional error/code. state is complete
+  or fail; fail adds error and code (the TLS error, or 207; an unsupported operation string is reported as 102 here,
+  not as an RPC error). Successful helpers can add record. Request metadata (userId, timestamp, platform, appVersion,
+  osVersion) appear only inside record, not as top-level members. Channel I (TCP 4700). Delivery: ordinary broadcast
+  to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence,
+  delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 recognises it in the event-type
+  dispatcher.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, factory_test_control handler @0xe1490, HandleDeleteUserImagesAsync @0x1423b0,
+  HandleScopeHomeEvent @0x1438e0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: FactoryTestControl event
+  type: object
+  discriminator: Event
+  description: 'Custom event: operation and outcome.'
+  required:
+  - Event
+  - Timestamp
+  - operation
+  - state
+  properties:
+    Event:
+      type: string
+      const: FactoryTestControl
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; factory_test_control handler @0xe1490,
+        HandleDeleteUserImagesAsync @0x1423b0, HandleScopeHomeEvent @0x1438e0 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    operation:
+      type: string
+      description: 'The requested operation string, always inserted by the helper. Known operations: scopePark,
+        delUserImages, delLicense, setLangEn, enterShippingMode (the event chapter names enterShippingMode, scopePark
+        and delUserImages in the inspected producers).'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, factory_test_control handler @0xe1490, HandleDeleteUserImagesAsync
+        @0x1423b0, HandleScopeHomeEvent @0x1438e0 (64-bit build)
+    state:
+      type: string
+      enum:
+      - complete
+      - fail
+      description: complete on helper success, fail otherwise.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, factory_test_control handler @0xe1490, HandleDeleteUserImagesAsync
+        @0x1423b0, HandleScopeHomeEvent @0x1438e0 (64-bit build)
+    error:
+      type: string
+      description: Failure message.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, factory_test_control handler @0xe1490, HandleDeleteUserImagesAsync
+        @0x1423b0, HandleScopeHomeEvent @0x1438e0 (64-bit build)
+    code:
+      type: integer
+      description: Failure code (TLS error, or 207; 102 for an unsupported operation).
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, factory_test_control handler @0xe1490, HandleDeleteUserImagesAsync
+        @0x1423b0, HandleScopeHomeEvent @0x1438e0 (64-bit build)
+    record:
+      anyOf:
+      - type: object
+        description: 'One metadata record. Members only when set: no operation/state/code inside.'
+        properties: &id001
+          userId:
+            type: string
+            description: Only when non-empty.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+          timestamp:
+            type: integer
+            description: Only when its signed 32-bit value is > 0. Lower-case member, unrelated to the envelope
+              Timestamp; unit unresolved (the app supplies epoch milliseconds, truncated to 32 bits).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+          platform:
+            type: string
+            description: Only when non-empty.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+          appVersion:
+            type: string
+            description: Only when non-empty.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+          osVersion:
+            type: string
+            description: Only when non-empty.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+      - type: array
+        items:
+          type: object
+          description: 'One metadata record. Members only when set: no operation/state/code inside.'
+          properties: *id001
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+      description: 'Saved metadata records on some successful operations: normally an array (FillRecord); enterShippingMode
+        inserts a single object. Failure paths may lack it.'
+      x-required-when: some successful operations only
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, factory_test_control handler @0xe1490, HandleDeleteUserImagesAsync
+    @0x1423b0, HandleScopeHomeEvent @0x1438e0 (64-bit build)
+examples:
+- name: complete-park
+  summary: Deferred park completion (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FactoryTestControl
+    Timestamp: '1234.123456789'
+    operation: scopePark
+    state: complete
+- name: fail-unknown-op
+  summary: Unsupported operation (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FactoryTestControl
+    Timestamp: '1234.123456789'
+    operation: example
+    state: fail
+    error: example error
+    code: 102
+- name: complete-with-record
+  summary: Success with records (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FactoryTestControl
+    Timestamp: '1234.123456789'
+    operation: setLangEn
+    state: complete
+    record:
+    - userId: example-user
+      platform: android
+      appVersion: 3.3.2
+see_also:
+- factory_test_control
+- get_factory_test_state
+spec:
+- spec/control/maintenance.md#factory-test-and-shipping

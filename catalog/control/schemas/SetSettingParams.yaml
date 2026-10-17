@@ -1,0 +1,533 @@
+title: set_setting params
+type: object
+description: All members optional; omitted means unchanged. Members are processed in input order (INFERRED);
+  the first checked failure stops later members with no rollback. Unknown top-level keys give 109 (except
+  the wide_cross_offset substring family). An empty object succeeds with 0. Wrong-typed members are either
+  ignored or rejected as listed. Setting names also exist in get_setting output but the getter names heater_enable
+  and expt_heater_enable are not setter aliases. Firmware 9.75, app 3.4.0 adds the top-level keys sky_replay, annotation (object),
+  enable_dark_library, can_encrypt and motion_monitor, the preview member raw_bin2, exp_ms.more_exposure
+  and the stack members startrail_mode and startrails_duration_min (nested, not top-level), and removes
+  expert_mode (it now gives 109 as an unknown key). annotation and sky_replay sent in the same request
+  as wide_cam give 102. An unknown name inside the annotation object gives 109; unknown members inside
+  exp_ms and stack are ignored. The nested preview object's handling of unknown members was not re-read
+  (unresolved). The temperature-dark library notes are in calibration-frames.md;
+  reset_setting resets a subset of the keys.
+properties:
+  wide_cam:
+    type:
+    - boolean
+    - integer
+    description: 'Routing gate: true in process type 1 forwards the whole original request to the peer
+      and exits locally. Otherwise ignored. Boolean or integer (nonzero is true).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  temp_unit:
+    type: string
+    description: C or F. Other string 102; other type 109.
+    enum:
+    - C
+    - F
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  beep_volume:
+    type: string
+    description: close, backyard, field (0, 60, 90). Any other string is not rejected and maps to 81.
+      Other type 109. Helper failure 207.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  lang:
+    type: string
+    description: zh, en, fr, ja, ko, ASCII case-insensitive. Unknown 210; nonstring 109. Process type
+      1 forwards the request after the local change.
+    enum:
+    - zh
+    - en
+    - fr
+    - ja
+    - ko
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  beep_sec:
+    type: integer
+    description: Beep length, seconds (INFERRED). Noninteger 109; no limit.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  offset_deg_3ppa:
+    type: array
+    description: '[lon, lat] in degrees (INFERRED); neither may be within 0.1 of -999 and the calibration
+      mode must be 2, otherwise failure (207 when the internal code is zero). Missing or non-numeric component
+      108; nonarray 109.'
+    prefixItems:
+    - type: number
+    - type: number
+    minItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  stack_lenhance:
+    type:
+    - boolean
+    - integer
+    description: Invalid type ignored. Wheel busy 203; wheel unavailable 318. Boolean or integer (nonzero
+      is true). True moves the filter wheel to slot 2 (LP), false to slot 1 (IRCUT); the move is asynchronous,
+      is not restored, and nothing else is stored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (SetWheelPosition at 0xee434-0xee450)
+      (64-bit build)
+  center_xy:
+    type: array
+    description: '[x, y] display pixels (INFERRED); both integers required, else 104; nonarray 102.'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  ae_bri_percent:
+    type:
+    - integer
+    - number
+    description: 0 to 100 inclusive else 204; wrong type 102.
+    minimum: 0
+    maximum: 100
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  preview:
+    $ref: ../schemas/SetSettingPreview.yaml
+    description: Required object else 107.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  timelapse:
+    $ref: ../schemas/SetSettingTimelapse.yaml
+    description: Required object else 107.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  focal_pos:
+    type: integer
+    description: Configured focal position; wrong type ignored; no range check; not a focus move.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  factory_focal_pos:
+    type: integer
+    description: Factory focal position; wrong type ignored; no range check.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_focal_pos:
+    type: integer
+    description: Process type 2 acts as focal_pos; process type 1 relays to the peer; other types ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_factory_focal_pos:
+    type: integer
+    description: As wide_focal_pos for the factory position.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  exp_ms:
+    $ref: ../schemas/SetSettingExpMs.yaml
+    description: Nonobject 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  stack:
+    $ref: ../schemas/SetSettingStack.yaml
+    description: Nonobject 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  stack_dither:
+    $ref: ../schemas/SetSettingStackDither.yaml
+    description: Nonobject 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  auto_power_off:
+    type:
+    - boolean
+    - integer
+    description: Persisted. Enables shutdown after 15 minutes of inactivity. Inactive means no camera
+      exposure, no TCP client connection, no access-point station, no planet stack, batch stack or RTMP
+      stream, no demo or view plan and no other running work function. A wrongly typed value is skipped
+      silently, without error. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40, branch @0xefcb8, idle check CheckActive
+      @0x120aa0 (900000 ms timeout) (64-bit build)
+  auto_3ppa_calib:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  auto_master_dark:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  stack_after_goto:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_4k:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. 64-bit build; local write can precede a peer failure. Boolean or integer
+      (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  main_8k:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. 64-bit build. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  auto_af:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  frame_calib:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true). Test setting, not persisted, starts
+      false. While true, dark, bias and flat calibration is applied in place to each frame read for viewing,
+      exposure or stacking (see calibration-frames.md).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40, CalibImage @0x3ba090 (64-bit build)
+  planet_correction:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  rtsp_roi_index:
+    type: integer
+    description: 0, 1, 2 select 1x, 2x, 4x. Wrong type 104; other integer 204. 64-bit build only (D32
+      differences unresolved).
+    enum:
+    - 0
+    - 1
+    - 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  rtsp_roi_scale:
+    type:
+    - integer
+    - number
+    description: Finite value from about 0.9999 up to about 4.0001; values within 0.0001 of 1 or 4 snap
+      to them; otherwise 204; wrong type 108.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  hdr:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106. 64-bit build. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  manual_exp:
+    type:
+    - boolean
+    - integer
+    description: Invalid uses the current internal error (207 if none). True returns {isp_exp_ms, isp_gain}
+      and skips the remaining members. Requires RTSP running. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  isp_exp_ms:
+    type:
+    - integer
+    - number
+    description: Milliseconds (INFERRED). Requires RTSP and manual exposure; invalid 207 or current error;
+      no limit.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  isp_gain:
+    type:
+    - integer
+    - number
+    description: Gain on the wire scale (internal gain is 10x); physical unit unresolved.
+    x-confidence: READ; unit unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  selected_cam:
+    type: string
+    description: 'Process type 1 only: View or SecondView (SecondView INFERRED wide, View INFERRED main).
+      Unknown 209; during a non-dual view plan 536; otherwise falls through to 109.'
+    enum:
+    - View
+    - SecondView
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  expt_set_heater_enable:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Library failure 207. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  mosaic:
+    $ref: ../schemas/SetSettingMosaic.yaml
+    description: Other type 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  scan_planet_tip:
+    type:
+    - boolean
+    - integer
+    description: Invalid ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_cross_offset:
+    type: array
+    description: '[x, y] pixel offset; bad array 104, nonarray 102. Matching is by substring: any key
+      containing wide_cross_offset reaches this parser, and one containing show converts display pixels.
+      Process type 1 relays; locally on a non-wide camera 300.'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_cross_offset_show:
+    type: array
+    description: '[x, y] display coordinates; see wide_cross_offset.'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  guest_mode:
+    type:
+    - boolean
+    - integer
+    description: Persisted. Switches guest mode. Enabling needs the requester's connection UUID and makes
+      the requester master, with a Client notification. Disabling is allowed only for the master and closes
+      all other connections. Setting the current value again fails with a nonspecific (stale) error code,
+      so a client SHOULD send it only when the value changes. When a secondary process exists the change
+      is relayed to it, and a relay failure is an error. Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ; send-only-on-change advice INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40, branch @0xf0f9c (106 @0xf17ac, same-value
+      path @0xf16b0), switch_guest_mode @0x6b52a0 (64-bit build)
+  user_stack_sim:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106. True requires no stack (259), no view plan (536) and a valid simulation
+      image (267). Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  usb_en_eth:
+    type:
+    - boolean
+    - integer
+    description: Persisted. Turns Ethernet over USB-C on or off through the USB gadget script. When on,
+      USB-C storage is detached; when off, the device rescans for USB-C storage. An unchanged value is
+      accepted silently. Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40, branch @0xf0eac (106 @0xf1754), CStorageHotPlug::SetEnEth
+      @0x316df0 (64-bit build)
+  rec_res_index:
+    type: integer
+    description: Recording resolution index. Wrong type 104; 210 without the capability; changing it during
+      RTSP plus video recording 524. No numeric limit in the 64-bit build.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  dark_mode:
+    type:
+    - boolean
+    - integer
+    description: Persisted. Switches the battery and power LEDs to their dark style and forwards the value
+      to the secondary process. An unchanged value is accepted silently. Invalid 106. Boolean or integer
+      (nonzero is true).
+    x-confidence: READ; visual effect INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40, branch @0xf0c58 (106 @0xf0e8c), SetDarkMode
+      @0x125320 (64-bit build)
+  light_brightness:
+    type: integer
+    description: Exactly 0, 50 or 100; other integers give 207; wrong type 104.
+    enum:
+    - 0
+    - 50
+    - 100
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  expert_mode:
+    type:
+    - boolean
+    - integer
+    description: 'Invalid 106. Modifies further stack fields. Boolean or integer (nonzero is true). Firmware
+      9.75: the key is no longer in the handler''s key table (removed), so it gives 109 as an unknown key.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  plan_target_af:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  viewplan_gohome:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  ap_changed:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106; 210 without NFC. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  password:
+    type: string
+    description: Invalid 105; no length or character check. Sensitive.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  connect_lock:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  alpaca_enable:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106; 210 in the slave process; waits up to 30 s. Boolean or integer (nonzero
+      is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  typec_mode:
+    type: string
+    description: file or net. Wrong type 105, other string 102; script error 207.
+    enum:
+    - file
+    - net
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  master_cli:
+    type:
+    - boolean
+    - integer
+    description: true claims master status (master UUID becomes the caller's), false releases it. Succeeds
+      only with guest mode on (210 otherwise), when no master exists or the caller already is master (300
+      otherwise), and never for an internal connection (200). A Client event is sent only when the master
+      changes. A non-master client's set_setting accepts only master_cli, cli_name, cli_uuid and the SOCKS5
+      support flag. Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 fallback @0xf1c90, SetSettingGuest @0xa8930,
+      guest_mode_set_master @0x6b5040 (210 @0x6b5090, 300 @0x6b51f4, 200 @0x6b5234) (64-bit build)
+  cli_name:
+    type: string
+    description: Invalid 105. Observed sent by the iOS app together with cli_uuid (2026-10-12).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  cli_uuid:
+    type: string
+    description: Invalid 105. Observed sent by the iOS app together with cli_name (2026-10-12).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  support_socks5:
+    type:
+    - boolean
+    - integer
+    description: Invalid 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  socks5:
+    type:
+    - boolean
+    - integer
+    description: Alias of support_socks5. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  sky_replay:
+    type:
+    - boolean
+    - integer
+    description: 'Firmware 9.75, app 3.4.0: wrong type 106; sent with wide_cam 102. The value is ignored:
+      the feature is force-disabled, so the stored flag is cleared and any running replay session ends
+      whatever is sent. A Setting event is raised only if the stored flag had been true. Firmware 9.31 has
+      no such key (109).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+  enable_dark_library:
+    type:
+    - boolean
+    - integer
+    description: 'Firmware 9.75, app 3.4.0: enable flag of the temperature dark library, persisted.
+      Boolean or integer (nonzero is true); a wrong type is silently ignored and the call succeeds. The
+      flag is stored and applied through the stack-setting path and the result of applying is ignored.
+      No wide-camera gate and no running-stack check. No functional reader of the flag was found
+      (INFERRED inert or reserved).'
+    x-confidence: READ; effect INFERRED
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting handler @0x10a230 (64-bit build)
+  annotation:
+    type: object
+    description: 'Firmware 9.75, app 3.4.0: not an object 107; sent with wide_cam 102. Members are optional and processed in order. Each is boolean or integer (nonzero is true); a wrong type gives 106 and an unknown or null member name gives 109. A persistence failure returns the thread error code. A change adds annotation to the resulting Setting event in the main process.'
+    properties:
+      stargazing_deepsky:
+        type:
+        - boolean
+        - integer
+        description: Stargazing deep-sky annotation switch.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+      stargazing_supernovae:
+        type:
+        - boolean
+        - integer
+        description: Stargazing supernovae annotation switch.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+      milkyway_lines:
+        type:
+        - boolean
+        - integer
+        description: Milky Way lines annotation switch.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+      milkyway_background:
+        type:
+        - boolean
+        - integer
+        description: Milky Way background annotation switch.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+  can_encrypt:
+    type:
+    - boolean
+    - integer
+    description: 'Firmware 9.75, app 3.4.0: boolean or integer (nonzero is true), other types 106. true is
+      accepted as a no-op (nothing stored, no event); false gives 210, matching the constant-true value
+      that get_setting reports.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting handler @0x10a230 (64-bit build)
+  motion_monitor:
+    type: object
+    description: 'Firmware 9.75, app 3.4.0 (64-bit build; absent from the 32-bit build): not an object 107.
+      Members are optional; unknown members are ignored. mode is a string, auto_track (0) or auto_capture
+      (1): wrong type 105, other string 209. sensitivity is a string whose id above 2 gives 209.
+      return_to_origin is boolean (106). waiting_time (seconds, INFERRED) and duration_min (minutes,
+      INFERRED) are integers (104); waiting_time is read only when return_to_origin is true after the
+      update, otherwise ignored even if mistyped. The final check gives 209 for mode or sensitivity out
+      of range, a threshold that does not match the sensitivity table, a negative waiting_time, or a
+      duration_min that is neither -1 (no limit) nor 1 to 35791394 (the 209 for the duration is INFERRED).
+      If nothing changed the call succeeds with no event. If something changed and the motion-monitor
+      function is running the reply is 524; otherwise it is applied and motion_monitor joins the changed
+      keys of the Setting event. Allowed in either process.'
+    x-confidence: READ; duration 209 INFERRED
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting handler @0x10a230 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

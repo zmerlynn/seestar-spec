@@ -1,0 +1,273 @@
+kind: method
+name: get_photometry_result_json
+summary: Read a saved photometry CSV as JSON rows (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. Returns the rows of a Magnitude_*.csv file from the MyWorks
+  photometry folder of the current image path. This is a different method from get_photometry_result.
+  Read only.
+grade: PURE GETTER / READ
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit build)
+side_effects: None.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_photometry_result_json request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_photometry_result_json
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          description: 'CSV file name: must start with Magnitude_, end with .csv and contain no slash
+            or backslash. Missing or non-string 105; any other violation 102.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit build)
+reply_success:
+  title: get_photometry_result_json reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: object
+        required:
+        - path
+        - name
+        - rows
+        properties:
+          path:
+            type: string
+            description: Path of the file read.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit
+              build)
+          name:
+            type: string
+            description: File name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit
+              build)
+          rows:
+            type: array
+            description: Photometry rows.
+            items:
+              type: object
+              description: One CSV row; columns are located by header name. Empty or unparsable numbers
+                are null.
+              properties:
+                name:
+                  type: string
+                  description: Target name.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                type:
+                  type: string
+                  description: Target type.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                ra:
+                  type: number
+                  description: Right ascension.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                dec:
+                  type: number
+                  description: Declination.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                valid_reference_stars:
+                  type:
+                  - integer
+                  - 'null'
+                  description: Number of reference stars used, or null.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                reference_magnitude:
+                  type:
+                  - number
+                  - 'null'
+                  description: Reference magnitude, null when empty or unparsable.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                measured_magnitude:
+                  type:
+                  - number
+                  - 'null'
+                  description: Measured magnitude, null when empty or unparsable.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                magnitude_error:
+                  type:
+                  - number
+                  - 'null'
+                  description: Magnitude error, null when empty or unparsable.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                x:
+                  type:
+                  - number
+                  - 'null'
+                  description: Pixel x.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                y:
+                  type:
+                  - number
+                  - 'null'
+                  description: Pixel y.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure:
+                  type: string
+                  description: Exposure text.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure_start:
+                  type: string
+                  description: Exposure start text.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure_start_jd:
+                  type:
+                  - number
+                  - 'null'
+                  description: Exposure start, Julian date.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure_start_mjd:
+                  type:
+                  - number
+                  - 'null'
+                  description: Exposure start, modified Julian date.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure_end:
+                  type: string
+                  description: Exposure end text.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure_end_jd:
+                  type:
+                  - number
+                  - 'null'
+                  description: Exposure end, Julian date.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                exposure_end_mjd:
+                  type:
+                  - number
+                  - 'null'
+                  description: Exposure end, modified Julian date.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                is_variable:
+                  type: boolean
+                  description: Variable-star flag.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+                snr:
+                  type:
+                  - number
+                  - 'null'
+                  description: Signal-to-noise ratio.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc
+                    (32-bit build)
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit
+                build)
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit
+              build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, handler @0xf7f30 (64-bit build), @0x853bc (32-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: name missing or not a string
+  label: expected string
+- code: 102
+  trigger: empty or malformed name, header read failure
+  label: bad name
+- code: 255
+  trigger: path not accessible
+  label: no access
+- code: 258
+  trigger: file could not be opened
+  label: open failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: On the 32-bit build the helpers and strings are present and the behaviour is INFERRED to
+  match.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 91
+    method: get_photometry_result_json
+    params:
+      name: Magnitude_example.csv
+  summary: READ shape, not captured; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_photometry_result_json
+    result:
+      path: example/MyWorks/PhotoMetry/Magnitude_example.csv
+      name: Magnitude_example.csv
+      rows:
+      - name: T1
+        is_variable: false
+        measured_magnitude: 12.3
+    code: 0
+    id: 91
+  summary: values invented
+see_also:
+- get_photometry_result
+- get_saved_photometry_stars
+- get_photometry_wcs
+- check_photometry
+spec:
+- spec/control/solving-and-annotation.md#photometry

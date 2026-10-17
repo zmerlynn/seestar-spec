@@ -1,0 +1,15 @@
+title: get_user_location result
+type: array
+minItems: 2
+maxItems: 2
+description: Two numbers [lon, lat] read from the stored user location (global/user_location_lon then
+  user_location_lat), unit degrees, longitude positive east (INFERRED from the geographic interpretation
+  and from the east-positive astronomy routine that consumes the stored value). The loader rejects lon
+  <= -360.1 or >= 360.1 and lat <= -90.1 or >= 90.1; there is no clamping. Order and the thresholds are
+  READ.
+items:
+  type: number
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, LoadUserLocation @0x141960
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x78710 and LoadUserLocation @0x141960

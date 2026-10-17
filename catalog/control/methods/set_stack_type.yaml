@@ -1,0 +1,103 @@
+kind: method
+name: set_stack_type
+summary: Select the frame type that the stacker accumulates (light, dark, bias or flat) and, for flat,
+  an auto-exposure flag.
+description: Stores the frame type and auto-exposure flag. Changing away from an existing calibration
+  type clears the stack and the calibration frame and count caches, or restores the light-stack counts;
+  selecting the type already in force is not refused by the type logic, but the call is refused while
+  the Stack function is running, even for the same type. No camera-open or mount check is made and no
+  worker is started. There are no numeric exposure, limit or count inputs. The clearing step takes locks
+  without a bounded timeout.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe7250, SetStackType @0x1927d0 (64-bit build)
+side_effects: Stores the frame type and flat auto-exposure flag; may clear the accumulated stack and calibration
+  caches or restore light-stack counts.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_stack_type request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_stack_type
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetStackTypeParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe7250, SetStackType @0x1927d0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: type missing or not a string (also params absent, null, scalar, wrong top-level shape or empty
+    array)
+  label: expected string param
+- code: 209
+  trigger: type is empty or not one of light, dark, bias, flat
+  label: invalid value
+- code: 106
+  trigger: type is flat and autoexp is present with a type other than boolean or integer
+  label: expected bool param
+- code: 259
+  trigger: The Stack function is running
+  label: stack is already running
+- code: 204
+  trigger: Internal frame-type value above 3; not reachable from validated handler input
+  label: out of limit
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: light
+  of: request
+  payload:
+    id: 31
+    method: set_stack_type
+    params:
+      type: light
+- name: flat-autoexp
+  of: request
+  payload:
+    id: 32
+    method: set_stack_type
+    params:
+      type: flat
+      autoexp: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_stack_type
+    result: 0
+    code: 0
+    id: 31
+- name: stack-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_stack_type
+    error: stack is already running
+    code: 259
+    id: 33
+see_also:
+- start_stack
+- clear_stack
+- save_stack
+spec:
+- spec/control/stacking.md#sequence

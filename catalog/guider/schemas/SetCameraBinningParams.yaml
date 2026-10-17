@@ -1,0 +1,16 @@
+title: set_camera_binning params
+type:
+- integer
+- array
+description: 'Binning factor: a bare integer or an array whose first element is the integer. Valid range
+  is 1 up to the camera maximum binning (device dependent, not established as a number); outside it gives
+  204.'
+minimum: 1
+items:
+  type: integer
+  minimum: 1
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x73a20 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x73a20 (64-bit build)

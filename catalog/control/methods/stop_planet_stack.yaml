@@ -1,0 +1,65 @@
+kind: method
+name: stop_planet_stack
+summary: Signal the planet-stack worker to stop and wait for it.
+description: No parameters are read. The handler calls the worker-stop routine and ignores its return
+  value, so the reply is always success, including when no stack is running. Stop signals the thread and
+  may join it, so the reply can be delayed until the worker has ended; no finite deadline is established.
+  The final PlanetStack event timing is not established.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xca210, StopPlanetStack @0x332820, CMyThread::Stop
+  @0x6d98c0 (64-bit build)
+side_effects: Signals and may join the PlanetStack worker thread, which can block until it terminates.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_planet_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_planet_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca210 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'No handler-specific error is reachable: the stop return value is ignored.'
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 121
+    method: stop_planet_stack
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_planet_stack
+    result: 0
+    code: 0
+    id: 121
+see_also:
+- start_planet_stack
+spec:
+- spec/control/stacking.md#planet-stack
+- spec/control/stacking.md#planet-stack

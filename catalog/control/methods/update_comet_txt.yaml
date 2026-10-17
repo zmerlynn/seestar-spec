@@ -1,0 +1,96 @@
+kind: method
+name: update_comet_txt
+summary: Install a previously staged comet-data file after checking its MD5 against the supplied value.
+description: Runs a device shell command that computes the MD5 of the staged comet-data file in the update
+  staging area, compares it with the supplied text and, on a match, moves the file into the device installation
+  directory. Success is decided by the command output containing a success marker; the shell exit status
+  alone is not checked and the shell output is not returned. The md5 text is not validated for length,
+  hex or case; an empty string is a type-valid value and simply fails the comparison. Synchronous, no
+  timeout.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdf5f0 (64-bit build)
+side_effects: Spawns a shell command and moves the staged comet-data file into the installation directory,
+  replacing the previous data.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: update_comet_txt request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: update_comet_txt
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      required:
+      - md5
+      description: Required object; only md5 is read, other keys are ignored. Missing, null, scalar and
+        array params yield no md5 and are rejected.
+      properties:
+        md5:
+          type: string
+          description: Expected MD5 text of the staged file, compared as given. Wrong type is rejected;
+            an empty string is accepted and fails the comparison.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xdf5f0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdf5f0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: md5 missing or not a string (including non-object params)
+  label: expected string param
+- code: 207
+  trigger: The shell command failed to run or its output lacked the success marker (including a digest
+    mismatch or missing staged file)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No digest-specific error code exists.
+examples:
+- name: install
+  summary: Invented digest
+  of: request
+  payload:
+    id: 55
+    method: update_comet_txt
+    params:
+      md5: 0123456789abcdef
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: update_comet_txt
+    result: 0
+    code: 0
+    id: 55
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: update_comet_txt
+    error: fail to operate
+    code: 207
+    id: 56
+see_also: []
+spec:
+- spec/control/object-lists.md#comets
+- spec/control/maintenance.md#update-related-markers

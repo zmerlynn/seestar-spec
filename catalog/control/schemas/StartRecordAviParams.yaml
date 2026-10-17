@@ -1,0 +1,53 @@
+title: start_record_avi params
+type: object
+description: Optional object. Absent, null, scalar or array params produce an empty map and the defaults
+  apply; arrays are not positional.
+properties:
+  raw:
+    description: 'Optional boolean or integer (nonzero is true); a wrong type is ignored. When parsed: on the
+      wide camera it forces recording format 0, on other cameras false gives format 0 and true gives format 2.
+      When missing or unparseable the recording format is 1, so omitting raw differs from raw false (a client
+      MUST NOT assume they are equal). Format 0 records an MP4 from the camera''s processed (YUV) stream;
+      formats 1 and 2 both record a raw-frame 8-bit AVI (-RAW.avi name) (READ). How 2 differs from 1 is
+      unresolved: no format-2 branch was found in the writer path. The chosen format is persisted as the rtmp
+      rec_format setting.'
+    anyOf:
+    - type: boolean
+    - type: integer
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+      @0x2ee3f0, YUVRecordMP4Func @0x2f5860 (64-bit build)'
+  timelapse:
+    type: object
+    description: Optional object; a missing or wrong-typed value is ignored, as are wrong-typed members
+      (the default stays, no error). A successfully parsed delay_sec or src_dura_min saves the timelapse
+      recording config for the current view mode; enable alone does not.
+    properties:
+      enable:
+        description: Boolean or integer (nonzero is true). Default false; explicitly clears the saved
+          enable.
+        anyOf:
+        - type: boolean
+        - type: integer
+        x-default: 'false'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+          @0x2ee3f0 (64-bit build)
+      delay_sec:
+        type: number
+        description: Frame delay, INFERRED seconds. Integer or float. Default is the saved value. Must
+          be greater than 0 when timelapse is enabled (209 otherwise); no upper bound here.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+          @0x2ee3f0 (64-bit build)
+      src_dura_min:
+        type: integer
+        description: Source duration in minutes, unscaled; drives the worker stop in timelapse mode. Strict
+          integer. Default is the saved value. No range check in the handler; downstream limits are unresolved.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+          @0x2ee3f0 (64-bit build); unit confirmed by StartWriteAvi, which prints this same value
+          unscaled under a debug format string naming it "durMinutes"
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+      @0x2ee3f0 (64-bit build)

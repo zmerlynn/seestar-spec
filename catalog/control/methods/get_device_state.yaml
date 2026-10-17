@@ -1,0 +1,134 @@
+kind: method
+name: get_device_state
+summary: Read selected sections of the device state (device, settings, camera, focuser, network, storage,
+  sensors, mount, client).
+description: Optional object with keys, a list of section names. Only string elements are kept; a missing
+  or non-object params, a missing or non-array keys, or a list with no strings selects all sections, with
+  no error reply.
+  Failures of one section omit that section and never produce an error reply. The focuser section can
+  open and close the focuser during the query, so its reported state is the state during the query. An
+  all-sections call also issues sequential peer queries with a 10,000 ms wait each, so there is no single
+  bound for the whole request. The setting section is identical to get_setting. Effects differ per key
+  (64-bit build, READ). Client alone is a pure getter; camera and location_lon_lat refresh shared software
+  caches; focuser opens and closes hardware. station, storage and mount only query state and change
+  nothing. station runs a shell query of the Wi-Fi station state, storage reads the cached storage state
+  and file-system usage, and mount sends three read-only queries to the mount controller (moving state,
+  axis coordinates, track state), each with its own 10 s wait, so that section alone can delay the reply
+  by about 30 s when the mount does not answer. No section moves hardware. Sections appear in a fixed
+  order, independent of the order of keys and the same in both builds (device, setting, location_lon_lat,
+  camera, focuser, ap, station, storage, balance_sensor, compass_sensor, mount, pi_status, client). Clients
+  SHOULD still look sections up by name. The method-level tier stays C.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build), handler @0x87720 (32-bit build,
+  section order); station ns_net::pi_station_state, storage FormatStorage, mount GetMountMoveType @0x1814ec,
+  GetScopeAltAz @0x183f6c, GetTrackState @0x186288 (10000 ms waits), GetEqMode @0x17c170 (64-bit build)
+side_effects: Focuser queries may open and close hardware; camera, location, AP and settings paths refresh
+  shared state; the device block runs shell queries and hardware helpers. station, storage and mount are
+  read-only (mount can wait about 30 s). Narrowed selectors differ greatly in effect.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_device_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_device_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      description: Optional. Non-object params and malformed keys are not rejected; they select every
+        section. There is no positional array form.
+      properties:
+        keys:
+          type: array
+          description: 'Section selectors, case-sensitive: device, setting, location_lon_lat, camera,
+            focuser, ap, station, storage, balance_sensor, compass_sensor, mount, pi_status, client. Duplicates
+            are harmless; unknown strings select nothing. Non-string elements are skipped. Empty, absent
+            or wrong-typed keys selects every section. The order of keys does not affect the reply order.'
+          items:
+            type: string
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_device_state success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetDeviceStateResult.yaml
+        description: Selected sections.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Firmware 9.31 has no handler-level error branch. Firmware 9.75 (64-bit) returns an error reply only when encoding the ap password really fails (codes 571 to 573, see the secure-communication chapter); without a crypto session the ap section omits passwd and the call succeeds. Catastrophic helper failures have no established reply shape.
+examples:
+- name: request
+  summary: Balance sensor only
+  of: request
+  payload:
+    id: 151
+    method: get_device_state
+    params:
+      keys:
+      - balance_sensor
+- name: all
+  summary: Empty object selects all sections (shape OBSERVED from the iOS app 2026-10-12; values invented)
+  of: request
+  payload:
+    id: 152
+    method: get_device_state
+    params: {}
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_device_state
+    result:
+      balance_sensor:
+        code: 0
+        data:
+          x: 0.01
+          y: -0.02
+          z: 0.99
+          angle: 1.2
+    code: 0
+    id: 151
+- name: empty
+  summary: 'keys [client] over the tunnel path returned an empty result object (OBSERVED 2026-10-12; guest
+    mode off is INFERRED)'
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_device_state
+    result: {}
+    code: 0
+    id: 153
+see_also:
+- get_setting
+- pi_get_info
+spec:
+- spec/control/device-state-and-settings.md#device-snapshot-get_device_state
+- spec/transport/p2p-tunnel/seestar-profile.md#first-application-bytes-on-port-4700
+- spec/control/session-handshake/verification-and-roles.md#guest-and-master

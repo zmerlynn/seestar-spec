@@ -1,0 +1,81 @@
+kind: method
+name: set_view_plan_target_name
+summary: Set the target name that the device uses for the current view and for autosaved captures.
+description: Only on device process type 2. An empty target_name clears the stored view target name. A
+  non-empty name is regularised as a filename, stored as the view target info, then copied (name and coordinates)
+  to the global autosave settings. The inspected helper does not clear a pending match from iscope_match_target_name.
+  The helper's return value is ignored, so no downstream error is reported. Registered in the 64-bit build
+  only.
+grade: MUTATOR / probable (64-bit build; absent from the 32-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdee90, SetViewTargetName @0x3c0fd0 (64-bit build only)
+side_effects: Changes the stored view target name and the global autosave target used to name captures.
+  No worker is launched. No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_view_plan_target_name request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_view_plan_target_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetViewPlanTargetNameParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Device process type is not 2
+  label: not supported
+- code: 107
+  trigger: params absent or not an object
+  label: expected object param
+- code: 105
+  trigger: target_name missing, null or not a string
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 70
+    method: set_view_plan_target_name
+    params:
+      target_name: Example target
+- name: ok
+  of: reply_success
+  payload:
+    method: set_view_plan_target_name
+    result: 0
+    code: 0
+    id: 70
+- name: bad-name
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_view_plan_target_name
+    error: expected string param
+    code: 105
+    id: 71
+see_also:
+- iscope_accept_target_name
+- iscope_match_target_name
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#viewplan-wide-camera-helpers

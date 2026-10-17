@@ -1,0 +1,283 @@
+kind: event
+name: GuideStep
+summary: 'Per-frame guiding correction report: star displacement, corrections and quality.'
+description: 'Sent once per guiding correction frame (exposure/controller cadence; no helper rate cap).
+  Sent by the guider process (zwoair_guider) on its TCP 4400 event server to every retained connection
+  (G/all). The main imager process, which is a client of 4400, recognises event lines and forwards them
+  unchanged onto TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager process deliberately
+  does not forward 4400 events. The imager''s forwarding test is lexical (the exact text "Event":" in
+  the line). Custom guider producer: no lowercase state; ErrorCode is the guide-step error. All member
+  capitalisation is wire-significant (note RADistanceRaw vs DecLimited). Frame, Time, Mount, dx and dy
+  are shown in every READ illustration; IsSettle and IsDither are written unconditionally (READ); RADuration
+  and RADirection are written only when the RA correction duration is positive, and DECDuration and DECDirection
+  only when the Dec duration is positive (READ); the other branch conditions are only partly resolved. Member order on
+  the wire (READ): Frame, Time, Mount, dx, dy, RADistanceRaw, DECDistanceRaw, RADistanceGuide, DECDistanceGuide,
+  RADuration, RADirection, DECDuration, DECDirection, IsSettle, IsDither, StarMass, SNR, AvgDist. No Android app
+  consumer is established. 32-bit parity of the limit and mount-callback branches is not fully established.
+  Ordering against RPC replies and other guider events is not guaranteed; no sequence number, replay or
+  fixed cadence exists. Runtime reachability of the retained guiding functionality on every model is unresolved.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0 (64-bit
+  guider build); 32-bit counterpart present
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: GuideStep event
+  type: object
+  discriminator: Event
+  description: Custom guider producer; some members after dy are branch-dependent.
+  required:
+  - Event
+  - Timestamp
+  - Frame
+  - Time
+  - Mount
+  - dx
+  - dy
+  - IsSettle
+  - IsDither
+  properties:
+    Event:
+      type: string
+      const: GuideStep
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    Frame:
+      type: integer
+      description: Guide frame number.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    Time:
+      type: number
+      description: Seconds since guiding started, three decimals. Not the Timestamp.
+      x-confidence: READ (format); INFERRED (origin and unit)
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    Mount:
+      type: string
+      description: Mount name. The member is Mount, not GuideStep.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    dx:
+      type: number
+      description: Raw x displacement in camera pixels (GuideStepInfo+0x20), read and serialized with
+        no scaling applied in this function. Unscaled, not arcseconds.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
+        instruction @0x6f3bc (`ldr d0, [x28,#32]`, no multiply before the "dx" NV construction at
+        @0x6f3ac) (64-bit guider build); 32-bit counterpart present, not independently re-verified
+    dy:
+      type: number
+      description: Raw y displacement in camera pixels (GuideStepInfo+0x28), read and serialized with
+        no scaling applied in this function. Unscaled, not arcseconds.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
+        instruction @0x6f3fc (`ldr d0, [x28,#40]`, no multiply before the "dy" NV construction at
+        @0x6f3ec) (64-bit guider build); 32-bit counterpart present, not independently re-verified
+    RADistanceRaw:
+      type: number
+      description: RA distance in arcseconds, despite the "Raw" name. The raw pixel pair at
+        GuideStepInfo+0x38/+0x40 is multiplied by MyDev::GetCameraPixelScale() once at the top of the
+        function, and this member is the first (RA) lane of that product.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0;
+        GetCameraPixelScale call @0x6f240, pixel pair loaded from [x28,#56] @0x6f29c, multiplied by the
+        pixel-scale vector @0x6f2bc (`fmul v0.2d,v0.2d,v1.2d`), stored to a stack temporary consumed by
+        the "RADistanceRaw" NV construction at @0x6f438/@0x6f448 (64-bit guider build); 32-bit counterpart
+        present, not independently re-verified
+    DECDistanceRaw:
+      type: number
+      description: Dec distance in arcseconds, despite the "Raw" name. The second (Dec) lane of the same
+        pixel-scale product as RADistanceRaw.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
+        same multiply as RADistanceRaw (@0x6f2bc), second lane consumed by the "DECDistanceRaw" NV
+        construction at @0x6f47c/@0x6f488 (64-bit guider build); 32-bit counterpart present, not
+        independently re-verified
+    RADistanceGuide:
+      type: number
+      description: Guide RA distance; read and serialized with no scaling applied in this function (unlike
+        RADistanceRaw). Probably pixels (INFERRED); not traced to its origin.
+      x-confidence: READ (no conversion in this function); INFERRED (scale)
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
+        instruction @0x6f4d0 (`ldr d0, [x28,#72]`, no multiply before the "RADistanceGuide" NV
+        construction at @0x6f4b4) (64-bit guider build); 32-bit counterpart present, not independently
+        re-verified
+    DECDistanceGuide:
+      type: number
+      description: Guide Dec distance; read and serialized with no scaling applied in this function (unlike
+        DECDistanceRaw). Probably pixels (INFERRED); not traced to its origin.
+      x-confidence: READ (no conversion in this function); INFERRED (scale)
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
+        instruction @0x6f50c (`ldr d0, [x28,#80]`, no multiply before the "DECDistanceGuide" NV
+        construction at @0x6f4f4) (64-bit guider build); 32-bit counterpart present, not independently
+        re-verified
+    RADuration:
+      type: integer
+      description: RA correction duration; milliseconds INFERRED. Absent when the duration is zero or negative.
+      x-required-when: the RA correction duration is positive
+      x-confidence: READ (type, presence); unit INFERRED
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build; duration test on step-info word +0x58, member and its direction skipped when
+        <= 0); 32-bit not checked for the presence rule
+    RADirection:
+      type: string
+      description: RA direction name from a lookup; the literal set is not established. Present exactly when
+        RADuration is present.
+      x-required-when: the RA correction duration is positive
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    DECDuration:
+      type: integer
+      description: Dec correction duration; milliseconds INFERRED. Absent when the duration is zero or negative.
+      x-required-when: the Dec correction duration is positive
+      x-confidence: READ (type, presence); unit INFERRED
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build; duration test on step-info word +0x5c, member and its direction skipped when
+        <= 0); 32-bit not checked for the presence rule
+    DECDirection:
+      type: string
+      description: Dec direction name from a lookup; the literal set is not established. Present exactly when
+        DECDuration is present.
+      x-required-when: the Dec correction duration is positive
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    IsSettle:
+      type: integer
+      enum:
+      - 0
+      - 1
+      description: 1 while the guide controller reports settling, else 0. Always present; a number, not a JSON
+        boolean.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (unconditional write; value from PhdController::IsSettling @0x57ea0) (64-bit guider build); 32-bit
+        not checked
+    IsDither:
+      type: integer
+      enum:
+      - 0
+      - 1
+      description: One-shot dither flag, cleared when reported, so 1 appears on one step only (READ); set by a
+        dither (INFERRED). Always present; a number, not a JSON boolean.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (unconditional write; flag bit extracted @0x6fa34, written as unsigned integer @0x6fb04) (64-bit guider
+        build); 32-bit not checked
+    StarMass:
+      type: number
+      description: Star mass, written as the raw number with no scaling in the serializer; its scale (set by the
+        star-measurement code) is unresolved.
+      x-confidence: READ (type, no scaling); scale unresolved
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (NV double @0x864a0, no conversion) (64-bit guider build); 32-bit counterpart present
+    SNR:
+      type: number
+      description: Signal-to-noise ratio.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    AvgDist:
+      type: number
+      description: Average distance; pixels INFERRED.
+      x-confidence: READ (type); unit INFERRED
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    RALimited:
+      type: boolean
+      description: RA correction limited.
+      x-required-when: the RA-limit branch is selected (flag true)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    DecLimited:
+      type: boolean
+      description: Dec correction limited. Note the spelling Dec, unlike DECDuration.
+      x-required-when: the Dec-limit branch is selected (flag true)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    ErrorCode:
+      type: integer
+      description: Guide-step error code; values not enumerated.
+      x-required-when: the guide-step error branch is taken (exact condition unresolved)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+    Pos:
+      type:
+      - array
+      - 'null'
+      items:
+        type: integer
+      minItems: 2
+      maxItems: 2
+      description: Current mount/point position as two integers, or null.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+        (64-bit guider build); 32-bit counterpart present
+      x-required-when: the position-append branch is taken (exact condition unresolved)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0
+    (64-bit guider build); 32-bit counterpart present
+examples:
+- name: step
+  summary: Static example (READ shape, not captured; values and direction strings invented)
+  of: payload
+  payload:
+    Event: GuideStep
+    Timestamp: '1234.123456789'
+    Frame: 57
+    Time: 171.2
+    Mount: Example mount
+    dx: 0.31
+    dy: -0.22
+    RADistanceRaw: 0.35
+    DECDistanceRaw: -0.18
+    RADistanceGuide: 0.28
+    DECDistanceGuide: -0.1
+    RADuration: 120
+    RADirection: West
+    DECDuration: 40
+    DECDirection: North
+    IsSettle: 0
+    IsDither: 0
+    StarMass: 5200.0
+    SNR: 24.6
+    AvgDist: 0.27
+    Pos:
+    - 1012
+    - 768
+- name: minimal
+  summary: The required members (values invented)
+  of: payload
+  payload:
+    Event: GuideStep
+    Timestamp: '1234.123456789'
+    Frame: 58
+    Time: 174.2
+    Mount: Example mount
+    dx: -0.05
+    dy: 0.12
+    IsSettle: 0
+    IsDither: 0
+see_also:
+- guide
+- dither
+spec:
+- spec/guider/index.md#events

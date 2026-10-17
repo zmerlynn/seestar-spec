@@ -1,0 +1,42 @@
+title: start_track_object params
+type: object
+required:
+- x
+- y
+- width
+- height
+description: Object required. All four members are required integers; no range check is applied by the
+  handler. Integer-tag values use signed 32-bit storage. The rectangle is INFERRED to be in displayed-image
+  pixel coordinates; the device converts all four through its display-to-sensor mapping, which depends
+  on display and read-AVI state.
+properties:
+  x:
+    type: integer
+    description: Rectangle left edge, displayed-image pixels (INFERRED). Missing, null or non-integer
+      is rejected with 104.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdbbf0, StartObjTrack @0x3dd560 (64-bit build)
+  y:
+    type: integer
+    description: Rectangle top edge, displayed-image pixels (INFERRED). Missing, null or non-integer is
+      rejected with 104.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdbbf0, StartObjTrack @0x3dd560 (64-bit build)
+  width:
+    type: integer
+    description: Rectangle width. If the converted width or height is 0 or negative, the device substitutes
+      the camera subframe instead of rejecting the request.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdbbf0, StartObjTrack @0x3dd560 (64-bit build)
+  height:
+    type: integer
+    description: Rectangle height. See width.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdbbf0, StartObjTrack @0x3dd560 (64-bit build)
+  is_manual_selection:
+    type: boolean
+    description: 'Firmware 9.75, app 3.4.0: optional bool, default true. Wrong type 106. When false, the rectangle is passed through a correction step before use (a change is logged); the 9.31 conversion is replaced by a show-to-sensor conversion in both cases. Absent from the 32-bit build.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0 reports, start_track_object handler @0xef280 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdbbf0, StartObjTrack @0x3dd560 (64-bit build)

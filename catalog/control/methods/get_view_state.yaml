@@ -1,0 +1,94 @@
+kind: method
+name: get_view_state
+summary: Return the state tree of the currently selected View function.
+description: 'Prints the selected View function subtree (not the root function tree and not the ViewPlan
+  queue): the View function''s detail followed by its live child functions, nested by name (READ). Each node
+  carries state, code, error, lapse_ms and stage (code and error only at fail), plus function-specific members
+  from its own printer; for View these are the view mode, target info, star info and RTMP info (READ). Which
+  children are live depends on the active mode, so the set of child keys and per-node members is open
+  (unresolved); clients MUST tolerate unknown child keys and unknown node members. When the selected state is
+  absent or ignored no node is added and the result can be an empty object. It is a pure getter: it changes no
+  device state; the tree walk takes a lock and can block, and the ignored-state branch writes a log line
+  (READ).'
+grade: PURE GETTER / established (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ (handler); unresolved (result members)
+basis: static analysis of firmware 9.31, handler @0xb6f20, PrintFuncTreeView @0x3c19a0, S_FUNC_TREE::Print
+  @0x6f21b0 (64-bit build)
+side_effects: None on device state. Locks and walks the function tree and invokes the bound print callbacks
+  (which read state, including an ISP gain query on one board); logs on the ignored-state branch. No timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_view_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_view_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb6f20 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: get_view_state reply (success)
+    properties:
+      result:
+        type: object
+        additionalProperties:
+          $ref: ../schemas/GetViewStateNode.yaml
+        description: Object keyed by function name (View, with live children nested by name); may be empty.
+          Open member set.
+        x-confidence: READ (shape); unresolved (members)
+        x-basis: static analysis of firmware 9.31, handler @0xb6f20 (64-bit build), S_FUNC_TREE::Print
+          @0x6f21b0
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: read
+  summary: Bare request
+  of: request
+  payload:
+    id: 58
+    method: get_view_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_view_state
+    result:
+      View:
+        state: working
+        stage: Stack
+        lapse_ms: 12000
+        mode: star
+        Stack:
+          state: working
+          lapse_ms: 9000
+    code: 0
+    id: 58
+see_also:
+- iscope_get_app_state
+- clear_app_state
+- set_view_plan
+spec:
+- spec/control/viewing-and-exposure.md#objects-and-state

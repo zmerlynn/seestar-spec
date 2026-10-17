@@ -1,0 +1,14 @@
+title: scope_is_moving result
+type: string
+enum:
+- none
+- ScopeGoto
+- ScopeHome
+- ScopeMoveToHorizon
+- move_home_horizon
+- clear_backlash
+- move
+description: Motion type name. none means idle. Move types 2 and 4 (manual and angle moves), type 0 while a
+  watcher runs, and any unlisted type map to move. Clients MUST treat any value other than none as moving.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x7a330, mount_move_type_str @0x41000 (64-bit build)

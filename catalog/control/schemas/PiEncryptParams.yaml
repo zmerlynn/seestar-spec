@@ -1,0 +1,50 @@
+title: pi_encrypt params
+type: object
+description: 'Legacy form: passwd and license both nonempty (digest and the rest are then not parsed).
+  Plus form otherwise: digest nonempty, then sn or cpuId, auth_code, digest, sign all nonempty. Members
+  have default empty string; wrong-typed members are ignored as absent; unknown keys are ignored. No maximum
+  lengths are established. Plus-form values are issued by the vendor activation web service and forwarded
+  unchanged; the legacy pair is not sent by the app and its issuer and formats are unresolved.'
+properties:
+  passwd:
+    type: string
+    description: Legacy form. Wrong type is ignored as absent; default empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+  license:
+    type: string
+    description: Legacy form. Wrong type is ignored as absent; default empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+  sn:
+    type: string
+    description: 'Plus form: device identity string. At least one of sn and cpuId must be nonempty; it
+      must match the hardware identity (222).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+  cpuId:
+    type: string
+    description: 'Plus form: alternative identity string; must match the hardware identity (222).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+  auth_code:
+    type: string
+    description: 'Plus form: authorisation code; must be nonempty and equal the content recovered from
+      sign (222).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+  digest:
+    type: string
+    description: 'Plus form: Base64 of an HMAC-SHA256 value; must be nonempty and match the device-side
+      value (222); the MACed input string is unresolved. Also gates the plus branch when the legacy pair
+      is not complete.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+  sign:
+    type: string
+    description: 'Plus form: Base64 RSA signature; must be nonempty; its public-key recovery must equal
+      auth_code (222).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)

@@ -1,0 +1,76 @@
+kind: method
+name: clear_batch_stack
+summary: Mark the batch stack state as cleared while no batch worker is running.
+description: When the batch worker is idle, sets a cached clear flag in the batch status. It does not
+  synchronously delete input files or results and does not zero every counter. No camera or mount precondition
+  and no wait beyond the running check. No request parameters are read.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc9f20, ClearBatchStack @0x3a66f0 (64-bit build)
+side_effects: Sets the cached clear flag in the batch stack status.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_batch_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_batch_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9f20, ClearBatchStack @0x3a66f0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 259
+  trigger: The batch worker is running
+  label: stack is already running
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No other ordinary local error is reachable.
+examples:
+- name: clear
+  of: request
+  payload:
+    id: 151
+    method: clear_batch_stack
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_batch_stack
+    result: 0
+    code: 0
+    id: 151
+- name: batch-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_batch_stack
+    error: stack is already running
+    code: 259
+    id: 152
+see_also:
+- start_batch_stack
+- stop_batch_stack
+- get_batch_stack_setting
+spec:
+- spec/control/stacking.md#batch-stack

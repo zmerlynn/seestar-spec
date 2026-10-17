@@ -1,0 +1,33 @@
+title: set_is_favorite params
+type: object
+description: Object params only (any other type, including absent, is rejected with 102). No positional
+  alternative.
+required:
+- name
+- is_favorite
+properties:
+  storage:
+    type: string
+    description: 'Storage to resolve the filenames against. Names are model dependent (emmc, sd, udisk),
+      matched case-insensitively. Absent or non-string silently uses the current image path. An unrecognized
+      name is not ignored: it fails with 204. The storage connected/mounted state is not checked.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1d00, AddImages @0xae600 (64-bit build)
+  name:
+    description: Image file name or array of names. A string becomes base path plus that string. In an
+      array, non-string elements are silently skipped and an empty resulting list is accepted. Any other
+      top-level type, or absence, is rejected with 100. No length, traversal, extension, existence or
+      count limit is checked.
+    anyOf:
+    - type: string
+    - type: array
+      items:
+        type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1d00, AddImages @0xae600 (64-bit build)
+  is_favorite:
+    type: boolean
+    description: Strict JSON boolean (integer 0/1 is rejected with 102). True adds the files to the favorites
+      database, false removes them. No default. Checked after the names are collected.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1d00, AddImages @0xae600 (64-bit build)

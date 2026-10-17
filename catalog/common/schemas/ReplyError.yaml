@@ -1,0 +1,38 @@
+title: error
+type: object
+description: >-
+  Reply envelope on failure. error is a plain string, not an object; there is no result
+  member. A handler that fails without assigning a code is reported as 207. Early dispatcher errors
+  (100 invalid request, 200 invalid id) have no `method` member and carry `id: null`. A `stop_func`
+  relay failure replaces the whole reply with `error`, `code` and `id` only (no `jsonrpc`, `Timestamp`
+  or `method`). Receivers MUST NOT require `jsonrpc`, `Timestamp` or `method`.
+required: [error, code, id]
+properties:
+  jsonrpc:
+    $ref: './ReplySuccess.yaml#/properties/jsonrpc'
+  Timestamp:
+    $ref: './ReplySuccess.yaml#/properties/Timestamp'
+  method:
+    type: string
+    description: The request method, echoed. Absent on dispatcher errors 100 and 200 and on a stop_func
+      relay failure.
+    x-required-when: the request had an id and a string method (handler errors and 103), except a locally
+      built stop_func relay failure
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handle_request @0x6f9440 (adds method only after the id
+      and method checks); stop_func handler @0xc8210 relay-failure path
+  error:
+    type: string
+    description: Message looked up from the code; unknown codes yield "fail to operate".
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, jrpc_error @0x6f8bc0 and get_err_string @0x6d68d0
+  code:
+    type: integer
+    description: Nonzero. A requested code of 0 is coerced to 207.
+    not: {const: 0}
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, jrpc_error @0x6f8bc0
+  id:
+    $ref: './Id.yaml'
+    description: The request id echoed with its JSON type; null on dispatcher errors 100 and 200, where
+      it is the only way to recognise the reply and cannot be matched to a request.

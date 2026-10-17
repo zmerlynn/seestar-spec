@@ -1,0 +1,116 @@
+kind: method
+name: set_sequence
+summary: Create or patch imaging sequence entries, by id.
+description: params is an array of entry objects, applied in order. For each, the existing entry with
+  that id (if any) is patched and re-inserted, otherwise a new entry is created from defaults, and the
+  entry is saved to settings. Earlier entries stay applied if a later one fails. An empty array succeeds
+  without changes. A normal non-empty object is traversed as a list of its member values, so it fails
+  107 unless every member is an object. Absent params has no established safe response. The grade reflects
+  the whole request/reply path, which reaches the shared diagnostic logger; it does not by itself mean
+  the method changes device settings.
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd0500 (64-bit build)
+side_effects: Erases and re-inserts entries in the shared sequence map and persists each one to the sequence
+  settings; checks free storage against an estimate. Every call also performs shared request/reply diagnostic
+  logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_sequence request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_sequence
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: array
+      items:
+        $ref: ../schemas/SetSequenceEntry.yaml
+      description: Array of entry objects (required). See the entry schema.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd0500 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: An entry (or, for non-array params, a member) is not an object
+  label: expected object param
+- code: 200
+  trigger: An entry id is missing, not an integer, or -1
+  label: invalid id
+- code: 224
+  trigger: 'Exposure mode 2 is active and either the capture thread is running or the total lapsed count of enabled
+    entries is neither zero nor equal to their total repeat count'
+  label: cannot edit sequence unless reset the progress
+- code: 208
+  trigger: Estimated size of enabled sequences plus 150 MB exceeds free space (a decreased remaining count
+    and disabled entries bypass the check)
+  label: disk is full
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Helper errors outside the audited branches are unresolved.
+examples:
+- name: two-entries
+  summary: Two light-frame entries (values invented)
+  of: request
+  payload:
+    id: 61
+    method: set_sequence
+    params:
+    - id: 1
+      type: light
+      filter: 0
+      suffix: L
+      exp: 10
+      gain: 80
+      bin: 1
+      repeat: 30
+      capture_index: 0
+      enable: true
+      autoexp: false
+    - id: 2
+      type: dark
+      exp: 10
+      repeat: 20
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_sequence
+    result: 0
+    code: 0
+    id: 61
+- name: locked
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_sequence
+    error: cannot edit sequence unless reset the progress
+    code: 224
+    id: 62
+see_also:
+- get_sequence
+- get_sequence_number
+- delete_sequence
+- clear_sequence
+- reset_sequence_progress
+- set_sequence_setting
+spec:
+- spec/control/legacy-plans-and-sequences/sequences.md#the-stand-alone-sequence-list

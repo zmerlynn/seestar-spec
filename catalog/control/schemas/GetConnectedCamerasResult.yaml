@@ -1,0 +1,28 @@
+title: get_connected_cameras result
+type: array
+description: One entry per discovered camera, in discovery order; an empty array when none are known.
+items:
+  type: object
+  required:
+  - name
+  - id
+  - path
+  properties:
+    name:
+      type: string
+      description: Camera model name as listed in the discovery cache.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd47d0 (64-bit build)
+    id:
+      type: integer
+      description: Zero-based position of the camera in the list (assigned by the handler while enumerating).
+        This is not a hardware identifier; it is the ordinal that open_camera and get_camera_info accept.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd47d0 (64-bit build)
+    path:
+      type: string
+      description: Camera path string from the discovery cache.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd47d0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd47d0, GetCameraList @0x130670 (64-bit build)

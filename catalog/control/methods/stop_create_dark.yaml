@@ -1,0 +1,64 @@
+kind: method
+name: stop_create_dark
+summary: Abort the dark-frame creation worker.
+description: Sets the capture error to aborted and asks the dark worker thread to stop. Does not accept
+  wide_cam and does not relay. The handler has no error branch, so it replies success even when no worker
+  is running (INFERRED from the absence of an error branch).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8f40, StopDark @0x3b9fa0 (64-bit build)
+side_effects: Sets the capture error to 253 (aborted) and stops the dark worker thread, which can signal
+  and join it with no bounded short timeout. Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_create_dark request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_create_dark
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc8f40, StopDark @0x3b9fa0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No local error branch. The aborted state may surface in the worker's own events; its payload
+  is unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 74
+    method: stop_create_dark
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_create_dark
+    result: 0
+    code: 0
+    id: 74
+see_also:
+- start_create_dark
+spec:
+- spec/control/calibration-frames/dark-library.md#building-the-dark-library

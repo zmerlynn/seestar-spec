@@ -1,0 +1,6 @@
+title: scope_set_beep_volume params
+type: integer
+description: Direct scalar integer, required. An array or object is not equivalent and gives 104. No handler
+  range, default or clamp; valid volume indices and any controller clamping are unresolved.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x71080 (64-bit build)

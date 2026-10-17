@@ -1,0 +1,46 @@
+title: pi_output_set params
+description: 'Output settings keyed by name. Two spellings: a single object, or an array whose first element
+  is that object. Each member name selects an output by case-sensitive substring, tested in this order:
+  port, dslr, esp, beep, gpio. port<N> and gpio<N> take the first run of decimal digits in the name as
+  N (port: zero-based port index; gpio: raw driver pin number, no handler bounds). Unrecognised names
+  are ignored when their value type is acceptable. A boolean value means digital state at value 100. A
+  numeric value means PWM percent with state true when the value exceeds 0.001. dslr and esp accept boolean,
+  integer or real but always use digital mode at value 100 and compute state from the raw 32-bit value
+  (any nonzero bit pattern, including integer -1 and negative zero, is true). beep always uses PWM mode;
+  a boolean beep value leaves the value at 100, so beep:false still requests PWM 100 rather than clearing
+  the output. An empty object succeeds and does nothing.'
+oneOf:
+- type: object
+  additionalProperties:
+    type:
+    - boolean
+    - integer
+    - number
+    description: Output state (boolean) or PWM percent (number). Any other JSON type is rejected with
+      209, even for an unrecognised name. No percent bound in the handler; with PWM state true, the computed
+      duty outside 0..range is rejected with 204 (the exact fractional edge depends on truncation).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf8250, GPIOController::WriteByIndex @0x324650,
+      Write @0x323ab0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    type: object
+    additionalProperties:
+      type:
+      - boolean
+      - integer
+      - number
+      description: Output state (boolean) or PWM percent (number). Any other JSON type is rejected with
+        209, even for an unrecognised name. No percent bound in the handler; with PWM state true, the
+        computed duty outside 0..range is rejected with 204 (the exact fractional edge depends on truncation).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf8250, GPIOController::WriteByIndex @0x324650,
+        Write @0x323ab0 (64-bit build)
+    description: First element is used; further elements are ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf8250, GPIOController::WriteByIndex @0x324650,
+      Write @0x323ab0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf8250, GPIOController::WriteByIndex @0x324650, Write
+  @0x323ab0 (64-bit build)

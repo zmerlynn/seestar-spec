@@ -1,0 +1,69 @@
+kind: method
+name: clear_ra_dec_history
+summary: Clear the guider's stored guide-telemetry history (distance, duration and direction samples).
+description: No parameters are read. Empties the shared guide-telemetry history list and its counter;
+  active alignment and coordinate state are untouched and no hardware is involved. Atomicity against a
+  concurrent history read is unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x72eb0 (64-bit guider build)
+side_effects: Clears the shared guide-telemetry history list and counter.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_ra_dec_history request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_ra_dec_history
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x72eb0 (64-bit guider build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No handler-specific error branch was recovered.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 111
+    method: clear_ra_dec_history
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_ra_dec_history
+    result: 0
+    code: 0
+    id: 111
+see_also:
+- clear_calibration
+- deselect_star
+spec:
+- spec/guider/index.md#method-groups

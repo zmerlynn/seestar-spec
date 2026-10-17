@@ -1,0 +1,155 @@
+kind: method
+name: ota_prepare_module
+summary: 'Updater (firmware 9.75): prepare the device to receive one module package on the binary socket.'
+description: Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the 64-bit
+  and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The handler
+  clears the thread error code and calls the updater's single OTA manager. The OTA methods do not use
+  the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350 is wrapped
+  is not established. Firmware update is a high-risk operation; do not send this to a real device to test
+  it. Prepares reception of one module package, named in send_modules. The device creates a partial file
+  for the package, arms the binary receiver for the caller's address, and replies with the module's size
+  and SHA-256 from the target manifest, the binary port and whether the module was already received (the
+  client then skips it). The reply carries binary_port, but the app ignores it and always streams to TCP
+  4361. After the reply the client streams the package file raw on 4361 with no header. When the stream
+  ends the device checks the byte count (error 525 on mismatch) and the SHA-256 (also 525), then renames
+  the partial file to the final package name (515 on failure). It emits an OtaUpdate event with state
+  working at prepare time and again as the stage changes. If no ota_prepare_module arrives within the
+  pending timeout (15 s, see ota_begin) the session fails. Unlike the legacy begin_recv (which needs the
+  caller's 4361 connection to exist first), this path uses a pending-receive record keyed by the caller's
+  address and a pending timeout, so the 4361 connection need not exist at prepare time; the exact ordering
+  rules are INFERRED. If the binary connection does not arrive within 15 s of the prepare reply (a
+  15000 ms comparison on the pending-receive start time, checked once per loop of the updater network
+  thread, whose select timeout is 5 s, so it fires within about 5 s after the 15 s mark) the device clears
+  the pending record and fails the receive with code 546 and the text ota module binary connection timeout
+  (firmware 9.75, 64-bit build, READ; new in 9.75; the 32-bit build has the check but its constants were
+  not located).
+grade: MUTATOR / probable
+side_effect_tier: C
+confidence: READ (firmware 9.75); partly INFERRED, see description
+basis: static analysis of firmware 9.75, updater RPC handler @0x27710 (64-bit build), OTA manager; app
+  3.3.2 OtaService DTOs
+side_effects: Creates a partial package file and arms the binary receiver.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: ota_prepare_module request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: ota_prepare_module
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater dispatcher table, handler @0x27710 (64-bit build)
+    params:
+      type: object
+      description: Object params with name. A missing or non-string name gives 105.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, ota_prepare_module handler @0x27710 (64-bit build); app
+        3.3.2 OtaPrepareModuleParams
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          description: Module name from send_modules.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        properties:
+          name:
+            type: string
+            description: The module name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          size:
+            type: integer
+            description: Size in bytes the device expects.
+            x-confidence: READ; JSON number form INFERRED
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          sha256:
+            type: string
+            description: Expected SHA-256 of the package file.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          binary_port:
+            type: integer
+            description: Port for the binary stream (the binary channel is TCP 4361).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          already_received:
+            type: boolean
+            description: true when the package was already received and need not be sent again.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        required:
+        - name
+        - size
+        - sha256
+        - binary_port
+        - already_received
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params.name missing or not a string
+  label: invalid name
+- code: 107
+  trigger: Missing params
+  label: missing params
+- code: 102
+  trigger: Module not in target_manifest or not in send_modules
+  label: invalid module
+- code: 546
+  trigger: The binary connection did not arrive within 15 s of the prepare reply. Reported through the
+    OtaUpdate failure event and the session failure, not in this reply (firmware 9.75, 64-bit build)
+  label: ota module binary connection timeout
+- code: 524
+  trigger: 'Stage conflict or busy: the call is not allowed in the current OTA stage (text names the stage
+    and, where relevant, asks the caller to ota_abort first)'
+  label: stage conflict
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: ota_prepare_module
+    params:
+      name: example_module
+  summary: Shape READ; all values invented
+- name: ok
+  of: reply_success
+  summary: Shape READ; all values invented
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: ota_prepare_module
+    result:
+      name: example_module
+      size: 1048576
+      sha256: <64 hex digits>
+      binary_port: 4361
+      already_received: false
+    code: 0
+    id: 100
+see_also:
+- ota_get_current_manifest
+- ota_get_session
+- ota_begin
+- ota_retry_upgrade
+- ota_abort
+- begin_recv
+- OtaUpdate
+spec:
+- spec/updater/index.md#ota-methods-firmware-975
+- spec/updater/ota-package-handling.md#ota-package-handling

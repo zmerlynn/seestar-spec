@@ -1,0 +1,45 @@
+title: mosaic
+type: object
+description: >-
+  Optional. Only inspected after both target coordinates parsed successfully; otherwise silently
+  ignored, even if malformed. Not an object: ignored. No grid size or overlap member is consumed.
+dependentRequired:
+  scale: [angle]
+properties:
+  star_map_angle:
+    type: number
+    default: -999
+    description: >-
+      Degrees. App 3.3.2 reads it from its native sky-map renderer for plan targets and for the sky-map
+      mosaic goto (READ). In equatorial-mount display mode it is the sky-map rotation plus the last solve
+      angle; otherwise it is the sky-map rotation minus the clockwise on-screen direction of celestial
+      west from window right (READ, app 3.3.2 native library; see grid-and-movement.md R20a). It has no
+      fixed cardinal meaning of its own. Wrong type is rejected with 102. Must be
+      sent for the mosaic to be applied: when absent (sentinel -999) capture setup resets the mosaic
+      parameters to scale 1, angle 0, which do not enable a mosaic (INFERRED).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseMosaic @0x1a1180 (64-bit build); app 3.3.2 PlanViewDelegate
+      and GLRender.getTargetObjAngle; SkyViewDelegate star-map goto (StartGotoMosaicParams); libnewstartmap.so
+      GLUtils::GetSeestarTargetObjAngle @0x1a3511, SetSeestarMasicParameterEx @0x1a3355, SetCameraParameter
+      @0x1a038d, project_to_win @0x1893c5
+  scale:
+    type: number
+    default: -999
+    description: >-
+      Dimensionless canvas multiplier on the camera frame size (READ; the term is INFERRED). When absent,
+      the whole mosaic is treated as unset (and is not echoed in the event), even if the other members
+      are given. No range check or clamp; the mosaic is enabled when abs(scale) > 1.01 or abs(angle) > 0.1.
+      The app UI uses 1.0 to 2.0 (INFERRED). There is no fixed grid per scale.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseMosaic @0x1a1180
+  angle:
+    type: number
+    default: -999
+    description: >-
+      Degrees (INFERRED); truncated to an integer for the grid planner. Read only when scale is present,
+      where it is then required; otherwise ignored even if mistyped. No range check; the app UI uses -90
+      to 90 (INFERRED).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseMosaic @0x1a1180
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, ParseMosaic @0x1a1180

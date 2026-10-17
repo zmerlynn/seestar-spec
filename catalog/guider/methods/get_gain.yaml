@@ -1,0 +1,76 @@
+kind: method
+name: get_gain
+summary: Report the guide camera gain setting and its limits.
+description: Params are not read. Returns the cached gain range and current value. No explicit error is
+  raised; when the camera is not usable the output values keep their initial values, which are not established.
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)
+side_effects: Reads cached gain fields; no SDK or driver request.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_gain request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_gain
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)
+reply_success:
+  title: get_gain success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetGainResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: get_gain
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_gain
+    result:
+      min: 0
+      max: 500
+      val: 100
+    code: 0
+    id: 22
+see_also: []
+spec:
+- spec/guider/index.md#method-groups

@@ -1,0 +1,126 @@
+kind: method
+name: reset_setting_prepare
+summary: Stage a settings reset on the second camera without applying it (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. First phase of the reset transaction between the primary
+  and the second-camera process. Only the second-camera process accepts it; elsewhere it replies 210.
+  It snapshots the affected settings and changes nothing. The pending transaction has no expiry. Clients
+  normally use reset_setting, which drives this phase itself.
+grade: MUTATOR / READ
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0x102430 (64-bit build), @0x8a5c0 (32-bit build)
+side_effects: Holds one pending reset transaction on the device. No settings change until commit.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: reset_setting_prepare request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: reset_setting_prepare
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      required:
+      - transaction_id
+      - keys
+      properties:
+        transaction_id:
+          type: integer
+          description: Transaction identifier, greater than 0.
+          minimum: 1
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0x102430 (64-bit build), @0x8a5c0 (32-bit
+            build)
+        keys:
+          type: array
+          description: Setting names to stage, same rules as reset_setting items.
+          items:
+            type: string
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0x102430 (64-bit build), @0x8a5c0 (32-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0x102430 (64-bit build), @0x8a5c0 (32-bit build)
+reply_success:
+  title: reset_setting_prepare reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      unsupported_keys:
+        type: array
+        description: Staged keys that cannot be reset on this build.
+        items:
+          type: string
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, handler @0x102430 (64-bit build), @0x8a5c0 (32-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: process is not the second-camera process
+  label: wrong process
+- code: 107
+  trigger: params is not an object
+  label: expected object
+- code: 102
+  trigger: transaction_id or keys missing or malformed, or planning failed
+  label: bad request
+- code: 105
+  trigger: a key is not a string
+  label: expected string
+- code: 524
+  trigger: a transaction is already pending
+  label: busy
+- code: 207
+  trigger: planning the reset failed
+  label: apply failed
+- code: 259
+  trigger: Stack is active and an exp_ms.* key is listed (association INFERRED)
+  label: stack active
+- code: 536
+  trigger: a view plan is running (association INFERRED)
+  label: plan running
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No event is emitted.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 82
+    method: reset_setting_prepare
+    params:
+      transaction_id: 1
+      keys:
+      - stack
+  summary: READ shape, not captured; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_setting_prepare
+    result: 0
+    code: 0
+    id: 82
+    unsupported_keys: []
+see_also:
+- reset_setting
+- reset_setting_commit
+- reset_setting_rollback
+spec:
+- spec/control/function-states.md#settings-reset

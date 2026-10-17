@@ -1,0 +1,27 @@
+title: get_batch_stack_setting result
+type: object
+description: The retained batch input list. No frame type, header, exposure or size metadata is included.
+required:
+- files
+properties:
+  key_frame:
+    type: string
+    description: 'Firmware 9.75, app 3.4.0: reference frame of the list; deepsky and comet types only. Absent in firmware 9.31.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, get_batch_stack_setting @0xc5b30, FormatFileList @0x3ecb40 (64-bit build)
+  batch_startrails_mode:
+    type: integer
+    description: 'Firmware 9.75, app 3.4.0: star-trail output mode, 0 to 2 (0 maximum video, 1 decay video, 2 both); startrail type only. Absent in firmware 9.31.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, get_batch_stack_setting @0xc5b30, FormatFileList @0x3ecb40 (64-bit build)
+  files:
+    type: array
+    description: Retained input files; empty when none.
+    items:
+      $ref: GetBatchStackSettingFile.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+      @0x3a7010 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList @0x3a7010
+  (64-bit build)

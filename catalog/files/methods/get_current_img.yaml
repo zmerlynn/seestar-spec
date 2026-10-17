@@ -1,0 +1,100 @@
+kind: method
+name: get_current_img
+summary: 'Image socket: return the latest live/preview frame as image bytes.'
+description: 'Image-socket (4800/4804) method. Returns the current preview frame. Optional params:
+  `compress` (boolean, default true) and `img_type` (`"Raw"` forces raw output). Under a lock the handler
+  copies the shared current-image buffer into a request-local buffer, releases the lock, and sends it:
+  JPEG (imgType 4) in Jpg mode unless `img_type` is `"Raw"`; otherwise raw, zip-compressed (dataType 3)
+  when `compress` is true and plain (dataType 2) when it is false. With no frame available the reply is
+  the error text `there is no image now`. READ. It fetches an already-captured frame; it does not trigger
+  an exposure or write shared state. Zip-compressed raw output goes through a temporary scratch file on
+  device storage, so under the strict convention it is a MUTATOR with observation-safe (tier B) effects.
+  The 32-bit build matches (READ), apart from log wording and image-library version. Firmware 9.75 (64-bit): when the preview setting raw_bin2 is true, raw 16-bit Bayer (imgType 1) and RGB48 (imgType 5) frames on the non-JPEG path are binned 2x2 before sending; the header width, height and bytes 20 to 23 are halved and imgType is unchanged (READ; 32-bit not checked).'
+grade: 'MUTATOR / established (scratch file on the compressed raw path; 64-bit build, 32-bit build
+  matches (READ))'
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x116cb0
+  (64-bit build), @0xa6dec (32-bit build); static analysis of app 3.3.2, MainFileManager.getCurrentPic;
+  copy into a request-local IMG_DATA (IMG_DATA::operator=), shouldTransferJpg/convertImageToJpg, zip
+  compression of raw output, reponse_result; param strings compress and img_type; JPEG path,
+  convertImageToJpg passes an empty target path to IMG_DATA::ToJPG, whose imwrite/Save branches run only
+  for a non-empty path (CFG check, 64-bit build); raw path, IMG_DATA::Compress @0x6a2d10 (64-bit) /
+  @0x67236c (32-bit), WriteFile of a scratch file, run_popen of a zip command, ReadFile, remove
+side_effects: 'Reads the shared current-image buffer under a mutex into a request-local buffer,
+  optionally converting it to JPEG or zip-compressing it, then responds with the bytes. No capture is
+  triggered and no shared state is mutated. READ; the 32-bit build matches (READ). JPEG conversion
+  encodes in memory: the conversion routine writes a file only when it is given a target path, and this
+  handler passes none. READ (64-bit build; the 32-bit build has the same call structure, READ). When
+  `compress` is true on the raw path: zip compression of raw output writes the raw bytes to a fixed-name
+  scratch file in the imager''s private data directory, runs an external zip compressor on it, reads the
+  archive back and deletes both files before replying. READ. Nothing persists, so the effect is
+  observation-safe (tier B), but the handler is a MUTATOR under the strict convention, as for
+  get_server_log. Because the scratch name is fixed, two compressed raw requests served at the same time
+  could interfere; INFERRED.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_current_img request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_current_img
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler
+        @0x116cb0 (64-bit build), @0xa6dec (32-bit build)
+    params:
+      type: object
+      description: Optional. The app sends no params member. `img_type` "Raw" forces raw output; without
+        it the image transfer mode decides (Jpg gives JPEG).
+      properties:
+        compress:
+          type: boolean
+          default: true
+          description: Zip-compress raw output (dataType 3); false sends plain raw (dataType 2). Default
+            true.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0x116cb0 (64-bit build)
+        img_type:
+          type: string
+          description: '"Raw" forces raw output even in Jpg mode.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0x116cb0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x116cb0 (64-bit build); static analysis of
+        app 3.3.2, MainFileManager.getCurrentPic
+reply_success:
+  title: get_current_img success reply
+  description: 'Not an ordinary command reply. The current preview frame: JPEG (imgType 4) in Jpg mode
+    unless `img_type` "Raw" is given; otherwise raw, dataType 3 (zip) when `compress` is true (the default),
+    else dataType 2. 80-byte big-endian header (spec/media/image-sockets.md#reply-framing), then the
+    payload; errors are text replies with dataType 1.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x116cb0
+    (64-bit build), @0xa6dec (32-bit build)
+reply_error:
+  title: get_current_img error reply
+  description: 'Text reply (imgType 0, dataType 1): `there is no image now` when no frame is available.
+    No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x116cb0
+    (64-bit build), @0xa6dec (32-bit build)
+errors: []
+errors_note: No numeric code reaches the client. The handler's error is the text `there is no image now`
+  (spec/media/image-sockets.md#registered-methods, R6).
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: get_current_img
+see_also:
+- get_camera_img
+- get_stacked_img
+spec:
+- spec/media/image-sockets.md#registered-methods

@@ -1,0 +1,107 @@
+kind: method
+name: check_pa_alt
+summary: Check whether the mount tilt matches the site latitude closely enough for equatorial polar alignment.
+description: 'No parameters are read. Returns result.is_valid. Special case: in equatorial mode, if the
+  user location cannot be loaded, the handler appends an error and then also appends the result (is_valid
+  true), so one reply carries both error and result members and two code members (the failure code, then
+  0). A parser that keeps the last duplicate sees code 0 while the error string remains; clients SHOULD
+  treat the presence of error as failure. Out-of-range location is reported with code 204; unassigned
+  failures fall to 207. An invalid orientation is is_valid false, not an error.'
+grade: MUTATOR / established (strict, 64-bit build; location/time cache refresh and logging); 32-bit build probable. Behaviourally a getter.
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb61a0 (64-bit build); LoadUserLocation (64-bit build)
+side_effects: May refresh the shared user-location and time cache from configuration. No mount motion
+  or setting write. Full command-socket calls also incur the shared diagnostic (logging) writes; this
+  is why the strict grade is MUTATOR even for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: check_pa_alt request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: check_pa_alt
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb61a0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: check_pa_alt reply_success
+  required:
+  - method
+  - result
+  - code
+  - id
+  description: Same envelope as the common success reply, except that result is an object.
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/Timestamp.yaml
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/CheckPaAltResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 204
+  trigger: Equatorial mode and the configured location is outside longitude (-360.1, 360.1) or latitude
+    (-90.1, 90.1); the reply also carries result.is_valid true
+  label: out of limit
+- code: 207
+  trigger: Equatorial mode and the location could not be read for another reason with no code assigned;
+    the reply also carries result
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other configuration-read failures can carry other, unassigned codes.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 33
+    method: check_pa_alt
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: check_pa_alt
+    result:
+      is_valid: false
+    code: 0
+    id: 33
+- name: bad-location
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: check_pa_alt
+    error: out of limit
+    code: 204
+    id: 34
+see_also:
+- cali_user_location
+spec:
+- spec/control/polar-alignment.md#location-checks
+- spec/control/errors.md#replies-with-extra-or-missing-members

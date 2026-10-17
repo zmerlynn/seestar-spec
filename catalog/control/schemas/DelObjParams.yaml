@@ -1,0 +1,26 @@
+title: del_obj params
+description: Object with list and obj, or a positional array of two strings [list, obj]. Any other container
+  yields an empty map and therefore 105. No defaults and no further validation.
+oneOf:
+- type: object
+  required:
+  - list
+  - obj
+  properties:
+    list:
+      type: string
+      description: Display name of the list.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, del_obj @0xe82a0, key literal @0x8e1298 (64-bit build)
+    obj:
+      type: string
+      description: Display name of the object.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, del_obj @0xe82a0, key literal @0x7303c0 (64-bit build)
+- type: array
+  minItems: 2
+  items:
+    type: string
+x-basis: static analysis of firmware 9.31, handler @0xe82a0, Params two-name constructor @0x1003c0 (64-bit
+  build)
+x-confidence: READ

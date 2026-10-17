@@ -1,0 +1,87 @@
+kind: method
+name: start_stack
+summary: Enter the stacking stage of the star view and start its worker.
+description: 'Calls the star-view stage starter with stage 3: any existing View is stopped asynchronously,
+  the camera view mode is changed, the subframe is cleared and page 0 selected, and on the wide-camera
+  model the view size is changed; the View worker is then started with no worker parameter. A success
+  reply (0) means the worker was started, not that stacking has begun or finished; later eligibility checks
+  can fail asynchronously. If the same stage is already running the call succeeds before the opened-camera
+  check. No request parameters reach the stage. There is no mount-parked gate and no fixed RPC timeout
+  in the start path. While running, the worker reports View metadata (including gain) through its own
+  events; stack-count and progress fields are not established for that formatter.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcaed0, StartStack @0x191bb0, StartViewStarStage @0x3c1570
+  (64-bit build)
+side_effects: Stops any running View, switches camera view mode, clears the subframe, selects page 0,
+  may change the view size on the wide-camera model and starts the View worker thread.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcaed0, StartStack @0x191bb0, StartViewStarStage
+        @0x3c1570 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: The opened-camera check in the stage starter fails (not raised if the same stage is already
+    running)
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Errors raised while starting the named worker are forwarded with their own codes; those are
+  not established. Some SDK return values in the stage starter are not checked.
+examples:
+- name: start
+  of: request
+  payload:
+    id: 41
+    method: start_stack
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_stack
+    result: 0
+    code: 0
+    id: 41
+- name: camera-not-open
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_stack
+    error: device not connected
+    code: 318
+    id: 42
+see_also:
+- stop_stack
+- clear_stack
+- set_stack_type
+- iscope_start_stack
+spec:
+- spec/control/stacking.md#sequence

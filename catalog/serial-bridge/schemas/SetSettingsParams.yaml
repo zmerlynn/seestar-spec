@@ -1,0 +1,59 @@
+title: set_settings params
+description: 'Root object {"setting": {...}}, or a positional array whose first element is the setting
+  object. Top-level numeric siblings do not configure the fields. A negative value (the -1 default) or
+  an unchanged value leaves that setting as is; unsupported values make the reopen fail, which is only
+  logged.'
+anyOf:
+- type: object
+  required:
+  - setting
+  properties:
+    setting:
+      $ref: '#/$defs/Setting'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    $ref: '#/$defs/Setting'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build)
+$defs:
+  Setting:
+    type: object
+    description: Serial line settings. Each member is optional and defaults to -1 when absent or not an
+      integer (the string form of parity is ignored). No member is individually required by the parser.
+    properties:
+      baudrate:
+        type: integer
+        description: Serial baud rate in bits per second; one of the POSIX rates 50, 75, 110, 134, 150,
+          200, 300, 600, 1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200 or 230400. -1 or the
+          current value leaves it unchanged. The rate table also contains 0. Default stored setting 9600.
+        x-default: '-1'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build); open_serial
+          @0x246b0; CFdHandler::load_setting @0x23cb0
+      word_size:
+        type: integer
+        description: Data bits per word, 5 to 8. -1 or the current value leaves it unchanged. Default stored
+          setting 8.
+        x-default: '-1'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build); open_serial
+          @0x246b0; CFdHandler::load_setting @0x23cb0
+      stop_bits:
+        type: integer
+        description: Stop bits, 1 or 2. -1 or the current value leaves it unchanged. Default stored setting
+          1.
+        x-default: '-1'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build); open_serial
+          @0x246b0; CFdHandler::load_setting @0x23cb0
+      parity:
+        type: integer
+        description: Parity as an integer; 0 = none, 1 or 2 (1 = odd, 2 = even, INFERRED). -1 or the current
+          value leaves it unchanged. Default stored setting 0. A string value is ignored.
+        x-default: '-1'
+        x-confidence: READ; INFERRED (meaning of 1 and 2)
+        x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build); open_serial
+          @0x246b0; CFdHandler::load_setting @0x23cb0

@@ -1,0 +1,88 @@
+kind: method
+name: start_demonstrate
+summary: Stop the current view and start the demonstration function.
+description: 'No request parameters are read. Fails if a view plan is running; otherwise stops the current
+  view and starts the named Demonstrate thread. Success acknowledges thread start only. The worker only moves
+  the mount. It repeatedly slews to a random position (altitude 5-79 degrees, any azimuth) computed from the
+  stored user location, waits up to 120 s for each goto, and pauses 5 s; it starts or changes no view. It ends
+  with fail 207 when no location is stored, and stops the mount and ends with fail 501 when a goto fails or
+  times out. The worker reports through the shared function-state payload; that its events are named
+  Demonstrate is INFERRED. No demonstration-specific formatter is installed at start.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8b30 (64-bit build), StartDemonstrate @0x17d1f0,
+  DemonstrateFunc @0x1866e0
+side_effects: Stops the running view (possibly blocking, no timeout established) and starts the demonstration
+  worker, which slews the mount to random positions until stopped.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_demonstrate request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_demonstrate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc8b30 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 536
+  trigger: A view plan is running
+  label: view plan is already running
+- code: 212
+  trigger: The demonstration thread could not be created
+  label: fail to create thread
+- code: 207
+  trigger: A helper failed without assigning a code
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other propagated start errors are unresolved. Worker failures (207 no stored location, 501 goto
+  failed or timed out) arrive on the Demonstrate event, not in this reply.
+examples:
+- name: start
+  of: request
+  payload:
+    id: 91
+    method: start_demonstrate
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_demonstrate
+    result: 0
+    code: 0
+    id: 91
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_demonstrate
+    error: view plan is already running
+    code: 536
+    id: 92
+see_also:
+- stop_demonstrate
+spec:
+- spec/control/maintenance.md#demonstration-mode-and-sound
+- spec/control/maintenance.md#demonstration-mode-and-sound

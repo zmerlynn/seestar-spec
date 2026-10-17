@@ -1,0 +1,80 @@
+kind: method
+name: is_stacked
+summary: Ask whether the current stack is still compatible with the live capture state.
+description: 'Runs the query form of the stack-moved check and returns its boolean. Despite the name this
+  is not a plain state read: the check can wait for the filter wheel to stop and may update the cached
+  autosave target name. On wide-camera models the request may be relayed to the peer process before the
+  local query; the relayed reply is not described here.'
+grade: MUTATOR / established (64-bit build; 32-bit build effects are a subset of these (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb7040, IsStackMoved @0x1941b0 (64-bit build), IsStackMoved
+  @0x108e6c (32-bit build; callee closure a strict subset of the 64-bit one, reaching WaitWheelStop, autosave-target
+  and relay helpers, no preview/ROI computations)
+side_effects: May wait up to 1000 ms for the filter wheel to stop and query the wheel, mount and stacker;
+  may update the cached autosave target name when no frames are recorded. The query path avoids the branch
+  that clears stacks and sets the stack target. Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_stacked request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: is_stacked
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7040, IsStackMoved @0x1941b0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_stacked success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/IsStackedResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb7040, IsStackMoved @0x1941b0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No local error branch. A relay can supply an error reply; helper errors alone do not change
+  the success code. The 32-bit query reaches the same filter-wheel
+  wait, autosave-target update and relay, without the 64-bit preview computations, so its effects are
+  no wider (READ).
+examples:
+- name: request
+  of: request
+  payload:
+    id: 31
+    method: is_stacked
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_stacked
+    result:
+      is_stacked: true
+    code: 0
+    id: 31
+see_also:
+- iscope_start_stack
+spec:
+- spec/control/stacking.md#queries

@@ -1,0 +1,98 @@
+kind: method
+name: pi_get_ap_channel
+summary: Read the channel, frequency and band of the device access point.
+description: Runs the network script's AP state query (and, on one board type, falls back to a wireless-tools
+  frequency query) and reports channel, frequency in MHz and whether the band is 5 GHz. No request parameters
+  are read. OBSERVED (2026-10-12) that the iOS app sends it as the last step of its connect sequence.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbb710, ns_net::pi_get_ap_channel @0x6ffa50 (64-bit
+  build); connect-order sighting OBSERVED 2026-10-12 (iOS app)
+side_effects: Runs shell commands synchronously (no timeout); the shared debug logger can write date/time
+  buffers and create or rotate log files even when logging is disabled. No hardware or setting change.
+  Observer tier B.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_get_ap_channel request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_get_ap_channel
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbb710 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_get_ap_channel success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/PiGetApChannelResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbb710, ns_net::pi_get_ap_channel @0x6ffa50
+          (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The script process could not be started
+  label: fail to run command
+- code: 223
+  trigger: AP state script produced empty output
+  label: no result from command
+- code: 207
+  trigger: Regex or fallback failure that left no specific error code (default code)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other propagated codes are unresolved. The grade is MUTATOR because the shared logger writes,
+  although the reply is observational.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 71
+    method: pi_get_ap_channel
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_get_ap_channel
+    result:
+      is_5g: false
+      channel: 6
+      freq: 2437
+    code: 0
+    id: 71
+- name: no-output
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_get_ap_channel
+    error: no result from command
+    code: 223
+    id: 72
+see_also:
+- pi_get_ap
+- pi_set_5g
+spec:
+- spec/control/network.md#access-point

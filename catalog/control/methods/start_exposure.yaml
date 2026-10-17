@@ -1,0 +1,157 @@
+kind: method
+name: start_exposure
+summary: Start capture in the current exposure mode, optionally selecting the frame type.
+description: Requires an open camera. In exposure mode 0 an optional type (light, dark, bias, flat; case-insensitive)
+  selects the frame type before starting; the type change is kept even if a later step fails. Depending
+  on the existing exposure mode the device starts single, continuous or sequence capture on a named worker
+  thread asynchronously; the reply result 0 acknowledges the start, not completion. No exposure time or
+  bin is read here (see set_camera_exp_and_bin). Mode 1 may release buffers, set exposure and set the
+  video subframe before starting video.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe6620, StartExposure @0x2130a0 (64-bit build)
+side_effects: Changes the frame selection and reconnect state and starts capture work on a worker thread;
+  may release buffers and set exposure and subframe in video mode.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_exposure request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_exposure
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Optional. Either an object with the members below, or an array whose first element
+        is the frame type string (keep_autosave_dev has no array form). Scalar or wrong top-level types
+        and an empty array behave as absent params and use the defaults.
+      anyOf:
+      - type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe6620 (64-bit build)
+        properties:
+          type:
+            type: string
+            description: Frame type. Read only when the exposure mode is 0; absent or empty leaves the
+              current frame type unchanged. Matched case-insensitively by exact ASCII name; an unrecognised
+              non-empty name fails with 209. A non-string value fails with 105.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe6620 (64-bit build)
+            x-valid-values: light, dark, bias, flat (case-insensitive)
+          keep_autosave_dev:
+            description: Boolean or integer (zero false, non-zero true). Default false. When false the
+              device runs its auto-reconnect initialisation before starting. Wrong types, including null,
+              fail with 106.
+            type:
+            - boolean
+            - integer
+            x-default: 'false'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe6620 (64-bit build)
+      - type: array
+        description: 'Positional form: first element is the frame type string.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe6620 (64-bit build)
+        items:
+          type: string
+          description: Frame type, as the type member.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xe6620 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe6620 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: A three-point polar alignment is working
+  label: not supported
+- code: 106
+  trigger: keep_autosave_dev present with a type other than boolean or integer
+  label: expected bool param
+- code: 105
+  trigger: type present and not a string (exposure mode 0)
+  label: expected string param
+- code: 209
+  trigger: type non-empty but not a recognised frame name
+  label: invalid value
+- code: 318
+  trigger: Camera is not open
+  label: device not connected
+- code: 206
+  trigger: An exposure or capture flag is set or the capture thread is active
+  label: capture is active
+- code: 524
+  trigger: Planet stacking is active
+  label: function conflict
+- code: 102
+  trigger: Exposure mode 3
+  label: invalid params
+- code: 208
+  trigger: Sequence disk-space check fails (required size plus 150)
+  label: disk is full
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Plan-size, video-start and thread-creation failures below StartExposure are propagated with
+  their own codes and are not enumerated by the source.
+examples:
+- name: light
+  of: request
+  payload:
+    id: 29
+    method: start_exposure
+    params:
+      type: light
+      keep_autosave_dev: false
+- name: positional
+  of: request
+  payload:
+    id: 30
+    method: start_exposure
+    params:
+    - dark
+- name: bare
+  of: request
+  payload:
+    id: 31
+    method: start_exposure
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_exposure
+    result: 0
+    code: 0
+    id: 29
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_exposure
+    error: capture is active
+    code: 206
+    id: 32
+see_also:
+- stop_exposure
+- set_camera_exp_and_bin
+- save_image
+spec:
+- spec/control/viewing-and-exposure.md#exposures

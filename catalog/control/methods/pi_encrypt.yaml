@@ -1,0 +1,114 @@
+kind: method
+name: pi_encrypt
+summary: Install or verify an activation licence (legacy password/licence pair or the plus digest form).
+description: Params are a required object or a one-element array holding it. If the legacy pair passwd
+  and license are both nonempty, the legacy path writes the serial, password and licence files and then
+  runs hardware verification. Otherwise a nonempty digest is required and the plus form is parsed and
+  verified. On success the power LED activated state is set. Result is integer 0. Not a read-only check;
+  pi_is_verified is the read-only counterpart. The legacy path returns 210 on devices with an eMMC (branch).
+  Verification, read and write helper errors propagate their own code. Plus-form values are issued by the
+  vendor's activation web service (POST /v1/activation with RSA-encrypted sn/cpuId, model, subModel and
+  location); the app copies the returned sn, cpuId, authCode (as auth_code), digest and sign into a one-element
+  array with id 14 over the BLE route (READ, app 3.3.2). The device checks that sn or cpuId matches the hardware identity (222), that
+  the RSA public-key recovery of the Base64 sign equals auth_code (222), and that digest (Base64 of an
+  HMAC-SHA256 of a device-side string; which string is unresolved) matches (222); a shell failure in
+  these checks gives 214. The app never sends the legacy pair; its issuer (INFERRED a vendor or factory
+  tool) and byte formats are unresolved.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0, verifyPlus @0x31d980
+  (64-bit build); app 3.3.2 BleUtilsV2.requestActive and connectBle, SeestarActivationBody, SignResBean, NetUtils.getEncryptSn,
+  ZApiServiceSeeStar.activateDevice
+side_effects: Writes licence/activation data files and changes the power LED activation state on success.
+  No handler timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_encrypt request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_encrypt
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Required object, or an array whose first element is the object.
+      anyOf:
+      - $ref: ../schemas/PiEncryptParams.yaml
+      - type: array
+        minItems: 1
+        prefixItems:
+        - $ref: ../schemas/PiEncryptParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Params absent, null, empty array or not an object
+  label: expected object param
+- code: 102
+  trigger: No nonempty legacy pair and no digest
+  label: invalid params
+- code: 217
+  trigger: 'Plus form: identity, auth_code, digest or sign missing or empty'
+  label: string is empty
+- code: 210
+  trigger: Legacy path on a device model with eMMC storage
+  label: not supported
+- code: 222
+  trigger: Old-licence verification mismatch in the hardware verification step; plus form sn/cpuId, auth_code
+    or digest compare mismatch
+  label: fail to verify SN
+- code: 214
+  trigger: 'Plus form: a shell step of the signature or digest check fails'
+  label: fail to run command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other read and write helper codes propagate unchanged and are not enumerated (unresolved).
+examples:
+- name: plus-form
+  summary: Plus form in the array shape (values invented)
+  of: request
+  payload:
+    id: 91
+    method: pi_encrypt
+    params:
+    - sn: EXAMPLE-SN
+      auth_code: example-auth
+      digest: example-digest
+      sign: example-sign
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_encrypt
+    result: 0
+    code: 0
+    id: 91
+- name: empty-field
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_encrypt
+    error: string is empty
+    code: 217
+    id: 92
+see_also:
+- pi_is_verified
+spec:
+- spec/control/maintenance.md#activation-pi_encrypt

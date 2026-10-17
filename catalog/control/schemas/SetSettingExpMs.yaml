@@ -1,0 +1,35 @@
+type: object
+description: 'D64 order: stack_l_auto, stack_l, continuous. Firmware 9.75 adds more_exposure (position in the order not established). Unknown nested members are ignored.'
+properties:
+  stack_l_auto:
+    type:
+    - boolean
+    - integer
+    description: Automatic stack exposure. Malformed 106; 210 on a non-wide camera; 259 while stacking.
+      Ignored on the 32-bit build. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  stack_l:
+    type: integer
+    description: Stack exposure; noninteger silently ignored; 259 while stacking. When the auto flag is
+      absent or false it also clears the auto flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  continuous:
+    type: integer
+    description: Continuous exposure, milliseconds (INFERRED); noninteger ignored.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  more_exposure:
+    type:
+    - boolean
+    - integer
+    description: 'Firmware 9.75, app 3.4.0: extended-exposure option of the stack setting. Boolean or integer
+      (nonzero is true), other types 106. Tele camera only: the wide camera gives 210 (get_setting is not
+      gated). Applied through the stack-setting path; no running-stack check for this member alone. Meaning
+      beyond the name is INFERRED.'
+    x-confidence: READ; meaning INFERRED
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting exp_ms branch
+      @0x10e308 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

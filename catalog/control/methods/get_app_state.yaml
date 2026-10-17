@@ -1,0 +1,105 @@
+kind: method
+name: get_app_state
+summary: Poll the application activity state, or ask whether autosave is running.
+description: A polling carrier for annotation, exposure, plan progress, stack, autofocus and guide state.
+  It does not establish same-named events. The full state path on page 6 in autosave mode runs the plan
+  auto-selection, which clears the plan-changed flag and can change current target and sequence selection.
+  The scalar selector bypasses that path but the method-wide tier stays C. No error branches; helper failures
+  only affect state members.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+side_effects: Full state on page 6 in autosave mode calls plan auto-selection (clears plan-changed flag,
+  may write current target and sequence selection). Uses cached statuses and locks; no wait for completion.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_app_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_app_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Optional. Exactly the scalar string is_autosave_running selects the boolean answer
+        (an object or array containing it does not). Anything else, including other strings, null, objects
+        and arrays, gives the full state.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      type: string
+      examples:
+      - is_autosave_running
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_app_state success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetAppStateResult.yaml
+        description: Boolean for the scalar selector, else the full state object.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error branch.
+examples:
+- name: selector
+  summary: Scalar selector
+  of: request
+  payload:
+    id: 161
+    method: get_app_state
+    params: is_autosave_running
+- name: selector-ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_app_state
+    result: false
+    code: 0
+    id: 161
+- name: full
+  summary: Full state
+  of: request
+  payload:
+    id: 162
+    method: get_app_state
+- name: full-ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_app_state
+    result:
+      page: preview
+      annotate:
+        is_working: false
+        lapse_ms: 0
+      capture:
+        is_working: false
+        exposure_mode: none
+        state: idle
+      rtmp:
+        is_working: true
+    code: 0
+    id: 162
+see_also: []
+spec:
+- spec/control/device-state-and-settings.md#application-state

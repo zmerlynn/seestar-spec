@@ -1,0 +1,120 @@
+title: get_3p_pa_state result
+type: object
+properties:
+  state:
+    type: string
+    description: 'Stage name. Table (code=name): 0=idle; 1=start; 2=exp1; 3=solve1; 4=calc1; 5=move1;
+      6=delay1; 7=exp2; 8=solve2; 9=calc2; 10=move2; 11=delay2; 12=exp3; 13=solve3; 14=calc3; 15=exp4;
+      16=solve4; 17=calc4. An unrecognised code yields a shared fallback string whose text is not established.
+      Stages are retained after a pause and are not terminal/failure states.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860; table
+      @0xaad0b0
+  state_code:
+    type: integer
+    minimum: 0
+    description: Stage number, 0 to 17 (see state). Not an RPC or error code.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860; table
+      @0xaad0b0
+  auto_move:
+    type: boolean
+    description: Auto-move setting of the alignment run.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+  auto_update:
+    type: boolean
+    description: Auto-update setting of the alignment run.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+  paused:
+    type: boolean
+    description: True when the alignment worker thread is not running; independent of the active flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+  detail:
+    type: object
+    properties:
+      lapse_ms:
+        type: integer
+        minimum: 0
+        description: Milliseconds elapsed in the stage (since capture start, solver start or PA-stage
+          timestamp depending on stage).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      total_ms:
+        type: integer
+        minimum: 0
+        description: 'Stage duration in milliseconds: exposure duration for exposure stages, constant
+          4000 for delay stages. Absent for solve stages.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      star_number:
+        type: integer
+        minimum: 0
+        description: Stars found by the solver; present only for solve stages and only when non-negative.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+    description: 'Per-stage progress. Exposure stages (2,7,12,15): lapse_ms and total_ms. Solve stages
+      (3,8,13,16): lapse_ms and, when non-negative, star_number. Delay stages (6,11): lapse_ms and total_ms
+      of 4000. Every other stage: empty object.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+  lapse_ms:
+    type: integer
+    minimum: 0
+    description: Milliseconds since the status started.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+  retry_cnt:
+    type: integer
+    description: Retry counter of the alignment run.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+  pa_error:
+    type: object
+    properties:
+      total:
+        type: number
+        description: Total error, degrees.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      x:
+        type: number
+        description: X-component error, degrees.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      y:
+        type: number
+        description: Y-component error, degrees.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      total_arcsec:
+        type: number
+        description: Total error, arcseconds.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      x_arcsec:
+        type: number
+        description: X-component error, arcseconds.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+      y_arcsec:
+        type: number
+        description: Y-component error, arcseconds.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+    description: Polar-axis error; present only when both component errors are away from the -999 sentinel
+      (by more than 0.1). Arcsecond members are the degree members multiplied by 3600.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860
+required:
+- state
+- state_code
+- auto_move
+- auto_update
+- paused
+description: Current three-point polar-alignment status, the same structure the 3PPA event carries. Members
+  after paused are present only while the status active flag is set.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, get_3p_pa_state @0xb79f0, FormatPaStatus @0x161860

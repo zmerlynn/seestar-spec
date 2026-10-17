@@ -1,0 +1,64 @@
+kind: method
+name: stop_recv
+summary: 'Updater: clear the active-receive flag if the requesting connection matches the one receiving
+  a file.'
+description: Belongs to the updater process (registered with test_connection, trigger_test_crash and begin_recv),
+  listed here with the other non-control servers. No parameters are read. The dispatcher supplies the
+  requester source string; the helper compares it by byte equality (equal length, then memcmp; two empty
+  strings match) with the retained receiver connection, and on a match clears the active-receive flag.
+  The helper result is ignored and the handler always reports success, so result 0 is not proof of a match.
+  Later worker cleanup, partial-file handling and upgrade interaction are unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, updater handler @0x26d30 (64-bit build); socket_json_server_binary::stopRecv
+  @0x28d60
+side_effects: May clear the updater receive-active flag for a matching connection.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_recv request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_recv
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      description: Not read. Omission, null and any other shape take the same path. Clients SHOULD omit
+        it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater handler @0x26d30 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors: []
+errors_note: 'No explicit handler error is reachable. Source-string provenance and format are
+  unresolved. The 32-bit build matches (READ). No dispatcher-level rows (missing id, bad method) are listed: the evidence
+  for the guider server does not state them.'
+examples:
+- name: request
+  of: request
+  payload:
+    id: 22
+    method: stop_recv
+  summary: Shape READ; example invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_recv
+    result: 0
+    code: 0
+    id: 22
+see_also: []
+spec:
+- spec/updater/index.md#stop_recv
+- spec/transport/ports.md#ports-a-client-uses

@@ -1,0 +1,79 @@
+kind: method
+name: pi_station_auto_connect
+summary: Run the device network helper in automatic mode to reconnect the station network.
+description: Reads no parameters. Runs the configured network helper script with the argument auto, synchronously,
+  and treats the call as failed if its output contains the substring error (case-insensitive). Empty output
+  counts as success. Because it can change the station or network connection, it may interrupt the caller
+  own connection. No ssid, password or timeout is requested, and none is applied on the RPC side. What
+  the helper actually does, and any resulting events, are unresolved.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcd980, ns_net::pi_station_auto @0x6fcc90 (64-bit build)
+side_effects: Executes the network helper via a shell pipe, synchronously; can change Wi-Fi/station connectivity
+  and drop the current connection. No RPC-side timeout. Tier C is INFERRED from the reconnect command
+  the helper runs; the helper script's own behaviour is unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_auto_connect request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_auto_connect
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcd980 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Helper output contains the substring error (case-insensitive); if the helper cannot be run
+    the thread-local code is forwarded instead (exact codes unresolved)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 181
+    method: pi_station_auto_connect
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_auto_connect
+    result: 0
+    code: 0
+    id: 181
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_auto_connect
+    error: fail to operate
+    code: 207
+    id: 182
+see_also:
+- pi_station_list
+- pi_station_remove
+spec:
+- spec/control/network.md#station-wi-fi-client

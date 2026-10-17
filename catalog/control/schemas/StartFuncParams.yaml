@@ -1,0 +1,29 @@
+title: start_func params
+type: object
+required:
+- name
+description: Object params are required; no positional form. Only the GoPixel function is accepted.
+properties:
+  name:
+    type: string
+    description: Function to start. MUST be exactly GoPixel (case-sensitive); any other value, a missing
+      or non-string name, null or non-object params is rejected with 100.
+    const: GoPixel
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdade0, StartCenterPixel @0x17da50 (64-bit build)
+  x:
+    type: integer
+    description: Target X in displayed-image pixel coordinates (INFERRED from conversion helper names).
+      Required for GoPixel; no range bound. A float, bool, string, null or missing value makes the handler
+      return without writing a result or an error.
+    x-required-when: name is GoPixel
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xdade0, StartCenterPixel @0x17da50 (64-bit build)
+  y:
+    type: integer
+    description: Target Y in displayed-image pixel coordinates; same rules as x.
+    x-required-when: name is GoPixel
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xdade0, StartCenterPixel @0x17da50 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdade0, StartCenterPixel @0x17da50 (64-bit build)

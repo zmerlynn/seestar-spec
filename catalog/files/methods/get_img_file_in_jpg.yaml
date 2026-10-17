@@ -1,0 +1,91 @@
+kind: method
+name: get_img_file_in_jpg
+summary: 'File channel: read a stored image/AVI frame from disk and return it as JPEG.'
+description: 'File-channel (4801) method. Resolves `name` to a path under the image store, reads the
+  stored file and converts it to JPEG in a request-local buffer: a FITS file is converted whole and an
+  AVI file gives one frame; any other file type gives error 102 (`invalid params`). The reply is JPEG
+  (imgType 4). A missing or invalid path gives a text error carrying the current error code. READ. For a
+  FITS file it also creates a thumbnail JPEG beside the file when none exists, a persistent cache write,
+  so it is a MUTATOR with observation-safe (tier B) effects. The 32-bit build matches (READ), apart from
+  log wording and image-library version.'
+grade: 'MUTATOR / established (thumbnail cache write for FITS; 64-bit build, 32-bit build has the same
+  call structure (READ))'
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f6880 (64-bit
+  build), @0x183860 (32-bit build); static analysis of app 3.3.2, RemoteBigPhotoEntity / AlbumBigCellBean
+  command builders; FillPath, Fit2Jpg (FITS), AviFrame2Jpg (one AVI frame), request-local IMG_DATA,
+  reponse_result; jrpc_error with err_code/get_err_string on path errors; Fit2Jpg passes the
+  GetThumbnailName result (suffix _thn, extension .jpg) to IMG_DATA::ToJPG, which calls CanAccess and,
+  when the file is absent, cv::imwrite of a scaled image (GetThumbRatio, 200); AviFrame2Jpg passes an
+  empty path (no write)
+side_effects: 'Resolves a request path and reads a stored file from disk, converting it (or one AVI
+  frame) to JPEG in a request-local buffer, then responds. READ; the 32-bit build matches (READ). For a
+  FITS file the conversion is also given a thumbnail path: the file name with a `_thn` suffix and a
+  `.jpg` extension, in the same folder. If no file exists at that path, a reduced-size JPEG thumbnail is
+  written there and kept. READ (64-bit build; the 32-bit build has the same call structure, READ).
+  Repeating the call does not rewrite an existing thumbnail. The AVI-frame conversion is given no path
+  and writes nothing. READ.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_file_in_jpg request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_file_in_jpg
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f6880 (64-bit
+        build), @0x183860 (32-bit build)
+    params:
+      type: object
+      description: Object form sent by the app. Device-side parsing is unresolved.
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          description: Remote file path, as listed by get_albums (INFERRED source).
+          x-confidence: READ
+          x-basis: static analysis of app 3.3.2, RemoteBigPhotoEntity / AlbumBigCellBean command builders
+      x-confidence: READ
+      x-basis: static analysis of app 3.3.2, RemoteBigPhotoEntity / AlbumBigCellBean command builders
+reply_success:
+  title: get_img_file_in_jpg success reply
+  description: JPEG (imgType 4) of a FITS file or of one AVI frame. Not an ordinary command reply. 80-byte
+    big-endian header (spec/media/image-sockets.md#reply-framing), then the payload; errors are text
+    replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f6880 (64-bit
+    build), @0x183860 (32-bit build)
+reply_error:
+  title: get_img_file_in_jpg error reply
+  description: 'Text reply (imgType 0, dataType 1): the payload is the fixed text for the error code (spec/media/files-and-album.md#parameter-rules-read-handlers,
+    R9). No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f6880 (64-bit
+    build), @0x183860 (32-bit build)
+errors:
+- code: 102
+  trigger: File type is neither FITS nor AVI
+  label: invalid params
+errors_note: Other failures (missing or unreadable file) are text replies whose codes were not listed.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: get_img_file_in_jpg
+    params:
+      name: MyWorks/example.jpg
+see_also:
+- get_img_thumbnail
+- get_img_file
+- control/get_albums
+spec:
+- spec/media/files-and-album.md#methods

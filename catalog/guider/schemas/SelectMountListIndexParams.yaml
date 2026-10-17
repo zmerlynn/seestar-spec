@@ -1,0 +1,26 @@
+title: select_mount_list_index params
+type:
+- object
+- array
+description: Object {index, aux} or the positional array [index, aux]. With aux absent or not a string
+  the primary mount list is addressed and index MUST be an integer (104 otherwise). With aux exactly "aux"
+  the auxiliary list is addressed and index may be an integer or a string (a name); any other type gives
+  109. Any other string for aux gives 109. No numeric clamp; choice-list bounds are checked natively (209).
+required:
+- index
+properties:
+  index:
+    type:
+    - integer
+    - string
+    description: Index into the mount list (integer), or for the auxiliary list also a name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7bec0 (64-bit build)
+  aux:
+    type: string
+    description: The literal "aux" selects the auxiliary mount list; omit to select the primary list.
+      Any other string gives 109.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7bec0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7bec0 (64-bit build)

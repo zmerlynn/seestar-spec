@@ -1,0 +1,17 @@
+title: is_stacked result
+type: object
+required:
+- is_stacked
+description: Local success result. A relayed reply (wide-camera models) is not established.
+properties:
+  is_stacked:
+    type: boolean
+    description: 'Output of the query-mode stack-moved check: whether the current stack can continue.
+      False can follow a change of scene shooting, settings, capture or mosaic mode, user simulation,
+      drizzle, star-trail or dark-mode mismatch, mount movement, or an exposure, filter, target or coordinate
+      change. Not merely whether a stacking worker is running. The handler ignores the helper''s own error
+      state and emits the current boolean.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7040, IsStackMoved @0x1941b0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb7040, IsStackMoved @0x1941b0 (64-bit build)

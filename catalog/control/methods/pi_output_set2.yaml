@@ -1,0 +1,106 @@
+kind: method
+name: pi_output_set2
+summary: Set auxiliary outputs from per-output setting objects (state, duty, PWM mode, frequency).
+description: 'Object-valued variant of pi_output_set. Members are applied sequentially with no rollback.
+  The reply is a bare success: it does not prove the hardware or frequency change was applied, because
+  the named dslr, beep and heater branches ignore driver and SetFreq results. As with pi_output_set, a
+  loop-breaking error can be followed by an appended success result, producing duplicate envelope keys.
+  The companion app sends a heater member with state, value and freq when switching the dew heater (INFERRED
+  from the app data-transfer object).'
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+  @0x324650, SetFreq @0x3260a0 (64-bit build)
+side_effects: Writes configured output state, type, duty and PWM mode, and optionally the PWM frequency;
+  changes can persist before a later error.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_output_set2 request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_output_set2
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiOutputSet2Params.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+        @0x324650, SetFreq @0x3260a0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null, not an object, or a member is not an object
+  label: expected object param
+- code: 207
+  trigger: Unexpected regular-expression submatch shape while extracting the port number
+  label: fail to operate
+- code: 204
+  trigger: Invalid port index, or computed PWM duty outside 0..range, in the port write path
+  label: out of limit
+- code: 273
+  trigger: Driver or connection failure on the checked port write branch
+  label: GPIO operation failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: heater-on
+  summary: Heater at 50 percent (values invented)
+  of: request
+  payload:
+    id: 20
+    method: pi_output_set2
+    params:
+      heater:
+        state: true
+        value: 50
+        freq: 1000
+- name: port
+  summary: Digital write to port 2
+  of: request
+  payload:
+    id: 21
+    method: pi_output_set2
+    params:
+      port2:
+        state: true
+        is_pwm: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_set2
+    result: 0
+    code: 0
+    id: 20
+- name: not-object
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_set2
+    error: expected object param
+    code: 107
+    id: 22
+see_also:
+- pi_output_get2
+- pi_output_set
+- pi_output_get
+spec:
+- spec/control/power-and-storage.md#power-led-and-auxiliary-outputs

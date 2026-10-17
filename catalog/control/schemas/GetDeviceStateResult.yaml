@@ -1,0 +1,601 @@
+title: get_device_state result
+type: object
+description: Selected sections only. Unselected sections are absent. Failing sections or members are omitted;
+  selecting only unknown keys, or only second_camera/second_focuser, gives an empty object. Sections appear
+  in the fixed order device, setting, location_lon_lat, camera, focuser, ap, station, storage, balance_sensor,
+  compass_sensor, mount, pi_status, client, whatever the order of keys (both builds, READ).
+properties:
+  device:
+    type: object
+    description: Device block.
+    properties:
+      name:
+        type: string
+        description: Literal device name string.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      firmware_ver_int:
+        type: integer
+        description: Firmware version as an integer (encoding not established).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      firmware_ver_string:
+        type: string
+        description: Firmware version string.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      is_verified:
+        type: boolean
+        description: Hardware verification result.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      ios_ver:
+        type: string
+        description: OS version file content, trimmed. The spelling is as shown and is not an iOS client
+          version. Present only if the file read succeeds and is nonempty.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      sn:
+        type: string
+        description: Hardware serial. Present only if the serial query succeeds. Treat as an identifier.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      cpuId:
+        type: string
+        description: Same serial query; exact key case.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      product_model:
+        type: string
+        description: Present only for the iScope model.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      user_product_model:
+        type: string
+        description: Present only for the iScope model.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      custom_model:
+        type: string
+        description: Present only if the custom model value is read and nonempty.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      focal_len:
+        type: number
+        description: Rounded focal length, millimetres (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      fnumber:
+        type: number
+        description: F-number (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      can_star_mode_sel_cam:
+        type: boolean
+        description: Capability.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      can_wide_cam_roi:
+        type: boolean
+        description: Capability.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      can_wide_cam_af:
+        type: boolean
+        description: Capability.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      can_roi_scale:
+        type: boolean
+        description: Capability.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      firmware_platform:
+        type: integer
+        description: Literal 1 in the 64-bit handler.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      can_adjust_brightness:
+        type: boolean
+        description: Capability.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      can_dark_correction:
+        type: boolean
+        description: Capability from the model check only. True on S30 Plus-class, S30 Pro, S50 Pro and
+          S80 boards, false on the S50 (Pro names INFERRED from board names). These are the models on
+          which auto_master_dark has an effect. It gates nothing itself. On firmware 9.75 it is always true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80, CanDarkCorrection @0x1953e0, ShouldMinusDark
+          @0x195420 (64-bit build)
+      can_motion_monitor:
+        type: boolean
+        description: 'Firmware 9.75, app 3.4.0: capability flag for motion monitor and motion detection. Reported from bit 0 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
+          build)
+      can_dual_capture:
+        type: boolean
+        description: 'Firmware 9.75, app 3.4.0: capability flag for dual capture. Reported from bit 1 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
+          build)
+      can_4k_quality:
+        type: boolean
+        description: 'Firmware 9.75, app 3.4.0: capability flag for 4K quality. Reported from bit 2 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
+          build)
+      can_wide_mosaic_8k:
+        type: boolean
+        description: 'Firmware 9.75, app 3.4.0: capability flag for 8K wide-camera mosaic. Reported from bit 3 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
+          build)
+      can_comet_post_stack:
+        type: boolean
+        description: 'Firmware 9.75, app 3.4.0: capability flag for comet post-stack, true when bit 4 of the per-model capability mask is set (the emission and the bit test are READ). By the masks this is true for S30, S50, S30P, S50P and S80 and false for S30Plus, S50N and an unknown model (model mapping INFERRED). It is the only comet post-stack member: comet stacking is batch-only and there is no comet start or stop method. Masks: unknown 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20.'
+        x-confidence: READ (emission, bit); model mapping INFERRED
+        x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
+          build)
+      can_roi_smart_follow:
+        type: boolean
+        description: 'Firmware 9.75, app 3.4.0: capability flag for region-of-interest smart follow. Reported from bit 5 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
+          build)
+      main_version:
+        type: string
+        description: 'Firmware 9.75: main version from the update manifest. Presence condition INFERRED.'
+        x-confidence: READ; presence INFERRED
+        x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+      modules:
+        type: array
+        description: 'Firmware 9.75: installed module list from the update manifest.'
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Module name.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+            version:
+              type: string
+              description: Module version.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+        x-confidence: READ; presence INFERRED
+        x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  setting:
+    $ref: ../schemas/GetSettingResult.yaml
+    description: Same object as the get_setting result, including the same conditional members and duplicate
+      keys.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  location_lon_lat:
+    type: array
+    description: '[longitude, latitude] in that order, degrees (INFERRED). Present only if the stored
+      location loads and validates (-360.1 < lon < 360.1, -90.1 < lat < 90.1).'
+    prefixItems:
+    - type: number
+    - type: number
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  camera:
+    $ref: ../schemas/GetDeviceStateCamera.yaml
+    description: Present only if camera info query succeeds (camera opened).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  second_camera:
+    $ref: ../schemas/GetDeviceStateCamera.yaml
+    description: Output rename, never a selector. Process type 1 only, when the camera section is selected
+      and the peer query succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  focuser:
+    $ref: ../schemas/GetDeviceStateFocuser.yaml
+    description: Focuser block. If open fails only state close is emitted.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  second_focuser:
+    $ref: ../schemas/GetDeviceStateFocuser.yaml
+    description: Output rename, never a selector. Present when the wide camera supports autofocus, process
+      type 1, and the peer query succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  ap:
+    type: object
+    description: Present only if the access-point query succeeds.
+    properties:
+      ssid:
+        type: string
+        description: Access-point name.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      passwd:
+        type: string
+        description: 'Access-point password. Firmware 9.31: in clear. Firmware 9.75 (64-bit build): an
+          enc1 string when the connection has a crypto session (see the secure-communication chapter);
+          without a session the member is omitted and the reply is still a success. Treat as sensitive
+          either way.'
+        x-confidence: READ; firmware 9.75 behaviour READ for the 64-bit build only
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build); firmware 9.75, handler
+          @0x110580, Wi-Fi password encode call @0x11231c
+      is_5g:
+        type: boolean
+        description: 5 GHz flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  station:
+    type: object
+    description: Present only if the station query succeeds. Read-only shell query of the Wi-Fi station
+      state.
+    required:
+    - server
+    properties:
+      server:
+        type: boolean
+        description: Always present.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      freq:
+        type: integer
+        description: Wi-Fi frequency, MHz (INFERRED). Only when server is true.
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      ip:
+        type: string
+        description: Only when server is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      ssid:
+        type: string
+        description: Only when server is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      gateway:
+        type: string
+        description: Only when server is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      netmask:
+        type: string
+        description: Only when server is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      sig_lev:
+        type: integer
+        description: Received signal level of the associated access point as reported by the wireless
+          driver (iwconfig Signal level), an unscaled integer, normally negative dBm. Only when server
+          is true.
+        x-confidence: READ (no scaling); unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80, ns_net::pi_station_state @0x700140
+          (Signal level regex, strtol) (64-bit build)
+      key_mgmt:
+        type: string
+        description: Only when server is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  storage:
+    type: object
+    description: Storage block, always present when selected. Read-only (cached storage state and file-system
+      usage).
+    properties:
+      is_typec_connected:
+        type: boolean
+        description: Type-C connected.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      connected_storage:
+        type: array
+        description: Names of connected storages (emmc/sd/udisk depending on model).
+        items:
+          type: string
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      storage_volume:
+        type: array
+        description: One object per connected storage.
+        items:
+          type: object
+          description: One volume.
+          required:
+          - name
+          - state
+          properties:
+            name:
+              type: string
+              description: Storage name.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            state:
+              type: string
+              description: 'Storage state, mapped from an integer via a code-name table: 0 disconnected,
+                1 connected, 2 mounted, 3 ejecting, 4 ejected; any other value yields the literal string
+                unknown.'
+              enum:
+              - disconnected
+              - connected
+              - mounted
+              - ejecting
+              - ejected
+              - unknown
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80, get_storage_state_name @0x315590,
+                storage_state_name table @0xaad7c8, default p_str_unknown (64-bit build)
+            total_mb:
+              type: integer
+              description: Alias of totalMB; MiB despite the name. Only when the capacity query succeeds.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            totalMB:
+              type: integer
+              description: Total capacity in MiB. Only when the capacity query succeeds.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            free_mb:
+              type: integer
+              description: Alias of freeMB; MiB.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            freeMB:
+              type: integer
+              description: Free capacity in MiB.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            disk_mb:
+              type: integer
+              description: Alias of diskSizeMB. Only when the physical size is above 0.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            diskSizeMB:
+              type: integer
+              description: Physical disk size in MiB.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+            used_percent:
+              type: integer
+              description: Integer percent used. Only when the physical size is above 0.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      cur_storage:
+        type: string
+        description: Current storage name.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  balance_sensor:
+    type: object
+    description: Always present when selected.
+    properties:
+      code:
+        type: integer
+        description: Sensor validity code (valid byte XOR 1); an embedded value, not an RPC error code.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      data:
+        type: object
+        description: Shared cached sensor values, present even when code indicates invalid.
+        properties:
+          x:
+            type: number
+            description: Axis value; unit not established.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          y:
+            type: number
+            description: Axis value; unit not established.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          z:
+            type: number
+            description: Axis value; unit not established.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          angle:
+            type: number
+            description: Degrees (INFERRED).
+            x-confidence: READ; unit INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  compass_sensor:
+    type: object
+    description: Always present when selected.
+    properties:
+      code:
+        type: integer
+        description: Sensor validity code (valid byte XOR 1).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      data:
+        type: object
+        description: Present even on an invalid sensor code.
+        properties:
+          x:
+            type: number
+            description: Axis value; unit not established.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          y:
+            type: number
+            description: Axis value; unit not established.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          z:
+            type: number
+            description: Axis value; unit not established.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          direction:
+            type: number
+            description: Degrees (INFERRED).
+            x-confidence: READ; unit INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          cali:
+            type: integer
+            description: Raw compass-sensor calibration status byte, forwarded verbatim from the sensor
+              data block (byte offset 1). The firmware applies no mapping; the numeric meaning is defined
+              by the compass sensor module and is not established here.
+            x-confidence: READ (raw byte); numeric meaning unresolved
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80, packCompassSensorData @0x126700
+              (sensor block byte 1) (64-bit build)
+          interference:
+            type: integer
+            description: Raw compass-sensor interference status byte, forwarded verbatim from the sensor
+              data block (byte offset 2). The firmware applies no mapping; the numeric meaning is defined
+              by the compass sensor module and is not established here.
+            x-confidence: READ (raw byte); numeric meaning unresolved
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80, packCompassSensorData @0x126700
+              (sensor block byte 2) (64-bit build)
+          stable:
+            type: integer
+            description: Raw compass-sensor stability status byte, forwarded verbatim from the sensor
+              data block (byte offset 3). The firmware applies no mapping; the numeric meaning is defined
+              by the compass sensor module and is not established here.
+            x-confidence: READ (raw byte); numeric meaning unresolved
+            x-basis: static analysis of firmware 9.31, handler @0xf2b80, packCompassSensorData @0x126700
+              (sensor block byte 3) (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  mount:
+    type: object
+    description: Present only if at least one member could be appended. Read-only; three mount-controller
+      queries with a 10 s wait each, so this section can delay the reply by about 30 s.
+    properties:
+      move_type:
+        type: string
+        description: Only on a successful query.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      close:
+        type: boolean
+        description: True when altitude is at or below -85 degrees (INFERRED). No altitude or azimuth
+          is emitted.
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      tracking:
+        type: boolean
+        description: Only on a successful query.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      equ_mode:
+        type: boolean
+        description: Only on a successful query.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  pi_status:
+    type: object
+    description: Same status members as pi_get_info, without model, guid or is_pi4. Always present when
+      selected.
+    properties:
+      is_overtemp:
+        type: boolean
+        description: Over-temperature flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      temp:
+        type: number
+        description: SoC temperature in degrees C (thermal-zone millidegrees divided by 1000); same formatter
+          as pi_get_info and the PiStatus event.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80, FormatStatus @0x126d90, RefreshPiTemp
+          @0x137790 (64-bit build)
+      charger_status:
+        type: string
+        enum:
+        - Charging
+        - Discharging
+        - Full
+        - Cool
+        - Warm
+        - Cold
+        - Hot
+        - Unknown
+        description: Charger state with initial capital, derived from the charger status, battery_temp
+          and battery_capacity (rules on the PiStatus event card). Clients SHOULD compare case-insensitively.
+        x-confidence: READ (vendor charger-library part from an archived copy not proven identical to
+          9.31)
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80, FormatStatus @0x126d90, CPiStatusChecker::BatteryChange
+          (64-bit build)
+      battery_capacity:
+        type: integer
+        description: Battery capacity; percent INFERRED.
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      charge_online:
+        type: boolean
+        description: Charger online flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      is_typec_connected:
+        type: boolean
+        description: Type-C connected flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      battery_overtemp:
+        type: boolean
+        description: Battery over-temperature flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      battery_temp:
+        type: integer
+        description: Battery temperature in whole degrees C, passed through from the charger without scaling.
+        x-confidence: READ (no scaling); unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      battery_temp_type:
+        type: string
+        description: Only for internal enum 0, 1, 2.
+        enum:
+        - normal
+        - high
+        - low
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  client:
+    type: object
+    description: Present only when guest mode is on.
+    properties:
+      connected:
+        type: array
+        description: Connected client names.
+        items:
+          type: string
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      master_index:
+        type: integer
+        description: Index of the designated master, -1 if none.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+      is_master:
+        type: boolean
+        description: Whether the requesting socket is the master.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)

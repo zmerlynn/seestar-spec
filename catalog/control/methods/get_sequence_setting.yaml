@@ -1,0 +1,175 @@
+kind: method
+name: get_sequence_setting
+summary: Return the autosave and sequence behaviour settings with remaining size and time estimates.
+description: 'No params are read. Despite the getter name this is tier C: on the 64-bit build, when the
+  device is on the plan page in exposure mode 2, the query can select the first stored plan as enabled if none is, and it
+  rebuilds the persistent plan-derived settings. It is therefore not safe to use as an observation-only
+  poll. The grade reflects the whole request/reply path, which reaches the shared diagnostic logger; it
+  does not by itself mean the method changes device settings.'
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build), GetAutosaveSetting, GetEnabledPlan;
+  32-bit build reaches the same GetEnabledPlan/GetAutosaveSetting/EstimateSeqSizeTime; GetEnabledPlan identical
+  (@0x304400/@0x3044e0 64-bit, @0x263458/@0x263508 32-bit); other differences are camera-info and debug
+  reads only
+side_effects: Rebuilds cached plan settings (strings, flags, coordinates); may set the first stored plan's
+  enable flag; calls frame-size and time estimators whose deeper effects are unresolved. The 32-bit plan selection
+  matches (READ). Every call also performs shared request/reply diagnostic logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sequence_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_sequence_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sequence_setting reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: object
+      required:
+      - delay_first
+      - delay_between_frame
+      - group_by_slot
+      - merid_flip
+      - group_name
+      - park_mount
+      - shutdown_pi
+      - close_cooler
+      - left_size_m
+      properties:
+        delay_first:
+          type: integer
+          description: Seconds (INFERRED).
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        delay_between_frame:
+          type: integer
+          description: Seconds (INFERRED).
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        group_by_slot:
+          type: boolean
+          description: See set_sequence_setting.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        merid_flip:
+          type: boolean
+          description: See set_sequence_setting.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        group_name:
+          type: string
+          description: Output group name.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        park_mount:
+          type: boolean
+          description: See set_sequence_setting.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        shutdown_pi:
+          type: boolean
+          description: See set_sequence_setting.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        close_cooler:
+          type: boolean
+          description: See set_sequence_setting.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+        left_size_m:
+          type: number
+          description: Estimated size in MB of the enabled sequences' remaining frames.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build), GetSequenceSizeM
+        left_time_sec:
+          type: integer
+          description: Estimated remaining time in seconds. If the frame size lookup fails the caller
+            does not initialise it, so its value on that path is not established; clients SHOULD NOT rely
+            on it.
+          x-confidence: unresolved
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build), EstimateSeqSizeTime
+        target_coord:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: Two numbers, RA then Dec (INFERRED; units not established). Present only when both
+            coordinates are outside the sentinel band around -999.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+      description: Current sequence settings and remaining-work estimates. On the plan page the settings
+        may come from the persistent plan-derived settings rather than the ordinary autosave object.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc1150 (64-bit build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable; a failed frame-size lookup is not reported as an
+  error.
+examples:
+- name: get
+  summary: Bare request
+  of: request
+  payload:
+    id: 131
+    method: get_sequence_setting
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_sequence_setting
+    result:
+      delay_first: 5
+      delay_between_frame: 2
+      group_by_slot: false
+      merid_flip: true
+      group_name: Example group
+      park_mount: true
+      shutdown_pi: false
+      close_cooler: true
+      left_size_m: 1500
+      left_time_sec: 3600
+    code: 0
+    id: 131
+see_also:
+- set_sequence_setting
+- get_sequence
+- set_sequence
+spec:
+- spec/control/legacy-plans-and-sequences/sequences.md#the-stand-alone-sequence-list

@@ -1,0 +1,73 @@
+kind: method
+name: close_focuser
+summary: Close the electronic focuser.
+description: No parameters are read. Closes the GPIO focuser handle and resets the cached maximum, position
+  and handle fields. Closing an already-closed focuser returns success. There is no explicit wait or timeout.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xccad0, Close @0x15b980 (64-bit build); tier INFERRED
+side_effects: Closes the focuser hardware handle and clears cached focuser state.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: close_focuser request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: close_focuser
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xccad0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 201
+  trigger: eaf_close fails (the message text says connect although the operation is a close)
+  label: fail to connect
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 25
+    method: close_focuser
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: close_focuser
+    result: 0
+    code: 0
+    id: 25
+- name: close-failed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: close_focuser
+    error: fail to connect
+    code: 201
+    id: 26
+see_also:
+- open_focuser
+- get_focuser_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle

@@ -1,0 +1,112 @@
+kind: method
+name: start_polar_align
+summary: Start (or restart) polar alignment.
+description: 'Refuses while a ViewPlan is running, then selects the procedure from the mount''s equatorial
+  mode: in alt-azimuth mode always the three-point procedure (altaz_3p, is_one_star ignored); in equatorial
+  mode is_one_star true selects the one-star gyro procedure (eq_1p) and false the equatorial three-point
+  procedure (eq_3p). F events are named EqModePA for both equatorial procedures and 3PPA in alt-azimuth
+  mode; the per-stage status event is named 3PPA in every mode. A client SHOULD read the mount mode first and
+  follow the matching F event. If the stored setting is_pa_3p is false the start returns 0 without starting
+  any worker (legacy image-pair mode INFERRED). A session stays active from start until stop_polar_align.
+  With restart true, when the worker is running or an equatorial-mode session is active, the handler first
+  stops the worker and the gyro thread and, if a session is active, restores settings and clears it. Then: a
+  still-running worker gives 268; a different type from the active session clears the old session and starts
+  fresh; no active session starts fresh; an active eq_3p session resumes with its kept stage; an active
+  altaz_3p or eq_1p session gives 268. So restart true gives a fresh start in equatorial mode, and a paused
+  alt-azimuth session gives 268 until stop_polar_align. Starting stops any autogoto, view or exposure first.
+  The calling connection is recorded as the recipient of alignment results. No parked-mount check is made.
+  The ViewPlan check happens before params are parsed, so malformed params can yield 536 first.'
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe10e0, StartPAFunc @0x15fcc0 (type table, F-event name
+  set @0x160194, is_pa_3p gate @0x15fd6c), ThreePointPaFunc @0x162800, SendPaEvent @0x1626c0 (64-bit build)
+side_effects: Stops any autogoto, view or exposure. With restart, stops both alignment threads and restores
+  settings (the stop can block); a type change also restores and clears the old session; then initialises
+  alignment state and starts the worker, which moves the mount and captures images. Records the caller
+  connection.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_polar_align request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_polar_align
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartPolarAlignParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 536
+  trigger: A ViewPlan is running
+  label: view plan is already running
+- code: 204
+  trigger: dec_pos_index is an integer outside 1..5
+  label: out of limit
+- code: 254
+  trigger: The mount mode could not be read
+  label: mount operation failed
+- code: 268
+  trigger: An alignment worker is still running, or an active altaz_3p or eq_1p session cannot be resumed
+  label: operation is in progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other failures of the worker start forward the current thread-local error code and are not
+  fully enumerated. Gyro-mode events are not fully audited. With is_pa_3p false the reply is 0 and no
+  worker or event follows.
+examples:
+- name: defaults
+  of: request
+  payload:
+    id: 81
+    method: start_polar_align
+- name: restart
+  summary: Restart at position 2
+  of: request
+  payload:
+    id: 82
+    method: start_polar_align
+    params:
+      restart: true
+      dec_pos_index: 2
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_polar_align
+    result: 0
+    code: 0
+    id: 81
+- name: plan-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_polar_align
+    error: view plan is already running
+    code: 536
+    id: 83
+see_also:
+- 3PPA
+- EqModePA
+- pause_polar_align
+- stop_polar_align
+- clear_polar_align
+- get_polar_axis
+spec:
+- spec/control/polar-alignment.md#run-control

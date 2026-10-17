@@ -1,0 +1,31 @@
+title: pi_station_select params
+description: 'SSID of a saved station network to select. Three spellings: a bare string, a one-element
+  array holding a string, or an object with ssid. No length or content check in the handler or helper
+  beyond a bounded command buffer.'
+oneOf:
+- type: string
+  description: Bare SSID string.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xcdc00, ns_net::pi_station_select @0x6fc710 (64-bit
+    build)
+- type: array
+  minItems: 1
+  items:
+    type: string
+    description: First element is the SSID; further elements are ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcdc00, ns_net::pi_station_select @0x6fc710 (64-bit
+      build)
+- type: object
+  required:
+  - ssid
+  properties:
+    ssid:
+      type: string
+      description: SSID of the saved network to select.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcdc00, ns_net::pi_station_select @0x6fc710
+        (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcdc00, ns_net::pi_station_select @0x6fc710 (64-bit
+  build)

@@ -1,0 +1,550 @@
+title: get_app_state full result
+type: object
+description: 'Full state. Open object: cached and callback-produced members are not completely enumerated;
+  preserve unknown members.'
+required:
+- page
+properties:
+  page:
+    type: string
+    description: Current page name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  annotate:
+    type: object
+    description: Annotation state.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Milliseconds.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  solve:
+    type: object
+    description: Plate-solve state.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Milliseconds.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      filename:
+        type: string
+        description: Solve file name.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      star_number:
+        type: integer
+        description: Present only if the count is >= 0.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  capture:
+    type: object
+    description: Capture state. Page 6 always has progress and state; other pages always state; lapse_ms,
+      seq_* and total_ms depend on activity and mode.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      exposure_mode:
+        type: string
+        description: 'For native modes 0 to 3: single, video, autosave, none; other modes omit it.'
+        enum:
+        - single
+        - video
+        - autosave
+        - none
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      error:
+        type: string
+        description: Autosave mode only and only when a capture error code is nonzero. State data; it
+          does not make the outer reply an error.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      code:
+        type: integer
+        description: Autosave mode only, with error.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      state:
+        type: string
+        description: 'Capture state string, mapped from an integer via a code-name table: 0 idle, 1 first_delay,
+          2 dither, 3 guide_settling, 4 dither_settling, 5 frame_delay, 6 expose, 7 download, 8 mount_settle,
+          9 target_delay, 10 cooling; any other value yields the literal string none.'
+        enum:
+        - idle
+        - first_delay
+        - dither
+        - guide_settling
+        - dither_settling
+        - frame_delay
+        - expose
+        - download
+        - mount_settle
+        - target_delay
+        - cooling
+        - none
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90, get_ext_states_string @0x1467a0,
+          code_str table @0xb076b0, default none (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Signed 32-bit milliseconds. Present while active (see description).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      total_ms:
+        type: integer
+        description: Signed 32-bit milliseconds. Present while active with nonzero duration.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      seq_id:
+        type: integer
+        description: Autosave mode, active only (non-page-6).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      seq_frame:
+        type: integer
+        description: Autosave mode, active only (non-page-6).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      progress:
+        type: object
+        description: Page 6 only. Same object as the legacy plan progress (PlanEventProgress). Every member
+          is always written. Totals and lapses are counts, not durations. When no current target or sequence
+          exists, both ids are -2147483648 (INT32 minimum), counters are 0, target_name is empty, frame_type
+          is unknown and plan_end is false; clients SHOULD treat -2147483648 as none.
+        properties:
+          targets:
+            type: object
+            description: Plan targets.
+            properties:
+              total:
+                type: integer
+                description: Total count; 0 when nothing is current.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              lapse:
+                type: integer
+                description: Completed count (not a duration); 0 when nothing is current.
+                x-confidence: READ; completed-count meaning INFERRED
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          cur_plan:
+            type: object
+            description: Current plan.
+            properties:
+              total:
+                type: integer
+                description: Total count; 0 when nothing is current.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              lapse:
+                type: integer
+                description: Completed count (not a duration); 0 when nothing is current.
+                x-confidence: READ; completed-count meaning INFERRED
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          cur_target:
+            type: object
+            description: Current target.
+            properties:
+              total:
+                type: integer
+                description: Total count; 0 when nothing is current.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              lapse:
+                type: integer
+                description: Completed count (not a duration); 0 when nothing is current.
+                x-confidence: READ; completed-count meaning INFERRED
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              target_name:
+                type: string
+                description: Target name; empty when there is no current target.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              id:
+                type: integer
+                description: Target id; -2147483648 when there is no current target.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90, INT_MIN default near @0xc52d0
+                  (64-bit build)
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          cur_seq:
+            type: object
+            description: Current sequence.
+            properties:
+              total:
+                type: integer
+                description: Total count; 0 when nothing is current.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              lapse:
+                type: integer
+                description: Completed count (not a duration); 0 when nothing is current.
+                x-confidence: READ; completed-count meaning INFERRED
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              frame_type:
+                type: string
+                description: 'Frame type: light, dark, bias, flat for codes 0 to 3; unknown otherwise, including
+                  when there is no current sequence.'
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+              id:
+                type: integer
+                description: Sequence id; -2147483648 when there is no current sequence.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xc4d90, INT_MIN default near @0xc52d0
+                  (64-bit build)
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          plan_end:
+            type: boolean
+            description: Plan finished flag; false when no plan run is current.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  pa:
+    type: object
+    description: Polar alignment.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Only while active.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  pa_3p:
+    type: object
+    description: Three-point polar alignment.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Only while active.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  auto_goto:
+    type: object
+    description: Auto goto. target_pixel only while active and both coordinates valid (-999 invalid);
+      target_ra_dec whenever both valid. Pixel pair INFERRED from the name.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      count:
+        type: integer
+        description: Only while active.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      mount_moving:
+        type: boolean
+        description: Only while active.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      target_pixel:
+        type: array
+        description: '[number, number]; units unresolved.'
+        prefixItems:
+        - type: number
+        - type: number
+        minItems: 2
+        maxItems: 2
+        x-confidence: READ; units unresolved
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      target_ra_dec:
+        type: array
+        description: '[number, number]; units unresolved.'
+        prefixItems:
+        - type: number
+        - type: number
+        minItems: 2
+        maxItems: 2
+        x-confidence: READ; units unresolved
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      target_name:
+        type: string
+        description: Only if nonempty.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  stack:
+    type: object
+    description: Stacking.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      frame_type:
+        type: string
+        description: Frame type.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      stacked_frame:
+        type: integer
+        description: Count.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      dropped_frame:
+        type: integer
+        description: Count.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      total_frame:
+        type: integer
+        description: Count.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      is_stacking:
+        type: boolean
+        description: Only while work is active.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      left_sec:
+        type: integer
+        description: Seconds; only when >= 0.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  export_image:
+    type: object
+    description: Export.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      success_frame:
+        type: integer
+        description: Count.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      total_frame:
+        type: integer
+        description: Count.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      keep:
+        type: boolean
+        description: Keep flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      dst_storage:
+        type: string
+        description: Destination storage.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  merid_flip:
+    type: object
+    description: Meridian flip.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      wait_left_sec:
+        type: integer
+        description: Seconds; only while working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      count:
+        type: integer
+        description: Only while working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  auto_focus:
+    type: object
+    description: Autofocus.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      result:
+        type: object
+        description: 'Copy of the cached autofocus result. Members are not enumerated (unresolved): preserve
+          unknown members.'
+        x-confidence: unresolved
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      focuser_opened:
+        type: boolean
+        description: Focuser open flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      reason:
+        type: object
+        description: Autofocus reason.
+        required:
+        - comment
+        - code
+        properties:
+          comment:
+            type: string
+            description: Reason text.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          code:
+            type: integer
+            description: Reason code. 1 adds before/after numbers, 2 adds hours, 3 adds before/after strings;
+              others add none.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          before:
+            description: 'Code 1: number (temperature, unit unresolved); code 3: string.'
+            x-confidence: READ; unit unresolved
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          after:
+            description: 'Code 1: number; code 3: string.'
+            x-confidence: READ; unit unresolved
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+          hours:
+            type: number
+            description: Code 2 only.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  find_star:
+    type: object
+    description: Star finding.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Always emitted.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  avi_record:
+    type: object
+    description: Video recording.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_sec:
+        type: integer
+        description: Seconds.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      fps:
+        type: number
+        description: Frames per second.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      write_file_fps:
+        type: number
+        description: Frames per second.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  rtmp:
+    type: object
+    description: Stream state.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  auto_exp:
+    type: object
+    description: Auto exposure.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Only while working.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+  restart_guide:
+    type: object
+    description: Guide restart.
+    properties:
+      is_working:
+        type: boolean
+        description: Whether the operation is working.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+      lapse_ms:
+        type: integer
+        description: Only while working.
+        minimum: 0
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)

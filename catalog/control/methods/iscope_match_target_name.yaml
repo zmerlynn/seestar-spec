@@ -1,0 +1,136 @@
+kind: method
+name: iscope_match_target_name
+summary: Match the current view against the target catalogue and hold the result for iscope_accept_target_name.
+description: No request parameters are read. In the local path the device lazily loads catalogue entries,
+  computes a match from the goto or plate-solved centre and field of view, stores a pending-match ready
+  flag and the original and matched names, and returns them. When the device is the master process in
+  view mode 0 (with a wide-star-capable view) or modes 1 to 5, and it is not the selected master, the
+  whole request is forwarded to the other process and that reply is returned instead; forwarded results
+  and errors are unresolved. The cached match is written on both builds. Firmware 9.75, app 3.4.0 replaces the old view-mode test with the relay-only form of the common relay check (it relays to the peer process when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75), the wire effect is INFERRED and the 32-bit build was not checked.
+grade: MUTATOR / established (64-bit and 32-bit builds). Observer tier C
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbdd80, MatchViewManualCaptureTarget @0x41cf80 (64-bit
+  build); 32-bit success path also read
+side_effects: Writes the pending-match ready flag and the original and matched names that later enable
+  iscope_accept_target_name; may load catalogue entries into memory. Forwarded requests have a delegated
+  wait of 10000 ms, which is not a whole-call deadline.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: iscope_match_target_name request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: iscope_match_target_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbdd80 (64-bit build)
+reply_success:
+  title: iscope_match_target_name reply (success)
+  type: object
+  description: Success envelope with an object result. Member order and the socket-layer members are as
+    in the common success envelope.
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: object
+      required:
+      - original_name
+      - matched_name
+      - changed
+      description: Match of the current pointing against the device's target catalogue.
+      properties:
+        original_name:
+          type: string
+          description: Current target name, display-normalised; can be the literal Unknown.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbdd80, MatchViewManualCaptureTarget @0x41cf80
+            (64-bit build); 32-bit success path also read
+        matched_name:
+          type: string
+          description: Best catalogue match name, display-normalised; can be the literal Unknown.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbdd80, MatchViewManualCaptureTarget @0x41cf80
+            (64-bit build); 32-bit success path also read
+        changed:
+          type: boolean
+          description: Whether the matched name differs from the original.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbdd80, MatchViewManualCaptureTarget @0x41cf80
+            (64-bit build); 32-bit success path also read
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbdd80, MatchViewManualCaptureTarget @0x41cf80
+        (64-bit build); 32-bit success path also read
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 100
+  trigger: 'Matching returned false: view mode is not 0 or the selected camera is not the main camera'
+  label: invalid request
+- code: 300
+  trigger: Forwarding helper has a null context
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Relay and waiter failures on the forwarded path are propagated and not enumerated. Code 100
+  here comes from the handler, and shares its label with the dispatcher's invalid-request error.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 90
+    method: iscope_match_target_name
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: iscope_match_target_name
+    result:
+      original_name: Example target
+      matched_name: Example target A
+      changed: true
+    code: 0
+    id: 90
+- name: wrong-mode
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: iscope_match_target_name
+    error: invalid request
+    code: 100
+    id: 91
+see_also:
+- iscope_accept_target_name
+- set_view_plan_target_name
+spec:
+- spec/control/object-lists.md#target-name-matching

@@ -1,0 +1,123 @@
+kind: method
+name: move_focuser
+summary: Move the electronic focuser to a target step.
+description: Starts a focuser move and returns without waiting for motion to complete. On models with
+  a wide-angle camera the request may be relayed to the peer processor before any local parsing; such
+  a relayed reply is not described here. With ret_step true the reply result is an object with the clamped
+  step instead of 0. The move happens before the optional return-step lookup, so an error from that lookup
+  does not mean no motion occurred.
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build), Move, GetValue
+side_effects: Commands the focuser motor (eaf_move) and updates the stored focuser conversion state. Under
+  some view-mode conditions on wide-camera models the request is relayed to the peer instead. No motion-complete
+  wait.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: move_focuser request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: move_focuser
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)
+      anyOf:
+      - $ref: ../schemas/MoveFocuserParams.yaml
+      - type: array
+        minItems: 1
+        description: Positional form [step, ret_step]; extra elements ignored.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: move_focuser success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/MoveFocuserResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: step missing, null or not an integer
+  label: expected int param
+- code: 318
+  trigger: Focuser handle is not open (before the move, or in the post-move lookup)
+  label: device not connected
+- code: 300
+  trigger: Conversion numerator or denominator is not positive, or the driver move call fails
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Errors produced on the peer when the request is relayed are unresolved.
+examples:
+- name: move
+  summary: Move to a target and ask for the step back
+  of: request
+  payload:
+    id: 41
+    method: move_focuser
+    params:
+      step: 1200
+      ret_step: true
+- name: ok-with-step
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: move_focuser
+    result:
+      step: 1200
+    code: 0
+    id: 41
+- name: ok-plain
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: move_focuser
+    result: 0
+    code: 0
+    id: 42
+- name: missing-step
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: move_focuser
+    error: expected int param
+    code: 104
+    id: 43
+see_also: []
+spec:
+- spec/control/focus-and-filter.md#lifecycle

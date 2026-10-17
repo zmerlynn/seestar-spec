@@ -1,0 +1,30 @@
+title: set_photometry params
+type: object
+required:
+- id
+- save
+description: Object, or a positional array [id, save, name]; extra elements ignored. Unknown members are
+  ignored. Missing, scalar or null top-level params count as a missing id.
+properties:
+  id:
+    type: string
+    description: Plot id. Required string; missing or non-string gives 104 (message expected int).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)
+  save:
+    type:
+    - boolean
+    - integer
+    description: Mark the plot saved or unsaved. Required; boolean or integer (nonzero is true). Missing
+      or other type gives 106. With false, the stored name and start time are cleared regardless of name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)
+  name:
+    type: string
+    description: Plot name. Optional string; another type gives 105. Missing or empty keeps the existing
+      name when saving. No length check.
+    x-default: empty (keep existing name)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)

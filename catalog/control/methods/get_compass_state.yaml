@@ -1,0 +1,88 @@
+kind: method
+name: get_compass_state
+summary: Return the number of compass samples collected so far in the current calibration run.
+description: No parameters are read. The handler locks the compass mutex, copies the sample count and
+  returns it as result.number. Despite the name it is not a state enumeration. The handler has a nominal
+  helper-failure branch but the helper always returns success, so no handler-specific error is established.
+  Calibration progress and outcome are sent as CompassCalibration events; see start_compass_calibration.
+grade: MUTATOR / established (strict; the only writes are shared diagnostic logging). Behaviourally a
+  getter.
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb92c0 (64-bit build); helper getCompassState
+side_effects: None beyond shared diagnostic logging. Full command-socket calls also incur the shared diagnostic
+  (logging) writes; this is why the strict grade is MUTATOR even for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_compass_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_compass_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb92c0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_compass_state reply_success
+  required:
+  - method
+  - result
+  - code
+  - id
+  description: Same envelope as the common success reply, except that result is an object.
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/Timestamp.yaml
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/GetCompassStateResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable in the inspected code.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 23
+    method: get_compass_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_compass_state
+    result:
+      number: 42
+    code: 0
+    id: 23
+see_also:
+- start_compass_calibration
+- stop_compass_calibration
+spec:
+- spec/control/polar-alignment.md#compass-calibration

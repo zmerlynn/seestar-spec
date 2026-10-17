@@ -1,0 +1,105 @@
+kind: method
+name: set_photometry
+summary: Mark a photometry plot saved or unsaved and optionally rename it.
+description: Updates the cached plot's save flag, name and start time under the photometry mutex and rewrites
+  the star JSON in the plot and image caches. On the first save, or when the start time is empty, the
+  start time is set to the local time. Does not call the file-persistence routine in the audited helper,
+  so success does not prove disk or cloud persistence. An unknown id returns false without a handler-set
+  code and is reported as 207.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)
+side_effects: Rewrites cached plot save/name/startTime and the star JSON in the plot and image caches.
+  No camera or mount movement; no timeout. Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_photometry request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_photometry
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - $ref: ../schemas/SetPhotometryParams.yaml
+      - type: array
+        minItems: 1
+        description: Positional form [id, save, name]; extra elements ignored.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd96f0, SetPhotoMetry @0x1ff6e0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: id missing or not a string (also missing top-level params)
+  label: expected int param
+- code: 106
+  trigger: save missing or not boolean or integer
+  label: expected bool param
+- code: 105
+  trigger: name present and not a string
+  label: expected string param
+- code: 207
+  trigger: Unknown id (no code assigned by the helper)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: save
+  summary: Mark saved (shape from the app DTO; values invented)
+  of: request
+  payload:
+    id: 131
+    method: set_photometry
+    params:
+      id: plot-1
+      save: true
+      name: Example target
+- name: unsave-positional
+  of: request
+  payload:
+    id: 132
+    method: set_photometry
+    params:
+    - plot-1
+    - false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_photometry
+    result: 0
+    code: 0
+    id: 131
+- name: bad-save
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_photometry
+    error: expected bool param
+    code: 106
+    id: 133
+see_also:
+- get_saved_photometry_stars
+- get_photometry_plot
+spec:
+- spec/control/solving-and-annotation.md#photometry

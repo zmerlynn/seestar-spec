@@ -1,0 +1,59 @@
+kind: event
+name: MountMode
+summary: Mount switched between equatorial and alt-az mode.
+description: 'Custom guider producer, no state or error. Sent after a mount-mode command succeeds. Emitted
+  by the guider on TCP 4400 to every retained socket; the main imager process forwards the line unchanged
+  onto TCP 4700 (the auxiliary imager process suppresses guider forwarding). The imager also installs
+  a local callback for this name. Overlaps the equ_mode member of scope_get_state and the mount section
+  of get_device_state. APK consumer: the device-state mount handler.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SetEqModeCmd @0xf0aa0 (64-bit guider build); 32-bit counterpart
+  present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: MountMode event
+  type: object
+  discriminator: Event
+  description: Mode change.
+  required:
+  - Event
+  - Timestamp
+  - equ_mode
+  properties:
+    Event:
+      type: string
+      const: MountMode
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetEqModeCmd @0xf0aa0 (64-bit guider build)
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    equ_mode:
+      type: boolean
+      description: true for equatorial mode.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetEqModeCmd @0xf0aa0 (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SetEqModeCmd @0xf0aa0 (64-bit guider build)
+examples:
+- name: eq
+  summary: Equatorial mode set (READ shape)
+  of: payload
+  payload:
+    Event: MountMode
+    Timestamp: '1234.123456789'
+    equ_mode: true
+see_also:
+- scope_set_eq_mode
+- scope_get_state
+- control/get_device_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#equatorial-mode

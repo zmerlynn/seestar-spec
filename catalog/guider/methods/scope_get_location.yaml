@@ -1,0 +1,103 @@
+kind: method
+name: scope_get_location
+summary: Read the mount site latitude and longitude as a two-element array.
+description: 'Queries the connected mount for its site coordinates and returns [latitude, longitude].
+  The handler normalises the longitude into a +-180 range. Degrees are INFERRED; the unit is not stated
+  by the evidence. Served by the guider process (TCP 4400); a client on the main command port reaches
+  it through the imager unknown-method relay, which is unavailable to guest-table clients. The native-handler
+  grade below does not describe the relay. Mount serial (firmware 9.31, READ): :Gt, :Gg.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x788b0 (64-bit build)
+side_effects: Live query of the connected mount through the native mount layer; no motion or setting change
+  is established. Tier C rests on the supplied native mount query path; other runtime-selected mount implementations
+  are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_location request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_location
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x788b0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetLocationResult.yaml
+        description: Two-number array [latitude, longitude].
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x788b0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 207
+  trigger: Mount operation failed
+  label: fail to operate
+- code: 210
+  trigger: The connected mount type does not support the operation
+  label: not supported
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+errors_note: Further branches forward the error code recorded by the native mount layer; those codes are
+  not exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: scope_get_location
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_location
+    result:
+    - 12.5
+    - -45.25
+    code: 0
+    id: 5
+- name: err-315
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_location
+    error: mount is not connected
+    code: 315
+    id: 6
+see_also:
+- scope_get_time
+- scope_get_state
+- scope_get_mode
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

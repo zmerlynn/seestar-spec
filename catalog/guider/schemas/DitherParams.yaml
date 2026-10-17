@@ -1,0 +1,71 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: dither params
+description: Required. An object {amount, settle} or a positional array [amount, settle].
+anyOf:
+- type: object
+  required:
+  - amount
+  - settle
+  properties:
+    amount:
+      type: number
+      description: Dither amplitude in guide-camera pixels, multiplied by /DitherScaleFactor; sign ignored.
+        Required, integer or real accepted; no range check or clamp in the handler. READ (arithmetic) / INFERRED
+        (unit).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+    settle:
+      type: object
+      description: Settle criteria, parsed by the parser shared with the guiding-start method. Applied
+        here by INFERENCE from that shared parser; the three members are required numbers, time and timeout
+        are floored to integers (whole seconds, INFERRED), a missing member gives 102, there is no range
+        check, and pixels is an arcsecond distance (see the members).
+      required: &id001
+      - pixels
+      - time
+      - timeout
+      properties: &id002
+        pixels:
+          type: number
+          description: Distance in arcseconds despite the name; converted with the guide camera's arcsec
+            per pixel, used as pixels if the scale is unknown. The imager fills it from settle_arcsec.
+          x-confidence: READ (conversion); INFERRED (unit)
+          x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build); GetCameraPixelScale
+            @0x94400; imager StartDither @0x182790
+        time:
+          type: number
+          description: Settle time; floored, whole seconds (floor READ in the shared parser; unit INFERRED).
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+        timeout:
+          type: number
+          description: Settle timeout; floored, whole seconds (floor READ in the shared parser; unit INFERRED).
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+- type: array
+  minItems: 2
+  prefixItems:
+  - type: number
+    description: Dither amplitude in guide-camera pixels, multiplied by /DitherScaleFactor; sign ignored.
+      Required, integer or real accepted; no range check or clamp in the handler. READ (arithmetic) / INFERRED
+      (unit).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+  - type: object
+    description: Settle criteria, parsed by the parser shared with the guiding-start method. Applied here
+      by INFERENCE from that shared parser; the three members are required numbers, time and timeout are
+      floored to integers (whole seconds, INFERRED), a missing member gives 102, there is no range check,
+      and pixels is an arcsecond distance (see the members).
+    required: *id001
+    properties: *id002
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+  description: 'Positional form: [amount, settle].'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7c490 (64-bit guider build)

@@ -1,0 +1,24 @@
+title: scope_get_connection_mode result
+type: object
+required:
+- list
+- index
+description: Connection modes the mount driver offers (a local list built from Serial and TCP) and the
+  index of the current one. The exact strings are not established by the evidence.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x81950 (64-bit build)
+properties:
+  list:
+    type: array
+    description: Names of the available connection modes.
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x81950 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x81950 (64-bit build)
+  index:
+    type: integer
+    description: Index of the current mode within list.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x81950 (64-bit build)

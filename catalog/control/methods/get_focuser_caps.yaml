@@ -1,0 +1,93 @@
+kind: method
+name: get_focuser_caps
+summary: List the names of the focuser controls (intended capability query; unreachable in practice).
+description: No parameters are read. The capability routine walks the focuser control list and collects
+  the control names (max_step, backlash, reset_step with ids 3, 5, 6). The list built when the focuser
+  is opened also contains a null-name entry with id 0; reaching it makes the capability routine throw
+  a logic error before the handler serialises the partial list, so the intended success reply (an array
+  of three names) is not reachable with an ordinarily opened focuser. Nothing on the command path catches
+  that exception (READ), so the imaging process is expected to terminate and no reply is sent (INFERRED
+  from C++ exception semantics; restart behaviour not established). A client MUST NOT send this request
+  while the focuser is open, and MUST treat a lost connection after it as this failure. A closed focuser
+  gives 318.
+grade: PURE GETTER / established (64-bit build; 32-bit build established)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd66f0, GetCaps @0x15a700 (logic-error throw @0x15a94c),
+  no catch site in TopCmdFunc @0x6b3980, handle_cli_input_event @0x6b3280, handle_request @0x6f9440 or
+  MyThr @0x6e57d0 (64-bit build); 32-bit counterpart @0x53664; control list built by open_focuser
+side_effects: None; request-local list construction and error reporting. Does not call Open.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_focuser_caps request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_focuser_caps
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd66f0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: array
+        items:
+          type: string
+          enum:
+          - max_step
+          - backlash
+          - reset_step
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd66f0 (64-bit build)
+        description: Array of control names. Described from the handler; not reachable after an ordinary
+          open (see description).
+        x-confidence: unresolved
+        x-basis: static analysis of firmware 9.31, handler @0xd66f0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Focuser is not open
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'With the focuser open no reply is sent: the uncaught null-sentinel throw is expected to
+  terminate the imaging process (READ no catch site; INFERRED termination).'
+examples:
+- name: request
+  of: request
+  payload:
+    id: 13
+    method: get_focuser_caps
+- name: closed
+  summary: Focuser not open
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_caps
+    error: device not connected
+    code: 318
+    id: 13
+see_also:
+- open_focuser
+- get_focuser_value
+- set_focuser_value
+spec:
+- spec/control/focus-and-filter.md#values-and-settings

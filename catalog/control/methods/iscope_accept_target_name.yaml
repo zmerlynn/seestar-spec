@@ -1,0 +1,82 @@
+kind: method
+name: iscope_accept_target_name
+summary: Adopt the pending matched target name produced by iscope_match_target_name and announce the change.
+description: 'No request parameters are read. Uses the pending match left by iscope_match_target_name,
+  applies the matched name as the view target name and emits a ViewTargetNameChanged notification with
+  original_name and updated_name (both display-normalised); an optional route member is not established for this sender. The notification has no id. The same master
+  or forwarding rule as iscope_match_target_name applies: a forwarded request returns the other process''s
+  reply, which is unresolved. Firmware 9.75, app 3.4.0 replaces the old view-mode test with the relay-only form of the common relay check (it relays to the peer process when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75), the wire effect is INFERRED and the 32-bit build was not checked.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc9140, AcceptMatchedViewTargetName @0x41a2a0, NotifyViewTargetNameChanged
+  @0x41a620 (64-bit build)
+side_effects: Changes the stored view target name and emits a ViewTargetNameChanged event. Forwarded requests
+  have a delegated wait of 10000 ms, which is not a whole-call deadline.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: iscope_accept_target_name request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: iscope_accept_target_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9140 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 100
+  trigger: 'No acceptable pending match: wrong view mode or camera, the ready flag is false, or the pending
+    matched name is empty'
+  label: invalid request
+- code: 300
+  trigger: Forwarding helper has a null context
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Relay and waiter failures on the forwarded path are propagated and not enumerated. Code 100
+  here comes from the handler, and shares its label with the dispatcher's invalid-request error.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 95
+    method: iscope_accept_target_name
+- name: ok
+  of: reply_success
+  payload:
+    method: iscope_accept_target_name
+    result: 0
+    code: 0
+    id: 95
+- name: no-pending-match
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: iscope_accept_target_name
+    error: invalid request
+    code: 100
+    id: 96
+see_also:
+- iscope_match_target_name
+- set_view_plan_target_name
+spec:
+- spec/control/object-lists.md#target-name-matching

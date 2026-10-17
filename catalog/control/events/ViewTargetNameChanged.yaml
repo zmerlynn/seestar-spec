@@ -1,0 +1,75 @@
+kind: event
+name: ViewTargetNameChanged
+summary: Notification that the current view target name was replaced by an accepted or matched name.
+description: 'Broadcast on TCP 4700 (channel I) when an accepted or matched target name replaces the cached
+  view target name (for example after iscope_accept_target_name); the event accompanies the cache update.
+  No timer. Both names are display-normalized. route is the function-parent path when the producer includes
+  it; the accepting handler is only shown to send the two names, so route is optional. The
+  32-bit build has the same emitter and member names. Family: custom; no state or error. APK consumer:
+  DeviceService app-state handler (route check disabled for this name).'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620 (64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ViewTargetNameChanged event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - original_name
+  - updated_name
+  properties:
+    Event:
+      type: string
+      const: ViewTargetNameChanged
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    original_name:
+      type: string
+      description: Previous target name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620
+    updated_name:
+      type: string
+      description: Accepted or matched target name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-parent path when included; may be absent.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620, PrintFunParent
+        @0x6e46c0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620
+examples:
+- name: accepted
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: ViewTargetNameChanged
+    Timestamp: '1234.123456789'
+    original_name: Example raw name
+    updated_name: Example catalogue name
+    route:
+    - View
+see_also:
+- iscope_accept_target_name
+- iscope_match_target_name
+- get_view_state
+- set_view_plan_target_name
+spec:
+- spec/control/object-lists.md#target-name-matching
+- spec/control/events-overview.md

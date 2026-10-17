@@ -1,0 +1,91 @@
+kind: method
+name: save_image
+summary: Save the current image to storage.
+description: 'Params are not read by the local handler; there is no filename or path parameter. On the
+  64-bit build, when the device is the main unit of a wide/dual configuration with a selected slave in
+  an eligible view mode, the whole request is relayed to the slave instead and the slave''s params handling
+  is not established. Locally, the existing image is saved: when the RTMP stream is running an RTSP image
+  save starts, otherwise a save thread is started, so result 0 only acknowledges the start. If the image
+  is already saved the reply is an error 213 that may additionally carry a top-level fullname string (the
+  saved name) when that name is non-empty, still without result; the common error envelope does not model
+  that extra member. While the stream runs, the still is captured from the RTSP pipeline and reported
+  through the SaveImage event (READ).'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: 'static analysis of firmware 9.31, handler @0xd10c0, SaveImage @0x13cfe0 (64-bit build); RTSP branch
+  StartSaveRtspImg → SaveRtspImgFunc emitting SaveImage (finding #357)'
+side_effects: Starts a save of the current image (disk work delegated to a thread or the RTSP path); in
+  the wide configuration may forward the save action to the peer unit.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: save_image request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: save_image
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd10c0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Exposure mode 2
+  label: not supported
+- code: 207
+  trigger: No usable image buffer
+  label: fail to operate
+- code: 213
+  trigger: Image already saved; reply may add a top-level fullname string
+  label: image is already saved
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: RTSP and save-thread failures are propagated with their own codes; eventual saved-image events
+  and save-thread failures are not covered.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 49
+    method: save_image
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: save_image
+    result: 0
+    code: 0
+    id: 49
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: save_image
+    error: fail to operate
+    code: 207
+    id: 50
+see_also:
+- start_exposure
+- stop_exposure
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings
+- spec/control/errors.md#replies-with-extra-or-missing-members

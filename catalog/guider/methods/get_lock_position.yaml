@@ -1,0 +1,107 @@
+kind: method
+name: get_lock_position
+summary: Report the stored guide-star lock position.
+description: Params are not read. The result is a two-element array [x, y] in pixels when the stored lock-validity
+  byte is set, and JSON null when it is not. A missing guide object is reported as error 300. Beyond that
+  stored flag there is no guarantee the position is current.
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+side_effects: Copies the stored lock position only.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_lock_position request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_lock_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+reply_success:
+  title: get_lock_position success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        oneOf:
+        - type: array
+          minItems: 2
+          maxItems: 2
+          prefixItems:
+          - type: number
+            description: X coordinate in pixels.
+            x-confidence: INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+          - type: number
+            description: Y coordinate in pixels.
+            x-confidence: INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+        - type: 'null'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+        description: '[x, y] in pixels when a valid lock position is stored, otherwise null. Element numeric
+          type (integer or float) is not established.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x78520 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 300
+  trigger: No guide object exists
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: get_lock_position
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_lock_position
+    result:
+    - 10.5
+    - 20.25
+    code: 0
+    id: 22
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_lock_position
+    error: internal error
+    code: 300
+    id: 23
+see_also: []
+spec:
+- spec/guider/index.md#method-groups

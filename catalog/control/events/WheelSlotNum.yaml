@@ -1,0 +1,62 @@
+kind: event
+name: WheelSlotNum
+summary: Discovered filter-wheel slot names.
+description: 'Sent once the slot-count step (GetSlotsNum, reached from open_wheel) has built the slot
+  map. Custom producer; no state, code or error. Recipients: all retained 4700 sockets. No APK consumer
+  is established. No reply-before-event order is established: the RPC reply that starts the worker and
+  the worker''s events can arrive in either order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifyWheelNum @0xb19f0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: WheelSlotNum event
+  type: object
+  discriminator: Event
+  description: Slot list.
+  required:
+  - Event
+  - Timestamp
+  - slots
+  properties:
+    Event:
+      type: string
+      const: WheelSlotNum
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyWheelNum @0xb19f0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    slots:
+      type: array
+      items:
+        type: string
+      description: Slot names in ascending slot-id order. The ids are not serialized; only the string
+        values.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyWheelNum @0xb19f0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyWheelNum @0xb19f0
+examples:
+- name: slots
+  summary: Three slots (READ shape; values invented)
+  of: payload
+  payload:
+    Event: WheelSlotNum
+    Timestamp: '1234.123456789'
+    slots:
+    - Dark
+    - IR cut
+    - LP
+see_also:
+- open_wheel
+- get_wheel_slot_name
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position
+- spec/control/events-overview.md

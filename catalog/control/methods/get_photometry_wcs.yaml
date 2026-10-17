@@ -1,0 +1,144 @@
+kind: method
+name: get_photometry_wcs
+summary: Return the plate-solution WCS of the photometry image (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. Parameters are ignored. Returns the image size and the linear
+  WCS terms of the image used for photometry. Read only.
+grade: PURE GETTER / READ
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit build)
+side_effects: None.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_photometry_wcs request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_photometry_wcs
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+reply_success:
+  title: get_photometry_wcs reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: object
+        properties:
+          IMAGEW:
+            type: integer
+            description: Image width in pixels.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          IMAGEH:
+            type: integer
+            description: Image height in pixels.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CRVAL1:
+            type: number
+            description: Reference value, axis 1.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CRVAL2:
+            type: number
+            description: Reference value, axis 2.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CRPIX1:
+            type: number
+            description: Reference pixel, axis 1.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CRPIX2:
+            type: number
+            description: Reference pixel, axis 2.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CD1_1:
+            type: number
+            description: CD matrix element 1,1.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CD1_2:
+            type: number
+            description: CD matrix element 1,2.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CD2_1:
+            type: number
+            description: CD matrix element 2,1.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+          CD2_2:
+            type: number
+            description: CD matrix element 2,2.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit
+              build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, handler @0xc4920 (64-bit build), @0x5a564 (32-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 267
+  trigger: no photometry image
+  label: no image
+- code: 207
+  trigger: the image has no complete WCS key set
+  label: no WCS
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: On the 32-bit build the 267 path is not confirmed.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 92
+    method: get_photometry_wcs
+  summary: READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_photometry_wcs
+    result:
+      IMAGEW: 1080
+      IMAGEH: 1920
+      CRVAL1: 10.5
+      CRVAL2: 41.2
+      CRPIX1: 540.0
+      CRPIX2: 960.0
+      CD1_1: -0.0005
+      CD1_2: 0.0
+      CD2_1: 0.0
+      CD2_2: 0.0005
+    code: 0
+    id: 92
+  summary: values invented
+see_also:
+- get_photometry_result_json
+- check_photometry
+spec:
+- spec/control/solving-and-annotation.md#photometry

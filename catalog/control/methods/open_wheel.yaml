@@ -1,0 +1,104 @@
+kind: method
+name: open_wheel
+summary: Select the filter wheel, count its slots and start a move toward position 1.
+description: Optional integer wheel id (omitted params mean -1). When no wheel is selected, any nonnegative
+  id selects wheel 0 without range validation, and a negative id triggers discovery. The handler then
+  runs the slot-count step, stops any movement thread and starts movement toward position 1. When a wheel
+  is already selected, only an exactly matching id is an early no-op success; a different id gives 202.
+  Because the omitted-params default (-1) differs from the open id 0, a bare repeat call gives 202. Some
+  internal 318 and 203 branches return true, so the reply is still success; the thread-local error is
+  not transmitted. An explicit null is 104. Params of an empty array unwrap to null that the handler dereferences
+  without a check, so no safe reply is established. Synchronous initialisation and stop can block before
+  the worker starts.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcec90 (64-bit build)
+side_effects: Selects wheel 0, runs the slot-count step, stops the movement thread, then starts the movement
+  thread toward position 1 (physical motion). Slot-setup and thread-start failures are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: open_wheel request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: open_wheel
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type:
+      - integer
+      - array
+      description: Wheel id as a bare integer or the first element of an array. Omitted gives -1. Non-integer
+        (including null) gives 104.
+      items:
+        type: integer
+        description: First element is used.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcec90 (64-bit build)
+      x-default: '-1'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcec90 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Params present but not an integer (including null)
+  label: expected int param
+- code: 202
+  trigger: A wheel is already selected and the supplied id (default -1) differs from it
+  label: already connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A failed discovery for a negative id sets 318 internally but the handler still replies success.
+examples:
+- name: request
+  summary: Explicit id (value from get_connected_wheels)
+  of: request
+  payload:
+    id: 71
+    method: open_wheel
+    params: 0
+- name: bare
+  summary: Omitted params (id -1)
+  of: request
+  payload:
+    id: 72
+    method: open_wheel
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: open_wheel
+    result: 0
+    code: 0
+    id: 71
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: open_wheel
+    error: already connected
+    code: 202
+    id: 72
+see_also:
+- get_connected_wheels
+- close_wheel
+- set_wheel_position
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position

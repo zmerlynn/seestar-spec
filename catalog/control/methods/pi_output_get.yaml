@@ -1,0 +1,118 @@
+kind: method
+name: pi_output_get
+summary: Read the state of one auxiliary output, or of all indexed ports.
+description: 'Reads output state through the GPIO controller. The per-port path uses cached per-port configuration
+  unless the controller hardware-read flag is set; reading refreshes shared work-mode and PWM caches and
+  can log, which is why the grade is MUTATOR although nothing observable changes. The reply is a bare
+  scalar or array, not an object: see the result schema. GPIO must be connected for hardware reads. Compare
+  pi_output_get2, which returns objects.'
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70, Read
+  @0x323e70 (64-bit build)
+side_effects: Refreshes the shared GPIO work-mode and PWM caches and may write log output; no hardware
+  motion or persistent setting change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_output_get request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_output_get
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Optional selector. A string selects one output by case-sensitive substring: reset
+        is tested before beep; an unrecognised string fails with 109. Any non-string value, including
+        absent, null, integer, object and array, selects all indexed ports. There is no positional or
+        object form.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70,
+        Read @0x323e70 (64-bit build)
+reply_success:
+  title: pi_output_get success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/PiOutputGetResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70,
+          Read @0x323e70 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 109
+  trigger: String selector matches no known output
+  label: unexpected param
+- code: 204
+  trigger: Invalid configured port index inside the per-port read
+  label: out of limit
+- code: 273
+  trigger: GPIO connection unavailable, or GPIO/PWM read failed
+  label: GPIO operation failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Error replies carry no result. The code set for driver failures beyond 273 is unresolved.
+examples:
+- name: all-ports
+  of: request
+  payload:
+    id: 10
+    method: pi_output_get
+- name: by-name
+  summary: Select the reset output
+  of: request
+  payload:
+    id: 11
+    method: pi_output_get
+    params: reset
+- name: ok-all
+  summary: 'Three ports: digital on, PWM off, PWM at 35 percent (values invented)'
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_get
+    result:
+    - true
+    - 0
+    - 35.0
+    code: 0
+    id: 10
+- name: ok-one
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_get
+    result: false
+    code: 0
+    id: 11
+- name: bad-selector
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_get
+    error: unexpected param
+    code: 109
+    id: 12
+see_also:
+- pi_output_set
+- pi_output_get2
+- pi_output_set2
+spec:
+- spec/control/power-and-storage.md#power-led-and-auxiliary-outputs

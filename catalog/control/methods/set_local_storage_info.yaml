@@ -1,0 +1,104 @@
+kind: method
+name: set_local_storage_info
+summary: Set the local storage path and capacity (accepted only by one process type).
+description: Only the process whose type is 2 accepts work; any other process rejects the call with 210
+  before reading params. It sets the first storage slot's path and size, assigns a device name and marks
+  the storage mounted. Process type 2 is the device role that accepts a peer's storage; devices send this
+  method to a connected secondary unit with their own disk size, so clients SHOULD NOT call it (advice
+  INFERRED). disk_gb is binary gigabytes (GiB); the device multiplies it by 1024 and compares it with free
+  space in MiB when computing usage. No path, positivity or capacity checks are made.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdaad0, SetLocalDiskInfo @0x315dc0, GetDiskSpace, parse_size_G,
+  CbConnectSlave (sender) (64-bit build)
+side_effects: Updates the storage slot path, stored size, device name and mounted/connected state. No
+  timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_local_storage_info request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_local_storage_info
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      required:
+      - path
+      - disk_gb
+      description: Required object. Other keys are ignored. Non-object or absent params yield 100 once
+        the process check has passed.
+      properties:
+        path:
+          type: string
+          description: Storage path. Not validated.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xdaad0 (64-bit build), key @0x941a20
+        disk_gb:
+          type: number
+          description: Capacity in binary gigabytes, GiB (float or integer; stored as a float). No range
+            check.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xdaad0 (64-bit build), key @0x72f6b8, float_param
+            @0x6f5810
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdaad0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Process type is not 2 (checked before params)
+  label: not supported
+- code: 209
+  trigger: path or disk_gb missing or of the wrong type
+  label: invalid value
+- code: 100
+  trigger: params absent or not an object (after the process check); also the dispatcher case of a missing
+    or non-string method
+  label: invalid request
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+errors_note: SetLocalDiskInfo has no tested failure branch.
+examples:
+- name: set
+  summary: Invented path and size
+  of: request
+  payload:
+    id: 61
+    method: set_local_storage_info
+    params:
+      path: /example/storage
+      disk_gb: 64
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_local_storage_info
+    result: 0
+    code: 0
+    id: 61
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_local_storage_info
+    error: not supported
+    code: 210
+    id: 62
+see_also: []
+spec:
+- spec/control/power-and-storage.md#selecting-the-save-location

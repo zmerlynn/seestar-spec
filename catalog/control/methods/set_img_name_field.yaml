@@ -1,0 +1,81 @@
+kind: method
+name: set_img_name_field
+summary: Choose which fields (temperature, gain, camera name) go into saved image file names.
+description: Copies the current name-field settings, overwrites the temp, gain and camera_name switches
+  that are present in the request and writes the result to configuration. The bin and date_time fields
+  and a temperature-unit switch exist internally but cannot be changed through this call (get_img_name_field
+  reports bin as always true). Write failures are not tested, so there is no error reply for them.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)
+side_effects: Writes changed name-field flags to persistent configuration and updates the shared settings
+  struct. Synchronous, no timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_img_name_field request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_img_name_field
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetImgNameFieldParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null, an empty array, or not an object
+  label: expected object param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'App usage: no app emitter was found for this method.'
+examples:
+- name: object-form
+  summary: Enable temperature and gain in names
+  of: request
+  payload:
+    id: 131
+    method: set_img_name_field
+    params:
+      temp: true
+      gain: true
+      camera_name: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_img_name_field
+    result: 0
+    code: 0
+    id: 131
+- name: no-params
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_img_name_field
+    error: expected object param
+    code: 107
+    id: 132
+see_also:
+- get_img_name_field
+spec:
+- spec/control/power-and-storage.md#selecting-the-save-location

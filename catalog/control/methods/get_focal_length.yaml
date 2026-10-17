@@ -1,0 +1,77 @@
+kind: method
+name: get_focal_length
+summary: Read the stored focal length.
+description: Params are not read. Returns the focal-length global as a bare number result. The 64-bit
+  build formats a floating-point value; the 32-bit build returns an integer. A bare numeric result was
+  observed on the wire (2026-10-12, tunnel session). The value is in millimetres; the factory default
+  is 250 (READ). The device derives the plate scale in arcseconds per pixel as pixel size (micrometres) x 206.265 x
+  bin / focal length, and uses the same value for the field of view, get_device_state and the FITS FOCALLEN
+  header. No camera needs to be open.
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd3110, GetFocalLen @0x11cca0 (64-bit build); result
+  shape OBSERVED 2026-10-12
+side_effects: 'None: reads a global.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_focal_length request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_focal_length
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd3110 (64-bit build)
+reply_success:
+  title: get_focal_length success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: number
+        description: Focal length in millimetres; factory default 250. The 64-bit build emits a float; the
+          32-bit build an integer (hence number rather than float only).
+        x-confidence: READ (OBSERVED as a bare number 2026-10-12)
+        x-basis: static analysis of firmware 9.31, handler @0xd3110, GetPixelScale, focal-length member default
+          250.0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The handler has no error branch of its own.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 55
+    method: get_focal_length
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focal_length
+    result: 250.0
+    code: 0
+    id: 55
+see_also:
+- get_camera_info
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

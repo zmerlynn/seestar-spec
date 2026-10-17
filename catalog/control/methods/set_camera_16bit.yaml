@@ -1,0 +1,117 @@
+kind: method
+name: set_camera_16bit
+summary: Select the camera pixel format via a boolean (behaviour on the audited backend is unusual).
+description: Required boolean. The handler passes 0 (false) or 1 (true) to the backend, which accepts
+  only 1 or 2; it maps 1 to format enum 3 and 2 to format enum 2. Consequently on the audited 64-bit camera
+  backend false is rejected with 210 and true selects format enum 3 (get_camera_16bit then reports false,
+  because it tests for enum 2). The 32-bit build behaves the same way end to end (READ, 32-bit build); it
+  also requires a JSON boolean (106 otherwise), maps true to format 3, refuses false with 210 and gives
+  318 with no camera. The image types are 1 (8-bit raw), 2 (16-bit raw; 10- or 12-bit samples widened,
+  with hot-pixel correction) and 3 (8-bit Bayer mosaic; black level subtracted, red/blue white-balance
+  gains applied, scaled to 8 bits and clipped at 255; not debayered, one byte per pixel). Cropped capture
+  supports only format 3. So true selects 8-bit capture, not 16-bit (READ, 64-bit camera library; INFERRED
+  for the 32-bit camera backend); a client MUST NOT infer bit depth from this flag.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcefe0, SetBytesPerPix @0x11e850 (64-bit build); SDK image-type
+  enum, gained 8-bit conversion helpers and cropped-capture type check from the camera library debug
+  information; 32-bit build set_camera_16bit JSON boolean type check and bytes-per-pixel set/get switches
+  in the camera class; 32-bit statically linked backend image fetch dispatches to the same helper family
+side_effects: Stores the camera pixel-format selection in the camera object.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_camera_16bit request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_camera_16bit
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Required JSON boolean, scalar or first array element. Integers are rejected (stricter
+        than most boolean parameters). Absent, empty array, null or wrong type fails with 106.
+      anyOf:
+      - type: boolean
+        description: Scalar form.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcefe0 (64-bit build)
+      - type: array
+        description: 'Array form: first element is the value.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcefe0 (64-bit build)
+        items:
+          type: boolean
+          description: The value.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xcefe0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcefe0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: Params missing, empty array, null or not a boolean (integers rejected)
+  label: expected bool param
+- code: 318
+  trigger: Camera is closed
+  label: device not connected
+- code: 210
+  trigger: Backend rejects the value (false, on both builds)
+  label: not supported
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The accepted value selects pixel format 3 (gained 8-bit Bayer) on both builds; false gives 210 on both.
+examples:
+- name: 'false'
+  summary: Rejected on the audited backend (shape INFERRED)
+  of: request
+  payload:
+    id: 51
+    method: set_camera_16bit
+    params: false
+- name: 'true'
+  of: request
+  payload:
+    id: 52
+    method: set_camera_16bit
+    params: true
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_camera_16bit
+    error: not supported
+    code: 210
+    id: 51
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_camera_16bit
+    result: 0
+    code: 0
+    id: 52
+see_also:
+- get_camera_16bit
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

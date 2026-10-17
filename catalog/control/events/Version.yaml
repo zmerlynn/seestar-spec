@@ -1,0 +1,134 @@
+kind: event
+name: Version
+summary: Connection greeting sent to a newly accepted socket, naming the server and (imager only) its
+  firmware version.
+description: 'Sent once to the arriving socket only (single-socket send from the socket-arrival callback),
+  not broadcast. No repeating timer and no application request is needed. Emitted by three servers: the
+  imager on TCP 4700 (channel I), the guider zwoair_guider on TCP 4400 (channel G) and the legacy updater
+  on TCP 4350 (channel U). Each server greets its own sockets; the imager does not forward a guider greeting
+  as its own (the guider socket held by the imager is internal). The guider and updater greetings carry
+  name but not the imager version members. The imager runs its version printer before serializing, so
+  its greeting carries the firmware version and verification flag; the downgrade members appear only on
+  Plus-class and Mini-class hardware when a staged update package with a parsable version is present
+  (READ); other models omit them, and clients MUST treat both as optional. Firmware 9.75 adds main_version
+  and modules (name and version pairs) from the update manifest; their presence condition is INFERRED. The greeting does not establish
+  handshake order relative to other traffic or any authentication gate. Family: custom (not N/S/F); no
+  state or error members. APK consumers: DeviceEventPart, ConnectService, and the legacy firmware-update
+  fragment on 4350.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, imager SockeArrival @0xea100, PrintVerInfo @0xb0030; guider SockeArrival
+  @0x6a950; updater SockeArrival @0x25400 (64-bit builds); updater greeting OBSERVED (2026-10-12)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Version event
+  type: object
+  discriminator: Event
+  description: Imager form carries name plus version members; guider and updater forms carry name only.
+  required:
+  - Event
+  - Timestamp
+  - name
+  properties:
+    Event:
+      type: string
+      const: Version
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager SockeArrival @0xea100
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60; shape OBSERVED (2026-10-12)
+    name:
+      type: string
+      description: 'Server name literal: ASI AIR imager, ASI AIR guider or ASI AIR updater.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SockeArrival in imager @0xea100, guider @0x6a950, updater
+        @0x25400; presence on 4350 OBSERVED (2026-10-12, value suppressed)
+    firmware_ver_int:
+      type: integer
+      description: Firmware version as an integer (encoding not established).
+      x-required-when: imager greeting (4700)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintVerInfo @0xb0030
+    firmware_ver_string:
+      type: string
+      description: Firmware version string.
+      x-required-when: imager greeting (4700)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintVerInfo @0xb0030
+    is_verified:
+      type: boolean
+      description: Hardware verification result.
+      x-required-when: imager greeting (4700)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintVerInfo @0xb0030
+    downgrade_fw_ver_int:
+      type: integer
+      description: Version of a staged update package. Only on Plus-class and Mini-class hardware; optional.
+      x-required-when: imager greeting on Plus/Mini hardware when the staged package name yields a version
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SockeArrival @0xea100, isModelPlusOrMini @0x6de710
+    downgrade_fw_ver_string:
+      type: string
+      description: Same condition as downgrade_fw_ver_int.
+      x-required-when: as downgrade_fw_ver_int
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SockeArrival @0xea100, isModelPlusOrMini @0x6de710
+    main_version:
+      type: string
+      description: 'Firmware 9.75: main version from the update manifest.'
+      x-required-when: imager greeting on firmware 9.75, when the manifest is readable (INFERRED)
+      x-confidence: READ; presence INFERRED
+      x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+    modules:
+      type: array
+      description: 'Firmware 9.75: module list from the update manifest.'
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Module name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+          version:
+            type: string
+            description: Module version.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+      x-required-when: as main_version
+      x-confidence: READ; presence INFERRED
+      x-basis: static analysis of firmware 9.75, sweep reports (GetOtaVersionInfo)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SockeArrival (imager, guider, updater)
+examples:
+- name: updater-greeting
+  summary: Passive-connect greeting on 4350 (shape OBSERVED 2026-10-12; value invented)
+  of: payload
+  payload:
+    Event: Version
+    Timestamp: '1234.123456789'
+    name: ASI AIR updater
+- name: imager-greeting
+  summary: Imager greeting (READ shape, not captured; values invented)
+  of: payload
+  payload:
+    Event: Version
+    Timestamp: '1234.123456789'
+    name: ASI AIR imager
+    firmware_ver_int: 2470
+    firmware_ver_string: '4.70'
+    is_verified: true
+see_also:
+- get_device_state
+- pi_is_verified
+- is_downgraded
+spec:
+- spec/control/events/envelope.md#recipients
+- spec/control/maintenance.md#version-greeting
+- spec/control/session-handshake.md#connection-lifecycle

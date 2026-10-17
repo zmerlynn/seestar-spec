@@ -1,0 +1,154 @@
+kind: method
+name: pi_get_time
+summary: Read the device's local calendar time and its time-zone name.
+description: 'No request parameters are read. Returns the libc local wall-clock calendar fields (year
+  as a full year, month 1 to 12) and a time-zone name obtained from a different source (64-bit build:
+  output of a fixed timedatectl pipeline; 32-bit build: contents of the timezone file). Calendar and zone
+  come from separate sources and are not read atomically, so they can disagree; no epoch, numeric UTC
+  offset or DST flag is returned. The zone string is not trimmed by the handler; the command socket framing
+  removes raw line-feed bytes from the whole reply before appending CR LF. An empty zone string can still
+  be a success (64-bit build). After a zone change the zone name is current at once, because it is read
+  freshly on every call; the calendar fields come from the running process''s local-time conversion, and
+  no process refreshes its zone after the change, so they may stay in the previous zone until the services
+  restart (no refresh READ; effect INFERRED).'
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit build)
+side_effects: Runs a fixed shell pipeline whose logging writes shared diagnostic state (64-bit build);
+  the 32-bit build reads a timezone file. No clock or zone is changed. Observation-safe.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_get_time request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_get_time
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_get_time success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: object
+        description: Local calendar fields plus zone name.
+        required:
+        - year
+        - mon
+        - day
+        - hour
+        - min
+        - sec
+        - time_zone
+        properties:
+          year:
+            type: integer
+            description: Full calendar year (libc year plus 1900).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+          mon:
+            type: integer
+            description: Month, 1 to 12 (libc month plus 1).
+            minimum: 1
+            maximum: 12
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+          day:
+            type: integer
+            description: Day of month.
+            minimum: 1
+            maximum: 31
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+          hour:
+            type: integer
+            description: Hour, local time.
+            minimum: 0
+            maximum: 23
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+          min:
+            type: integer
+            description: Minute, local time.
+            minimum: 0
+            maximum: 59
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+          sec:
+            type: integer
+            description: Second, local time (a leap second 60 is not excluded by the source).
+            minimum: 0
+            maximum: 60
+            x-confidence: READ; range INFERRED from libc
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+          time_zone:
+            type: string
+            description: Time-zone name as read from the host. Not trimmed by the handler, so trailing
+              characters from the source are not excluded; the usual form is an IANA zone name (INFERRED).
+            x-confidence: READ; usual form INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit
+              build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc0370, GetLocaltime @0x6d8800 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: The zone command could not be run (64-bit build), or the timezone file could not be read or
+    was empty (32-bit build)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  summary: No parameters (plain request answered with code 0 without prior verification on a tunnel path,
+    OBSERVED 2026-10-12)
+  of: request
+  payload:
+    id: 71
+    method: pi_get_time
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_get_time
+    result:
+      year: 2026
+      mon: 10
+      day: 14
+      hour: 21
+      min: 5
+      sec: 33
+      time_zone: America/Chicago
+    code: 0
+    id: 71
+see_also:
+- guider/pi_set_time
+spec:
+- spec/control/time-and-location.md#reading-the-time-pi_get_time

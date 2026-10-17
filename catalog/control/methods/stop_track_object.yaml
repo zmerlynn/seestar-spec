@@ -1,0 +1,85 @@
+kind: method
+name: stop_track_object
+summary: Stop the object tracker (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. Stops the object tracker started by start_track_object.
+  Refused with 524 while smart follow runs; use stop_smart_follow then. Routing by wide_cam follows stop_smart_follow,
+  with the difference that process type 2 without wide_cam gives 210. Reached through the relay path,
+  a failed relay replies 524 (INFERRED from control flow).
+grade: MUTATOR / READ
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xeef40 (64-bit build), @0x67aec (32-bit build)
+side_effects: Stops the object tracker; the mount stops following the target.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_track_object request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_track_object
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      description: params is optional; a non-object gives 107.
+      properties:
+        wide_cam:
+          type: boolean
+          description: Address the wide camera. Wrong type 106.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xeef40 (64-bit build), @0x67aec (32-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0xeef40 (64-bit build), @0x67aec (32-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params is not an object
+  label: expected object
+- code: 106
+  trigger: wide_cam is not a bool
+  label: expected bool
+- code: 210
+  trigger: wide_cam routing not served by this process
+  label: wrong process
+- code: 524
+  trigger: smart follow is running, or the relay to the other camera failed (the relay case is INFERRED)
+  label: busy
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The 32-bit routing table was not read.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 89
+    method: stop_track_object
+  summary: READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_track_object
+    result: 0
+    code: 0
+    id: 89
+see_also:
+- start_track_object
+- stop_smart_follow
+- ObjectTrack
+spec:
+- spec/control/function-states.md#smart-follow

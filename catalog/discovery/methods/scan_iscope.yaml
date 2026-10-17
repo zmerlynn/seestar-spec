@@ -1,0 +1,100 @@
+kind: method
+name: scan_iscope
+summary: UDP 4720 discovery request; the device answers with its discovery record (serial, name, model,
+  activation, lock and client count).
+description: >-
+  Sent as one CR- or LF-terminated JSON line in one UDP datagram to port 4720, normally to the Wi-Fi
+  directed broadcast address (unicast is also processed). The handler is registered only on the UDP
+  discovery socket, not on TCP 4700. Datagram boundaries are not line boundaries: the device keeps one
+  line reader across datagrams and senders, ignores lines of four bytes or fewer, and replies to the
+  source of the latest datagram, so a client should send the whole delimited request in one datagram.
+  The reply is one datagram, unicast to the request's source address and port, with LF bytes removed
+  and no line terminator appended. Unknown methods (code 103) get no reply, also inside batches. The
+  device address is the reply's source address; the record has no address member.
+grade: PURE GETTER / established (no persistent effect; 64-bit build)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0 and UDP thread @0x1e6a80 (64-bit build;
+  32-bit builder @0x17b820); app 3.3.2 UDP scanner
+side_effects: 'None persistent: reads identity, AP state, lock settings and licence files; starts read-only
+  helper processes (boot-environment read, interface query); logs and sets a thread-local error code.
+  Tier B because of the log writes and thread-local error state.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scan_iscope request
+  description: The app sends exactly id, method and params (an empty string), with no jsonrpc member.
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scan_iscope
+      description: Matched exactly and case-sensitively.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, UDP dispatch table @0x1e6a80
+    params:
+      description: The app sends an empty string. The handler does not read params.
+      x-confidence: READ
+      x-basis: static analysis of app 3.3.2 request DTO; firmware 9.31 scan_iscope @0x1e7ae0
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: scan_iscope success reply
+  description: One datagram, no line terminator. The Android app reads only result and ignores method,
+    id, code and jsonrpc.
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/ScanIscopeResult.yaml
+        description: Discovery record.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+- code: 103
+  trigger: Unknown method; the reply is suppressed on UDP, so nothing is sent
+  label: method not found (silent)
+errors_note: No handler-level error branch is established.
+examples:
+- name: request
+  summary: As sent by the app (CRLF follows on the wire)
+  of: request
+  payload:
+    id: 7
+    method: scan_iscope
+    params: ''
+- name: ok
+  summary: Synthetic values; optional members vary by device
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scan_iscope
+    result:
+      sn: EXAMPLESN01
+      ssid: S50_EXAMPLE
+      product_model: Seestar S50
+      is_verified: true
+      tcp_client_num: 1
+      connect_lock: false
+      password: md5-hex-placeholder
+      can_star_mode_sel_cam: false
+    code: 0
+    id: 7
+see_also:
+- control/get_device_state
+spec:
+- spec/transport/lan-discovery/app-scan.md#app-level-discovery-udp-4720
+- spec/transport/lan-discovery/app-scan.md#reply

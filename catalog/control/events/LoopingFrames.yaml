@@ -1,0 +1,83 @@
+kind: event
+name: LoopingFrames
+summary: Legacy exposure loop start, end or failure.
+description: 'S family. Sent by the imager''s frame-loop worker: start, complete or fail. A direct failure
+  to start the loop reports code 207. error and code appear only for a supplied code greater than zero.
+  Broadcast on TCP 4700 to every retained socket. Distinct from the guider''s LoopingExposures event.
+  The app defines the name as a constant but no event branch handling it is established. A 32-bit counterpart
+  exists.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, LoopFrames @0x1795a0 (64-bit build); 32-bit counterpart present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: LoopingFrames event
+  type: object
+  discriminator: Event
+  description: Loop transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: LoopingFrames
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, LoopFrames @0x1795a0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - complete
+      - fail
+      description: Legacy literal.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, LoopFrames @0x1795a0
+    error:
+      type: string
+      description: Message for code. The S helper writes it only when the caller supplies a code greater
+        than zero.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Written only when the caller supplies a code greater than zero; never written as 0
+        by this helper.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, LoopFrames @0x1795a0
+examples:
+- name: start
+  summary: Loop begins (READ shape)
+  of: payload
+  payload:
+    Event: LoopingFrames
+    Timestamp: '1234.123456789'
+    state: start
+- name: fail
+  summary: Loop could not start (READ shape; message invented)
+  of: payload
+  payload:
+    Event: LoopingFrames
+    Timestamp: '1234.123456789'
+    state: fail
+    error: fail to operate
+    code: 207
+see_also:
+- get_app_state
+- guider/loop
+spec:
+- spec/control/events/variants-and-consumers.md#defined-but-never-dispatched
+- spec/control/events-overview.md

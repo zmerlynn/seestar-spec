@@ -1,0 +1,88 @@
+kind: method
+name: scope_set_location
+summary: Set the observing site location on the connected mount.
+description: 'Passes the supplied latitude and longitude to the mount location setter when the mount supports
+  it and updates local geographic caches or configuration. Success means the call returned, not that the
+  mount accepted the values. Longitude is decimal degrees, positive east (INFERRED, strong: the mount
+  driver negates it for the mount''s west-positive site command). Parameter forms: object or positional
+  array; both members required. Via the imager command port (4700) the request reaches this handler only
+  as a forwarded unknown method; see the control service for the relay. Mount serial (firmware 9.31, READ):
+  :St then :Sg.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7b950, ScopeAM5::SetSiteLatLong (64-bit build)
+side_effects: Changes the mount site location and local geographic cache/configuration.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_location request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_location
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetLocationParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7b950 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 108
+  trigger: latitude or longitude missing or not a number
+  label: expected float param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 42
+    method: scope_set_location
+    params:
+    - 10
+    - 20
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_location
+    result: 0
+    code: 0
+    id: 42
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_location
+    error: expected float param
+    code: 108
+    id: 43
+see_also:
+- scope_set_time
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

@@ -1,0 +1,134 @@
+kind: method
+name: pi_station_scan
+summary: Scan for nearby Wi-Fi networks that the device could join as a station.
+description: 'Runs the network script''s scan branch, which asks the Wi-Fi supplicant to start a radio
+  scan and then reads the results; this is an active scan, not a cached list. The reply is an array of
+  networks, or {value: array} when ret_obj is true. Only networks in the same band as the device''s own
+  access point are listed, one entry per SSID (the strongest), with signal level in dBm at or above -80.
+  Blocks until the script completes.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0 (64-bit build)
+side_effects: Initiates an active radio scan through the supplicant tool and logs the command, synchronously
+  with no timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_scan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_scan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type:
+      - object
+      - array
+      - boolean
+      - integer
+      - 'null'
+      properties:
+        ret_obj:
+          type:
+          - boolean
+          - integer
+          x-default: false
+          description: 'Wrap the reply array as {value: array}. Boolean or integer (0 false, nonzero true).
+            A malformed value is silently treated as false.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+            (64-bit build)
+      description: Optional. An object with ret_obj, or a positional [boolean-or-integer]. Absent, null
+        or any unrecognised container behaves as defaults; there is no error for malformed ret_obj. No
+        scan-control keys are read.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0 (64-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_station_scan success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/PiStationScanResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+          (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The scan script process could not be started
+  label: fail to run command
+- code: 223
+  trigger: Scan script produced empty output
+  label: no result from command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other propagated failure codes are unresolved. The app (3.3.2) passes null params to its sender;
+  whether the member is then omitted on the wire is not established.
+examples:
+- name: default
+  of: request
+  payload:
+    id: 81
+    method: pi_station_scan
+- name: wrapped
+  summary: Object-wrapped reply
+  of: request
+  payload:
+    id: 82
+    method: pi_station_scan
+    params:
+      ret_obj: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_scan
+    result:
+    - freq: 2437
+      sig_lev: -52
+      flags: '[WPA2-PSK-CCMP][ESS]'
+      ssid: ExampleNet
+    code: 0
+    id: 81
+- name: ok-wrapped-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_scan
+    result:
+      value: []
+    code: 0
+    id: 82
+- name: no-output
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_scan
+    error: no result from command
+    code: 223
+    id: 83
+see_also:
+- pi_station_list
+- pi_station_select
+- pi_station_state
+spec:
+- spec/control/network.md#station-wi-fi-client

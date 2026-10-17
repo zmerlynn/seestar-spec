@@ -1,0 +1,19 @@
+title: scope_get_target_pierside result
+type: object
+description: Declared success form; NOT produced by any supplied mount implementation. A connected supplied
+  mount always replies with error 210.
+properties:
+  list:
+    type: array
+    description: Declared list of target pier-side labels. Accepted labels and range are unresolved.
+    items:
+      type: string
+    x-confidence: unresolved
+    x-basis: static analysis of firmware 9.31, handler @0x80df0 (64-bit build)
+  cursel:
+    type: integer
+    description: Declared current selection index. unresolved.
+    x-confidence: unresolved
+    x-basis: static analysis of firmware 9.31, handler @0x80df0 (64-bit build)
+x-confidence: unresolved
+x-basis: static analysis of firmware 9.31, handler @0x80df0 (64-bit build)

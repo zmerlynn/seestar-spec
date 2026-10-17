@@ -1,0 +1,15 @@
+title: get_merid_setting result
+type: object
+description: Only the recalibrate flag is reported. merid_over_min and merid_before_min are copied by
+  the helper but not emitted.
+required:
+- merid_recalibrate
+properties:
+  merid_recalibrate:
+    type: boolean
+    description: Recalibrate after a meridian flip.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7770, GetMeridSetting @0x11fd80 (64-bit build);
+      OBSERVED on a device (session S12, bare request, code 0)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb7770, GetMeridSetting @0x11fd80 (64-bit build)

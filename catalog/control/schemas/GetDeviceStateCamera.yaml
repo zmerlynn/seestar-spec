@@ -1,0 +1,46 @@
+title: get_device_state camera
+type: object
+description: Camera info.
+properties:
+  chip_size:
+    type: array
+    description: '[width, height] in pixels.'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  pixel_size_um:
+    type: number
+    description: Pixel size, micrometres (READ from the plate-scale formula pixel size x 206.265 x bin / focal mm).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  focal_len:
+    type: number
+    description: Focal length rounded to a whole value, millimetres (READ; factory default 250).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  fnumber:
+    type: number
+    description: F-number, dimensionless (INFERRED).
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  debayer_pattern:
+    type: string
+    description: Present only for a colour sensor.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  hpc_num:
+    type: integer
+    description: Hot-pixel count; meaning is hardware specific (unresolved).
+    x-confidence: READ; meaning unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  gain:
+    type: integer
+    description: Cached view-star gain; meaning is hardware specific (unresolved).
+    x-confidence: READ; meaning unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)

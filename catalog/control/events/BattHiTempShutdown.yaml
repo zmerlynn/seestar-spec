@@ -1,0 +1,47 @@
+kind: event
+name: BattHiTempShutdown
+summary: Envelope-only warning sent just before the device shuts down for battery over-temperature.
+description: 'Broadcast on TCP 4700 (channel I) from the high-temperature branch of the battery-change
+  handler, before the event server is stopped and the shutdown action is selected; expect the connection
+  to end shortly after. No timer on the emitter. Family N (Event and Timestamp only). The PiStatus battery
+  members describe the associated condition. APK consumers: DeviceEventPart; ConnectService.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, CPiStatusChecker::BatteryChange @0x12b3e0 (64-bit build)
+side_effects: Observation only for the receiver. On the device the same branch stops the event server
+  and starts a shutdown.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: BattHiTempShutdown event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: BattHiTempShutdown
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CPiStatusChecker::BatteryChange @0x12b3e0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, CPiStatusChecker::BatteryChange @0x12b3e0
+examples:
+- name: shutdown
+  summary: READ shape, not captured
+  of: payload
+  payload:
+    Event: BattHiTempShutdown
+    Timestamp: '1234.123456789'
+see_also:
+- PiStatus
+- pi_get_info
+spec:
+- spec/control/power-and-storage.md#high-temperature-shutdown

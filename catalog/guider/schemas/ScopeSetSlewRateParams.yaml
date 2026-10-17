@@ -1,0 +1,13 @@
+title: scope_set_slew_rate params
+type:
+- integer
+- array
+description: 'Slew-rate index: a bare integer, or an array whose first element is the integer. A direct
+  integer type is required.'
+items:
+  type: integer
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x72200 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x72200 (64-bit build)

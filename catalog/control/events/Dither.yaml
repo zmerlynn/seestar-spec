@@ -1,0 +1,81 @@
+kind: event
+name: Dither
+summary: 'Imager-side dither: move the guide lock and wait for the guider''s settle-done.'
+description: S family, emitted by the imager. The legacy do-dither and start-dither paths start a dither
+  movement on the guider and wait for the guider's SettleDone. state is a caller-supplied operation literal;
+  no closed list is established. error and code only for a supplied code greater than zero. Broadcast
+  on TCP 4700 to every retained socket. Distinct from the guider's GuidingDithered event. The app defines
+  the name as a constant but no event branch handling it is established. 32-bit evidence covers the start-dither
+  path.
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, DoDither @0x182f80, StartDither @0x182790 (64-bit build); 32-bit
+  counterpart for StartDither
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Dither event
+  type: object
+  discriminator: Event
+  description: Dither transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Dither
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, DoDither @0x182f80, StartDither @0x182790
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      description: Caller-supplied operation literal. Open set.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, DoDither @0x182f80, StartDither @0x182790
+    error:
+      type: string
+      description: Message for code. The S helper writes it only when the caller supplies a code greater
+        than zero.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Written only when the caller supplies a code greater than zero; never written as 0
+        by this helper.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, DoDither @0x182f80, StartDither @0x182790
+examples:
+- name: start
+  summary: Dither begins (READ shape; literal invented)
+  of: payload
+  payload:
+    Event: Dither
+    Timestamp: '1234.123456789'
+    state: start
+- name: complete
+  summary: Dither settled (READ shape)
+  of: payload
+  payload:
+    Event: Dither
+    Timestamp: '1234.123456789'
+    state: complete
+see_also:
+- Settle
+- set_dither
+- get_dither
+- guider/dither
+spec:
+- spec/control/events/variants-and-consumers.md#defined-but-never-dispatched
+- spec/control/events-overview.md

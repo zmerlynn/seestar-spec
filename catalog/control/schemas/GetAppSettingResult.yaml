@@ -1,0 +1,17 @@
+title: get_app_setting result
+type: object
+description: Object keyed by the dynamic setting names. Stored type integer gives integer, boolean gives
+  boolean, string gives string, floating point gives number. A selected key of any other stored type reports
+  the literal string "unknow type" (sic); enumeration skips unsupported types. An empty effective selection
+  can yield {}. A failure reading any selected key aborts the whole call with no partial result.
+additionalProperties:
+  anyOf:
+  - type: integer
+  - type: boolean
+  - type: string
+  - type: number
+  description: Stored value of the named key.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build)

@@ -1,0 +1,24 @@
+title: scope_get_beep_volume result
+type: object
+required:
+- list
+- index
+description: Choice list of sound-volume settings and the index of the current one. The list contents
+  are provided by the device and are not enumerated by the evidence.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x808a0 (64-bit build)
+properties:
+  list:
+    type: array
+    description: Names of the available volume choices.
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x808a0 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x808a0 (64-bit build)
+  index:
+    type: integer
+    description: Index of the current choice within list.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x808a0 (64-bit build)

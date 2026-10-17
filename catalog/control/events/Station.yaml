@@ -1,0 +1,100 @@
+kind: event
+name: Station
+summary: Result of a Wi-Fi station-mode connection attempt, with the station state on success.
+description: 'Broadcast on TCP 4700 (channel I) by the station-check worker after a station connection
+  attempt. The check started by pi_station_set is the only producer: it tests the connection about once a
+  second until the requested timeout. On failure (timeout, an error from the check, or an address in
+  10.0.0.x) the device deletes the saved network it was trying to join and then sends fail, so a client must
+  re-send credentials to retry and must not assume the network is still saved. A newer pi_station_set stops
+  the previous check without any event for it. On success the event
+  carries state complete and the station object, formatted exactly like the pi_station_state result.
+  On failure it is sent through the state helper (family S): state fail, with code and error only when
+  the supplied code is positive. No timer. Family: S plus custom. APK: recognized by the event-type table
+  (route check disabled for this name) and enters the DeviceService event flow.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710 (only references to the event name),
+  StartCheckStation @0x121ce0 (called only from pi_station_set), PrintStationState @0xb0c80 (64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Station event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Station
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - complete
+      - fail
+      description: complete on success, fail otherwise.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710
+    station:
+      $ref: ../schemas/PiStationStateResult.yaml
+      description: Station connection state, same formatter as pi_station_state.
+      x-required-when: state is complete
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710, PrintStationState @0xb0c80
+    code:
+      type: integer
+      description: Failure code (family S).
+      x-required-when: state is fail and the supplied code is greater than 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710, NotifyState
+    error:
+      type: string
+      description: Message for code; present together with code.
+      x-required-when: as code
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710, NotifyState
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, CheckStaConnFunc @0x121710
+examples:
+- name: connected
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: Station
+    Timestamp: '1234.123456789'
+    state: complete
+    station:
+      server: true
+      freq: 2437
+      ip: example-address
+      ssid: ExampleNet
+      gateway: example-gateway
+      netmask: example-netmask
+      sig_lev: -55
+      key_mgmt: WPA2-PSK
+- name: failed
+  summary: READ shape, not captured; no specific failure code is established
+  of: payload
+  payload:
+    Event: Station
+    Timestamp: '1234.123456789'
+    state: fail
+see_also:
+- pi_station_state
+- pi_station_set
+- pi_station_select
+- pi_station_auto_connect
+spec:
+- spec/control/events/nested-schemas.md#station-object
+- spec/control/network.md#station-event

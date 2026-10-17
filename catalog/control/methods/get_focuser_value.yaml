@@ -1,0 +1,115 @@
+kind: method
+name: get_focuser_value
+summary: Read one focuser control value by name.
+description: Requires an open focuser. Of the three named controls only max_step (the cached UI maximum,
+  an integer) yields an ordinary success. In the 64-bit build a recognised backlash on an open handle
+  always fails (the driver read is a stub), logging and replying 300; the 32-bit backend is a separate
+  implementation whose outcome is unresolved. reset_step has no getter (210). The handler can encode integer,
+  float, boolean and string values internally; an unexpected value tag gives 300. The strict grade is
+  MUTATOR because both builds write diagnostic log state on the failure path; no device setting is changed.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd3480, myStristr @0x6dc530 (64-bit build)
+side_effects: Reads cached state; the backlash failure path writes diagnostic log state. No open, move
+  or close.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_focuser_value request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_focuser_value
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetFocuserValueParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd3480 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type:
+        - integer
+        - number
+        - boolean
+        - string
+        description: Control value. An integer for max_step. The 64-bit build can encode integer, number,
+          boolean or string values; no other control produces one on the audited path. Physical unit of
+          backlash is unresolved.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd3480 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params absent, empty, null or name not a string
+  label: expected string param
+- code: 109
+  trigger: Name matches none of max_step, backlash, reset_step (including the empty string)
+  label: unexpected param
+- code: 318
+  trigger: Recognised control but the focuser is not open
+  label: device not connected
+- code: 210
+  trigger: Recognised control with no getter (reset_step)
+  label: not supported
+- code: 300
+  trigger: Backlash read fails (always, in the 64-bit build) or the value has an unexpected type
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 14
+    method: get_focuser_value
+    params:
+    - max_step
+- name: scalar-name
+  summary: Scalar name form
+  of: request
+  payload:
+    id: 15
+    method: get_focuser_value
+    params: max_step
+- name: ok
+  summary: max_step (value invented)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_value
+    result: 2600
+    code: 0
+    id: 14
+- name: backlash-fails
+  summary: Backlash read on an open focuser (64-bit build)
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_value
+    error: internal error
+    code: 300
+    id: 16
+see_also:
+- set_focuser_value
+- get_focuser_caps
+- get_focuser_setting
+spec:
+- spec/control/focus-and-filter.md#values-and-settings

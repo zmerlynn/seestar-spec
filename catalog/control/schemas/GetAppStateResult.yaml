@@ -1,0 +1,8 @@
+title: get_app_state result
+description: A boolean when the scalar selector is_autosave_running was sent, otherwise the full state
+  object.
+oneOf:
+- type: boolean
+- $ref: GetAppStateFull.yaml
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)

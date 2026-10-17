@@ -1,0 +1,26 @@
+title: set_connected params
+type:
+- object
+- array
+description: Object, or an array whose first element is the object, with optional camera, mount and aux
+  members. Only actual JSON booleans are acted on; integers, other types and unknown keys are ignored,
+  so an empty object succeeds without doing anything. A non-object gives 107.
+properties:
+  camera:
+    type: boolean
+    description: true connects and false disconnects the guide camera.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x74360 (64-bit build)
+  mount:
+    type: boolean
+    description: true connects and false disconnects the mount; disconnecting first stops the shared motion-check
+      thread.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x74360 (64-bit build)
+  aux:
+    type: boolean
+    description: true connects and false disconnects the auxiliary mount.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x74360 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x74360 (64-bit build)

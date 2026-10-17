@@ -1,0 +1,100 @@
+title: get_albums result
+type: object
+description: Album listing. The number of groups and entries depends on the filesystem and filter; there
+  is no separate count member. The result is absent on error.
+required:
+- path
+- list
+properties:
+  path:
+    type: string
+    description: Normalised requested path with the trailing slash removed.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+  list:
+    type: array
+    description: Groups of entries.
+    items:
+      type: object
+      required:
+      - group_name
+      - files
+      properties:
+        group_name:
+          type: string
+          description: Group label.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+            build)
+        files:
+          type: array
+          description: 'Entries of the group: files, or directories when listing a parent folder.'
+          items:
+            type: object
+            required:
+            - name
+            - thn
+            properties:
+              name:
+                type: string
+                description: File or directory name.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+                  build)
+              thn:
+                type: string
+                description: Thumbnail path; possibly empty.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+                  build)
+              type:
+                type: integer
+                description: Entry type. Directories carry 0. File codes (meanings from the device's file-name
+                  tests) are 1 sub-frame FITS, 2 stacked FITS, 3 deep-sky stacked, 4 video-stacked, 5 to 8
+                  video (timelapse or normal, with or without an AVI copy; 6 and 8 feed the cant_stack rule),
+                  9 other, 10 still image, 11 photometry, 12 meteor.
+                x-confidence: READ (values); INFERRED (meanings)
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60, GetFileType
+                  @0x11f8b0, GetFitsType @0x6a10f0 (64-bit build)
+              count:
+                type: integer
+                description: Number of items in a directory entry. Present for directories only, which
+                  omit date, is_favorite, duration_sec and cant_stack.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+                  build)
+              date:
+                type: string
+                description: File modification time in device local time, formatted YYYY-MM-DD HH:MM:SS.
+                  Files only.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60, getImgInfo
+                  @0x6e02c0 (64-bit build)
+              is_favorite:
+                type: boolean
+                description: Whether the file is in the favourites database. Emitted as a JSON boolean.
+                  Files only.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+                  build)
+              duration_sec:
+                type: number
+                description: Movie duration in seconds. Emitted only for movie files and only when the
+                  duration could be read.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+                  build)
+              cant_stack:
+                type: boolean
+                description: Emitted as true when the computed type is 6 or 8 and the full path contains
+                  the scenery folder name; otherwise absent.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+                  build)
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit
+            build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)

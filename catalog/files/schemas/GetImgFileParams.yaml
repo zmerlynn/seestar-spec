@@ -1,0 +1,32 @@
+title: get_img_file params
+description: File name and offset, as an object or as a positional array [name, offset].
+oneOf:
+- type: object
+  required:
+  - name
+  properties:
+    name:
+      type: string
+      description: File name. Required; omission yields error 105.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+    offset:
+      type: integer
+      description: Transfer offset. Missing or wrong type defaults to 0. No clamp. Unit INFERRED to be
+        bytes.
+      x-default: '0'
+      x-confidence: READ default; unit INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+- type: array
+  minItems: 1
+  prefixItems:
+  - type: string
+    description: File name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+  - type: integer
+    description: Transfer offset; default 0.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)

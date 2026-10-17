@@ -1,0 +1,39 @@
+title: get_merid_delta result
+type: object
+description: 'Meridian timing for the current target. All four members are present on success. The hour
+  delta is h = RA - LST (hours, wrapped to +/-12), so a non-negative h means the target has not yet crossed
+  the meridian (east) and a negative h means it has (west); when |h| exceeds 6 the delta is measured to the
+  lower meridian (LST - 12) instead. READ. LST is the third value of the guider scope_get_ra_dec reply
+  (sidereal time INFERRED). The helper''s h is converted to (h<0 ? h+12 : h)*60. Units of the three _min
+  members are INFERRED to be minutes.'
+required:
+- target_merid_delta_min
+- merid_over_min
+- merid_before_min
+- is_below_horizon
+properties:
+  target_merid_delta_min:
+    type: number
+    description: Target meridian delta (h = RA - LST) after the hour-to-minute conversion; no further clamp.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9b00, GetTargetDeltaHour @0x1882e0, CalcMeridDelta
+      @0x1875c0 (RA - LST @0x1875ec, lower-meridian branch @0x18771c) (64-bit build)
+  merid_over_min:
+    type: integer
+    description: Configured minutes allowed past the meridian. Negative values are clamped to 0 in the
+      helper.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9b00, GetTargetDeltaHour @0x1882e0 (64-bit
+      build)
+  merid_before_min:
+    type: integer
+    description: Configured minutes before the meridian, copied without clamp.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9b00, GetTargetDeltaHour @0x1882e0 (64-bit
+      build)
+  is_below_horizon:
+    type: boolean
+    description: True when the target is below the horizon.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9b00, GetTargetDeltaHour @0x1882e0 (64-bit
+      build)

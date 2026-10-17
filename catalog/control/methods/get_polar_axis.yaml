@@ -1,0 +1,107 @@
+kind: method
+name: get_polar_axis
+summary: Report the current polar-axis error from the saved alignment data.
+description: Computes the angular offset between the mount axis and the celestial pole, either from the
+  three-point error (three-point mode) or from the saved WCS images (legacy mode). Despite the name it
+  refreshes several static caches on success.
+grade: MUTATOR / established (64-bit build; 32-bit build established for the cache writes)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb7c20, GetPolarFromWcs @0x15e9e0, Get3PPaError @0x160500
+  (64-bit build)
+side_effects: Rewrites the cached last-distance values on success, updates the image-centre cache and
+  may reload the stored user location. No motion or settings write.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_polar_axis request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_polar_axis
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7c20 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_polar_axis success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/GetPolarAxisResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Legacy centre computation fails, or no usable cached distance exists
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A failure of only the pole calculation can instead return success false with cached distances.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 101
+    method: get_polar_axis
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_polar_axis
+    result:
+      dist_arcsec: 920.5
+      dist_x_arcsec: 640.25
+      dist_y_arcsec: 660.0
+      success: true
+      centre_deg:
+      - 182
+      - 41
+      polar_deg:
+      - 180
+      - 40
+    code: 0
+    id: 101
+- name: no-data
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_polar_axis
+    error: fail to operate
+    code: 207
+    id: 102
+see_also:
+- start_polar_align
+- set_polar_align_image
+spec:
+- spec/control/polar-alignment.md#results-and-image-slots

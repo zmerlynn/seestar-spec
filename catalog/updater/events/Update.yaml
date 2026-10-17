@@ -1,0 +1,127 @@
+kind: event
+name: Update
+summary: 'Updater: installation progress stage or failure while applying a firmware package.'
+description: 'Sent while the updater runs the firmware update script: a status reader watches the script
+  output, matches progress markers and sends one event per matched stage (not periodic, no numeric percent).
+  64-bit polling sleeps 200 ms in the normal loop, 100 ms on the pending/abort check and 50 ms while draining
+  a terminal or error state. Sent by the updater process (zwoair_updater) on its TCP 4350 JSON server,
+  not by the imager. Delivered with an IP-matched send: every 4350 connection whose IP string equals the
+  target''s receives it, so several sockets from one host can all match, and other clients get nothing.
+  State is caller-supplied: working for progress, fail on failure (READ); code and error are added on
+  the failure branch. The packaged update scripts on both builds report the stages copy file, write disk,
+  update mount FW and restart server; desc can also carry other dynamically parsed progress text, so it
+  is not a closed enum. The updater records result codes 201 (receive failure), 204 (timeout) and 525
+  (interruption, MD5 failure or signature failure) (READ); that these reach code is INFERRED. Firmware 9.75 (64-bit build, READ for the codes, which also exist
+  in 9.31) ends a failed update with the failure notification carrying the strings fail and error and a
+  numeric code of 204 (900 s timeout), 529 (update error status) or 207 (update output file not found,
+  poll aborted before it appeared, or the done marker could not be written); which wire members carry
+  those strings is INFERRED to be state and error, and the code member the number. In 9.75 the failure
+  path also clears the legacy update directory and writes the done marker. Other failure error and code
+  values are unresolved. Android app consumer (READ, consumer expectation,
+  not firmware behaviour): the legacy firmware screen selects UI by desc and also handles retry mount
+  FW update, which no 9.31 firmware binary emits (READ, exhaustive search for absence). The newer app OTA workflow listens for
+  OtaUpdate; no emitter for it was found in either packaged updater build.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+  @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Update event
+  type: object
+  discriminator: Event
+  description: Updater custom producer; error and code only on failure.
+  required:
+  - Event
+  - Timestamp
+  - state
+  - desc
+  - route
+  properties:
+    Event:
+      type: string
+      const: Update
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+        @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater Ev constructor @0x5d080 calls updater getTimestamp @0x37340
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit updater build)
+    state:
+      type: string
+      description: 'Installation state: working during progress, fail on failure. Supplied by the caller;
+        not an F lifecycle enum.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+        @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+    desc:
+      type: string
+      description: Stage description, e.g. copy file, write disk, update mount FW, restart server, or
+        other parsed progress text.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+        @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+    error:
+      type: string
+      description: Failure message.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+        @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+    code:
+      type: integer
+      description: Failure code. The updater records 201 (receive failure), 204 (timeout) and 525 (interrupted,
+        MD5 or signature failure); that these reach this member is INFERRED. Firmware 9.75 status poll
+        failures use 204 (900 s timeout), 529 (update error) and 207 (update output missing, aborted, or
+        done marker write failed); READ for the numbers, INFERRED for the member. Other values unresolved.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+        @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+    route:
+      type: array
+      items:
+        type: string
+      maxItems: 0
+      description: Always an empty array, inserted by the IP-matched sender; the recipient IP is not a
+        route element.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+        @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyUpdate @0x12c00, socket_json_server_binary::NotifyUpdate
+    @0x28140 and RefreshUpdateStatus @0x116b0 (64-bit build); 32-bit counterparts present
+examples:
+- name: write-disk
+  summary: READ illustration shape (not captured)
+  of: payload
+  payload:
+    Event: Update
+    Timestamp: '1234.123456789'
+    state: working
+    desc: write disk
+    route: []
+- name: failed
+  summary: Static example of the failure branch (READ shape, not captured; code and text invented)
+  of: payload
+  payload:
+    Event: Update
+    Timestamp: '1234.123456789'
+    state: fail
+    desc: update mount FW
+    error: example failure text
+    code: 1
+    route: []
+see_also:
+- begin_recv
+- stop_recv
+spec:
+- spec/control/events/envelope.md#recipients
+- spec/updater/index.md#events

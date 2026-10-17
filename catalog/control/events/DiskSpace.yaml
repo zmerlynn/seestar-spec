@@ -1,0 +1,57 @@
+kind: event
+name: DiskSpace
+summary: One-member delta reporting the used-storage percentage when it changes.
+description: 'Broadcast to all retained sockets on TCP 4700 (channel I) after a successful storage-space
+  read that yields a changed integer percentage with a positive total capacity; an identical percentage
+  is suppressed. The periodic updater refreshes when no earlier read exists or more than 5000 ms have
+  elapsed; save, record and refresh paths can force a read. The 5000 ms figure is a refresh condition,
+  not a broadcast rate or rate cap. This is not the full storage-volume getter result. Family: custom;
+  no state or error. APK consumers: DeviceEventPart; DeviceService disk-space handler.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, CSpaceChecker::GetSpace @0x125ad0, CSpaceChecker::TimeUpdate
+  @0x125cc0 (64-bit build); shape OBSERVED (2026-10-12)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: DiskSpace event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - used_percent
+  properties:
+    Event:
+      type: string
+      const: DiskSpace
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CSpaceChecker::GetSpace @0x125ad0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60; shape OBSERVED (2026-10-12)
+    used_percent:
+      type: integer
+      description: Used storage percentage of the current storage. Denominator and range are not established
+        by observation.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CSpaceChecker::GetSpace @0x125ad0; type OBSERVED (2026-10-12)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, CSpaceChecker::GetSpace @0x125ad0
+examples:
+- name: changed
+  summary: Shape OBSERVED (2026-10-12); value invented
+  of: payload
+  payload:
+    Event: DiskSpace
+    Timestamp: '1234.123456789'
+    used_percent: 37
+see_also:
+- get_disk_volume
+- get_device_state
+spec:
+- spec/control/power-and-storage.md#storage-events

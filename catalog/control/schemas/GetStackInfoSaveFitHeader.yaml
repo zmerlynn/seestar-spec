@@ -1,0 +1,233 @@
+title: get_stack_info save_fit_header
+type: object
+description: FITS-style keyword values as a flat JSON object (not a binary FITS header and not an array
+  of card strings). Keyword spelling, capitalisation and value types are significant. Members other than
+  CREATOR, PRODUCER and PROGRAM are conditional. The table is scoped to the 64-bit build.
+required:
+- CREATOR
+- PRODUCER
+- PROGRAM
+properties:
+  CREATOR:
+    type: string
+    description: Creator string. Always present.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  PRODUCER:
+    type: string
+    description: Producer; the device emits the literal ZWO. Always present.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+    const: ZWO
+  PROGRAM:
+    type: string
+    description: Firmware version string. Always present.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  OFFSET:
+    type: integer
+    description: Sensor offset. Present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  BIAS:
+    type: integer
+    description: Bias level. Present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  XORGSUBF:
+    type: integer
+    description: Subframe X origin. Present when both origins are non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  YORGSUBF:
+    type: integer
+    description: Subframe Y origin. Same condition as XORGSUBF.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  FOCALLEN:
+    type: number
+    description: Focal length, truncated to a whole number. Present when the stored value is above -1.
+      Unit unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  APERTURE:
+    type: number
+    description: Aperture. Present when valid (not the -999 sentinel). Unit unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  EQMODE:
+    type: integer
+    description: Equatorial-mode flag. Present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  WIDECAM:
+    type: integer
+    description: Wide-camera flag. Present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  SET-TEMP:
+    type: integer
+    description: Sensor set temperature. Present unless unset. Unit unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  EGAIN:
+    type: number
+    description: Electrons-per-ADU gain. Present when valid.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  XBINNING:
+    type: integer
+    description: X binning. Present when the bin value is non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  YBINNING:
+    type: integer
+    description: Y binning; same value and condition as XBINNING.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  CCDXBIN:
+    type: integer
+    description: X binning; same value and condition as XBINNING.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  CCDYBIN:
+    type: integer
+    description: Y binning; same value and condition as XBINNING.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  XPIXSZ:
+    type: number
+    description: 'Effective pixel width: bin times native pixel size. Present when bin is non-negative
+      and the pixel size is valid.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  YPIXSZ:
+    type: number
+    description: Same value and condition as XPIXSZ.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  IMAGETYP:
+    type: string
+    description: Image type string. Present when bin is non-negative and the string is non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  STACKCNT:
+    type: integer
+    description: Number of stacked frames. Present when non-negative; positive in the successful stack-header
+      branch.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  EXPOSURE:
+    type: number
+    description: Per-frame exposure. Unit INFERRED seconds. Present when valid.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  EXPTIME:
+    type: number
+    description: Same value and condition as EXPOSURE.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  CCD-TEMP:
+    type: number
+    description: Sensor temperature. Present when valid. Unit unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  RA:
+    type: number
+    description: Right ascension as a JSON number. Present when RA and Dec are both valid. Unit INFERRED
+      degrees.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  DEC:
+    type: number
+    description: Declination as a JSON number; same condition as RA. Unit INFERRED degrees.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  SITELONG:
+    type: number
+    description: Site longitude as a JSON number. Present when longitude and latitude are valid. Unit
+      INFERRED degrees.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  SITELAT:
+    type: number
+    description: Site latitude as a JSON number; same condition as SITELONG. Unit INFERRED degrees.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  DATE-OBS:
+    type: string
+    description: Observation start timestamp string. Present when non-empty. Format unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  DATE-EXP:
+    type: string
+    description: Exposure timestamp string. Present when non-empty. Format unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  FILTER:
+    type: string
+    description: Name (saved or factory default) of the filter-wheel slot the wheel is at when the header
+      is built. Empty, and so absent, while the wheel is moving or when no wheel is fitted. Present when
+      non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0, GetImgParams @0x210190 (0x210ca8-0x210cb4),
+      GetWheelPosition(string) @0x301280 (64-bit build)
+  INSTRUME:
+    type: string
+    description: Instrument name. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  GUIDECAM:
+    type: string
+    description: Guide-camera name. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  BAYERPAT:
+    type: string
+    description: Bayer pattern name. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  GAIN:
+    type: integer
+    description: Sensor gain. Present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  FOCUSPOS:
+    type: integer
+    description: Focuser position. Present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  ISO:
+    type: string
+    description: ISO setting as a string, not an integer. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  TELESCOP:
+    type: string
+    description: Telescope name. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  OBJCTTYP:
+    type: string
+    description: Object type. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  OBJECT:
+    type: string
+    description: Object name. Present when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  SHARPEN:
+    type: string
+    description: Sharpen parameters as comma-joined decimal integers with a trailing comma (a string,
+      not a JSON array). Present when the list is non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+  TOTALEXP:
+    type: number
+    description: Total exposure; in this method the device sets it to frame count times the per-frame
+      exposure. Present when valid. Unit INFERRED seconds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, PrintFitHeader @0x6a4dc0 (64-bit build)

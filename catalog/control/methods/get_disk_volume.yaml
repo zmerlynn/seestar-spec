@@ -1,0 +1,109 @@
+kind: method
+name: get_disk_volume
+summary: Return total and free capacity of a storage volume in MiB.
+description: Selects the storage by an optional string or positional element, checks named storages are
+  mounted, and queries filesystem capacity. The result names are MB but the values are MiB.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe5670, GetDiskInfo @0x6da200 (64-bit build)
+side_effects: Reads mount paths and filesystem capacity synchronously; logs through shared buffers. No
+  timeout. Observation-safe.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_disk_volume request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_disk_volume
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Optional. A string naming a storage or giving a path; or an array whose first element
+        is usb_disk (string, boolean or integer). Objects and other types are ignored (current-priority
+        storage). Boolean or integer: false/0 selects storage 0, true/nonzero selects storage 2; other
+        element types select storage 0. Missing, empty or empty-path values fall back to the current-priority
+        storage. Unrecognised strings are passed to the filesystem query directly with no range check,
+        so clients SHOULD use named storages.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5670, GetDiskInfo @0x6da200 (64-bit build)
+      anyOf:
+      - type: string
+      - type: array
+        minItems: 0
+        items:
+          type:
+          - string
+          - boolean
+          - integer
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_disk_volume success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetDiskVolumeResult.yaml
+        description: Capacity in MiB.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe5670, GetDiskInfo @0x6da200 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Named or boolean-selected storage not mounted
+  label: device not connected
+- code: 204
+  trigger: Invalid mount-path storage index
+  label: out of limit
+- code: 255
+  trigger: Filesystem query failed with no-such-file
+  label: file not exist
+- code: 300
+  trigger: Other filesystem query failure
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Mount-path helper failures propagate their own code.
+examples:
+- name: request
+  summary: Current-priority storage
+  of: request
+  payload:
+    id: 121
+    method: get_disk_volume
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_disk_volume
+    result:
+      totalMB: 118000
+      freeMB: 90000
+    code: 0
+    id: 121
+- name: not-mounted
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_disk_volume
+    error: device not connected
+    code: 318
+    id: 122
+see_also:
+- get_img_file_page_name
+spec:
+- spec/control/power-and-storage.md#querying

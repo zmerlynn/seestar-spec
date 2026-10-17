@@ -1,0 +1,44 @@
+title: pi_station_set parameters object
+description: The effective parameter object of pi_station_set.
+type: object
+required:
+- ssid
+properties:
+  ssid:
+    type: string
+    minLength: 1
+    description: SSID of the network to join. Required and nonempty; a missing, empty or non-string value
+      is rejected with 105. Script-imposed limits are unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+      @0x121ce0 (64-bit build)
+  psk:
+    type: string
+    x-default: ''
+    description: Pre-shared key. Optional. Firmware 9.75 (64-bit build) expects an enc1 token here, decoded
+      with the connection's crypto session (secure-communication chapter); there is no wifi object.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+      @0x121ce0 (64-bit build)
+  timeout_sec:
+    type: integer
+    x-default: 10
+    description: Seconds the asynchronous station check waits for the connection. Optional. Must be greater
+      than 0 (209 otherwise, after the station configuration has already been written); no upper bound
+      in the handler. A non-integer is rejected with 104.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+      @0x121ce0 (64-bit build)
+  hidden:
+    type:
+    - boolean
+    - integer
+    x-default: false
+    description: Whether the network is hidden. Optional boolean or integer (nonzero true); another type
+      is rejected with 106.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+      @0x121ce0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+  @0x121ce0 (64-bit build)

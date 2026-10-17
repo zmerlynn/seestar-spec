@@ -1,0 +1,101 @@
+kind: method
+name: scope_get_connection_mode
+summary: Report the mount driver's available connection modes and the current one.
+description: Builds a local list of connection modes and asks the connection chooser for the current parameters.
+  In TCP mode with an open handle, it also refreshes the cached address and port description. This is
+  a description-cache refresh, not a connect or send. Failures use internal-object and operation codes
+  rather than the mount-connected gate. Params are not consumed.
+grade: MUTATOR / established (strict; native handler, 64-bit build)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x81950 (64-bit build); ScopeAM5::GetConnectionMode
+  @0xf0840; TCP settings refresh @0x25560; formatter sites @0x81c74 (207), @0x81c4c (300)
+side_effects: Refreshes the shared connection-description cache, including the TCP settings; no command
+  is sent to a device.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_connection_mode request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_connection_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x81950 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: scope_get_connection_mode reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/ScopeGetConnectionModeResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x81950 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Operation fails
+  label: fail to operate
+- code: 300
+  trigger: Internal scope or chooser object missing
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: query
+  summary: Params omitted
+  of: request
+  payload:
+    id: 130
+    method: scope_get_connection_mode
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_connection_mode
+    result:
+      list:
+      - Serial
+      - TCP
+      index: 0
+    code: 0
+    id: 130
+  summary: Invented values
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_connection_mode
+    error: internal error
+    code: 300
+    id: 131
+see_also:
+- scope_get_connection_para
+- mount_scan_port
+spec:
+- spec/guider/index.md#method-groups

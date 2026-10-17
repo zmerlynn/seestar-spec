@@ -1,0 +1,158 @@
+kind: method
+name: get_enabled_plan
+summary: Read the enabled legacy autosave plans with progress and estimates.
+description: Returns only the enabled legacy plans, with the same fields as get_plan (progress flag set).
+  Disabled targets inside an enabled plan are still listed; enabled does not establish that the plan is
+  running. No request parameters are read.
+grade: MUTATOR / established (64-bit and 32-bit builds); it is a mutator because the estimate path writes shared caches.
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb53e0, FormatPlans @0x3097c0 (64-bit build)
+side_effects: Copies the global plan map under its lock. Estimating enabled plans refreshes shared camera-information
+  caches (64-bit build) and writes to the logger, which can append or rotate log files. No plan is started
+  and no hardware is moved. Camera-read failures are not turned into errors.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_enabled_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_enabled_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array take the same path. Clients SHOULD
+        omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb53e0, FormatPlans @0x3097c0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_enabled_plan success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: get_enabled_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      $ref: ../schemas/LegacyPlanOutput.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb53e0, FormatPlans @0x3097c0 (64-bit build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 268
+  trigger: The plan loader thread is running
+  label: operation is in progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: all
+  summary: Enabled plans
+  of: request
+  payload:
+    id: 41
+    method: get_enabled_plan
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_enabled_plan
+    result:
+    - id: 1
+      plan_name: Example plan
+      merid_flip: true
+      mount_go_home: true
+      focuser_go_home: false
+      shutdown_pi: false
+      start_guide: true
+      close_cooler: true
+      wait_cooling: true
+      enable: true
+      left_size_m: 800.5
+      left_time_sec: 5400
+      total_time_sec: 5400
+      cur_id: 1
+      start_time:
+        type: date
+        hour: 21
+      end_time:
+        type: dawn
+      targets:
+      - delay_first: 0
+        delay_between_frame: 0
+        id: 1
+        capture_index: 0
+        extra_sec_per_target: 0
+        left_time_sec: 5400
+        total_time_sec: 5400
+        code: 0
+        enable: true
+        group_by_slot: true
+        target_name: Example target
+        target_original_img: ''
+        target_original_name: ''
+        real_start_date: ''
+        real_end_date: ''
+        obj_type: ''
+        left_size_m: 800.5
+        error: no error
+        cur_id: 1
+        target_coord:
+        - 12
+        - 30
+        seqs:
+        - id: 1
+          filter: 0
+          gain: 80
+          bin: 1
+          repeat: 30
+          lapsed: 0
+          capture_index: 0
+          type: light
+          suffix: ''
+          exp: 10
+          enable: true
+          autoexp: false
+    code: 0
+    id: 41
+- name: ok-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_enabled_plan
+    result: []
+    code: 0
+    id: 43
+see_also:
+- get_plan
+- list_plan
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#legacy-plan-reply-format
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#observing-plans

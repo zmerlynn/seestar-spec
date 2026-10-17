@@ -1,0 +1,63 @@
+kind: method
+name: pause_polar_align
+summary: Stop the polar-alignment workers without restoring settings.
+description: Stops both the three-point and gyro alignment threads (the stop may block while the worker
+  finishes) and does not restore settings. There is no state check; the stop result is not examined. The
+  3PPA event state keeps its last progress value after a pause.
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcbc10 (64-bit build)
+side_effects: Stops the alignment worker threads; can block with no short timeout established.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pause_polar_align request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pause_polar_align
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcbc10 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The inspected handler returns no handler-specific error code.
+examples:
+- name: call
+  of: request
+  payload:
+    id: 91
+    method: pause_polar_align
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pause_polar_align
+    result: 0
+    code: 0
+    id: 91
+see_also:
+- start_polar_align
+- get_polar_axis
+spec:
+- spec/control/polar-alignment.md#run-control

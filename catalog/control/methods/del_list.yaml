@@ -1,0 +1,98 @@
+kind: method
+name: del_list
+summary: Delete a named object list and all objects in it.
+description: Finds the list by display name and removes its whole subtree from the persistent object-list
+  configuration.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcd080, ObjListConfig::DelList @0x6c3360 (64-bit build)
+side_effects: Removes a list entry and its objects from the persistent XML configuration, synchronously.
+  No event is emitted by the handler.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: del_list request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: del_list
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+      - type: array
+        minItems: 1
+        items:
+          type: string
+      description: The list display name, as a bare string or as a one-element array whose first element
+        is used (extra elements ignored). Absent, null, empty array or a non-string gives 105. No length
+        check.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcd080, json_array2obj @0x6fa450 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params is absent, null, an empty array, or not a string
+  label: expected string param
+- code: 236
+  trigger: The configuration root or the named list is not found
+  label: xml item is not found
+- code: 234
+  trigger: 'Lower RemoveChild step: configuration file name storage is empty'
+  label: xml file name is empty
+- code: 229
+  trigger: 'Lower RemoveChild step: the XML key could not be opened'
+  label: fail to open xml key
+- code: 230
+  trigger: 'Lower RemoveChild step: the XML item could not be deleted'
+  label: fail to delete xml item
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Lower-level codes 234, 229 and 230 are established for the 64-bit RemoveChild only; 32-bit
+  equivalence is not asserted. Close and save outcomes are not returned as RPC errors; other lower failures
+  are unresolved.
+examples:
+- name: delete
+  of: request
+  payload:
+    id: 41
+    method: del_list
+    params: Winter targets
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: del_list
+    result: 0
+    code: 0
+    id: 41
+- name: not-found
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: del_list
+    error: xml item is not found
+    code: 236
+    id: 42
+see_also:
+- add_list
+- rename_list
+- get_list
+spec:
+- spec/control/object-lists.md#user-object-lists

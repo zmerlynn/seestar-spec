@@ -1,0 +1,111 @@
+kind: method
+name: get_algo_param
+summary: Read one parameter of the active guiding algorithm for an axis.
+description: Params are an object {axis, name} or an array [axis, name]; axis is ra/x or dec/y. The handler
+  selects the active algorithm for the axis and calls its virtual parameter getter. The result is the
+  parameter value as a double. Parameter names per algorithm (READ) are hysteresis {hysteresis, aggression, minMove};
+  lowpass {slopeWeight, minMove}; lowpass2 {aggressiveness, minMove}; resist-switch {aggression, fastSwitch,
+  minMove}. minMove is in pixels (INFERRED).
+  Limits (64-bit; 32-bit not checked; READ) are hysteresis.hysteresis 0..1; hysteresis.aggression above 0 up to 2; lowpass2.aggressiveness 0 or more, no upper limit; resist-switch.aggression above 0 up to 1 (a fraction, not scaled); resist-switch.minMove above 0; every other minMove and lowpass.slopeWeight 0 or more; fastSwitch is never rejected (non-zero means on).
+  The method is registered in the guider command table (TCP 4400); a request that reaches the main imager
+  and is relayed to the guider is a separate route with its own side effects, outside this entry's tier.
+grade: PURE GETTER / probable (64-bit build; 32-bit build matches (READ))
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7c240 (64-bit build); GetParamNames for Hysteresis
+  @0xe25b0, Lowpass @0xe3a50, Lowpass2 @0xe4ee0, ResistSwitch @0xe6280
+side_effects: None established for the handler itself; the algorithm getter is a virtual call whose target
+  set is not closed.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_algo_param request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_algo_param
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/GetAlgoParamParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7c240 (64-bit build)
+reply_success:
+  title: get_algo_param success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: number
+        description: Current value of the named algorithm parameter, as a double. Units per name are in
+          the description.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x7c240 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: axis or name missing or not a string
+  label: expected string param
+- code: 323
+  trigger: The algorithm getter failed (for example an unknown name)
+  label: could not get param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Out-of-range values are rejected by the algorithm setters (set_algo_param, 322), which then apply and
+  persist a substitute value; see set_algo_param for the limits.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: get_algo_param
+    params:
+      axis: ra
+      name: aggression
+- name: request-array
+  of: request
+  payload:
+    id: 6
+    method: get_algo_param
+    params:
+    - dec
+    - minMove
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_algo_param
+    result: 80
+    code: 0
+    id: 5
+- name: error-323
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_algo_param
+    error: could not get param
+    code: 323
+    id: 7
+see_also:
+- get_algo_param_names
+spec:
+- spec/guider/index.md#method-groups

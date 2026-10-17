@@ -1,0 +1,86 @@
+kind: event
+name: Settle
+summary: Imager-side wait for guiding to settle (dither or guide start).
+description: S family, emitted by the imager. Sent from the wait-for-guide-settle, start-dither and do-dither
+  paths while the imager waits for the guider to settle. state is a caller-supplied literal (including
+  complete and fail); no closed list is established. error and code only for a supplied code greater than
+  zero. Not the guider's Settling event and not its schema. Broadcast on TCP 4700 to every retained socket.
+  The app defines the name as a constant but no event branch handling it is established. The 32-bit evidence
+  covers the wait and start-dither paths; a do-dither counterpart is not cited.
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, WaitGuideSettle @0x181ea0, StartDither @0x182790, DoDither @0x182f80
+  (64-bit build); 32-bit counterparts for WaitGuideSettle and StartDither
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Settle event
+  type: object
+  discriminator: Event
+  description: Settle-wait transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Settle
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, WaitGuideSettle @0x181ea0, StartDither @0x182790, DoDither
+        @0x182f80
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      description: Caller-supplied literal, including complete and fail. Open set.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, WaitGuideSettle @0x181ea0, StartDither @0x182790, DoDither
+        @0x182f80
+    error:
+      type: string
+      description: Message for code. The S helper writes it only when the caller supplies a code greater
+        than zero.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Written only when the caller supplies a code greater than zero; never written as 0
+        by this helper.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, WaitGuideSettle @0x181ea0, StartDither @0x182790, DoDither
+    @0x182f80
+examples:
+- name: complete
+  summary: Settled (READ shape)
+  of: payload
+  payload:
+    Event: Settle
+    Timestamp: '1234.123456789'
+    state: complete
+- name: fail
+  summary: Settle failed (READ shape; code and message invented)
+  of: payload
+  payload:
+    Event: Settle
+    Timestamp: '1234.123456789'
+    state: fail
+    error: fail to operate
+    code: 1
+see_also:
+- Dither
+- guider/dither
+- set_dither
+- get_dither
+spec:
+- spec/control/events/variants-and-consumers.md#defined-but-never-dispatched
+- spec/control/events-overview.md

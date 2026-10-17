@@ -1,0 +1,92 @@
+kind: method
+name: reset_setting_commit
+summary: Apply the staged settings reset (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. Second phase of the reset transaction between the primary
+  and the second-camera process. Only the second-camera process accepts it; elsewhere it replies 210.
+  Clients normally use reset_setting, which drives these phases itself.
+grade: MUTATOR / READ
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0x102060 (64-bit build), @0x8b854 (32-bit build)
+side_effects: Applies the staged reset and clears the pending transaction either way. If an apply fails,
+  the staged changes are rolled back and the stored code is returned.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: reset_setting_commit request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: reset_setting_commit
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      required:
+      - transaction_id
+      properties:
+        transaction_id:
+          type: integer
+          description: Identifier given to reset_setting_prepare.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0x102060 (64-bit build), @0x8b854 (32-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0x102060 (64-bit build), @0x8b854 (32-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: process is not the second-camera process
+  label: wrong process
+- code: 107
+  trigger: params is not an object
+  label: expected object
+- code: 209
+  trigger: transaction_id missing or not an integer, no pending transaction, or id mismatch
+  label: bad transaction
+- code: 207
+  trigger: an apply failed and was rolled back
+  label: apply failed
+- code: 300
+  trigger: rollback after the failed apply also failed
+  label: rollback failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No event is emitted.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 83
+    method: reset_setting_commit
+    params:
+      transaction_id: 1
+  summary: READ shape, not captured; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_setting_commit
+    result: 0
+    code: 0
+    id: 83
+see_also:
+- reset_setting
+- reset_setting_prepare
+- reset_setting_rollback
+spec:
+- spec/control/function-states.md#settings-reset

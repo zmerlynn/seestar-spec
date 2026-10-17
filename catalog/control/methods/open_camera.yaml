@@ -1,0 +1,115 @@
+kind: method
+name: open_camera
+summary: Open the camera at a given discovery ordinal (default 0).
+description: Opens the camera selected by an index into the cached discovery list; no discovery is performed
+  here, so get_connected_cameras (or an earlier scan) must have populated the list. The index is an integer,
+  either as a scalar or as the first element of an array, and defaults to 0 when params are absent or
+  the array is empty. Other types (null, object, string, real, boolean) fail with 109. On success the
+  device emits a CameraStateChange event, and the reply result is the integer 0.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd0bc0, OpenCamera @0x12a380 (64-bit build)
+side_effects: Opens the camera under the camera and imaging locks, allocates the camera object, restores
+  or migrates stored configuration, sets the application page to 0, checks plan and sequence binning and
+  updates focus settings. Emits CameraStateChange on success. Synchronous; no fixed timeout is visible.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: open_camera request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: open_camera
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Optional camera ordinal (list index). Default 0 when absent or when an array is empty.
+        109 if the (first) value is not an integer.
+      anyOf:
+      - type: integer
+        description: Scalar form.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd0bc0 (64-bit build)
+      - type: array
+        description: 'Array form: only the first element is inspected, the rest are ignored. An empty
+          array is treated as an absent value.'
+        items:
+          type: integer
+          description: The value.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd0bc0 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd0bc0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd0bc0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 109
+  trigger: Params (after array first-element selection) present but not an integer
+  label: unexpected param
+- code: 204
+  trigger: Ordinal negative or not below the discovery list size
+  label: out of limit
+- code: 300
+  trigger: A camera is already open
+  label: internal error
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Codes raised below the inspected operation (camera driver, configuration restore) are not
+  established; they are forwarded from the thread-local error code.
+examples:
+- name: default
+  summary: Open the first camera
+  of: request
+  payload:
+    id: 25
+    method: open_camera
+    params:
+    - 0
+- name: scalar
+  of: request
+  payload:
+    id: 26
+    method: open_camera
+    params: 0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: open_camera
+    result: 0
+    code: 0
+    id: 25
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: open_camera
+    error: out of limit
+    code: 204
+    id: 27
+see_also:
+- close_camera
+- get_connected_cameras
+- get_camera_state
+spec:
+- spec/control/viewing-and-exposure.md#camera-lifecycle

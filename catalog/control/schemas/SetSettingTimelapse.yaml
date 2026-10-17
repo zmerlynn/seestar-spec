@@ -1,0 +1,21 @@
+type: object
+description: Only in scenery view or solar-system mode, otherwise 210. An empty object still passes the
+  view gate and schedules a Setting event.
+properties:
+  delay_sec:
+    type:
+    - integer
+    - number
+    description: Seconds (INFERRED). Invalid 108; default is the loaded per-view config (initial fallback
+      1.0); no range check.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  src_dura_min:
+    type: integer
+    description: Minutes, unscaled. Invalid 104; default is the loaded value (initial fallback -1).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build); unit confirmed by
+      StartWriteAvi @0x2eb8f0, which prints this same saved value unscaled under a debug format
+      string naming it "durMinutes"
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

@@ -1,0 +1,142 @@
+kind: method
+name: get_camera_info
+summary: Read static camera information for the open camera or a listed camera.
+description: With no params (or an empty array) returns the currently open camera's info; with an integer
+  ordinal (scalar or first array element) returns the cached discovery metadata of that listed camera
+  without opening it. Fails with 318 when no info is available (camera closed, or ordinal not in the list),
+  and with 200 when the listed camera's id is missing from the info cache. Non-integer params fail with 104.
+  It is a read-only query; it changes no setting, sends no event, persists nothing and moves nothing. Without
+  params it re-reads the open camera's static description from the driver (open, read-direction info ioctl,
+  close) and refreshes the device's cached copy, which is idempotent. Both paths take the camera lock briefly,
+  so the call may wait behind other camera operations (INFERRED from the shared lock). On a live device
+  (2026-10-16) the ordinals 0 and 1 both returned code 0 with all-zero default records (chip [0,0], pixel
+  size 0, all flags false), so both ordinals are listed but their cached metadata was empty at that time
+  (OBSERVED); why it was empty is INFERRED to be a cache that the ordinal path never fills itself. A
+  later no-params call on an idle device returned code 0 with the telescope camera record (chip [2160,3840],
+  pixel 2.9 um, GR, colour, bins [1,2]), and ordinals 0 and 1 stayed all-zero before and after it
+  (OBSERVED 2026-10-16), so the no-params refresh does not fill the ordinal cache.
+grade: MUTATOR / established (64-bit build; 32-bit build PURE GETTER, probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc09c0, GetCamInfo(CAM_INFO*) @0x11df20 (camera mutex,
+  IsOpened else 318), GetCamInfo(int, CAM_INFO*) @0x11e360 (connected-list walk, 318 @0x11e568),
+  img_cam_mipi::GetCamInfo(int) @0x154a60 (cache map lookup, 200 @0x154af4) (64-bit build)
+side_effects: In the 64-bit build the current-camera lookup queries the driver (device node opened, info
+  ioctl, closed), refreshes the shared camera metadata record and may log; the ordinal branch reads the
+  discovery cache. Both take the camera mutex. No camera setting is changed and no event is sent.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_camera_info request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_camera_info
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Optional camera ordinal. Absent or empty array selects the currently open camera. Any
+        non-integer (including null) fails with 104.
+      anyOf:
+      - type: integer
+        description: Scalar form.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+      - type: array
+        description: 'Array form: only the first element is inspected, the rest are ignored. An empty
+          array is treated as an absent value.'
+        items:
+          type: integer
+          description: The value.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+reply_success:
+  title: get_camera_info success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetCameraInfoResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Params (after array first-element selection) present but not an integer
+  label: expected int param
+- code: 318
+  trigger: Current camera closed, or the ordinal is negative or not in the discovery list
+  label: device not connected
+- code: 200
+  trigger: 'The ordinal is in the connected list but that camera''s id is missing from the info cache;
+    dispatcher: request has no id'
+  label: invalid id
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Codes raised by the downstream info lookup are forwarded and not enumerated.
+examples:
+- name: current
+  of: request
+  payload:
+    id: 36
+    method: get_camera_info
+- name: by-ordinal
+  of: request
+  payload:
+    id: 37
+    method: get_camera_info
+    params:
+    - 0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_info
+    result:
+      chip_size:
+      - 1920
+      - 1080
+      bins:
+      - 1
+      - 2
+      pixel_size_um: 2.9
+      unity_gain: 80
+      has_cooler: false
+      is_color: true
+      is_usb3_host: true
+      has_hpc: false
+      debayer_pattern: GRBG
+    code: 0
+    id: 36
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_info
+    error: device not connected
+    code: 318
+    id: 38
+see_also:
+- get_connected_cameras
+- get_camera_state
+- set_camera_bin
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

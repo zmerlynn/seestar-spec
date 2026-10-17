@@ -1,0 +1,94 @@
+kind: method
+name: get_albums
+summary: List album folders and their images, optionally filtered by stack kind.
+description: Synchronously enumerates the filesystem under the requested album path, groups the files,
+  finds thumbnails, checks stacked-result folders, reads the favourites database and may probe movie durations.
+  Despite the name it only reads. The reply is built entirely by the listing helper; the schema reflects
+  the emitted shape. Folder-scan failures are logged and do not become errors, so no concrete handler
+  error other than 105 is established. Firmware 9.75 (app 3.4.0), the filter accepts stack, stacked, startrail, meteor, comet and video_stack on the 64-bit build (the 32-bit list is stack, stacked, video_stack and comet, not verified); a filter that is not a string gives 106. SolarSystem is not a new category (it existed in 9.31); whether PhotoMetry is an album group is unresolved. Motion recordings are saved in a Scenery_motion folder.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+side_effects: No file or favourite changes; logging state and first-use favourites query state are updated.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_albums request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_albums
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetAlbumsParams.yaml
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetAlbumsResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: name or filter present with a type other than string, including null
+  label: expected string param
+- code: 106
+  trigger: 'Firmware 9.75, 64-bit: filter present with a type other than string'
+  label: expected bool param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: stacked-folders
+  summary: Top-level listing, stacked filter (shape inferred; values invented)
+  of: request
+  payload:
+    id: 5
+    method: get_albums
+    params:
+      name: ''
+      filter: stack
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_albums
+    result:
+      path: MyWorks
+      list:
+      - group_name: Example group
+        files:
+        - name: Example target
+          thn: MyWorks/Example target/thn.jpg
+          count: 12
+          type: 0
+    code: 0
+    id: 5
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_albums
+    error: expected string param
+    code: 105
+    id: 6
+see_also:
+- fits_to_jpg
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

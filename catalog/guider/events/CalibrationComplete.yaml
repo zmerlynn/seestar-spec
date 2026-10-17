@@ -1,0 +1,84 @@
+kind: event
+name: CalibrationComplete
+summary: Guider notification that guiding calibration completed.
+description: Custom emitter, sent when guiding calibration completes. No lowercase state, code or error members;
+  the capitalized member names are distinct from the imager's lowercase state fields. Cadence is callback-driven
+  with no helper throttle. Sent by the guider (zwoair_guider) event server on TCP 4400 to every retained connection,
+  with no verified or master/guest filter. The main imager process, which holds a client connection to 4400,
+  recognizes peer event lines by the exact substring "Event":" and re-broadcasts the original line unchanged
+  to all retained connections on TCP 4700, so ordinary 4700 clients see it too; the auxiliary imager process
+  (4702) deliberately does not forward 4400 events, avoiding a duplicate copy. Because the forwarding test
+  is lexical, the forwarded line is byte-identical to the guider's. No universal order relative to RPC replies
+  or other events, no sequence number, no replay. The imager's peer-event waiter may also consume this event
+  internally; no APK consumer is established. Exact pairing with a guider getter (calibration state, lock position)
+  is unresolved. Limit comes from a mount-capability virtual-call branch; its presence conditions and 32-bit
+  parity (Limit and virtual mount callback) are not fully established.
+grade: PURE GETTER (shape only; observation for the receiver)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyCalibrationComplete @0x704a0
+  (64-bit guider build); 32-bit counterpart @0x6bb0c
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: CalibrationComplete event
+  type: object
+  discriminator: Event
+  description: Event, Timestamp, Mount and (from a mount-capability branch) Limit.
+  required:
+  - Event
+  - Timestamp
+  - Mount
+  properties:
+    Event:
+      type: string
+      const: CalibrationComplete
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyCalibrationComplete
+        @0x704a0 (64-bit guider build); 32-bit counterpart @0x6bb0c
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    Mount:
+      type: string
+      description: Mount name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyCalibrationComplete
+        @0x704a0 (64-bit guider build); 32-bit counterpart @0x6bb0c
+    Limit:
+      type: array
+      items:
+        type: integer
+      minItems: 2
+      maxItems: 2
+      x-required-when: unresolved; written by a mount-capability virtual-call branch whose conditions are not
+        established
+      description: Two packed integer endpoints from the mount's capability branch. Meaning and units are unresolved.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyCalibrationComplete
+        @0x704a0 (64-bit guider build); 32-bit counterpart @0x6bb0c
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyCalibrationComplete @0x704a0
+    (64-bit guider build); 32-bit counterpart @0x6bb0c
+examples:
+- name: complete
+  summary: Calibration complete (READ shape, values invented)
+  of: payload
+  payload:
+    Event: CalibrationComplete
+    Timestamp: '1234.123456789'
+    Mount: Example mount
+    Limit:
+    - 10
+    - 40
+see_also:
+- guide
+- get_calibrated
+- clear_calibration
+spec:
+- spec/guider/index.md#events

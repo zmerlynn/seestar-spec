@@ -1,0 +1,126 @@
+kind: method
+name: get_phone_list
+summary: List the clients currently connected to the control server.
+description: Returns one entry per distinct client address with a SOCKS5-support flag. No request parameters
+  are read.
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb2d60, print_phone_list @0x6b55b0 (64-bit build)
+side_effects: Locks the client map, aggregates a local copy and serializes it; no shared state is assigned
+  and no network or device query happens.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_phone_list request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_phone_list
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb2d60, print_phone_list @0x6b55b0 (64-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_phone_list success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: get_phone_list
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      type: array
+      items:
+        type: object
+        required:
+        - ip
+        - support_socks5
+        properties:
+          ip:
+            type: string
+            description: Client address as text.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb2d60, print_phone_list @0x6b55b0 (64-bit
+              build)
+          support_socks5:
+            type: boolean
+            description: Whether any grouped client advertises SOCKS5 support.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb2d60, print_phone_list @0x6b55b0 (64-bit
+              build)
+      description: Connected-client summary, possibly empty. Entries group client identities by address;
+        support_socks5 is true if any grouped client has its flag set.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb2d60, print_phone_list @0x6b55b0 (64-bit
+        build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 100
+  trigger: Handler context pointer is null (not reachable in normal operation)
+  label: invalid request
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: list
+  summary: Typical request
+  of: request
+  payload:
+    id: 3
+    method: get_phone_list
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_phone_list
+    result:
+    - ip: 192.0.2.10
+      support_socks5: true
+    - ip: 192.0.2.11
+      support_socks5: false
+    code: 0
+    id: 3
+- name: ok-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_phone_list
+    result: []
+    code: 0
+    id: 4
+see_also:
+- pi_station_list
+spec:
+- spec/control/session-handshake/verification-and-roles.md#guest-and-master
+- spec/control/session-handshake.md#connectivity-helpers

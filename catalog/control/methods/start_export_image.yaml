@@ -1,0 +1,112 @@
+kind: method
+name: start_export_image
+summary: Start an asynchronous copy or move of saved images from one storage volume to another.
+description: Enumerates the selected files and directories synchronously, checks that source and destination
+  differ and that both storages are mounted, copies the selection and options into global state, resets
+  the success counter and starts the export worker. A success reply means the worker was started. The
+  worker copies the selected files and accessories; with keep false it may remove each source after copying.
+  It reports progress through ExportImage events (fields state, lapse, total, keep, dst_storage; state
+  values start, frame_complete and complete; the counters count files or frames, and complete is also
+  sent after a requested stop, so it does not prove every copy succeeded). The final counts are returned
+  by stop_export_image. No camera or mount gate, request timeout or rollback exists; enumeration and locks
+  can block.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit build)
+side_effects: Starts a worker thread that copies (and with keep false, deletes) image files between storage
+  volumes; resets export counters; broadcasts ExportImage progress events.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_export_image request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_export_image
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartExportImageParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 109
+  trigger: Unknown params key, or files is not an array
+  label: unexpected param
+- code: 267
+  trigger: The selected list is empty after enumeration
+  label: no image
+- code: 209
+  trigger: Source and destination storage are the same
+  label: invalid value
+- code: 318
+  trigger: Source or destination storage is not mounted
+  label: device not connected
+- code: 204
+  trigger: Unknown storage id when its image path is requested (the mounted check may give 318 first)
+  label: out of limit
+- code: 268
+  trigger: An export is already running
+  label: operation is in progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A thread-start failure is forwarded with its own code. A malformed src or dst has no established
+  type-error code and can be unsafe.
+examples:
+- name: default-copy
+  of: request
+  payload:
+    id: 111
+    method: start_export_image
+    params:
+      keep: true
+- name: move-selected
+  of: request
+  payload:
+    id: 112
+    method: start_export_image
+    params:
+      src: emmc
+      dst: udisk
+      keep: false
+      files:
+      - Example_target
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_export_image
+    result: 0
+    code: 0
+    id: 111
+- name: same-storage
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_export_image
+    error: invalid value
+    code: 209
+    id: 113
+see_also:
+- stop_export_image
+- get_image_save_path
+- set_image_save_path
+spec:
+- spec/control/stacking.md#export-to-other-storage

@@ -1,0 +1,177 @@
+kind: method
+name: ota_get_session
+summary: 'Updater (firmware 9.75): read the state of the current OTA session.'
+description: Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the 64-bit
+  and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The handler
+  clears the thread error code and calls the updater's single OTA manager. The OTA methods do not use
+  the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350 is wrapped
+  is not established. Firmware update is a high-risk operation; do not send this to a real device to test
+  it. Replies with the session stage and the modules received so far
+  (firmware 9.75, 64-bit build, READ). The members are stage, target_main_version for a non-idle session, received_modules,
+  receiving_module (an array of entries with name, version and sha256, populated conditionally), missing_modules
+  and, after a failure, a failure object with stage, an optional module, an integer code and error text. Members
+  by stage (firmware 9.75, 64-bit build, READ). idle gives stage and received_modules. pending and receiving
+  give stage, target_main_version, received_modules, receiving_module and missing_modules. upgrading gives
+  stage, target_main_version and received_modules. complete gives stage and target_main_version only. fail
+  gives stage and target_main_version, then failure when the failure flag is set, then received_modules,
+  receiving_module and missing_modules. So one schema with every member always present is wrong. The
+  receiving_module array holds one object with name, version and sha256 when a receiving module is set
+  and found, otherwise it is empty (at most one element is INFERRED). The 32-bit build was not compared
+  member by member. When module is present inside failure, and the entry shape of missing_modules, are
+  unresolved. The app continues a new upgrade only when the
+  stage is blank, idle, fail or complete. The stage after each received module is INFERRED to be receiving.
+grade: PURE GETTER / probable
+side_effect_tier: B
+confidence: READ (firmware 9.75)
+basis: static analysis of firmware 9.75, updater RPC handler @0x26500 and GetSession @0x35ad0 (64-bit build), OTA manager; 32-bit GetSession @0x3693c; app
+  3.3.2 OtaService DTOs
+side_effects: None.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: ota_get_session request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: ota_get_session
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater dispatcher table, handler @0x26500 (64-bit build)
+    params:
+      description: Not read by the handler. The app omits it. Clients SHOULD omit it.
+      x-confidence: READ (app 3.3.2 emitter); firmware handler reads no params INFERRED
+      x-basis: app 3.3.2 OtaService; firmware 9.75 handler @0x26500 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        properties:
+          stage:
+            type: string
+            description: 'OTA session stage: idle, pending, receiving, upgrading, complete or fail (firmware
+              9.75 stage names; a value outside them is reported as "unknown").'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            enum:
+            - idle
+            - pending
+            - receiving
+            - upgrading
+            - complete
+            - fail
+          received_modules:
+            type: array
+            description: Modules already received, entries with name, version and sha256. Present in every stage
+              except complete.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0, module builders @0x34420 and @0x347b0
+              (64-bit build)
+            items:
+              type: object
+          target_main_version:
+            type: string
+            description: Main version of the target manifest of this session. Absent in the idle stage.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+          receiving_module:
+            type: array
+            description: One object with name, version and sha256 when a receiving module is set and found,
+              otherwise empty. Present in the pending, receiving and fail stages. At most one element is INFERRED.
+            x-confidence: READ (members and stages); INFERRED (at most one element)
+            x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0, module builders @0x34420 and
+              @0x347b0 (64-bit build)
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+                version:
+                  type: string
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+                sha256:
+                  type: string
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+          missing_modules:
+            type: array
+            description: Modules still to be received. Present in the pending, receiving and fail stages. Entry
+              shape not traced.
+            x-confidence: READ (stages); unresolved (entry shape)
+            x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+            items:
+              type: object
+          failure:
+            type: object
+            description: Failure record. Present in the fail stage when the failure flag is set, after
+              target_main_version and before the module arrays.
+            x-confidence: READ (members, stage); module presence inside failure unresolved
+            x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+            properties:
+              stage:
+                type: string
+                description: Stage in which the failure happened.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+              module:
+                type: string
+                description: Failing module; optional.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+              code:
+                type: integer
+                description: Failure code (see the error table of ota-package-handling.md).
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+              error:
+                type: string
+                description: Failure text.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.75, updater GetSession @0x35ad0 (64-bit build)
+        required:
+        - stage
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors: []
+errors_note: No handler-specific error is established.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: ota_get_session
+  summary: App shape; params omitted (READ)
+- name: ok
+  of: reply_success
+  summary: Shape READ; values invented; member presence INFERRED
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: ota_get_session
+    result:
+      stage: idle
+      received_modules: []
+      target_main_version: '9.99'
+    code: 0
+    id: 100
+see_also:
+- ota_get_current_manifest
+- ota_begin
+- ota_prepare_module
+- ota_retry_upgrade
+- ota_abort
+- begin_recv
+- OtaUpdate
+spec:
+- spec/updater/index.md#ota-methods-firmware-975
+- spec/updater/ota-package-handling.md#ota-package-handling

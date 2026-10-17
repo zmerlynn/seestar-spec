@@ -1,0 +1,63 @@
+kind: method
+name: stop_lock_sun
+summary: Stop the lock-on-sun worker thread and the sun-finding scan.
+description: Takes no parameters and replies with integer result 0. The handler calls the thread stop
+  helper on the lock-sun thread and then stops the FindSun scan; helper return values are not tested.
+  The thread stop may set a stop flag and wait, or signal and join the thread, with no timeout, so the
+  call can block. No dedicated event is built; notifications from the ending worker are unresolved. No
+  app emitter was found.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcb620, StopLockSun @0x2efbb0 (64-bit build)
+side_effects: Stops the lock-sun worker thread and the sun-finding scan. No mount or mode predicate. Scan
+  completion payload and stop latency are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_lock_sun request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_lock_sun
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcb620, StopLockSun @0x2efbb0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 61
+    method: stop_lock_sun
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_lock_sun
+    result: 0
+    code: 0
+    id: 61
+see_also: []
+spec:
+- spec/control/special-modes.md#scan

@@ -1,0 +1,91 @@
+kind: event
+name: Receive
+summary: 'Updater: result of a binary upload received on the updater''s binary socket.'
+description: 'Sent by the updater''s binary receiver when a firmware upload on the binary transfer socket
+  (TCP 4361) ends; the notification travels on TCP 4350, not on 4361. Sent by the updater process (zwoair_updater)
+  on its TCP 4350 JSON server, not by the imager. Delivered with an IP-matched send: every 4350 connection
+  whose IP string equals the target''s receives it, so several sockets from one host can all match, and
+  other clients get nothing. State: complete on success, otherwise one of recv interrupted, timeout, recv
+  timeout, md5 verify_fail, verify_fail or verify_fail: sign (READ). A 4361 receive idle for about 10 s
+  is ended. On the successful path a complete Receive precedes
+  the installation progress Update events; that is not a guarantee a disconnected client receives it.
+  Updater custom producer: no code or error member. Android app consumer (READ, consumer expectation):
+  the legacy firmware-upload screen treats any Receive whose state is not complete as a failure. The newer
+  app OTA workflow listens for a different name (OtaUpdate); no emitter for it was found in either packaged updater build.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, updater socket_json_server::NotifyRecv @0x12c20 and socket_json_server_binary::NotifyRecv
+  @0x28240 (64-bit build); 32-bit counterparts present; per-IP send adds route; state strings in networkThread
+  @0xf150
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Receive event
+  type: object
+  discriminator: Event
+  description: Updater custom producer with state and an empty route.
+  required:
+  - Event
+  - Timestamp
+  - state
+  - route
+  properties:
+    Event:
+      type: string
+      const: Receive
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyRecv @0x12c20 and socket_json_server_binary::NotifyRecv
+        @0x28240 (64-bit build); 32-bit counterparts present; per-IP send adds route
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater Ev constructor @0x5d080 calls updater getTimestamp @0x37340
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit updater build)
+    state:
+      type: string
+      enum:
+      - complete
+      - recv interrupted
+      - timeout
+      - recv timeout
+      - md5 verify_fail
+      - verify_fail
+      - 'verify_fail: sign'
+      description: complete on success; any other value is a failure (MD5 mismatch, signature failure,
+        interruption or timeout).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyRecv @0x12c20 and socket_json_server_binary::NotifyRecv
+        @0x28240 (64-bit build); 32-bit counterparts present; per-IP send adds route
+    route:
+      type: array
+      items:
+        type: string
+      maxItems: 0
+      description: Always an empty array, inserted by the IP-matched sender. It is not function ancestry
+        and does not carry the recipient IP.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyRecv @0x12c20 and socket_json_server_binary::NotifyRecv
+        @0x28240 (64-bit build); 32-bit counterparts present; per-IP send adds route
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, updater socket_json_server::NotifyRecv @0x12c20 and socket_json_server_binary::NotifyRecv
+    @0x28240 (64-bit build); 32-bit counterparts present; per-IP send adds route
+examples:
+- name: complete
+  summary: Static example of the success path (READ shape, not captured)
+  of: payload
+  payload:
+    Event: Receive
+    Timestamp: '1234.123456789'
+    state: complete
+    route: []
+see_also:
+- begin_recv
+- stop_recv
+spec:
+- spec/control/events/envelope.md#recipients
+- spec/updater/index.md#events
+- spec/updater/index.md#legacy-upload-flow-begin_recv

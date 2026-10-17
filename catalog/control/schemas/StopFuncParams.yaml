@@ -1,0 +1,16 @@
+title: stop_func params
+type: object
+required:
+- name
+description: Object form. The handler also accepts a bare string or the first item of a positional array.
+  Clients SHOULD send the object form.
+properties:
+  name:
+    type: string
+    description: 'Name of the function to stop (the app uses AIProcess and ViewPlan). No enum, length
+      or range check: unknown or idle names are accepted. The behaviour of an empty string is not established.
+      Missing, null or non-string is rejected with 105.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc8210 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc8210 (64-bit build)

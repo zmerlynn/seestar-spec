@@ -1,0 +1,37 @@
+title: set_img_name_field parameters object
+type: object
+description: Image-file-name field switches. Only temp, gain and camera_name are read; other keys (including
+  bin, date_time and a temperature-unit key that the setter supports internally) are ignored.
+properties:
+  temp:
+    type:
+    - boolean
+    - integer
+    description: 'Include the sensor temperature in saved image file names. Optional; a missing member
+      keeps the current setting. The handler compares the raw value with zero without checking its JSON
+      type: boolean and integer are predictable, other types (string, array, object, float, null) are
+      unresolved and MUST NOT be relied on. '
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)
+  gain:
+    type:
+    - boolean
+    - integer
+    description: 'Include the gain in saved image file names. Optional; a missing member keeps the current
+      setting. The handler compares the raw value with zero without checking its JSON type: boolean and
+      integer are predictable, other types (string, array, object, float, null) are unresolved and MUST
+      NOT be relied on. '
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)
+  camera_name:
+    type:
+    - boolean
+    - integer
+    description: 'Include the camera name in saved image file names. Optional; a missing member keeps
+      the current setting. The handler compares the raw value with zero without checking its JSON type:
+      boolean and integer are predictable, other types (string, array, object, float, null) are unresolved
+      and MUST NOT be relied on. '
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)

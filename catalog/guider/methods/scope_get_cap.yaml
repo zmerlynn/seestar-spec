@@ -1,0 +1,96 @@
+kind: method
+name: scope_get_cap
+summary: List the capabilities reported by the connected mount driver.
+description: Calls the scope's capability test slots and returns the names of the supported ones. No hardware
+  write is seen in the handler, but the virtual target set and its effect closure are not fully bounded,
+  hence tier D. Driver-specific members and errors are unresolved. Params are not consumed.
+grade: PURE GETTER / probable (native handler, 64-bit build)
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x78ae0 (64-bit build)
+side_effects: No direct hardware write in the handler; the virtual capability slots' full callee effects
+  are not proved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_cap request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_cap
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x78ae0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: scope_get_cap reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/ScopeGetCapResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x78ae0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: query
+  summary: Params omitted
+  of: request
+  payload:
+    id: 120
+    method: scope_get_cap
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_cap
+    result:
+    - position
+    - park
+    - sync
+    - goto
+    code: 0
+    id: 120
+  summary: Invented subset
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_cap
+    error: mount is not connected
+    code: 315
+    id: 121
+see_also:
+- scope_get_axle_coord
+- scope_get_guide_rate
+spec:
+- spec/guider/index.md#method-groups

@@ -1,0 +1,83 @@
+kind: method
+name: can_liveview
+summary: Report whether a camera is currently open for live view.
+description: 'No parameters are read. The result is a boolean: true if a camera is open, false if not.
+  A closed camera is not reported as an error (the internal error is discarded and the reply is a normal
+  success with false). Despite the name, the result is only the camera-open test, not a per-model capability
+  query.'
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4ad0, CanLiveview @0x11f740 (64-bit build); tier
+  INFERRED
+side_effects: None beyond reading camera-open state; no mode change, file write or hardware access in
+  the inspected path. Locks may block with no stated deadline.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: can_liveview request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: can_liveview
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4ad0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: boolean
+        description: true when a camera is open, false otherwise.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4ad0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 3
+    method: can_liveview
+- name: closed
+  summary: Camera not open
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: can_liveview
+    result: false
+    code: 0
+    id: 3
+- name: open
+  summary: Camera open
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: can_liveview
+    result: true
+    code: 0
+    id: 4
+see_also:
+- can_abort_expose
+spec:
+- spec/control/viewing-and-exposure.md#exposures

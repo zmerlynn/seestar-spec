@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: key envelope
+type: object
+description: >-
+  Wrapped session secret returned by a successful verify_client on firmware 9.75. Present only in
+  firmware 9.75 and later. The secret is 48 random bytes encrypted with an RSA public key fixed in the
+  firmware; the OAEP label is the text seestar-rpc-envelope-v1: followed by the challenge of this socket.
+  The matching private key is not part of this specification. See the secure-communication chapter for
+  key derivation and for the encrypted Wi-Fi strings the session protects.
+required:
+- version
+- wrap
+- kdf
+- cipher
+- data
+properties:
+  version:
+    type: integer
+    const: 1
+    description: Envelope version.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60 (inner object built @0x72e428-0x72e550, 64-bit imager)
+  wrap:
+    type: string
+    const: RSA-OAEP-SHA256
+    description: Wrapping scheme (OAEP padding, SHA-256 digest and MGF1 digest).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60, RpcCryptoSession::create @0x733630 (64-bit imager)
+  kdf:
+    type: string
+    const: HKDF-SHA256
+    description: Key derivation applied to the unwrapped secret.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60, deriveKey @0x732df0 (64-bit imager)
+  cipher:
+    type: string
+    const: AES-128-GCM
+    description: Cipher used for the protected fields.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60, encode @0x734c10 (64-bit imager)
+  data:
+    type: string
+    description: Base64 of the RSA-OAEP ciphertext of the 48-byte secret.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, RpcCryptoSession::create @0x733630 (wrapping and base64 @0x733914-0x7339f8, 64-bit imager)
+x-confidence: READ
+x-basis: static analysis of firmware 9.75, preprocessClientAuth @0x72dd60 (64-bit imager)

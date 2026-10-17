@@ -1,0 +1,23 @@
+title: stop_export_image result
+type: object
+description: Export counters at the time of the stop. They count exported entries (files or frames), not
+  exposure frames (INFERRED). No state, keep or dst_storage member is returned.
+required:
+- success_frame
+- total_frame
+properties:
+  success_frame:
+    type: integer
+    description: Number of entries exported successfully so far.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xba010, StopExportImage @0x121680, GetExportImageStatus
+      @0x1216a0 (64-bit build)
+  total_frame:
+    type: integer
+    description: Total entries selected for the export.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xba010, StopExportImage @0x121680, GetExportImageStatus
+      @0x1216a0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xba010, StopExportImage @0x121680, GetExportImageStatus
+  @0x1216a0 (64-bit build)

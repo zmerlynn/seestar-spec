@@ -1,0 +1,13 @@
+title: set_all_connected params
+type:
+- boolean
+- array
+description: 'true to connect all, false to disconnect all: a bare boolean or an array whose first element
+  is the boolean. Integers are rejected.'
+items:
+  type: boolean
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x74100 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x74100 (64-bit build)

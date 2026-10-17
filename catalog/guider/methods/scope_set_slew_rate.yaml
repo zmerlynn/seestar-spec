@@ -1,0 +1,95 @@
+kind: method
+name: scope_set_slew_rate
+summary: Select the mount slew-rate index.
+description: 'Requires a connected mount that supports the operation, then selects the slew-rate index
+  used by subsequent moves. The parameter is a bare integer or an array whose first element is an integer;
+  a non-integer gives 104. The handler applies no list bound, clamp or default; the supported index list
+  and whether the rate is sent to hardware immediately are unresolved. Via the imager command port (4700)
+  the request reaches this handler only as a forwarded unknown method; see the control service for the
+  relay. No serial traffic (firmware 9.31, READ): the rate is stored in the driver and sent as a rate
+  command at the next move.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x72200 (64-bit build)
+side_effects: Changes the cached slew-rate selection used by motion commands.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_slew_rate request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_slew_rate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetSlewRateParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x72200 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Parameter is not an integer
+  label: expected int param
+- code: 207
+  trigger: Native setter failure
+  label: fail to operate
+- code: 210
+  trigger: Mount does not support setting the slew rate
+  label: not supported
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 43
+    method: scope_set_slew_rate
+    params: 2
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_slew_rate
+    result: 0
+    code: 0
+    id: 43
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_slew_rate
+    error: mount is not connected
+    code: 315
+    id: 44
+see_also:
+- scope_set_guide_rate
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

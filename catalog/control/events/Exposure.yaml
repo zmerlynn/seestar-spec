@@ -1,0 +1,210 @@
+kind: event
+name: Exposure
+summary: 'Exposure progress from two producers: the legacy page/start/downloading/complete/fail sender and the function-state
+  Exposure detail.'
+description: 'Two producers share the name; select the contract by members, not by name. (1) Legacy SendExpEvent
+  (named single exposures, stack exposure cycle, sequence-list capture frames): sent only when the exposure parameter''s event flag is set; always
+  page, then tag if non-empty, then caller extension-map members; start adds exp_us and gain; downloading adds nothing;
+  the terminal branch sends complete for code 0 or fail with error and code for a non-zero code. It never carries
+  lapse_ms, exp_ms, port or route. (2) F detail named Exposure: Function-state family (F): SendFuncEvent formats
+  the named function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or
+  at a terminal state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail to
+  operate''); cancel omits code and error; route is optional function ancestry. The sender does no deduplication
+  and needs no preceding working event. Detail flags can suppress the working or non-working sends while the cached
+  function tree still changes, so a receiver can miss transitions. Its formatter adds exp_ms and port. Legacy microseconds
+  and F milliseconds are separate serializer paths. The legacy extension map has exactly one member in both builds:
+  ac_count (integer, the auto-goto attempt counter), on exposures taken by auto-goto and its solve retry; other legacy
+  Exposure events carry no extension members. Cadence follows exposure
+  and readout time; no fixed progress timer. Channels I (TCP 4700) and W (TCP 4702, forwarded onto 4700 by the main
+  imager). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified
+  sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. OBSERVED (2026-10-12,
+  firmware not matched to 9.31, stored plan imaging): about one exposure cycle per 63 s gave a legacy start event,
+  then near the end a burst of two legacy page/state events and two F events (route of length 2); a fail with code
+  514 was also seen. Legacy fail codes are 253 (client stop command such as stop_exposure, iscope_stop_view or
+  stop_stack), 514 (interrupted by an internal stop; produced only by application workers, never by the camera layer, so not a camera or sensor fault) and 238 (retries exhausted) (READ). The APK also derives a local ExposureTag event from Exposure; that is not a wire event.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ; all four producer shapes OBSERVED (2026-10-12)
+basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (64-bit build), PrintExpDuration @0x213ee0, ExpRetryTag
+  @0x2165d0, ExpRetry sets the event flag @0x216d0c for sequence-list frames (64-bit build); ac_count writers RetrySolve @0x172500, AutoGotoFunc @0x1736d0 and @0x1747f8 (64-bit build),
+  RetrySolve @0xf1568 and AutoGotoFunc @0xf1d28 (32-bit build); 32-bit build writes exp_ms and port too; all four shapes OBSERVED (2026-10-12)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Exposure event
+  type: object
+  discriminator: Event
+  description: Exposure event, legacy or F producer. The only legacy extension-map member is ac_count.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Exposure
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; SendExpEvent @0x214440 (64-bit build),
+        PrintExpDuration @0x213ee0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      - downloading
+      description: 'Union of two producers. F: idle, working, complete, fail, cancel. Legacy SendExpEvent: start,
+        downloading, complete, fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, SendExpEvent @0x214440; OBSERVED (2026-10-12)
+        start, downloading, working, complete, fail, cancel
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp. F producer only.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: 'F: state is fail; legacy: terminal branch with non-zero code (state fail)'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'F: stored code at fail. Legacy: the non-zero supplied code. From the exposure retry path
+        (READ): 253 when a client stop command (stop_exposure, iscope_stop_view, stop_stack, stop_create_dark
+        and similar) aborted the frame (legacy fail, not an F cancel); 514 when the worker was stopped by any
+        other, internal stop (for example a mode or page change or a superseding command; which ones occur live
+        is INFERRED); the camera layer never produces 514, so it is not a camera or sensor fault and clients
+        SHOULD NOT treat it as one; 238 when the capture retries ran out while
+        the worker was still running. 514 also OBSERVED 2026-10-12.'
+      x-required-when: 'F: state is fail; legacy: terminal branch with non-zero code (state fail)'
+      x-confidence: READ
+      x-basis: 'static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0,
+        SendExpEvent @0x214440, ExpRetryTag @0x2165d0 (code choice @0x216930), stop_exposure sets 253 @0xe6460,
+        iscope_stop_view sets 253 @0xde404; 514
+        OBSERVED (2026-10-12)'
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+        F producer only.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    exp_ms:
+      type: number
+      description: 'F producer: exposure duration in milliseconds, only when the exposure-control query succeeds.
+        Serialized as a floating token.'
+      x-required-when: F producer, exposure-control query succeeds
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintExpDuration @0x213ee0 (64-bit build); float token OBSERVED
+        (2026-10-12)
+    port:
+      type: integer
+      description: 'F producer: the JSON event-server port of the emitting process, not an image stream port.'
+      x-required-when: F producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintExpDuration @0x213ee0 (64-bit build); integer OBSERVED (2026-10-12)
+    page:
+      type: string
+      description: 'Legacy producer: current device page name.'
+      x-required-when: legacy producer (always)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (64-bit build); OBSERVED (2026-10-12)
+    tag:
+      type: string
+      description: 'Legacy producer: exposure parameter tag, only when non-empty.'
+      x-required-when: legacy producer, tag non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (64-bit build)
+    exp_us:
+      type: integer
+      description: 'Legacy start: exposure time in microseconds.'
+      x-required-when: legacy state start
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (64-bit build); OBSERVED (2026-10-12)
+    gain:
+      type: integer
+      description: 'Legacy start: camera gain; control scale unresolved.'
+      x-required-when: legacy state start
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (64-bit build); OBSERVED (2026-10-12)
+    ac_count:
+      type: integer
+      description: 'Legacy producer: auto-goto attempt counter, the only extension-map member in either build.
+        Only on exposures taken by auto-goto and its solve retry.'
+      x-required-when: legacy producer, exposure taken by auto-goto or its solve retry
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (extension map), RetrySolve @0x172500,
+        AutoGotoFunc @0x1736d0 and @0x1747f8 (64-bit build); RetrySolve @0xf1568, AutoGotoFunc @0xf1d28 (32-bit
+        build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendExpEvent @0x214440 (64-bit build), PrintExpDuration @0x213ee0
+examples:
+- name: legacy-start
+  summary: Legacy start (shape OBSERVED 2026-10-12; values invented)
+  of: payload
+  payload:
+    Event: Exposure
+    Timestamp: '1234.123456789'
+    page: stack
+    state: start
+    exp_us: 10000000
+    gain: 80
+- name: legacy-downloading
+  summary: Legacy phase (shape OBSERVED 2026-10-12; values invented)
+  of: payload
+  payload:
+    Event: Exposure
+    Timestamp: '1234.123456789'
+    page: stack
+    state: downloading
+- name: legacy-fail
+  summary: Legacy failure (shape OBSERVED 2026-10-12 with code 514; text invented)
+  of: payload
+  payload:
+    Event: Exposure
+    Timestamp: '1234.123456789'
+    page: stack
+    state: fail
+    error: example error
+    code: 514
+- name: function-complete
+  summary: F producer (shape OBSERVED 2026-10-12; values invented)
+  of: payload
+  payload:
+    Event: Exposure
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 10512
+    exp_ms: 10000.0
+    port: 4700
+    route:
+    - View
+    - Stack
+see_also:
+- start_single_expose
+- start_exposure
+- stop_exposure
+- can_abort_expose
+- iscope_get_app_state
+spec:
+- spec/control/events/variants-and-consumers.md#wire-shape-examples

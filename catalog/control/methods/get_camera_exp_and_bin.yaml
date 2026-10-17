@@ -1,0 +1,89 @@
+kind: method
+name: get_camera_exp_and_bin
+summary: Read the current exposure value and bin factor.
+description: Params are not read. Returns {exposure, bin}; neither is emitted unless both queries succeed.
+  exposure is an integer number of microseconds.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbc3a0 (64-bit build)
+side_effects: On page 1 it lazily refreshes the shared video bin and subframe cache (not a hardware setter)
+  and may block on locks.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_camera_exp_and_bin request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_camera_exp_and_bin
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbc3a0 (64-bit build)
+reply_success:
+  title: get_camera_exp_and_bin success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetCameraExpAndBinResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbc3a0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Required camera is closed
+  label: device not connected
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The first failing query forwards its thread-local error.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 47
+    method: get_camera_exp_and_bin
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_exp_and_bin
+    result:
+      exposure: 10000
+      bin: 1
+    code: 0
+    id: 47
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_exp_and_bin
+    error: device not connected
+    code: 318
+    id: 48
+see_also:
+- set_camera_exp_and_bin
+- get_camera_bin
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

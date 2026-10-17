@@ -1,0 +1,86 @@
+kind: method
+name: get_saved_photometry_stars
+summary: List the saved photometry plots in summary form.
+description: Iterates the cached plots, keeps those flagged saved and non-empty, and returns one summary
+  each. Reads only the in-memory cache; no file is read. An empty selection is a success with an empty
+  list.
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70 (64-bit build)
+side_effects: Builds and sorts a request-local vector under the photometry mutex. No file read, no persistent
+  cache change, no camera requirement, no time limit shown.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_saved_photometry_stars request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_saved_photometry_stars
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70 (64-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_saved_photometry_stars success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetSavedPhotometryStarsResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
+          (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The handler has a generic failure branch but the helper returns success on ordinary paths.
+  Whether the common logger writes are reachable on this path was not shown, hence the pure-getter grade
+  (probable).
+examples:
+- name: request
+  of: request
+  payload:
+    id: 121
+    method: get_saved_photometry_stars
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_saved_photometry_stars
+    result:
+      PhometryStars:
+      - id: plot-1
+        save: true
+        startTime: '2026-01-31 21:15:00'
+        radec_deg:
+        - 210.8
+        - 54.3
+        star_name: Example target
+    code: 0
+    id: 121
+see_also:
+- set_photometry
+- get_photometry_plot
+- get_photometry_result
+spec:
+- spec/control/solving-and-annotation.md#photometry

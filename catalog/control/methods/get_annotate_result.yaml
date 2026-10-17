@@ -1,0 +1,154 @@
+kind: method
+name: get_annotate_result
+summary: 'Return the cached annotation result for one image (default: the latest).'
+description: 'Looks up the cached annotation object for the requested image id and returns it unchanged;
+  it starts no computation. Under some secondary-camera and view-mode conditions the original request
+  is first forwarded to the secondary process (relay failure behaviour is unresolved). Although it is
+  a read, every call writes log state, so the strict grade is MUTATOR; the observer tier is B. The members
+  of the cached object are not enumerated by the evidence. Whether a matching annotation event exists
+  is unresolved; current activity is reported by the annotate member of the app state. Firmware 9.75,
+  app 3.4.0: the keyed form accepts file_path, so a stored file can be annotated; the call goes through
+  the relay-only form of the relay check (no 203 or 524), with errors 102 and 105 on the new member.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ) except that its relay condition
+  omits the two newest model checks)
+side_effect_tier: B
+confidence: READ (handler); unresolved (result members)
+basis: static analysis of firmware 9.31, handler @0xb74f0, GetAnnotateResult @0x1fce80 (64-bit build);
+  32-bit handler compared statically; the 32-bit relay condition lacks the S30Plus/S80 board checks but
+  reaches the same relay helpers; firmware 9.75 member from the 9.75 reports
+side_effects: Reads the cached annotation map; the helper logs default-id selection and the success, empty
+  and not-found branches (shared log state). May forward the request to the secondary process. No hardware
+  or setting change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_annotate_result request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_annotate_result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: integer
+        minimum: 0
+        maximum: 65534
+        description: Image id as a bare integer.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build), key table @0x72e5c8
+      - type: array
+        items:
+          type: integer
+          minimum: 0
+          maximum: 65534
+          description: Image id (first element only).
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build), key table @0x72e5c8
+        description: 'Positional form: only the first element is used.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build)
+      - type: object
+        properties:
+          img_id:
+            type: integer
+            minimum: 0
+            maximum: 65534
+            description: Image id.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build), key table @0x72e5c8
+          file_path:
+            type: string
+            description: 'Firmware 9.75, app 3.4.0: path of a stored image to annotate instead of a cached
+              one. Wrong type 105; invalid value 102 (exact validation unresolved).'
+            x-confidence: READ; validation unresolved
+            x-basis: static analysis of firmware 9.75, app 3.4.0 reports, get_annotate_result handler
+              (64-bit build)
+        additionalProperties: true
+        description: Keyed form.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build)
+      description: Optional. Omitted, an empty array or an object without img_id selects the most recent
+        image (internal sentinel 65535). A supplied id must be 0..65534; 65535 and negative values are
+        rejected with 204. Unknown object keys are ignored.
+      x-default: most recent image
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: get_annotate_result reply (success)
+    properties:
+      result:
+        type: object
+        additionalProperties: true
+        description: 'Cached annotation result object for the selected image, copied as stored. Its member
+          inventory is unresolved: the members come from the annotation producer, which is not fully traced.
+          This is not an empty-object contract; clients SHOULD preserve unknown members.'
+        x-confidence: unresolved (members)
+        x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build), GetAnnotateResult
+          @0x1fce80
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: img_id present but not an integer
+  label: expected int param
+- code: 204
+  trigger: img_id outside 0..65534
+  label: out of limit
+- code: 207
+  trigger: No cached annotation data, or the cached object is flagged empty
+  label: fail to operate
+- code: 102
+  trigger: 'Firmware 9.75: file_path invalid'
+  label: invalid argument
+- code: 105
+  trigger: 'Firmware 9.75: file_path is not a string'
+  label: expected string
+- code: 200
+  trigger: Requested (or default) image id not found in the cache; also the dispatcher case where the
+    request has no id
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'Failures while forwarding to the secondary process are unresolved. No result member on errors.
+  Firmware 9.75: 203 and 524 are not newly reachable: the relay check is the relay-only form without occupancy probes (a prior statement that they are is withdrawn).'
+examples:
+- name: latest
+  summary: Latest image
+  of: request
+  payload:
+    id: 45
+    method: get_annotate_result
+- name: by-id
+  summary: Keyed form
+  of: request
+  payload:
+    id: 46
+    method: get_annotate_result
+    params:
+      img_id: 3
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_annotate_result
+    error: fail to operate
+    code: 207
+    id: 47
+see_also:
+- start_annotate
+- stop_annotate
+- is_img_file_annotated
+- iscope_get_app_state
+spec:
+- spec/control/solving-and-annotation.md#annotation

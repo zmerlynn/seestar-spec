@@ -1,0 +1,94 @@
+kind: method
+name: file_rename
+summary: Rename an image file together with its accessory files.
+description: Renames the main file, then finds its accessory files and renames them by regular-expression
+  replacement of the source stem with the destination stem (unescaped, so regex metacharacters in names
+  behave as regex). A failure partway through leaves earlier renames in place (no rollback). An existing
+  destination is not explicitly rejected, so the underlying rename may replace it (INFERRED from the libc
+  call). After the primary rename the handler checks the old source path for being a directory, which
+  probably sees a non-existent path (INFERRED), with possible consequences for directory-type accessories.
+  Regular-expression exceptions are not converted to error replies in this handler. Synchronous, no timeout.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf6760, separateSuffix @0xf6270, AddAccessory @0x6ebad0
+  (64-bit build)
+side_effects: Renames the main image file and matching accessory files on the device filesystem; partial
+  results are possible.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: file_rename request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: file_rename
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/FileRenameParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params missing, wrong container, or src/dst missing or not strings
+  label: expected string param
+- code: 255
+  trigger: Source file not accessible
+  label: file not exist
+- code: 300
+  trigger: Source and destination suffixes both non-empty and different
+  label: internal error
+- code: 515
+  trigger: The primary or an accessory rename call failed
+  label: rename failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Exact handling of exceptions raised inside the regex replacement by the outer server is unresolved.
+examples:
+- name: rename
+  summary: Invented names
+  of: request
+  payload:
+    id: 53
+    method: file_rename
+    params:
+      src: Example_old.fit
+      dst: Example_new
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: file_rename
+    result: 0
+    code: 0
+    id: 53
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: file_rename
+    error: file not exist
+    code: 255
+    id: 54
+see_also:
+- remove_file
+spec:
+- spec/media/files-and-album.md#file-edits-on-4700
+- spec/media/files-and-album.md#album-methods-on-4700

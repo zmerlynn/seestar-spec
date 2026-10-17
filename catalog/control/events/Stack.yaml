@@ -1,0 +1,263 @@
+kind: event
+name: Stack
+summary: 'Stacking progress: per-frame counters from the frame producer and function-state updates.'
+description: 'Two producers share Event Stack; select by members. (1) Frame producer NotifyStackState: always
+  writes state, frame_type, stacked_frame, dropped_frame, total_frame, error, lapse_ms and code (error/code
+  even when code is 0, so they do not signal failure), plus file_name for a non-empty name; on the 64-bit
+  build it is sent only as frame_complete, once per accepted frame, by the live-stack worker (both direct
+  callers pass a null file name); no producer of a custom start or fail was found, and stack failures surface
+  through the function producer (READ for absence; INFERRED for the alternative path). The 32-bit callers were
+  not decoded. Neither the S nor the function fail-only rule applies to it. (2) Function producer
+  (ExtStackState): Function-state family (SendFuncEvent): state is always written; stage only when non-empty;
+  lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored
+  code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely on seeing
+  every transition. Its ordinary branch adds frame_errcode, stacked/dropped counts and annotation/scene flags
+  without frame_type or total_frame; other branches add mosaic, video, photometry and output members. The
+  32-bit build lacks the wide-mosaic, scene_shooting, auto_exp_us and video file_saved branches. Cadence
+  follows frame rate. OBSERVED (2026-10-12, firmware not matched to 9.31): during a stored plan, one Stack
+  pair per exposure cycle about 0.1 ms apart, one of each producer shape. Channels: imager 4700 and auxiliary
+  4702 (forwarded to 4700). No reply-before-event order is established: the RPC reply that starts the worker
+  and the worker''s events can arrive in either order. No fixed cadence. deepstack_finish is an upload-record
+  field, not a Stack member.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ; both producer shapes OBSERVED (2026-10-12)
+basis: static analysis of firmware 9.31, NotifyStackState @0x197be0, ExtStackState @0x198840, StackFunc
+  @0x19c3c0 (64-bit build); wire shapes OBSERVED (2026-10-12)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Stack event
+  type: object
+  discriminator: Event
+  description: Union of the frame-producer and function-producer members.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Stack
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StackFunc @0x19c3c0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      - frame_complete
+      description: 'Function producer: idle, working, complete, fail, cancel. Frame producer (NotifyStackState):
+        frame_complete only on the 64-bit build, once per accepted frame; it does not end the operation.
+        start is listed by the app but no firmware producer was found (READ, absence); kept so clients
+        accept it. No custom fail producer exists.'
+      x-confidence: READ; working and frame_complete OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; ExtStackState @0x198840;
+        NotifyStackState @0x197be0, callers @0x19cbc0 and @0x19dc6c
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Milliseconds. Function producer: function-state timer rule. Frame producer: always
+        written from a supplied value, distinct from the function timer.'
+      x-required-when: 'function producer: timer started or terminal; frame producer: always'
+      x-confidence: READ; both shapes OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: at fail, even if 0. Frame producer: always written, including 0,
+        and does not by itself signal failure.'
+      x-required-when: function producer at fail; frame producer always
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code. The frame producer always writes the lookup string, even for code
+        0.
+      x-required-when: function producer at fail; frame producer always
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    frame_type:
+      type: string
+      description: Frame-type name from the legacy frame-type table.
+      x-required-when: frame producer (NotifyStackState), always
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0
+    stacked_frame:
+      type: integer
+      description: Accepted (stacked) frame count.
+      x-required-when: frame producer always; function producer ordinary branch
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0, ExtStackState @0x198840
+    dropped_frame:
+      type: integer
+      description: Discarded frame count.
+      x-required-when: frame producer always; function producer ordinary branch
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0, ExtStackState @0x198840
+    total_frame:
+      type: integer
+      description: Planned total (legacy).
+      x-required-when: frame producer (NotifyStackState), always
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0
+    file_name:
+      type: string
+      description: Name argument. Both 64-bit direct callers pass a null name, so it is not sent from them (READ).
+      x-required-when: frame producer, name argument non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0
+    frame_errcode:
+      type: integer
+      description: Last frame-processing error, separate from the operation code; 0 observed.
+      x-required-when: function producer, branch-dependent
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    can_annotate:
+      type: boolean
+      description: Annotation possible.
+      x-required-when: function producer, non-mosaic branch
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    scene_shooting:
+      type: boolean
+      description: Scene-capture state. 64-bit build only.
+      x-required-when: function producer, 64-bit build
+      x-confidence: READ; OBSERVED (2026-10-12)
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    cont_capt_frame:
+      type: integer
+      description: Continuous-capture frame count.
+      x-required-when: function producer, capture type 1
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    progress:
+      type: integer
+      description: Wide-mosaic progress. 64-bit build only.
+      x-required-when: function producer, wide mosaic
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    stitch_progress:
+      type: integer
+      description: Wide-mosaic stitch progress. 64-bit build only.
+      x-required-when: function producer, wide mosaic
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    part_complete:
+      type: boolean
+      description: Wide-mosaic partial completion. 64-bit build only.
+      x-required-when: function producer, wide mosaic
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    ra_dec:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Mosaic coordinate pair. 64-bit build only; units not stated here.
+      x-required-when: function producer, wide mosaic
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    jpg_name:
+      type: string
+      description: Relative name of the saved large JPEG.
+      x-required-when: function producer, saved name non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    auto_exp_us:
+      type: integer
+      description: Auto-exposure value, microseconds. 64-bit build only.
+      x-required-when: function producer, auto exposure enabled with a positive exposure
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    file_saved:
+      type: boolean
+      description: Video output saved. 64-bit build only.
+      x-required-when: function producer, capture type 5 video or star-trail video
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    csv_saved:
+      type: boolean
+      description: Photometry CSV saved.
+      x-required-when: function producer, photometry capture type 2
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    angle:
+      type: number
+      description: Angle; degrees INFERRED.
+      x-required-when: function producer, capture type 2 with a valid (non-sentinel) angle
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ExtStackState @0x198840
+    output_file:
+      $ref: ../schemas/OutputFile.yaml
+      description: Current output-file buffer, `{path, files}` with one file entry, set after a stacked
+        result is saved. Not a scalar filename.
+      x-required-when: function producer, buffer populated
+      x-confidence: READ
+      x-basis: 'static analysis of firmware 9.31, ExtStackState @0x198840, GetOutputFileInfo @0x127ed0'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0, ExtStackState @0x198840
+examples:
+- name: function-working
+  summary: Function producer (shape OBSERVED 2026-10-12; values invented)
+  of: payload
+  payload:
+    Event: Stack
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 912345
+    frame_errcode: 0
+    stacked_frame: 42
+    dropped_frame: 3
+    can_annotate: true
+    scene_shooting: false
+    route:
+    - Stack
+- name: frame-complete
+  summary: Frame producer (shape OBSERVED 2026-10-12; values invented)
+  of: payload
+  payload:
+    Event: Stack
+    Timestamp: '1234.123456789'
+    state: frame_complete
+    frame_type: light
+    stacked_frame: 42
+    dropped_frame: 3
+    total_frame: 45
+    error: no error
+    lapse_ms: 9400
+    code: 0
+see_also:
+- iscope_start_stack
+- start_stack
+- stop_stack
+- clear_stack
+- get_stack_info
+- iscope_get_app_state
+spec:
+- spec/control/events/variants-and-consumers.md#wire-shape-examples

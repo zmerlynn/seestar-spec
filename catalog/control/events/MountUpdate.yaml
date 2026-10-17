@@ -1,0 +1,117 @@
+kind: event
+name: MountUpdate
+summary: Mount-controller firmware write worker state.
+description: F family with no task-specific members (the detail has no formatter, so no percent, file
+  name or numeric progress is proved). Sent by the mount-boot write worker once it starts successfully,
+  following its lifecycle; no periodic progress timer is established. The F serializer supports idle,
+  working, complete, fail and cancel; that is not a guarantee that every state, or a successful flash,
+  is reached on every model. The worker has no model check. It starts at imager start-up when the device has
+  the flashing tool installed, no done-marker exists for this boot, and the persisted write_mountboot flag is
+  set; it can also start from a start-up command-line option. READ. It puts the mount controller into boot
+  mode and flashes it over a fixed serial port, retrying; on a verified write it clears the flag and writes
+  the marker, so it runs at most once per flag setting. READ. A client cannot start it through the control
+  API. Which models ship the tool and set the flag is a firmware-packaging matter and unresolved. Broadcast
+  on TCP 4700 to every retained socket. No wire observation exists and no APK consumer is established.
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, StartWritemountBoot @0x11ac70, LoadHotSetting start-up trigger @0x11b5c0-0x11b840,
+  MainArgHandle trigger @0x11b10c, WriteMountBootFunc @0x136ab0, function-name initializer @0x9d360, SendFuncEvent
+  @0x6e4e20 (64-bit build); 32-bit start path equivalent; no wire observation
+side_effects: None for the receiver. The worker it reports writes mount-controller firmware.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: MountUpdate event
+  type: object
+  discriminator: Event
+  description: Worker transition. F fields only.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: MountUpdate
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartWritemountBoot @0x11ac70, function-name initializer
+        @0x9d360, SendFuncEvent @0x6e4e20 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: 'F state table: idle 0, working 1, complete 2, fail 3, cancel 4; an unknown internal
+        code falls back to idle. A formatter''s supported state is not a promise that every run visits
+        it.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: a non-empty stage string is held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or started with no end) uses
+        current monotonic minus start; other terminal states use end minus start.
+      x-required-when: state is working, or the timer was started (terminal states)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Ordered function-tree ancestry when included; a missing route is a legitimate branch.
+        Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    error:
+      type: string
+      description: Message for code; written for state fail even when the stored code is zero. Lookup
+        failure gives 'fail to operate'. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Written for state fail, including a stored zero. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, StartWritemountBoot @0x11ac70, function-name initializer
+    @0x9d360, SendFuncEvent @0x6e4e20 (64-bit build)
+examples:
+- name: working
+  summary: Write in progress (READ shape; values invented, not captured)
+  of: payload
+  payload:
+    Event: MountUpdate
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 8000
+- name: fail
+  summary: Write failed (READ shape; values invented)
+  of: payload
+  payload:
+    Event: MountUpdate
+    Timestamp: '1234.123456789'
+    state: fail
+    lapse_ms: 9000
+    error: fail to operate
+    code: 0
+see_also:
+- get_device_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#position-and-connection-state

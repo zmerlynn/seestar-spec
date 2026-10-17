@@ -1,0 +1,4 @@
+# UDP scan and access-point discovery.
+service: discovery
+entries:
+  - {kind: method, name: scan_iscope, file: methods/scan_iscope.yaml}

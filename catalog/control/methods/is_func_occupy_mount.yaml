@@ -1,0 +1,91 @@
+kind: method
+name: is_func_occupy_mount
+summary: Report whether a mount-using work function (stack, polar alignment, goto, sun scan, tracking,
+  pixel goto) or a planet-correction flag is active.
+description: No parameters are read. The result is the boolean true if any of seven named work functions
+  is active (Stack, EqModePA, 3PPA, AutoGoto, ScanSun, ObjectTrack, GoPixel, checked under the function-tree
+  mutex) or the planet-correction flag is set; otherwise false. It is not a general hardware-busy probe.
+  No error branch.
+grade: MUTATOR / established (strict; only shared diagnostic logging). Behaviourally a getter.
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4740 (64-bit build); helper IsFuncOccupyMount
+side_effects: None beyond diagnostic logging (the true paths log through the debug printer). Full command-socket
+  calls also incur the shared diagnostic (logging) writes; this is why the strict grade is MUTATOR even
+  for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_func_occupy_mount request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: is_func_occupy_mount
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4740 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_func_occupy_mount reply_success
+  required:
+  - method
+  - result
+  - code
+  - id
+  description: Same envelope as the common success reply, except that result is a boolean.
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/Timestamp.yaml
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: boolean
+      description: True when a checked work function or the planet-correction flag is active.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4740 (64-bit build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 32
+    method: is_func_occupy_mount
+- name: busy
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_func_occupy_mount
+    result: true
+    code: 0
+    id: 32
+see_also:
+- can_move
+- not_move
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#position-and-connection-state

@@ -1,0 +1,40 @@
+title: get_img_name_field result
+type: object
+required:
+- bin
+- date_time
+- temp
+- gain
+- camera_name
+description: Current image-file-name field switches. All members are booleans. The reply shape was also
+  seen from a device in a recorded session (date not recorded in the source). A temperature-unit switch
+  kept internally is not emitted.
+properties:
+  bin:
+    type: boolean
+    const: true
+    description: Always true (hardcoded by the handler).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)
+  date_time:
+    type: boolean
+    description: Date and time are part of image names.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)
+  temp:
+    type: boolean
+    description: Sensor temperature is part of image names.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)
+  gain:
+    type: boolean
+    description: Gain is part of image names.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)
+  camera_name:
+    type: boolean
+    description: Camera name is part of image names.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb8380, GetImgNameField @0x1213f0 (64-bit build)

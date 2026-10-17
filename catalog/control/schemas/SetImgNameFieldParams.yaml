@@ -1,0 +1,14 @@
+title: set_img_name_field params
+description: Required. An object, or a one-element array whose first element is the object. Absent, null,
+  an empty array or any non-object is rejected with 107.
+oneOf:
+- $ref: SetImgNameFieldBody.yaml
+- type: array
+  minItems: 1
+  items:
+    $ref: SetImgNameFieldBody.yaml
+    description: First element is the parameter object.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcce30, SetImgNameField @0x121420 (64-bit build)

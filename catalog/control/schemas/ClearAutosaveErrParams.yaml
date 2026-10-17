@@ -1,0 +1,23 @@
+title: clear_autosave_err params
+description: 'Two forms. (1) Params absent or any non-object (null, scalar, array): clears the global
+  capture error. (2) Object: plan_last MUST be present and true (boolean true, or a nonzero integer) and
+  clears the last error of the current enabled legacy-plan target. An object without a true plan_last
+  is rejected with 106.'
+anyOf:
+- type: object
+  required:
+  - plan_last
+  properties:
+    plan_last:
+      type:
+      - boolean
+      - integer
+      description: Must be true or nonzero. false, 0, null, a wrong type, or absence is rejected with
+        106. No other key is read.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdfa50, ClearCurrentTargetErr @0x3078b0 (64-bit
+        build); key literal in data section
+- not:
+    type: object
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdfa50, ClearCurrentTargetErr @0x3078b0 (64-bit build)

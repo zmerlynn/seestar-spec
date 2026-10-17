@@ -1,0 +1,37 @@
+title: get_subframe result
+type: object
+required:
+- width
+- height
+- x
+- y
+description: Current crop rectangle. All four members are always present; units are pixels (INFERRED),
+  affected by the active bin and camera crop.
+properties:
+  width:
+    type: integer
+    description: Crop width.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100
+      (64-bit build)
+  height:
+    type: integer
+    description: Crop height.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100
+      (64-bit build)
+  x:
+    type: integer
+    description: Left offset.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100
+      (64-bit build)
+  y:
+    type: integer
+    description: Top offset.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100
+      (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100 (64-bit
+  build)

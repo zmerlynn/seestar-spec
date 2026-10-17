@@ -1,0 +1,62 @@
+kind: event
+name: AppStateChange
+summary: Notification that a reconnection changed the active page or state, or resumed an exposure or
+  loop.
+description: 'Emitted when reconnection changes the active page or state, or resumes exposure or looping.
+  Emitted by the imager on TCP 4700 (channel I) with page, and by the guider on TCP 4400 (channel G) from
+  its camera-scan path, where the notification can be envelope-only; guider event lines are forwarded
+  onto 4700 by the imager main process, which also installs a local callback for this name. Family: custom;
+  no state or error. APK consumer: none established.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifyAppStateChange @0x122a30; guider Camera_ZWO::ScanZWOCams
+  @0xfcde0 (64-bit builds)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AppStateChange event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: AppStateChange
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAppStateChange @0x122a30
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    page:
+      type: string
+      description: Active page name; vocabulary not closed here.
+      x-required-when: imager producer; the guider notification can omit it
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAppStateChange @0x122a30
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyAppStateChange @0x122a30
+examples:
+- name: imager
+  summary: READ shape, not captured; value invented
+  of: payload
+  payload:
+    Event: AppStateChange
+    Timestamp: '1234.123456789'
+    page: preview
+- name: guider-envelope-only
+  summary: Guider form (READ shape)
+  of: payload
+  payload:
+    Event: AppStateChange
+    Timestamp: '1234.123456789'
+see_also:
+- get_app_state
+- set_page
+spec:
+- spec/control/device-state-and-settings.md#application-state

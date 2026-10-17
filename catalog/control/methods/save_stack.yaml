@@ -1,0 +1,116 @@
+kind: method
+name: save_stack
+summary: Save the current stack result to storage using the stored save settings.
+description: Builds the stack image name and header, obtains or computes the stacked image and starts
+  the save thread without waiting for it. Acquisition and conversion are synchronous; the file write is
+  asynchronous, so a success reply does not mean the file exists. The destination and type come from stored
+  save/autosave settings; request parameters (path, type) are not read. The call needs an accumulated
+  image but does not open hardware. It refuses the simulated stack and unsupported capture types. On error
+  213 the reply may carry an additional top-level fullname string when a non-empty saved file name is
+  known. Completion events and deeper file/SDK failures are unresolved.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd0fc0, SaveStack @0x1929e0 (64-bit build)
+side_effects: Starts an asynchronous write of the stacked image and its header to the currently selected
+  storage; may compute calibration or fetch the stacked frame.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: save_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: save_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd0fc0, SaveStack @0x1929e0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: save_stack error reply
+  allOf:
+  - $ref: ../../common/schemas/ReplyError.yaml
+  - type: object
+    properties:
+      fullname:
+        type: string
+        description: Name of the already-saved file. Present only on code 213 and only when the device
+          holds a non-empty saved name; otherwise absent.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd0fc0, response_save_error @0xaa510 (64-bit
+          build)
+errors:
+- code: 300
+  trigger: Internal frame type is 4
+  label: internal error
+- code: 267
+  trigger: The light stack has no positive frame count
+  label: no image
+- code: 213
+  trigger: The image is already saved; the reply may include fullname
+  label: image is already saved
+- code: 207
+  trigger: Fallback when a failure leaves no code
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Failures from buffer reallocation, calibration calculation, stacked-frame retrieval and starting
+  the save thread are forwarded unchanged and are not enumerated. A simulated stack, or a non-zero capture
+  type other than star trails, makes the call return failure without assigning a new code, so the code
+  is whatever was last set (207 if none).
+examples:
+- name: save
+  of: request
+  payload:
+    id: 71
+    method: save_stack
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: save_stack
+    result: 0
+    code: 0
+    id: 71
+- name: nothing-stacked
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: save_stack
+    error: no image
+    code: 267
+    id: 72
+- name: already-saved
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: save_stack
+    error: image is already saved
+    code: 213
+    id: 73
+    fullname: Example_stack_20260131
+see_also:
+- start_stack
+- clear_stack
+- get_stack_info
+spec:
+- spec/control/stacking.md#saving
+- spec/control/errors.md#replies-with-extra-or-missing-members

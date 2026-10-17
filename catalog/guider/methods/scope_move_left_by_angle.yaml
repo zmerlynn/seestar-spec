@@ -1,0 +1,112 @@
+kind: method
+name: scope_move_left_by_angle
+summary: Start a mount move by an angle to the left, run by a named worker.
+description: 'With a connected mount, the handler checks the mount is not moving (203) and can move (210),
+  then requires an integer degree ({degree} or [degree]; missing or non-integer gives 104). It stores
+  move type 4 with that angle, clears the elapsed-angle counter, starts the movement watcher with the
+  MoveByAngle worker and replies 0 (or the thread-start error). The worker reports through MoveByAngle
+  events (start, moving with value, complete or fail; no error or code). Without a connected mount degree
+  is ignored: the call replies 315, unless the manual parameter (key or first position) is the string
+  manual, in which case it emits MoveByAngle complete at once and replies 0 (INFERRED: a test or simulation
+  hook). Served by the guider process (TCP 4400); a client on the main command port reaches it through
+  the imager unknown-method relay, which is unavailable to guest-table clients. The native-handler grade
+  below does not describe the relay. Mount serial: runs on a worker; its commands were not traced (unresolved).'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build), MoveByAngleFunc @0x6b080, movement
+  watcher CheckMoveThr @0x1f7be0
+side_effects: Starts a worker thread, commands physical mount motion and emits MoveByAngle notifications.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_move_left_by_angle request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_move_left_by_angle
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeMoveLeftByAngleParams.yaml
+      description: degree is required with a connected mount; see the schema.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 315
+  trigger: No mount is connected and manual is not the string manual
+  label: mount is not connected
+- code: 203
+  trigger: The mount is already moving (checked first)
+  label: equipment is moving
+- code: 210
+  trigger: The mount driver has no motion capability
+  label: not supported
+- code: 104
+  trigger: Connected mount and degree missing or not an integer
+  label: expected int param
+errors_note: A failure to start the worker thread replies with the thread error code; those codes are
+  not exhausted by this table.
+examples:
+- name: object-form
+  of: request
+  payload:
+    id: 14
+    method: scope_move_left_by_angle
+    params:
+      degree: 10
+- name: array-form
+  of: request
+  payload:
+    id: 15
+    method: scope_move_left_by_angle
+    params:
+    - 10
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_move_left_by_angle
+    result: 0
+    code: 0
+    id: 14
+- name: err-203
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_move_left_by_angle
+    error: equipment is moving
+    code: 203
+    id: 16
+see_also:
+- MoveByAngle
+- scope_is_moving
+- scope_get_state
+- scope_get_slew_rate
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#fine-and-angle-moves
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

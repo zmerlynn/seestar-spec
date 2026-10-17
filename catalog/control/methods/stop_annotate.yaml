@@ -1,0 +1,66 @@
+kind: method
+name: stop_annotate
+summary: Stop the annotation worker, waiting for it to finish.
+description: Synchronously stops and joins the annotation thread, then reports success unconditionally.
+  The call can block until the worker has stopped. No params are read. Whether the stop emits events is
+  not established.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xca5d0, StopAnnotate @0x1fce50 (64-bit build)
+side_effects: Stops and joins the annotation worker thread (CMyThread stop); the stop may block with no
+  timeout established in the handler.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_annotate request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_annotate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca5d0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable; a helper-internal error state alone does not create
+  an error reply.
+examples:
+- name: stop
+  summary: Bare request
+  of: request
+  payload:
+    id: 44
+    method: stop_annotate
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_annotate
+    result: 0
+    code: 0
+    id: 44
+see_also:
+- start_annotate
+- get_annotate_result
+spec:
+- spec/control/solving-and-annotation.md#annotation

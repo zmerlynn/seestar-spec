@@ -1,0 +1,66 @@
+kind: method
+name: stop_demonstrate
+summary: Stop the demonstration function and wait for its thread to exit.
+description: No request parameters are read. The handler sets the stop request, notifies any guider request
+  waiter and stops the Demonstrate thread, which may involve waiting for or signalling the thread and
+  joining it. It can block with no numeric timeout. The reply is unconditionally success after the stop
+  returns, even if nothing was running. A running demonstration ends with a final Demonstrate cancel
+  event (no code or error on the wire; internal code 253, not sent), which can arrive before this reply.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8a60 (64-bit build), StopDemonstrate @0x17d350
+side_effects: Stops and joins the demonstration thread and wakes guider request waiters. No mode or park
+  guard.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_demonstrate request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_demonstrate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc8a60 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 93
+    method: stop_demonstrate
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_demonstrate
+    result: 0
+    code: 0
+    id: 93
+see_also:
+- start_demonstrate
+spec:
+- spec/control/maintenance.md#demonstration-mode-and-sound
+- spec/control/maintenance.md#demonstration-mode-and-sound

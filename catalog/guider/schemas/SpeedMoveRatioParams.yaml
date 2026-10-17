@@ -1,0 +1,32 @@
+title: speed_move_ratio params
+description: Named object only; positional forms are not accepted. All three members are required.
+type: object
+required:
+- cam_id
+- pix_scale
+- sel_wide_cam
+properties:
+  cam_id:
+    type: integer
+    minimum: 0
+    maximum: 1
+    description: Camera slot index. Allowed 0 to 1 (an unsigned comparison rejects negatives); out of
+      range gives 300, wrong type gives 104. Which slot is the tele or wide camera is INFERRED from use.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7e1d0 (64-bit build)
+  pix_scale:
+    type: number
+    description: Pixel scale for the slot, written into the stored per-camera table immediately (before
+      later checks can fail). No clamp. Angle per pixel, INFERRED from use; exact unit unresolved. Wrong
+      type gives 108.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7e1d0 (64-bit build)
+  sel_wide_cam:
+    type:
+    - boolean
+    - integer
+    description: When false the speed-move ratio is set to -1. When true the ratio is computed from the
+      stored tele and wide scales; invalid or sentinel scales give 300. Integer nonzero is true. Wrong
+      type gives 106.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7e1d0 (64-bit build)

@@ -1,0 +1,127 @@
+kind: method
+name: get_obj
+summary: List the objects of one named object list.
+description: Returns an array of {name, coord, type} for the list whose display name is given. Unknown
+  or empty groups give 236.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb57f0, ObjListConfig::Get @0x6c4a90 (64-bit build)
+side_effects: Enumerates the XML configuration into local structures and selects the requested group.
+  The established write is creation of a configured lock file under the temporary directory; no list content
+  is changed. Synchronous; no explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_obj request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_obj
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+      - type: array
+        minItems: 1
+        items:
+          type: string
+      description: The list display name, as a bare string or as a one-element array whose first element
+        is used (extra elements ignored). Absent, null, empty array or a non-string gives 105. No length
+        check.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb57f0, json_array2obj @0x6fa450 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_obj success reply
+  description: Same envelope as the common success reply, except that result carries data.
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: array
+      description: Objects of the named list; an existing empty list gives an empty array.
+      items:
+        $ref: ../schemas/GetObjEntry.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_obj @0xb57f0 (64-bit build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params is absent, null, an empty array, or not a string
+  label: expected string param
+- code: 236
+  trigger: The named group is empty or unmatched, or the inner enumeration found no children
+  label: xml item is not found
+- code: 229
+  trigger: Outer enumeration could not open the XML key (an empty configuration file name also ends here)
+  label: fail to open xml key
+- code: 231
+  trigger: Inner enumeration was given an invalid handle (not independently established as reachable after
+    a successful open)
+  label: xml is not opened
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Lower failures not converted by the enumeration helpers are unresolved. 32-bit lower-branch
+  equivalence is not asserted.
+examples:
+- name: get
+  of: request
+  payload:
+    id: 81
+    method: get_obj
+    params: Winter targets
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_obj
+    result:
+    - name: Example nebula
+      coord:
+      - 5
+      - 20
+      type: 0
+    code: 0
+    id: 81
+- name: no-such-list
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_obj
+    error: xml item is not found
+    code: 236
+    id: 82
+see_also:
+- get_list
+- add_obj
+- del_obj
+spec:
+- spec/control/object-lists.md#user-object-lists

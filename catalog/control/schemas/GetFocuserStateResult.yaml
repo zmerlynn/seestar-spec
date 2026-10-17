@@ -1,0 +1,33 @@
+title: get_focuser_state result
+type: object
+required:
+- state
+properties:
+  state:
+    type: string
+    enum:
+    - close
+    - moving
+    - idle
+    description: 'Focuser state: close when the focuser is not open; moving when IsMoving succeeds and
+      reports motion; otherwise idle (an IsMoving poll failure silently maps to idle).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)
+  name:
+    type: string
+    description: 'Focuser name; present only when the focuser is open and GetProperty succeeds. Observed
+      constant in the code: a GPIO EAF name string.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)
+  id:
+    type: integer
+    description: Focuser id (0 in the inspected path); present only when open and GetProperty succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)
+  max_step_range:
+    type: integer
+    description: UI maximum step; present only when open and GetProperty succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)

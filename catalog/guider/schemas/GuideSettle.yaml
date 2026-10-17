@@ -1,0 +1,31 @@
+title: guide settle
+type: object
+required:
+- pixels
+- time
+- timeout
+description: Settle criteria. All three members are required by the parser; a missing member gives 102.
+  There is no range check. time and timeout are floored to integers, and the native helper stores a fixed
+  99999 in a further field. pixels is, despite its name, a distance in arcseconds (READ conversion, INFERRED
+  unit); time and timeout are whole seconds (READ floor, INFERRED unit). The imager fills pixels from its
+  stored settle_arcsec.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, parse_settle @0x69eb0
+properties:
+  pixels:
+    type: number
+    description: Settle distance in arcseconds despite the name; converted with the guide camera's arcsec
+      per pixel, used as pixels if the scale is unknown. The imager fills it from settle_arcsec.
+    x-confidence: READ (conversion); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, parse_settle @0x69eb0; guide @0x7c810 and GetCameraPixelScale
+      @0x94400; imager StartDither @0x182790
+  time:
+    type: number
+    description: Settle time. Floored; whole seconds.
+    x-confidence: READ (floor); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, parse_settle @0x69eb0
+  timeout:
+    type: number
+    description: Settle timeout. Floored; whole seconds.
+    x-confidence: READ (floor); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, parse_settle @0x69eb0

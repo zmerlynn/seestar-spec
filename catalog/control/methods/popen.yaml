@@ -1,0 +1,96 @@
+kind: method
+name: popen
+summary: Run a shell command on the device and return its standard output.
+description: Runs the caller-supplied command string through the host's popen in read mode, reads output
+  until end of file, closes it, and returns the accumulated text as the result. The call is synchronous
+  with no timeout or output cap, so a command that never closes stdout blocks the reply. Output is appended
+  chunk-wise by C string length, so an embedded NUL byte truncates its chunk. Exit status and stderr are
+  not reported and a nonzero exit is not an error. Any command can be run; effects are command-dependent.
+  The command was not executed in the analysis.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe4fc0, run_popen @0x6d7500 (64-bit build)
+side_effects: Executes an arbitrary command on the device host; effects are whatever the command does.
+  Also writes log output.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: popen request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: popen
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PopenParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe4fc0, run_popen @0x6d7500 (64-bit build)
+reply_success:
+  title: popen success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: string
+        description: Accumulated standard output of the command.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4fc0, run_popen @0x6d7500 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: cmd absent or not a string
+  label: expected string param
+- code: 1
+  trigger: The command runner returned failure (explicit message overload; the internal popen-failure
+    code 214 is not emitted here)
+  label: runPopen error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Code 1 carries the explicit message "runPopen error" rather than a shared-table entry.
+examples:
+- name: echo
+  summary: Harmless command (invented)
+  of: request
+  payload:
+    id: 120
+    method: popen
+    params:
+      cmd: echo hello
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: popen
+    result: 'hello
+
+      '
+    code: 0
+    id: 120
+- name: missing-cmd
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: popen
+    error: expected string param
+    code: 105
+    id: 121
+see_also:
+- get_control_value
+spec:
+- spec/control/maintenance.md#diagnostic-and-dangerous-methods

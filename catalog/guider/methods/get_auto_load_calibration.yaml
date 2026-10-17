@@ -1,0 +1,79 @@
+kind: method
+name: get_auto_load_calibration
+summary: Read whether calibration is loaded automatically.
+description: Params are not consumed. Returns the cached auto-load-calibration flag as a boolean. No handler
+  error. The method is registered in the guider command table (TCP 4400); a request that reaches the main
+  imager and is relayed to the guider is a separate route with its own side effects, outside this entry's
+  tier.
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x77fd0 (64-bit build), MyDev::GetAutoLoadCalibration
+  @0x93a70
+side_effects: None. Reads a cached device flag.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_auto_load_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_auto_load_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x77fd0 (64-bit build)
+reply_success:
+  title: get_auto_load_calibration success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: boolean
+        description: Auto-load-calibration flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x77fd0 (64-bit build), MyDev::GetAutoLoadCalibration
+          @0x93a70
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 10
+    method: get_auto_load_calibration
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_auto_load_calibration
+    result: true
+    code: 0
+    id: 10
+see_also:
+- get_calibrated
+spec:
+- spec/guider/index.md#method-groups

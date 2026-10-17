@@ -1,0 +1,85 @@
+kind: method
+name: get_polar_align_image
+summary: Report whether each of the two saved polar-alignment image slots exists.
+description: Returns [exists_slot0, exists_slot1] from file-access checks. A failing check is reported
+  as false; no error is serialised.
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes
+  shared diagnostics); the handler itself is a probable pure getter (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb3280, CanAccess @0x6dd6a0 (64-bit build)
+side_effects: Only file-access checks and the shared request/reply diagnostics.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_polar_align_image request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_polar_align_image
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb3280 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_polar_align_image success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/GetPolarAlignImageResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The inspected handler returns no handler-specific error code.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 71
+    method: get_polar_align_image
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_polar_align_image
+    result:
+    - true
+    - false
+    code: 0
+    id: 71
+see_also:
+- set_polar_align_image
+- rm_polar_align_image
+spec:
+- spec/control/polar-alignment.md#results-and-image-slots

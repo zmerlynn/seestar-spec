@@ -1,0 +1,98 @@
+kind: method
+name: start_solve
+summary: Start a plate solve, either of the live image or of a named stored image.
+description: Without a string ra, starts the solver worker on the live image (if a live solve is already
+  running it clears the saved image name and returns success without a second thread). With a string ra,
+  stops any running solver synchronously, resets solve parameters and solves the named stored image. The
+  reply returns as soon as the worker is started; poll get_solve_result for progress and outcome. A solve
+  started here never emits Annotate; both paths leave the solve parameters' annotate flag at its constructor
+  zero, and the status refresher emits Annotate only when that flag is set (by start_annotate or annotation
+  after auto-save or exposure). READ.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe5c00, StartSolve @0x1fb9f0, StartSolveImg @0x1fbb90,
+  CheckSolveExec @0x1fb810, RefreshSolveStatusFunc annotate-flag test @0x207054, S_SOLVE_PARA constructor
+  @0x20a320, StartAnnotate @0x1fb0b0 (64-bit build)
+side_effects: Resets solve state and starts or restarts the solver worker thread; the file form stops
+  the running worker first.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_solve request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_solve
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartSolveParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5c00, StartSolve @0x1fb9f0, StartSolveImg
+        @0x1fbb90, CheckSolveExec @0x1fb810 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Three-point polar alignment is working
+  label: not supported
+- code: 255
+  trigger: Required solver executable (or test solver plus star-removal tool under the test setting) is
+    inaccessible
+  label: file not exist
+- code: 212
+  trigger: 'Named worker thread could not be started (unresolved: full failure chain)'
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: StartSolve and StartSolveImg failures forward the helper's error code unnamed.
+examples:
+- name: live
+  of: request
+  payload:
+    id: 90
+    method: start_solve
+- name: file
+  summary: Solve a stored image (name invented)
+  of: request
+  payload:
+    id: 91
+    method: start_solve
+    params:
+      ra: MyWorks/example.jpg
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_solve
+    result: 0
+    code: 0
+    id: 90
+- name: busy-pa
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_solve
+    error: not supported
+    code: 210
+    id: 92
+see_also:
+- stop_solve
+- get_solve_result
+- get_last_solve_result
+spec:
+- spec/control/solving-and-annotation.md#plate-solving

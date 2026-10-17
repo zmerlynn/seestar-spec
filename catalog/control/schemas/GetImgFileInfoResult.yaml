@@ -1,0 +1,178 @@
+title: get_img_file_info result
+type: object
+description: 'File metadata. date, size_k and type are always present once the file exists. The remaining
+  members are optional: they appear only when the corresponding FITS, WCS or media read succeeds, and
+  secondary read failures simply omit the members without any error reply.'
+required:
+- date
+- size_k
+- type
+properties:
+  date:
+    type: string
+    description: File date as formatted by the device; the format is not established.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  size_k:
+    type: integer
+    description: File size in KiB (bytes shifted right by 10).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  type:
+    type: integer
+    description: 'File classification code, derived from the file name and media kind, not from content.
+      Default 9 (other); media kind 3 gives 10; MP4 video gives 5, or 7 when the name contains timelapse,
+      changed to 6 or 8 when a companion AVI exists. FITS: name prefix Stacked_ gives 2, DSO_Stacked 3,
+      Video_Stacked 4, Magnitude 11; otherwise a name containing _meteor gives 12; otherwise a name containing
+      _sub gives 1, else 2. Semantic names beyond these criteria are unresolved.'
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  sharpen:
+    type: array
+    description: Planet-stack sharpen values stored in the FITS file (FITS only, when readable).
+    items:
+      type: integer
+      description: Sharpen value.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  angle:
+    type: number
+    description: Image rotation angle from WCS (FITS only, when all WCS keys resolve). Degree unit is
+      INFERRED from WCS convention; orientation unresolved.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  ra_dec_j2000:
+    type: array
+    description: '[RA, Dec] at J2000, in degrees (not RA hours); present with is_solved when the WCS RA
+      and Dec are valid (not within 0.1 of the -999 sentinel).'
+    minItems: 2
+    maxItems: 2
+    items:
+      type: number
+      description: Element.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  is_solved:
+    type: boolean
+    description: Companion of ra_dec_j2000.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  ra_dec:
+    type: array
+    description: '[RA, Dec] in degrees, J2000 coordinates precessed to the date taken from the file; present
+      only when the precession step succeeds.'
+    minItems: 2
+    maxItems: 2
+    items:
+      type: number
+      description: Element.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  duration_sec:
+    type: number
+    description: Video duration in seconds (MP4 only, when readable).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  header_date:
+    type: string
+    description: FITS header date. Present whenever the FITS header read succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  bayer_pat:
+    type: string
+    description: Bayer pattern from the FITS header. Present whenever the header read succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  creator:
+    type: string
+    description: FITS creator string. Present whenever the header read succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  obj_type:
+    type: string
+    description: Object type; present only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  obj_name:
+    type: string
+    description: Object name; present only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  size:
+    type: array
+    description: Image [width, height], pixels INFERRED; present when both are non-negative.
+    minItems: 2
+    maxItems: 2
+    items:
+      type: integer
+      description: Dimension.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  img_type:
+    type: integer
+    description: Native image type code mapped to 5 when the native type is 3, else 1; present when the
+      native type is non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  lon_lat:
+    type: array
+    description: '[longitude, latitude] from the header; degrees INFERRED from the header key names. Present
+      when both are valid.'
+    minItems: 2
+    maxItems: 2
+    items:
+      type: number
+      description: Element.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  stack_num:
+    type: integer
+    description: Number of stacked frames; present when greater than 0.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  exp_sec:
+    type: number
+    description: Per-frame exposure in seconds; present only when the exposure is valid.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  tot_exp_sec:
+    type: number
+    description: 'Total exposure in seconds: the stored total when valid, else max(stack_num, 1) times
+      exp_sec. Present only when the exposure is valid.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  eqmode:
+    type: integer
+    description: Equatorial-mode flag as an integer, not a boolean; present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+  is_wide:
+    type: integer
+    description: Wide-camera flag as an integer, not a boolean; present when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbd320, getImgFileInfo @0xbc960 (64-bit build)

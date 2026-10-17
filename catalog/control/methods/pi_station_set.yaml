@@ -1,0 +1,133 @@
+kind: method
+name: pi_station_set
+summary: Configure the station-mode Wi-Fi connection and start an asynchronous connection check.
+description: Writes the station network configuration for the given SSID and key via the network script,
+  then starts (replacing any previous) a background check thread that watches for the connection until
+  timeout_sec elapses. The reply reports only that setup and thread start succeeded; the outcome of the
+  connection is obtained by polling pi_station_state or from the Station event, whose only producer is
+  this check, which tests the connection about once a second until timeout_sec has passed, then sends
+  Station complete or fail. On failure (timeout, an error from the check, or an address in 10.0.0.x)
+  the device deletes the saved network it was trying to join before sending fail, so a client must re-send
+  the credentials to retry. A newer pi_station_set stops the previous check without any event for it.
+  If timeout_sec is not positive the error is returned
+  after the configuration was already changed; nothing is rolled back on any error.
+  Firmware 9.75 (64-bit build, app 3.4.0) the psk member (under params.para, no wifi object) is an enc1 token and needs
+  the crypto session of the connection (secure-communication chapter); a missing session returns 570 and a
+  bad token 571 to 573. Error 104 has an unresolved trigger in the 9.75 handler.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+  @0x121ce0, CheckStaConnFunc @0x121710 (64-bit build); firmware 9.75 handler @0xfbec0
+side_effects: Updates station network configuration (synchronous shell, no total timeout), stops the previous
+  station-check thread, records the desired SSID and timeout and starts a new check thread. May cause
+  the device to leave its current Wi-Fi network.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_set request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_set
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiStationSetParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe4b10, ns_net::pi_station_set @0x6fd800, StartCheckStation
+        @0x121ce0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent or not an object, or para present and not an object
+  label: expected object param
+- code: 105
+  trigger: ssid or psk not a string, or ssid missing/empty
+  label: expected string param
+- code: 104
+  trigger: timeout_sec not an integer
+  label: expected int param
+- code: 106
+  trigger: hidden not coercible to boolean
+  label: expected bool param
+- code: 570
+  trigger: 'Firmware 9.75: no active crypto session, or the psk token cannot be decoded (571 invalid, 572 replay, 573 crypto failure)'
+  label: encrypted session required
+- code: 209
+  trigger: timeout_sec is 0 or negative (checked after configuration was written)
+  label: invalid value
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 207
+  trigger: Script output contains the text error
+  label: fail to operate
+- code: 212
+  trigger: The check thread could not be started (other thread-start codes may propagate)
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No result member on errors. The asynchronous connection outcome is reported by the Station
+  event (or by polling pi_station_state), not by this reply.
+examples:
+- name: full
+  summary: All members
+  of: request
+  payload:
+    id: 91
+    method: pi_station_set
+    params:
+      ssid: ExampleNet
+      psk: example-passphrase
+      timeout_sec: 20
+      hidden: false
+- name: wrapped
+  summary: Wrapper form with defaults
+  of: request
+  payload:
+    id: 92
+    method: pi_station_set
+    params:
+      para:
+        ssid: ExampleNet
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_set
+    result: 0
+    code: 0
+    id: 91
+- name: bad-timeout
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_set
+    error: invalid value
+    code: 209
+    id: 93
+see_also:
+- pi_station_state
+- pi_station_select
+- pi_station_scan
+- pi_station_remove
+- pi_station_list
+spec:
+- spec/control/network.md#station-wi-fi-client
+- spec/control/secure-communication.md#encrypted-wi-fi-strings

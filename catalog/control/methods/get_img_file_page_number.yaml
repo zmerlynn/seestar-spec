@@ -1,0 +1,109 @@
+kind: method
+name: get_img_file_page_number
+summary: Count the pages of the image file listing for a directory.
+description: Rebuilds the device's sorted image list for the given directory synchronously and returns
+  ceil(entries / page_num) as a bare integer. The call replaces the shared list parameters and sorted
+  list, so a later get_img_file_page_name continues from this listing; it is the catalog's established
+  mutating getter. No entries, totals or paths are returned. The enumeration result is not checked, so
+  a count does not prove that storage access succeeded.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath @0x6e0860,
+  bool_param @0x6f58f0 (64-bit build)
+side_effects: Overwrites the shared image-list parameters and rebuilds the sorted image list cache; no
+  persistent setting or device operation.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_file_page_number request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_file_page_number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetImgFilePageNumberParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+        @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+reply_success:
+  title: get_img_file_page_number success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: integer
+        description: 'Signed page count: ceil(length of the sorted list / page_num). Zero for an empty
+          directory (INFERRED).'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+          @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Array params whose first element is not a string
+  label: expected string param
+- code: 209
+  trigger: Effective page_num is not positive
+  label: invalid value
+- code: 102
+  trigger: Explicit params present but neither an object nor an array (including null)
+  label: invalid params
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Behaviour when filesystem enumeration fails is unresolved. The object key for the directory
+  (dir) comes from the per-method reference; an older catalog row names the key path, which only the array
+  form uses.
+examples:
+- name: defaults
+  of: request
+  payload:
+    id: 80
+    method: get_img_file_page_number
+- name: with-options
+  summary: Values invented
+  of: request
+  payload:
+    id: 81
+    method: get_img_file_page_number
+    params:
+      dir: MyWorks
+      page_num: 20
+      size: true
+      date: true
+      skip_avi: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_file_page_number
+    result: 3
+    code: 0
+    id: 80
+- name: bad-page-size
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_file_page_number
+    error: invalid value
+    code: 209
+    id: 82
+see_also:
+- remove_file
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

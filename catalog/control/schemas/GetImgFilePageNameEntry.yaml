@@ -1,0 +1,60 @@
+title: get_img_file_page_name entry
+type: object
+description: One listing entry. Metadata helper failures are not errors; the affected members are omitted
+  or defaulted.
+required:
+- name
+- is_dir
+properties:
+  name:
+    type: string
+    description: Entry name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  is_dir:
+    type: boolean
+    description: True for a directory.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  date:
+    type: string
+    description: Present only if the shared list parameters enable dates (flag 0x100).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  size_k:
+    type: integer
+    description: Size in KiB; present only if the shared list parameters enable sizes. Directory value
+      is unsigned. Unit is INFERRED.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  file_cnt:
+    type: integer
+    description: 'Directories only: number of files, always present for directories.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  header_date:
+    type: string
+    description: 'FITS files only: DATE-OBS header value, if readable.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  is_recording:
+    type: boolean
+    description: 'AVI or MP4 files only: whether the file is currently being recorded.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+  avi_duration_sec:
+    type: number
+    description: 'AVI or MP4 files: duration in seconds; for AVI present only if the duration is not -1,
+      for MP4 only if not recording and the duration helper succeeds.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit build)

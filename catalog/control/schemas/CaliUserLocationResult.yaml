@@ -1,0 +1,54 @@
+title: cali_user_location result
+type: object
+required:
+- calib_location
+description: Calibration-location offsets. Only calib_location is always present. effect_offset_deg may
+  be emitted twice by the device (once after each offset query), so the serialized object can contain
+  duplicate keys; receivers MUST NOT rely on which duplicate wins.
+properties:
+  calib_location:
+    type: integer
+    description: Integer calibration mode. 1 enables goto location calibration (a parsed ra/dec pair
+      replaces the offset pair; goto and solve-and-calibrate fail with 210 when the offset is unavailable).
+      2 enables the three-point polar-alignment offset (offset_deg_3ppa, also settable via set_setting).
+      Any other value disables both.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe6da0 (64-bit build)
+  effect_offset_deg:
+    type: array
+    description: Two numbers in degrees, emitted when the calibration-offset query succeeds. Meaning of
+      the components not established by the printer.
+    items:
+      type: number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintClibLoc
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintClibLoc (64-bit build)
+  offset_deg:
+    type: array
+    description: Two numbers in degrees, emitted when both components are outside the sentinel band (-999
+      +/- 0.1).
+    items:
+      type: number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintClibLoc
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintClibLoc (64-bit build)
+  offset_deg_3ppa:
+    type: array
+    description: Two numbers in degrees from the 3-point polar-alignment offset query, emitted when both
+      components are valid.
+    items:
+      type: number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintClibLoc
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintClibLoc (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe6da0 and PrintClibLoc

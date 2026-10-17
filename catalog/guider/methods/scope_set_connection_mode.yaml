@@ -1,0 +1,88 @@
+kind: method
+name: scope_set_connection_mode
+summary: Select the mount connection mode (serial or network choice).
+description: Calls the mount connection-mode setter, which changes the serial/network connection choice.
+  Success returns integer 0. The mode-index list is unresolved. Served by the guider process (TCP 4400);
+  a client on the main command port reaches it through the imager unknown-method relay, which is unavailable
+  to guest-table clients. The native-handler grade below does not describe the relay.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x71ab0 (64-bit build)
+side_effects: Changes the mount serial/network connection choice.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_connection_mode request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_connection_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetConnectionModeParams.yaml
+      description: Mode index.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x71ab0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 104
+  trigger: params not an integer or one-element-array integer
+  label: expected int param
+- code: 207
+  trigger: Mount setter failed
+  label: fail to operate
+- code: 300
+  trigger: Internal object unavailable
+  label: internal error
+examples:
+- name: request
+  of: request
+  payload:
+    id: 31
+    method: scope_set_connection_mode
+    params: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_connection_mode
+    result: 0
+    code: 0
+    id: 31
+- name: err-300
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_connection_mode
+    error: internal error
+    code: 300
+    id: 32
+see_also:
+- scope_set_connection_para
+- scope_set_beep_volume
+spec:
+- spec/guider/index.md#method-groups

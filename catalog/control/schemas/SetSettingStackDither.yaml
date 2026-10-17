@@ -1,0 +1,26 @@
+type: object
+description: Parsed pix, interval, enable into a local copy; the setter runs only after parse success.
+properties:
+  pix:
+    type: integer
+    description: 0 to 200 inclusive; wrong type or missing ignored; out of range 204.
+    minimum: 0
+    maximum: 200
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  interval:
+    type: integer
+    description: 1 to 100 inclusive; wrong type or missing ignored; out of range 204.
+    minimum: 1
+    maximum: 100
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  enable:
+    type:
+    - boolean
+    - integer
+    description: Wrong type ignored. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

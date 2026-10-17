@@ -1,0 +1,88 @@
+kind: method
+name: stop_func
+summary: Stop a named running function, then relay the stop to the peer process.
+description: 'Looks up the named function in the function tree, stops its thread (which may wait for it
+  without a fixed timeout), then relays the original request to the peer process. The local stop result
+  is ignored: success is reported whenever the relay step succeeds, whether or not a function was found
+  or running. If the relay produces a reply, that reply is copied instead of the local one. A locally
+  built relay failure replaces the whole reply with error and code only (no jsonrpc, Timestamp, method
+  or result; the dispatcher then appends id), and a reply copied from the peer carries whatever fields
+  the peer set. Framework stop paths may emit the stopped function event (for example AIProcess, ViewPlan);
+  the full set of stoppable names is unresolved.'
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8210 (64-bit build); relay @0xae0a0
+side_effects: Stops the matching function thread; local effects persist even if the relay fails (no rollback).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_func request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_func
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StopFuncParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: name missing, null, empty array or not a string
+  label: expected string param
+- code: 300
+  trigger: 'Relay: main-process user context is null (reply then carries only error, code and id)'
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A relay failure code may also be a transport error code; the set is unresolved.
+examples:
+- name: stop-ai
+  summary: As sent by the app to cancel AI processing
+  of: request
+  payload:
+    id: 21
+    method: stop_func
+    params:
+      name: AIProcess
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_func
+    result: 0
+    code: 0
+    id: 21
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_func
+    error: expected string param
+    code: 105
+    id: 22
+see_also:
+- start_func
+- is_func_work
+- start_ai_process
+- clear_view_plan
+spec:
+- spec/control/solving-and-annotation.md#ai-processing
+- spec/control/special-modes.md#function-control-methods
+- spec/control/errors.md#replies-with-extra-or-missing-members

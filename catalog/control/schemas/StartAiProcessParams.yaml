@@ -1,0 +1,69 @@
+title: start_ai_process params
+type: object
+required:
+- brightness
+- contrast
+- saturation
+description: Object params only; arrays, scalars and null are treated as no keys and then fail the required
+  numeric members with 108. Numeric members are validated in the order brightness, contrast, saturation.
+  The app DTO also has a sharp member; the firmware reads no such key.
+properties:
+  name:
+    type: string
+    description: Image to process, resolved against the image root. Default empty selects the current
+      image. Non-string (including null) is rejected with 105.
+    x-default: empty string = current image
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build)
+  crop:
+    type: array
+    description: Crop polygon as up to eight integers. Absent defaults to [-1,0,0,0,0,0,0,0]; only the
+      first eight elements are read, short or empty arrays leave the rest at default, extras are ignored.
+      A negative first value means no crop. INFERRED to be four (x,y) corner pairs in image pixels; no
+      bounds or order validation. Non-integer element is rejected with 104, non-array or null with 102.
+    items:
+      type: integer
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+        @0x3f16b0 (64-bit build)
+    x-default: '[-1,0,0,0,0,0,0,0]'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build)
+  brightness:
+    type: number
+    description: Brightness adjustment. Integer or real; no range or clamp. Missing, null or other type
+      is rejected with 108.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build)
+  contrast:
+    type: number
+    description: Contrast adjustment. Integer or real; no range or clamp. Rejected with 108 as for brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build)
+  saturation:
+    type: number
+    description: Saturation adjustment. Integer or real; no range or clamp. Rejected with 108 as for brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build)
+  dbe:
+    type: array
+    description: Background-extraction points as a flat integer list, INFERRED to be (x,y) pixel pairs.
+      Absent defaults to empty; all elements are read, no size limit. Null, non-array, non-integer element
+      or odd element count is rejected with 102.
+    items:
+      type: integer
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+        @0x3f16b0 (64-bit build)
+    x-default: '[]'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+  @0x3f16b0 (64-bit build)

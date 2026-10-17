@@ -1,0 +1,16 @@
+title: set_auto_load_calibration params
+type:
+- boolean
+- integer
+- array
+description: 'Enable flag: a bare boolean or integer (nonzero is true), or an array whose first element
+  is that value. Any other type gives 106.'
+items:
+  type:
+  - boolean
+  - integer
+  description: 'Positional form: the first element is the flag.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x70f60 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x70f60 (64-bit build)

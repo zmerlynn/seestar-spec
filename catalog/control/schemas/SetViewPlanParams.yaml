@@ -1,0 +1,43 @@
+title: set_view_plan params
+type: object
+description: >-
+  Two forms. (1) Full plan: plan_name present, list required. (2) Restart: plan_name absent;
+  re-runs the held plan and ignores any list supplied. Non-object params (null, scalar, array)
+  are tolerated and behave as omitted; clients SHOULD omit params or send an object.
+dependentRequired:
+  plan_name: [list]
+properties:
+  plan_name:
+    type: string
+    description: Presence selects the full-plan form. Empty string is accepted.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930 (64-bit build)
+  update_time_seestar:
+    type: string
+    default: ""
+    description: 'Date of last plan edit; the iOS app was seen sending YYYY.MM.DD (OBSERVED 2026-10-12;
+      meaning and format are app-side only). Not validated and not used for scheduling. Missing or wrong type clears the stored value.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930; format OBSERVED (one app version, 2026-10-12)
+  plan_target_af:
+    type: [boolean, integer]
+    x-default: held value (compiled initial false)
+    description: Autofocus per target. Integer 0 is false, nonzero true. Wrong type is rejected with 106. Absent keeps the held setting; committed only if the start succeeds past parsing.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, parseViewPlanSetting @0x405f90; initial value from data bytes
+  viewplan_gohome:
+    type: [boolean, integer]
+    x-default: held value (compiled initial true)
+    description: Park at end of plan. The final go-home decision reads a device setting that may differ from this parsed flag, so this field alone does not guarantee the action.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, parseViewPlanSetting @0x405f90, ViewPlanFunc @0x401c20; echo OBSERVED (2026-10-12)
+  list:
+    type: array
+    minItems: 1
+    description: Targets in start order (the worker does not sort). Every element MUST be an object. No count limit, uniqueness check or sort.
+    items:
+      $ref: './ViewPlanTarget.yaml'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, StartViewPlan @0x40ba10 (64-bit build)

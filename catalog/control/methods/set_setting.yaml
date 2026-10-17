@@ -1,0 +1,194 @@
+kind: method
+name: set_setting
+summary: Change one or more device settings in a single object, non-transactionally.
+description: 'Required object of optional members, processed in input order. The first checked failure
+  stops later members and earlier writes remain. Ignored helper failures can still end in code 0. A true
+  manual_exp or a calculated mosaic returns early with a result object and skips later members. In process
+  type 1 a true wide_cam forwards the whole request to the peer; ISP-related members may also be forwarded
+  according to view mode. A successful call with changed keys emits a Setting event whose payload is the
+  filtered settings (not an echo of the request); some helpers emit it themselves. Client events are emitted
+  by the guest-mode members. Per key: auto_power_off enables a 15-minute idle shutdown and skips a wrong
+  type silently; guest_mode enabling makes the requester master, disabling requires master and closes
+  the other connections, and resending the current value fails with a stale code; usb_en_eth switches
+  Ethernet over USB-C through the gadget script; dark_mode sets the LED style and is forwarded to the
+  secondary process. master_cli claims (true) or releases (false) master status. The iOS app is observed
+  sending {lang} and {cli_uuid, cli_name} (2026-10-12). 32-bit and 64-bit members differ: wide_4k, main_8k,
+  hdr, rtsp_roi_index and rtsp_roi_scale, stack_l_auto and others are D64 only or differ; the reduced
+  32-bit set is not enumerated here. Firmware 9.75, app 3.4.0 adds keys sky_replay (value ignored, feature force-disabled), annotation
+  (object), preview.raw_bin2, enable_dark_library, can_encrypt (only true, a no-op), motion_monitor (validated object), exp_ms.more_exposure (tele camera only) and the stack members startrail_mode (wide camera only, 0 to 2, a change clears the stack) and startrails_duration_min (wide camera only, 259 while stacking), and drops
+  expert_mode, which now gives 109 although get_setting still emits it; annotation or sky_replay sent
+  together with wide_cam give 102. See the params schema.'
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xedf40 (auto_power_off @0xefcb8, guest_mode @0xf0f9c,
+  usb_en_eth @0xf0eac, dark_mode @0xf0c58, guest-settings fallback @0xf1c90), guest_mode_set_master @0x6b5040
+  (64-bit build); firmware 9.75 key-table additions from the 9.75 reports (handler @0x10a230, 64-bit build) and resolver report E (stack branch @0x10c238 and @0x10c42c, exp_ms branch @0x10e308, enable_dark_library @0x10e788, can_encrypt @0x10d110, motion_monitor @0x10b128, parser @0xefbc0)
+side_effects: Writes shared operational settings and configuration, can change hardware (LED, heater,
+  wheel), restart the preview stream, switch camera or guest mode, run scripts (USB gadget for usb_en_eth),
+  close other client connections, arm the auto_power_off idle shutdown and relay to the peer. Not transactional;
+  no rollback.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetSettingParams.yaml
+      description: Required object; absent, null, scalar or array gives 107.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: set_setting success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/SetSettingResult.yaml
+        description: Integer 0, or a result object for manual_exp or a calculated mosaic.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 102
+  trigger: Invalid temp_unit string, center_xy/offset not an array, ae_bri_percent not numeric, unknown
+    preview enum (firmware 9.75, also image_transfer_mode above 1), malformed mosaic pair, typec_mode outside
+    file/net; firmware 9.75, annotation or sky_replay sent in the same request as wide_cam
+  label: invalid params
+- code: 104
+  trigger: Missing or noninteger coordinate; integer-only nested member wrong type (firmware 9.75 includes stack.startrail_mode, stack.startrails_duration_min and motion_monitor waiting_time and duration_min); stack save/goto booleans
+    malformed; rtsp_roi_index, src_dura_min, light_brightness or rec_res_index wrong type
+  label: expected int param
+- code: 105
+  trigger: String-only member given another type (preview, capt_type, password, typec_mode, cli_name,
+    cli_uuid; firmware 9.75, motion_monitor mode)
+  label: expected string param
+- code: 106
+  trigger: Strict boolean member given another type; firmware 9.75, can_encrypt, exp_ms.more_exposure and motion_monitor return_to_origin; firmware 9.75, sky_replay, preview.raw_bin2 or an annotation member given a type other than boolean or integer
+  label: expected bool param
+- code: 107
+  trigger: Params missing or not an object; preview or timelapse not an object; firmware 9.75, motion_monitor not an object; firmware 9.75, annotation not an object
+  label: expected object param
+- code: 108
+  trigger: Positional lon/lat non-numeric, delay_sec non-numeric, ROI scale non-numeric
+  label: expected float param
+- code: 109
+  trigger: Unmatched top-level key (firmware 9.75 includes expert_mode), or a known name supplied with a type that bypasses its branch; firmware 9.75, unknown or null member name inside annotation
+  label: unexpected param
+- code: 200
+  trigger: Guest helper cannot find the client socket, or master_cli from a local (internal) connection
+  label: invalid id
+- code: 203
+  trigger: stack_lenhance while the wheel worker is running
+  label: fail to operate
+- code: 204
+  trigger: Dither, ROI or ae_bri_percent out of limit
+  label: out of limit
+- code: 207
+  trigger: Explicit beep/heater failure, LED helper failure, Alpaca busy or timeout, Type-C script error,
+    any failure with no internal code
+  label: fail to operate
+- code: 209
+  trigger: Capture type incompatible with the camera; unknown selected_cam; firmware 9.75, stack.startrail_mode above 2 or negative, motion_monitor mode or sensitivity out of range, threshold mismatch, negative waiting_time or an invalid duration_min (the duration case INFERRED)
+  label: invalid value
+- code: 210
+  trigger: Unsupported lang, timelapse view, stack_l_auto on non-wide camera, capability or NFC missing,
+    Alpaca in slave, master_cli outside guest mode; firmware 9.75, can_encrypt false, stack.startrail_mode or stack.startrails_duration_min on a non-wide camera, exp_ms.more_exposure on the wide camera
+  label: not supported
+- code: 259
+  trigger: Stack active while changing stack_l_auto, stack_l or capture type; enabling user_stack_sim
+    while stacking; firmware 9.75, stack.startrails_duration_min while stacking (startrail_mode has no such check, it clears the stack instead)
+  label: stack is already running
+- code: 267
+  trigger: user_stack_sim enabled when the simulation image check fails
+  label: no image
+- code: 300
+  trigger: wide_cross_offset on a non-wide camera locally; master_cli by a non-master while a master exists
+  label: internal error
+- code: 318
+  trigger: Wheel unavailable for stack_lenhance, or camera absent or closed for mosaic
+  label: device not connected
+- code: 524
+  trigger: Preview quality during video recording; changed rec_res_index during RTSP plus recording; firmware 9.75, a changed motion_monitor while the motion-monitor function runs
+  label: function conflict
+- code: 536
+  trigger: Capture-type change or user_stack_sim during a view plan; selected_cam during a non-dual view
+    plan
+  label: view plan is already running
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Messages follow the shared label table. Many downstream codes are dynamic and not a closed
+  set. Resending the current guest_mode value fails with the thread's last error code, which is stale.
+  An error reply carries no result and earlier changes remain. Each code listed also has 200 invalid id
+  at dispatch when the id is missing.
+examples:
+- name: request
+  summary: Two settings
+  of: request
+  payload:
+    id: 171
+    method: set_setting
+    params:
+      temp_unit: C
+      lang: en
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_setting
+    result: 0
+    code: 0
+    id: 171
+- name: manual
+  summary: Switch to manual exposure
+  of: request
+  payload:
+    id: 172
+    method: set_setting
+    params:
+      manual_exp: true
+- name: manual-ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_setting
+    result:
+      isp_exp_ms: 100.0
+      isp_gain: 80.0
+    code: 0
+    id: 172
+- name: unknown-key
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_setting
+    error: unexpected param
+    code: 109
+    id: 173
+see_also:
+- get_setting
+- reset_setting
+spec:
+- spec/control/device-state-and-settings.md#writing-set_setting
+- spec/media/video.md#stream-control-from-4700
+- spec/control/session-handshake/verification-and-roles.md#guest-and-master
+- spec/control/mosaic/timing-and-errors.md#duration-estimate
+- spec/control/function-states.md#sky-replay
+- spec/control/stacking.md#sky-replay-and-star-trail-decay-firmware-975

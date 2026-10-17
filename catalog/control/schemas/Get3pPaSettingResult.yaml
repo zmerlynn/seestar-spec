@@ -1,0 +1,19 @@
+title: get_3p_pa_setting result
+type: object
+required:
+- is_pa_3p
+- rotate_angle
+properties:
+  is_pa_3p:
+    type: boolean
+    description: Three-point polar alignment selected.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xba2e0, Get3PPaSetting @0x120360 (64-bit build)
+  rotate_angle:
+    type: integer
+    description: Rotation angle, degrees (INFERRED from naming). Permitted range not established.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xba2e0, Get3PPaSetting @0x120360 (64-bit build)
+description: Copy of the stored three-point alignment setting; both members always present.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xba2e0, Get3PPaSetting @0x120360 (64-bit build)

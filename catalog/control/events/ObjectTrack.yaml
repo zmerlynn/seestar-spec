@@ -1,0 +1,133 @@
+kind: event
+name: ObjectTrack
+summary: State of the object tracker with the tracked rectangle.
+description: 'Function producer: StartObjTrack and the image object-tracker callbacks update a named ObjectTrack
+  function. Function-state family (SendFuncEvent): state is always written; stage only when non-empty;
+  lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored
+  code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely on
+  seeing every transition. The formatter adds the tracked rectangle x, y, width, height. Recipients: all
+  retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker
+  and the worker''s events can arrive in either order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, StartObjTrack @0x3dd560, PrintState @0x3dda70 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ObjectTrack event
+  type: object
+  discriminator: Event
+  description: Function-state members plus the tracked rectangle.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: ObjectTrack
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartObjTrack @0x3dd560
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; StartObjTrack @0x3dd560
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    x:
+      type: integer
+      description: Tracked rectangle x; pixels INFERRED.
+      x-required-when: written by the tracker formatter; no further presence condition is established
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintState @0x3dda70, tracker location callback
+    y:
+      type: integer
+      description: Tracked rectangle y; pixels INFERRED.
+      x-required-when: written by the tracker formatter; no further presence condition is established
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintState @0x3dda70, tracker location callback
+    width:
+      type: integer
+      description: Tracked rectangle width; pixels INFERRED.
+      x-required-when: written by the tracker formatter; no further presence condition is established
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintState @0x3dda70, tracker location callback
+    height:
+      type: integer
+      description: Tracked rectangle height; pixels INFERRED.
+      x-required-when: written by the tracker formatter; no further presence condition is established
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintState @0x3dda70, tracker location callback
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintState @0x3dda70
+examples:
+- name: working
+  summary: Tracking (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ObjectTrack
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 2000
+    x: 512
+    y: 300
+    width: 64
+    height: 48
+see_also:
+- start_track_object
+- iscope_stop_view
+- iscope_get_app_state
+spec:
+- spec/control/special-modes.md#object-tracking
+- spec/control/events-overview.md

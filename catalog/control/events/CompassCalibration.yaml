@@ -1,0 +1,158 @@
+kind: event
+name: CompassCalibration
+summary: Progress and result of the compass (magnetometer) calibration worker.
+description: 'Broadcast on TCP 4700 (channel I). The calibration worker started by start_compass_calibration
+  sends terminal states complete or fail through the state-with-route helper (family SR: code and error
+  only when the supplied code is greater than 0); the magnetometer sampling callback sends working updates
+  carrying sector progress (sector_id, covered, total, samples) and a route. The heading circle is divided
+  into 12 sectors of 30 degrees numbered 0-11 from heading 0 (total 12). A working event is sent once
+  each time a new sector is first covered, so a run sends at most 12; there is no other throttle or timer.
+  A magnetometer sample within 4 raw units in both x and y of an already kept sample is dropped and cannot
+  cover a sector; at most 2000 samples are kept. This is the only compass event: no periodic heading event
+  exists, and the compass reading is otherwise available only from get_device_state. The device stops
+  sampling and calculates on its own when all 12 sectors are covered and no new sector has been seen for
+  2 s (after at least 20 samples), or 65 s after start. Firmware 9.31: the calculation thread ends with
+  complete or fail with code 0, so its fail carries no code or error; the move-round step fails with 241,
+  300 or 320. Firmware 9.75, app 3.4.0: the fail event carries code and error: 560 and 561 from the rotation
+  (communication, rotation), 562 rotation timeout, 563 sampling gate or sector coverage failure (set in the sampling and coverage branch, never by the fit classifier), 564 magnetic interference
+  or field instability, 565 generic failure (default, fewer than 10 de-duplicated samples, or a failed configuration write); 561 is also set when the automatic rotation fails with no code stored; the first code set
+  wins. A fit fails when the residual spread exceeds 10.0 or the maximum deviation exceeds 25.0 around the 50.0 reference, the matrix is near-singular or its condition number exceeds 10, or fewer than 6 of 12 sectors are covered (see the polar-alignment chapter). A client MUST NOT require code on fail, and SHOULD read it when present. Terminal route ancestry
+  is unresolved. Family: SR plus custom. APK: recognized by the event-type table (route check disabled
+  for this name).'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0, compassCalibrationThreadFunc
+  @0x12c370, scopeMoveRound @0x184160, getMSensorData @0x134ae0 (sector math @0x134cac-0x134cfc, auto-stop
+  thresholds, sample de-duplication @0x134c2c-0x134c64), packCompassSensorData @0x126700 (sole caller
+  get_device_state @0xf2b80, both builds), NotifyStateWithRoute @0xb15d0 (64-bit build); firmware 9.75
+  fail codes from the 9.75 reports (getCompassFitFailureCode @0x1571b0, scopeMoveRoundThreadFunc @0x13c590,
+  64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: CompassCalibration event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: CompassCalibration
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, compassCalibrationThreadFunc @0x12c370
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - working
+      - complete
+      - fail
+      description: working on sector progress; complete or fail from the worker at the end.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0, compassCalibrationThreadFunc
+        @0x12c370
+    sector_id:
+      type: integer
+      minimum: 0
+      maximum: 11
+      description: Sector newly covered, floor(heading / 30 degrees) mod 12, numbered 0-11 from heading
+        0.
+      x-required-when: working sector update
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0, getMSensorData
+        sector computation @0x134cac
+    covered:
+      type: integer
+      minimum: 1
+      maximum: 12
+      description: Number of sectors covered so far.
+      x-required-when: working sector update
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0
+    total:
+      type: integer
+      const: 12
+      description: Total number of sectors, always 12.
+      x-required-when: working sector update
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0
+    samples:
+      type: integer
+      description: Sample count (converted from an unsigned size).
+      minimum: 0
+      x-required-when: working sector update
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-parent path. Present on the working callback and on SR terminal sends; may
+        be empty.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, notifyCompassCalibrationSector @0x1285e0, NotifyStateWithRoute
+        @0xb15d0
+    code:
+      type: integer
+      description: 'Failure code. Firmware 9.31: 241, 300 and 320 from the move-round step; absent on
+        a calculation fail. Firmware 9.75: 560 to 565 on fail (see the error table).'
+      x-required-when: supplied code greater than 0 (family SR)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyStateWithRoute @0xb15d0, scopeMoveRound @0x184160;
+        firmware 9.75 codes from the 9.75 reports
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: as code
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyStateWithRoute @0xb15d0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, compassCalibrationThreadFunc @0x12c370
+examples:
+- name: sector-progress
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: CompassCalibration
+    Timestamp: '1234.123456789'
+    state: working
+    sector_id: 5
+    covered: 6
+    total: 12
+    samples: 240
+    route: []
+- name: complete
+  summary: READ shape, not captured
+  of: payload
+  payload:
+    Event: CompassCalibration
+    Timestamp: '1234.123456789'
+    state: complete
+    route: []
+- name: fail-9.75
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: CompassCalibration
+    Timestamp: '1234.123456789'
+    state: fail
+    code: 564
+    error: magnetic interference detected, remove magnetic objects and retry
+    route: []
+see_also:
+- get_compass_state
+- start_compass_auto_calibration
+- start_compass_calibration
+- stop_compass_calibration
+spec:
+- spec/control/polar-alignment.md#compass-calibration
+- spec/control/polar-alignment.md#automatic-compass-calibration-firmware-975

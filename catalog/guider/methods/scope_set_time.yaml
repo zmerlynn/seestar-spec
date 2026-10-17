@@ -1,0 +1,101 @@
+kind: method
+name: scope_set_time
+summary: Set the date, time and zone offset on the connected mount.
+description: 'Calls the mount time setter, which issues time commands to the mount. Requires a connected
+  mount that supports time setting. utc must contain a YYYY-MM-DDTHH:MM:SS date-time (trailing text tolerated);
+  offset is the zone offset in hours, fractions allowed, positive east of UTC (sign INFERRED). The driver
+  converts the pair to local date and time and sends offset, date and time to the mount; a year whose
+  last two digits are 21 or less fails with 207. Does not change the host clock or zone. Via the imager
+  command port (4700) the request reaches this handler only as a forwarded unknown method; see the control
+  service for the relay. Mount serial (firmware 9.31, READ): :SG, :SC, :SL in that order.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7b540, ScopeAM5::SetTime, Utc2Local, SetTimeCmd
+  (64-bit build)
+side_effects: Changes the mount clock and zone offset.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_time request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_time
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetTimeParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7b540 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: offset or utc missing or not a string
+  label: expected string param
+- code: 207
+  trigger: Native setter failure, including a year whose last two digits are 21 or less
+  label: fail to operate
+- code: 210
+  trigger: Mount does not support setting the time
+  label: not supported
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 209
+  trigger: Two-digit year of 21 or less (the driver refuses to set the year)
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 45
+    method: scope_set_time
+    params:
+      offset: '1'
+      utc: '2026-01-31T20:15:00Z'
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_time
+    result: 0
+    code: 0
+    id: 45
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_time
+    error: expected string param
+    code: 105
+    id: 46
+see_also:
+- scope_set_location
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

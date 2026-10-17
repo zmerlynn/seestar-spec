@@ -1,0 +1,81 @@
+kind: method
+name: loop
+summary: Start continuous guide-camera looping exposures.
+description: Calls MyDev::StartLooping, which schedules continuous capture on the guide camera. A success
+  reply (result 0) means the start was accepted; frames and looping/exposure notifications arrive asynchronously
+  with payloads and ordering unresolved. Params are not consumed.
+grade: MUTATOR / established (native handler, 64-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x74010 (64-bit build); MyDev::StartLooping @0x95360
+side_effects: Schedules continuous guide-camera capture.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: loop request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: loop
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x74010 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 303
+  trigger: StartLooping fails
+  label: could not start looping
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Other thread-local errors may be forwarded and are not exhausted by this table.
+examples:
+- name: start
+  summary: Params omitted
+  of: request
+  payload:
+    id: 60
+    method: loop
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: loop
+    result: 0
+    code: 0
+    id: 60
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: loop
+    error: could not start looping
+    code: 303
+    id: 61
+see_also:
+- guide
+spec:
+- spec/guider/guiding.md#guiding-workflow

@@ -1,0 +1,75 @@
+kind: event
+name: Client
+summary: Guest-mode client list, personalized per recipient with whether that socket is the master.
+description: 'Sent through the guest-mode notifier when guest-mode connections, the master or client names
+  change; no timer. Only sent while guest mode is on, and only to eligible clients (a per-connection client-info
+  flag can skip entries), each copy personalized with is_master. Emitted by the imager on TCP 4700 (channel
+  I) and by the guider on TCP 4400 (channel G); guider event lines reaching the imager are forwarded onto
+  4700 unchanged (except in the auxiliary process). Family: custom; no state or error. No client UUID
+  or MAC member is asserted. APK consumers: DeviceEventPart; DeviceService client handler.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_server::guest_mode_notify @0x6b40c0, print_cli_connection
+  @0x6b2a50, print_cli_is_master @0x6b3f10; guider guest_mode_notify @0x117c60 (64-bit builds)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Client event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - connected
+  - master_index
+  - is_master
+  properties:
+    Event:
+      type: string
+      const: Client
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guest_mode_notify @0x6b40c0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    connected:
+      type: array
+      items:
+        type: string
+      description: Eligible client names, ordered by copied connection index.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_cli_connection @0x6b2a50
+    master_index:
+      type: integer
+      description: Index of the master in connected; a negative sentinel when no entry matches.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_cli_connection @0x6b2a50
+    is_master:
+      type: boolean
+      description: Whether the receiving socket is the master; differs per recipient.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_cli_is_master @0x6b3f10
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guest_mode_notify @0x6b40c0
+examples:
+- name: two-clients
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: Client
+    Timestamp: '1234.123456789'
+    connected:
+    - Phone A
+    - Tablet B
+    master_index: 0
+    is_master: false
+see_also:
+- get_device_state
+- set_setting
+spec:
+- spec/control/events/envelope.md#recipients
+- spec/control/device-state-and-settings.md#guest-mode-client-and-alert-events

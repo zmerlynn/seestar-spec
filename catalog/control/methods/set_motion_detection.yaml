@@ -1,0 +1,106 @@
+kind: method
+name: set_motion_detection
+summary: Turn the motion detector on or off (firmware 9.75, 64-bit only).
+description: New in firmware 9.75, app 3.4.0, 64-bit build only. Starts or stops the motion detector on
+  its own, without the track-or-capture logic of the motion monitor. wide_cam true addresses the wide
+  camera; the call is routed or refused depending on the process type. Refused with 524 while smart follow
+  runs. Detection state members (width, height, exposure, points) exist; their types and the event that
+  carries them are unresolved.
+grade: MUTATOR / READ
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xf0430 (64-bit build)
+side_effects: Starts or stops the motion detector; starting requires a running preview stream.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_motion_detection request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_motion_detection
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      required:
+      - enable
+      description: params must be an object (209 otherwise).
+      properties:
+        enable:
+          type: boolean
+          description: true starts detection, false stops it. Missing or wrong type 106.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf0430 (64-bit build)
+        wide_cam:
+          type: boolean
+          description: Address the wide camera. Wrong type 106. Routing depends on process type (210 when
+            this process cannot serve it).
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf0430 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0xf0430 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 209
+  trigger: params is not an object, or invalid detection arguments
+  label: invalid argument
+- code: 106
+  trigger: enable or wide_cam is not a bool
+  label: expected bool
+- code: 210
+  trigger: wide_cam routing not served by this process
+  label: wrong process
+- code: 524
+  trigger: smart follow running, view mode not allowed (INFERRED), or object-track owner taken
+  label: busy
+- code: 268
+  trigger: detection already running
+  label: already running
+- code: 300
+  trigger: RTSP not running
+  label: not ready
+- code: 254
+  trigger: stopping the track failed
+  label: track stop failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A failed relay to the other camera is only logged. The unit of the internal first argument
+  is unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 86
+    method: set_motion_detection
+    params:
+      enable: true
+  summary: READ shape, not captured; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_motion_detection
+    result: 0
+    code: 0
+    id: 86
+see_also:
+- start_motion_monitor
+- stop_motion_monitor
+- start_smart_follow
+spec:
+- spec/control/function-states.md#motion-monitor

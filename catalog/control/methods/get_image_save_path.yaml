@@ -1,0 +1,109 @@
+kind: method
+name: get_image_save_path
+summary: Report the connected image storage volumes, their state and capacity, and the current save target.
+description: Queries the connection state and disk-space caches for storage types 0 to 2 and reads the
+  current type and the Type-C flag. No selection or mount operation is performed. Although it is a query,
+  the disk-space calls write diagnostic log output (and logging can create, append, rotate or remove log
+  files), which is why the grade is MUTATOR; the only demonstrated writes are logging, so the tier is
+  B. A failed disk-space query omits the numeric members of that volume rather than failing the call.
+  Storage latency is not established.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+side_effects: Refreshes storage and disk-space queries and writes diagnostic logging that can create,
+  append, rotate or remove log files; no setting or motion change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_image_save_path request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_image_save_path
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_image_save_path success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    required:
+    - result
+    properties:
+      result:
+        $ref: ../schemas/GetImageSavePathResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The handler would forward a storage-formatting failure, but the 64-bit formatter returns
+  success on every ordinary path, including a partial disk-query failure.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 101
+    method: get_image_save_path
+- name: ok-emmc
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_image_save_path
+    result:
+      is_typec_connected: false
+      connected_storage:
+      - emmc
+      storage_volume:
+      - name: emmc
+        state: mounted
+        total_mb: 51200
+        totalMB: 51200
+        free_mb: 40960
+        freeMB: 40960
+        disk_mb: 51200
+        diskSizeMB: 51200
+        used_percent: 20
+      cur_storage: emmc
+    code: 0
+    id: 101
+- name: ok-space-query-failed
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_image_save_path
+    result:
+      is_typec_connected: false
+      connected_storage:
+      - sd
+      storage_volume:
+      - name: sd
+        state: mounted
+      cur_storage: sd
+    code: 0
+    id: 102
+see_also:
+- set_image_save_path
+spec:
+- spec/control/stacking.md#saving
+- spec/control/power-and-storage.md#querying

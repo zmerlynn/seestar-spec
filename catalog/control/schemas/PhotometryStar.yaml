@@ -1,0 +1,90 @@
+title: photometry star
+type: object
+description: One cached star record, written unconditionally with all eleven members by the star-JSON
+  producer. Used by get_photometry_stars and get_photometry_plot, which may add members of their own.
+required:
+- pix
+- radec_deg
+- ref_mag
+- measure_mag
+- err
+- MJD
+- loc_date
+- id
+- name
+- star_type
+- is_reference
+properties:
+  pix:
+    type: array
+    items:
+      type: number
+    minItems: 2
+    maxItems: 2
+    description: 'Pixel coordinates [x, y] (INFERRED from the name). For a reference star not detected in the frame the value is the plate solution''s world-to-pixel result divided by a per-axis scale factor (READ); the origin and indexing follow the plate solution''s reference pixel and are unresolved.'
+    x-confidence: INFERRED (meaning); READ (computation); origin unresolved
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; PhotoMetry @0x203bf0 (WCSLIB wcss2p then per-axis divide), SolveResWcsprmPix2Sky @0x1fd190 (64-bit build); 32-bit not checked
+  radec_deg:
+    type: array
+    items:
+      type: number
+    minItems: 2
+    maxItems: 2
+    description: 'RA and Dec in degrees [ra, dec], copied unchanged from the raDeg and decDeg fields of the photometry reference list (READ); no epoch or precession conversion is applied, so the epoch is that of the reference list, which is unresolved.'
+    x-confidence: READ (source, no conversion); epoch unresolved
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; reference list loader LoadPmRef @0x203460, PhotoMetry @0x203bf0 (64-bit build); 32-bit not checked
+  ref_mag:
+    type: number
+    description: 'Reference magnitude, copied from the magV field of the photometry reference list (READ); V passband INFERRED from the field name. Zero (absolute value under 1e-6) marks a target star.'
+    x-confidence: READ (source); passband INFERRED
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; reference list loader LoadPmRef @0x203460, PhotoMetry @0x203bf0 (64-bit build); 32-bit not checked
+  measure_mag:
+    type: number
+    description: 'Measured magnitude: the instrumental magnitude plus a per-frame zero point, where the zero point is the mean reference magnitude minus the mean instrumental magnitude over up to eight matched reference stars, so the value is on the reference-list (ref_mag) scale. READ'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; ZFindStarsAndMagnitudeFitting @0x40d240 (zero point @0x40f0a4), PhotoMetry @0x203bf0 (64-bit build); 32-bit not checked
+  err:
+    type: number
+    description: 'Per-frame root-mean-square residual, in magnitudes, of the matched reference stars after the zero-point fit, with a floor of 0.01; every star of a frame carries the same value. READ'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; ZFindStarsAndMagnitudeFitting @0x40d240, floor constant @0x746c30, PhotoMetry @0x203bf0 (64-bit build); 32-bit not checked
+  MJD:
+    type: number
+    description: 'Modified Julian date of the measurement: Julian date from the device system clock minus 2400000.5 (READ); UTC time scale INFERRED (system clock through the astronomy library''s system-time Julian date).'
+    x-confidence: READ (computation); time scale INFERRED
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; PhotoMetry @0x203bf0 (libnova ln_get_julian_from_sys) (64-bit build); 32-bit not checked
+  loc_date:
+    type: string
+    description: 'Device local time when the frame record is built, formatted YYYY.MM.DD HH:MM:SS. READ'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940; GetFitsLocalTime @0x124c30 (localtime, format @0x735ab8), PhotoMetry @0x203bf0 (64-bit build); 32-bit not checked
+  id:
+    type: string
+    description: Cached star identifier.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)
+  name:
+    type: string
+    description: Cached star name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)
+  star_type:
+    type: string
+    enum:
+    - target
+    - reference
+    description: target when the absolute reference magnitude is under 1e-6, otherwise reference.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)
+  is_reference:
+    type: boolean
+    description: False on the target branch, true on the reference branch.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)
+  is_overexposure:
+    type: boolean
+    description: 'Firmware 9.75, app 3.4.0: per-star flag added by the star-JSON producer; the criterion was not traced (possibly saturation, INFERRED from the name). Optional: absent in firmware 9.31 and not part of the eleven always-present members.'
+    x-confidence: READ (existence); meaning INFERRED
+    x-basis: static analysis of firmware 9.75, resolver report E, UpdatePhotoMetryStarJson @0x221db0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)

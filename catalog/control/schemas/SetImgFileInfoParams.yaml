@@ -1,0 +1,28 @@
+title: set_img_file_info params
+type: object
+description: Object only; no positional spelling. Unknown keys are ignored.
+required:
+- file_name
+- planet_stack_sharpen
+properties:
+  file_name:
+    type: string
+    description: File name, concatenated onto the image root. No empty-string, path or extension sanitisation
+      is established. Missing or wrong type fails with 105.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe00b0, WriteFitsSharpen @0x69f440 (64-bit build)
+  planet_stack_sharpen:
+    type: array
+    description: Sharpen values, written to the FITS file as a comma-terminated list (each element as
+      a decimal integer followed by a comma, trailing comma retained). Empty array allowed; no length
+      or range bound. Missing or non-array fails with 102.
+    items:
+      type: integer
+      description: Sharpen value; a non-integer element fails with 104.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe00b0, WriteFitsSharpen @0x69f440 (64-bit
+        build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe00b0, WriteFitsSharpen @0x69f440 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe00b0, WriteFitsSharpen @0x69f440 (64-bit build)

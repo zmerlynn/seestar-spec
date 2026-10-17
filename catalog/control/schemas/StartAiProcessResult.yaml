@@ -1,0 +1,17 @@
+title: start_ai_process result
+type: object
+required:
+- estimated_sec
+description: Local success only; if the request is relayed to the peer process the peer reply is used
+  instead.
+properties:
+  estimated_sec:
+    type: integer
+    description: Estimated processing time in seconds, truncated toward zero from image area relative
+      to a 1920x1080 frame times 20. No lower bound of 1. The 32-bit build uses the same formula (READ). Not a completion state.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+      @0x3f16b0 (64-bit build), startDeNoise @0x376528 (32-bit build, same formula)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdb4b0, ParserDenoiseParams @0xaf380, startDeNoise
+  @0x3f16b0 (64-bit build)

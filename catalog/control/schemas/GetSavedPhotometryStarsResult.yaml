@@ -1,0 +1,66 @@
+title: get_saved_photometry_stars result
+type: object
+required:
+- PhometryStars
+description: The only member is spelled PhometryStars (missing a t) exactly as sent; the spelling must
+  be preserved.
+properties:
+  PhometryStars:
+    type: array
+    items:
+      type: object
+      required:
+      - id
+      - save
+      - startTime
+      - radec_deg
+      - star_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70 (64-bit
+        build)
+      properties:
+        id:
+          type: string
+          description: Plot id.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
+            (64-bit build)
+        save:
+          type: boolean
+          const: true
+          description: Always true in this list.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
+            (64-bit build)
+        startTime:
+          type: string
+          description: Save start time, local format YYYY-MM-DD HH:MM:SS (format INFERRED from the setter);
+            time zone unresolved.
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
+            (64-bit build)
+        radec_deg:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: RA and Dec of the last star of the plot, degrees (INFERRED from the name; epoch
+            unresolved).
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
+            (64-bit build)
+        star_name:
+          type: string
+          description: Plot name, or the last star's name when the plot name is empty.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
+            (64-bit build)
+    description: Summaries of saved, non-empty plots. Sorted by startTime descending (lexical), then id
+      ascending (lexical). Empty list when nothing is saved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70 (64-bit
+  build)

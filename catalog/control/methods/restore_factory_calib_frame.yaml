@@ -1,0 +1,144 @@
+kind: method
+name: restore_factory_calib_frame
+summary: Remove the customer calibration library and reload the factory calibration.
+description: Refused with 524 first if a View function, ViewPlan, planet stack, batch stack or mount-occupying
+  function is active. Then deletes the customer library files, clears an in-memory dark-library lookup table
+  and one calibration image buffer, and reloads bias, flat_IR and (wheel models) flat_LP from disk. A missing customer directory is not an error. There is no rollback after
+  a partial removal failure.
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, restore_factory_calib_frame @0xdcc70, RestoreCustomerCalib @0x3bdd80 (reloads
+  @0x3bdfa8, @0x3bdfb0, @0x3be004) (64-bit build)
+side_effects: Deletes customer calibration files, clears a dark-library lookup table and one image buffer, reloads
+  bias and flat from disk. Synchronous filesystem work with no explicit timeout. Every full call also makes the shared diagnostic
+  log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: restore_factory_calib_frame request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: restore_factory_calib_frame
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      properties:
+        wide_cam:
+          type:
+          - boolean
+          - integer
+          description: Target the wide camera. A wrong type is treated as false. true requires wide star
+            view support (210); the request is relayed to the peer process.
+          x-default: 'false'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, restore_factory_calib_frame @0xdcc70, RestoreCustomerCalib
+            @0x3bdd80
+      description: Optional object; absent, null, scalar, array or malformed members use defaults. No
+        positional form. Unknown keys ignored.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, restore_factory_calib_frame @0xdcc70, RestoreCustomerCalib
+        @0x3bdd80
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: restore_factory_calib_frame reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: restore_factory_calib_frame
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      type: object
+      properties:
+        value:
+          type: integer
+          enum:
+          - 0
+          - 1
+          description: 1 when no flat calibration files remain, 0 when flat files are available (INFERRED
+            reading of !HasCalibFlatFiles after reload); not the number of files removed.
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, restore_factory_calib_frame @0xdcc70, RestoreCustomerCalib
+            @0x3bdd80
+      required:
+      - value
+      description: Outcome of the reload.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, restore_factory_calib_frame @0xdcc70, RestoreCustomerCalib
+        @0x3bdd80
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 524
+  trigger: A View function, ViewPlan, planet stack, batch stack or mount-occupying function is active;
+    checked before parsing
+  label: function conflict
+- code: 210
+  trigger: wide_cam requested but the model does not support wide star view
+  label: not supported
+- code: 218
+  trigger: A customer file could not be removed
+  label: fail to write file
+- code: 300
+  trigger: Relay with no caller context
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Relay forwarding errors are possible, with potentially duplicated error fragments; peer-process
+  reply handling is unresolved. The app sends this request with no params.
+examples:
+- name: restore
+  of: request
+  payload:
+    id: 54
+    method: restore_factory_calib_frame
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: restore_factory_calib_frame
+    result:
+      value: 1
+    code: 0
+    id: 54
+- name: conflict
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: restore_factory_calib_frame
+    error: function conflict
+    code: 524
+    id: 55
+see_also:
+- start_create_calib_frame
+- set_calib_frame
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#selecting-frames

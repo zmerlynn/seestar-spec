@@ -1,0 +1,19 @@
+# Imager image/file endpoints (zwoair_imager image/file table; image sockets TCP 4800/4804, album/file socket TCP 4801).
+# HTTP 80 (separate file server) and the guider image server (TCP 4500) have no cards; see spec/transport/ports.md.
+service: files
+entries:
+  - {kind: method, name: begin_streaming, file: methods/begin_streaming.yaml}
+  - {kind: method, name: get_auto_focus_img, file: methods/get_auto_focus_img.yaml}
+  - {kind: method, name: get_batch_stack_thumbnail, file: methods/get_batch_stack_thumbnail.yaml}
+  - {kind: method, name: get_camera_img, file: methods/get_camera_img.yaml}
+  - {kind: method, name: get_current_img, file: methods/get_current_img.yaml}
+  - {kind: method, name: get_fits_file, file: methods/get_fits_file.yaml}
+  - {kind: method, name: get_img_file, file: methods/get_img_file.yaml}
+  - {kind: method, name: get_img_file_in_jpg, file: methods/get_img_file_in_jpg.yaml}
+  - {kind: method, name: get_img_page_thumbnail, file: methods/get_img_page_thumbnail.yaml}
+  - {kind: method, name: get_img_thumbnail, file: methods/get_img_thumbnail.yaml}
+  - {kind: method, name: get_photometry_img, file: methods/get_photometry_img.yaml}
+  - {kind: method, name: get_server_log, file: methods/get_server_log.yaml}
+  - {kind: method, name: get_stacked_img, file: methods/get_stacked_img.yaml}
+  - {kind: method, name: get_user_log, file: methods/get_user_log.yaml}
+  - {kind: method, name: stop_streaming, file: methods/stop_streaming.yaml}

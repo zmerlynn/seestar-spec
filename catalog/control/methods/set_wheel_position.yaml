@@ -1,0 +1,104 @@
+kind: method
+name: set_wheel_position
+summary: Start moving the filter wheel to slot 0, 1 or 2.
+description: Requires an integer position as a bare scalar or the first array element; absent, empty,
+  null or non-integer gives 107 (the message does not match the integer type). SetWheelPosition accepts
+  exactly 0, 1 or 2; the range is checked first, then the wheel must be selected and not already moving.
+  On success it writes the cached position and starts the movement thread without waiting, so the reply
+  means the move was started, not completed. Thread-start failure forwards the thread-local code. The
+  physical filter mapping is unresolved.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xce9c0, SetWheelPosition @0x3015c0 (64-bit build)
+side_effects: Writes the cached wheel position and starts the wheel movement thread (physical motion),
+  non-blocking. No elapsed-movement timeout in the handler.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_wheel_position request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_wheel_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type:
+      - integer
+      - array
+      description: Target slot as a bare integer or the first element of an array. Accepted values 0,
+        1, 2. No default.
+      items:
+        type: integer
+        description: First element is used.
+        minimum: 0
+        maximum: 2
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xce9c0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xce9c0, SetWheelPosition @0x3015c0 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Parameter absent, empty, null or not an integer
+  label: expected object param
+- code: 204
+  trigger: Position outside 0 to 2 (checked first; negatives included)
+  label: out of limit
+- code: 318
+  trigger: No wheel selected
+  label: device not connected
+- code: 203
+  trigger: Wheel movement thread is already running
+  label: equipment is moving
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A thread-start failure forwards the thread-local code; its value is not established.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 151
+    method: set_wheel_position
+    params:
+    - 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_position
+    result: 0
+    code: 0
+    id: 151
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_position
+    error: out of limit
+    code: 204
+    id: 152
+see_also:
+- get_wheel_position
+- open_wheel
+- close_wheel
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position

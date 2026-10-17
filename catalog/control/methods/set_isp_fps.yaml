@@ -1,0 +1,97 @@
+kind: method
+name: set_isp_fps
+summary: Set the global ISP frame-rate setting used by camera operation.
+description: Stores the normalised ISP output frame rate (integer frames per second; 0 selects the camera's
+  automatic frame rate) in a global setting and logs it. No configured value is returned. Out-of-range
+  inputs are normalised to 0 and still succeed. There is no camera, mount or mode guard and no wait. The
+  setter only stores the value; it is applied the next time the preview stream's frame rate is configured
+  (timing INFERRED). One view mode forces 30 regardless, and an internal flag can force automatic.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8580 (64-bit build), SetISPFrameRate @0x14eec0,
+  SetFpsBri @0x14cb20 (ASI_ISP_SetFrameRate / ASI_ISP_SetAutoFrameRate)
+side_effects: Overwrites the global ISP frame-rate setting. Whether it persists across restart is not
+  established.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_isp_fps request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_isp_fps
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: integer
+      - type: array
+        minItems: 1
+        prefixItems:
+        - type: integer
+        description: 'Positional form: only the first element is used.'
+      description: Frame rate as a bare integer, or as an array whose first element is an integer (later
+        elements ignored). An object, including one with a key such as fps, is not accepted. Values 0
+        to 30 are stored as given; negative values and values of 31 or more are stored as 0, which
+        selects the automatic frame rate. The low 32 bits of the integer are used, so values beyond the 32-bit range
+        are truncated rather than rejected. Missing, null, empty array, a non-integer first element, boolean,
+        float, string or object give 104.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc8580 (64-bit build), SetISPFrameRate @0x14eec0,
+        SetFpsBri @0x14cb20
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Params missing, null, empty array, or not an integer (bare or first array element)
+  label: expected int param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The range normalisation never produces an error.
+examples:
+- name: bare
+  of: request
+  payload:
+    id: 101
+    method: set_isp_fps
+    params: 15
+- name: positional
+  of: request
+  payload:
+    id: 102
+    method: set_isp_fps
+    params:
+    - 10
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_isp_fps
+    result: 0
+    code: 0
+    id: 101
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_isp_fps
+    error: expected int param
+    code: 104
+    id: 103
+see_also: []
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

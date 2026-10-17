@@ -1,0 +1,65 @@
+kind: method
+name: not_move
+summary: Set the global movement-permission flag to disabled.
+description: No parameters are read. Writes the global flag g_can_move = 0. Despite the name it is not
+  a capability getter and it does not itself issue a motion or stop command; what the flag gates is not
+  established by this handler. No precondition, no error branch.
+grade: MUTATOR / established (64-bit build, command-socket invocation); 32-bit build probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc7ce0 (64-bit build)
+side_effects: Sets the shared movement-permission flag to disabled. Full command-socket calls also incur
+  the shared diagnostic (logging) writes; this is why the strict grade is MUTATOR even for the read-only
+  calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: not_move request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: not_move
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc7ce0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 37
+    method: not_move
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: not_move
+    result: 0
+    code: 0
+    id: 37
+see_also:
+- can_move
+- is_func_occupy_mount
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#the-movement-permission-flag

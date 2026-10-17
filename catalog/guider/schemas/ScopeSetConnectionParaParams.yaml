@@ -1,0 +1,17 @@
+title: scope_set_connection_para params
+description: Object, or an array whose first element is the object. After unwrapping, a non-object gives
+  107. Unrecognised members are ignored. index is not an additional required member of the TCP form. Parity
+  of the 32-bit parser is not established.
+anyOf:
+- $ref: ScopeSetConnectionParaBody.yaml
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+- type: array
+  minItems: 1
+  prefixItems:
+  - $ref: ScopeSetConnectionParaBody.yaml
+  description: Positional form; only the first element is used.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)

@@ -1,0 +1,29 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: clear_calibration params
+description: 'Optional list of selectors. Absent params clear both the mount and the AO calibration. A
+  present container is iterated child by child (array elements, or object values: the root type is not
+  checked), each child naming what to clear; an empty container clears neither. A bare scalar selector
+  is not advertised.'
+anyOf:
+- type: array
+  items:
+    type: string
+    description: 'Selector, matched case-insensitively: mount, ao (adaptive-optics unit) or both. Any
+      other string, and any non-string child, is rejected with 109.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)
+  description: Array of selectors.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)
+- type: object
+  additionalProperties:
+    type: string
+    description: 'Selector, matched case-insensitively: mount, ao (adaptive-optics unit) or both. Any
+      other string, and any non-string child, is rejected with 109.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)
+  description: Object whose values are selectors (keys ignored).
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x74b40 (64-bit guider build)

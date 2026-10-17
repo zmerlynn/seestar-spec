@@ -1,0 +1,5 @@
+# Guider-process serial bridge: raw ser2net socket (TCP 4030) and its control table (TCP 4040).
+service: serial-bridge
+entries:
+  - {kind: method, name: disconnect, file: methods/disconnect.yaml}
+  - {kind: method, name: set_settings, file: methods/set_settings.yaml}

@@ -1,0 +1,118 @@
+kind: event
+name: AutoExp
+summary: Function-state notification of the auto-exposure loop, with the chosen exposure on completion.
+description: 'Sent by AutoExpFunc or the named stack auto-exposure loop. Function-state family (F): SendFuncEvent
+  formats the named function detail. state is always present; stage only when non-empty; lapse_ms while the timer
+  runs or at a terminal state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail
+  to operate''); cancel omits code and error; route is optional function ancestry. The sender does no deduplication
+  and needs no preceding working event. Detail flags can suppress the working or non-working sends while the cached
+  function tree still changes, so a receiver can miss transitions. The 64-bit stack auto-exposure callback adds
+  exp_us only at complete with a positive saved exposure; that callback is not established in the 32-bit build.
+  A separate direct AutoExp complete/fail producer (value/state helpers) also exists; its members beyond state are
+  unresolved. iscope_stop_view with stage AutoExp stops it (64-bit main process records 253 aborted).
+  Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest
+  and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other
+  events. APK 3.3.2 recognises it.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, AutoExpFunc @0x2127c0, StackAutoExpPrintEvent @0x197a70, StartBlockStackAutoExp
+  @0x190a70 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AutoExp event
+  type: object
+  discriminator: Event
+  description: F-family auto-exposure event.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: AutoExp
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; AutoExpFunc @0x2127c0, StackAutoExpPrintEvent
+        @0x197a70, StartBlockStackAutoExp @0x190a70 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: F state table; unknown internal codes fall back to idle.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, state-name table @0xae9468
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: state is fail (F formatter)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Stored error code; present at fail even when zero.
+      x-required-when: state is fail (F formatter)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    exp_us:
+      type: integer
+      description: Chosen exposure in microseconds; 64-bit stack callback only, at complete with a positive saved
+        exposure.
+      x-required-when: complete and positive saved exposure (64-bit stack callback)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StackAutoExpPrintEvent @0x197a70 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, AutoExpFunc @0x2127c0, StackAutoExpPrintEvent @0x197a70, StartBlockStackAutoExp
+    @0x190a70 (64-bit build)
+examples:
+- name: complete
+  summary: Auto exposure finished (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AutoExp
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 6200
+    exp_us: 10000000
+    route:
+    - View
+    - Stack
+see_also:
+- iscope_start_stack
+- iscope_stop_view
+- get_control_value
+- iscope_get_app_state
+spec:
+- spec/control/viewing-and-exposure.md#exposure-events
+- spec/control/events-overview.md

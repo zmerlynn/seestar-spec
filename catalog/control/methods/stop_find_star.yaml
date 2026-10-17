@@ -1,0 +1,67 @@
+kind: method
+name: stop_find_star
+summary: Stop the star-detection worker.
+description: Takes no parameters and replies with integer result 0. Calls the thread stop helper, which
+  may signal and join the worker or set a stop flag and wait, with no timeout, so the call can block.
+  It is not an error if no worker is running. No stop event is emitted by the handler. The stop clears the
+  worker's run flag, which star detection receives; a run that had not completed then ends with FindStar
+  fail, code 253 when the stop coincided with a capture abort and 514 otherwise; a run that had already
+  completed reports complete. READ. The cached result is not cleared.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xca500, StopFindStar @0x269080, FindStarFunc stop-code
+  substitution @0x269e78-0x269ea0 (64-bit build)
+side_effects: Stops and joins the find-star worker, which emits FindStar fail (253 or 514) unless it had
+  already completed; leaves the cached result and its status untouched.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_find_star request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_find_star
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca500, StopFindStar @0x269080 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 131
+    method: stop_find_star
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_find_star
+    result: 0
+    code: 0
+    id: 131
+see_also:
+- start_find_star
+- get_find_star_result
+spec:
+- spec/control/solving-and-annotation.md#find-star

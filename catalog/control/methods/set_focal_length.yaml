@@ -1,0 +1,100 @@
+kind: method
+name: set_focal_length
+summary: Store a new focal-length value in the device settings (64-bit build); the 32-bit build only acknowledges.
+description: Takes one number (a scalar, or the first element of an array) and passes it to the focal-length
+  setter, which overwrites the in-memory focal-length setting and writes a log line. No range or sign
+  check is made. The 64-bit build accepts an integer or a real and stores it as a 32-bit float. The 32-bit
+  build accepts only an integer tag, never reads or applies the payload, and acknowledges with result
+  0. The value is in millimetres (factory default 250); it drives the plate scale, pixel size (micrometres) x
+  206.265 x bin / focal length. The malformed-parameter reply uses the integer-parameter message
+  even though reals are accepted.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable); the 32-bit handler as read is a no-op acknowledgement
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xceed0, SetFocalLen @0x11c9b0 (64-bit build); 32-bit
+  handler @0x65e14
+side_effects: '64-bit build: overwrites the shared focal-length setting in memory and logs; no demonstrated
+  configuration persistence and no motor operation. 32-bit build: none.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_focal_length request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_focal_length
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type:
+      - number
+      - array
+      description: The focal-length number as a bare scalar or as the first element of an array. Absent,
+        empty array, null or non-number gives 104. The 32-bit build requires an integer. No keys, no default,
+        no range check. Millimetres.
+      items:
+        type: number
+        description: First element is used; the rest are ignored.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xceed0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xceed0, float_param @0x6f5810 (64-bit build);
+        the 32-bit build accepts integers only
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Parameter absent, empty, null or not a number (64-bit); not an integer (32-bit)
+  label: expected int param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: SetFocalLen itself never fails.
+examples:
+- name: request
+  summary: Array form (values invented)
+  of: request
+  payload:
+    id: 41
+    method: set_focal_length
+    params:
+    - 250
+- name: scalar-real
+  summary: Scalar real form, 64-bit build only (value invented)
+  of: request
+  payload:
+    id: 42
+    method: set_focal_length
+    params: 250.5
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_focal_length
+    result: 0
+    code: 0
+    id: 41
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_focal_length
+    error: expected int param
+    code: 104
+    id: 43
+see_also: []
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

@@ -1,0 +1,109 @@
+kind: method
+name: set_user_location
+summary: Store the user's site location (lon, lat) and push it to the mount when possible.
+description: 'Registered in both guider dispatcher tables; the name is not in the imager tables, so a
+  request on the main control port (4700) is not found locally (103) and reaches this handler through
+  the imager''s method-not-found relay to the guider; guest-table clients cannot use that relay. The app
+  sends it on every connect (after pi_set_time) and when the user selects a location. READ (64-bit build):
+  the handler parses lon and lat as numbers (104 if either is missing or not numeric), then stores them
+  through the user-location save routine, which validates the range, writes the user longitude/latitude
+  settings, refreshes the geographic caches and the configuration timestamp. The store outcome is only
+  logged; the handler continues either way. Unless the imager reports the View function as running, it
+  then calls the mount location update helper (which can query the imager for its location and set the
+  mount site); the flag passed to that helper comes from the mount type, not from the request''s force
+  member, which is never read. Depending on the helper''s outcome the reply is result 0 or an error carrying
+  the helper''s recorded code. No time-zone or host-clock change is made on this path. OBSERVED 2026-10-12
+  (iOS app traffic and a device run): object params with numeric lon/lat and boolean force, reply code
+  0 with an integer result, and the changed site was confirmed by the location_lon_lat readback of get_device_state.
+  Precision, units and the value of force were not established by the observation. lon and lat are decimal
+  degrees, longitude positive east (INFERRED, strong: the stored value feeds an east-positive astronomy
+  routine and is negated for the mount''s west-positive site command). The 32-bit build handler was not
+  analysed; only its registration is READ.'
+grade: MUTATOR / established (64-bit build; 32-bit build registration only); stored-site change also OBSERVED
+  2026-10-12
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x7e660 (64-bit build), SaveUserLocation @0x141af0, GetCalibLocatOffset,
+  ScopeAM5::SetSiteLatLong, registration
+  @0x74548 (32-bit build); wire observation 2026-10-12
+side_effects: Persists the user longitude/latitude settings and refreshes the geographic caches and configuration
+  timestamp (SaveUserLocation); unless View is running, attempts to update the mount's site location. The store
+  happens before the mount update, so it is not undone when the mount step fails (INFERRED from call order).
+  The stored-site change was OBSERVED 2026-10-12 via get_device_state readback.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_user_location request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_user_location
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (64-bit entry @0x1f1b30, 32-bit entry
+        @0x1eec1c)
+    params:
+      $ref: ../schemas/SetUserLocationParams.yaml
+      x-confidence: READ; object form also OBSERVED 2026-10-12
+      x-basis: static analysis of firmware 9.31, guider handler @0x7e660 (64-bit build); wire observation 2026-10-12
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+  description: Result is the integer 0 (READ, 64-bit handler); an integer result with code 0 was OBSERVED
+    2026-10-12.
+  x-confidence: READ; also OBSERVED 2026-10-12
+  x-basis: static analysis of firmware 9.31, handler @0x7e660 jrpc_result call (64-bit build); wire observation
+    2026-10-12
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: lon or lat missing or not a number
+  label: expected int param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: The 104 label is the shared table text, although the parse is numeric. A failed mount location
+  update forwards the code recorded by the native mount layer; those codes are not exhausted by this table.
+  Failure and validation behaviour was not exercised on a device.
+examples:
+- name: positional
+  summary: Positional form (values invented); the app sends the equivalent object form with lon, lat and force
+  of: request
+  payload:
+    id: 31
+    method: set_user_location
+    params:
+    - 10.0
+    - 50.0
+    - false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_user_location
+    result: 0
+    code: 0
+    id: 31
+see_also:
+- get_user_location
+- scope_set_location
+- control/get_device_state
+- pi_set_time
+spec:
+- spec/control/time-and-location.md#user-location
+- spec/guider/index.md#method-groups

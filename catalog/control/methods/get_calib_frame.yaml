@@ -1,0 +1,144 @@
+kind: method
+name: get_calib_frame
+summary: Read the calibration frame selection (file name, enable flag, size) for one or all frame types.
+description: Copies stored calibration metadata without reading any FITS file. With no selector it returns
+  dark, bias and flat entries; with a selector the three members of that type appear directly in the result.
+  Entries are reported even for an empty name or a disabled frame. The result is the stored selection only;
+  it does not show which bias and flat files the frame-read calibration has loaded (fixed names in the customer
+  or default library), and nothing reports the wide-camera lens-shading correction.
+grade: MUTATOR / established (the handler itself only reads state; the grade reflects the shared diagnostic
+  log writes made by every full call)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510 (only caller
+  is this handler); LoadCalibFile @0x3bace0, HasCalibFlatFiles @0x3b8fa0, GetFlatBiasFileName @0x3b8d30; LSC
+  calibration_s30p_s50p_lsc_img @0x1bed50 (no reporting path)
+side_effects: None beyond the shared diagnostic log writes. Copies calibration metadata and the hot simulate
+  flag; no FITS read or hardware activity.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_calib_frame request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_calib_frame
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - type: string
+      - type: array
+        items:
+          type: string
+      description: 'Optional frame-type selector: a string (dark, bias or flat), or an array whose first
+        element is that string. Absent params or an empty array selects all types. An explicit null, non-string
+        or object gives 105. light and unknown strings give 209. There is no object-key form.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_calib_frame reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: get_calib_frame
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      $ref: ../schemas/GetCalibFrameResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Selector present but not a string
+  label: expected string param
+- code: 209
+  trigger: Unknown or light selector
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: all
+  of: request
+  payload:
+    id: 43
+    method: get_calib_frame
+- name: one
+  summary: Selector form
+  of: request
+  payload:
+    id: 44
+    method: get_calib_frame
+    params: dark
+- name: all-ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_calib_frame
+    result:
+      simulate: false
+      dark:
+        frame_name: example_dark.fit
+        enable: true
+        frame_size:
+        - 1080
+        - 1920
+      bias:
+        frame_name: ''
+        enable: false
+        frame_size:
+        - 0
+        - 0
+      flat:
+        frame_name: ''
+        enable: false
+        frame_size:
+        - 0
+        - 0
+    code: 0
+    id: 43
+- name: one-ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_calib_frame
+    result:
+      simulate: false
+      frame_name: example_dark.fit
+      enable: true
+      frame_size:
+      - 1080
+      - 1920
+    code: 0
+    id: 44
+see_also:
+- set_calib_frame
+- get_calib_param
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#selecting-frames

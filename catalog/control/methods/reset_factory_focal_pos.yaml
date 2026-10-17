@@ -1,0 +1,102 @@
+kind: method
+name: reset_factory_focal_pos
+summary: Reset the stored focus position to the factory value.
+description: Restores the cached factory focal value, writes the camera-specific focal-position configuration
+  if it changed, updates the global focal position and returns it. No focuser movement SDK call is made
+  and the focuser being opened is not checked, so this changes the stored value, not the lens position
+  (INFERRED from the absence of a move call).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdbf60, Reset2FactoryFocalPos @0x27db50 (64-bit build)
+side_effects: Updates the global focal position and writes the camera-specific focal_pos configuration
+  if changed (synchronous; the write result is ignored). No motion command. Every full call also makes
+  the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: reset_factory_focal_pos request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: reset_factory_focal_pos
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/ResetFactoryFocalPosParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdbf60, Reset2FactoryFocalPos @0x27db50 (64-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: reset_factory_focal_pos success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ResetFactoryFocalPosResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xdbf60, Reset2FactoryFocalPos @0x27db50 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: wide_cam true and the wide camera has autofocus
+  label: not supported
+- code: 300
+  trigger: wide_cam true under an unsupported process type
+  label: internal error
+- code: 236
+  trigger: Factory focal value is zero or negative
+  label: xml item is not found
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Relay errors are forwarded. A config write failure does not fail the reply.
+examples:
+- name: default
+  of: request
+  payload:
+    id: 81
+    method: reset_factory_focal_pos
+- name: explicit-local
+  summary: Shape from the app DTO
+  of: request
+  payload:
+    id: 82
+    method: reset_factory_focal_pos
+    params:
+      wide_cam: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_factory_focal_pos
+    result:
+      focal_pos: 1500
+    code: 0
+    id: 81
+- name: no-factory-value
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_factory_focal_pos
+    error: xml item is not found
+    code: 236
+    id: 83
+see_also:
+- move_focuser
+spec:
+- spec/control/focus-and-filter.md#values-and-settings

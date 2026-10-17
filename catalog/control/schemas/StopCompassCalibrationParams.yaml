@@ -1,0 +1,15 @@
+title: stop_compass_calibration params
+type: object
+description: Optional. A missing, null, scalar or array params value, a missing force, or a force of the
+  wrong type (including boolean) all leave force at 0. Unknown keys are ignored. There is no positional
+  form.
+properties:
+  force:
+    type: integer
+    description: Zero requests calculation of the calibration from the samples collected; any nonzero
+      integer cancels the run. Nonzero values are not range-checked.
+    x-default: '0'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdc270 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdc270

@@ -1,0 +1,222 @@
+kind: event
+name: AviRecord
+summary: Video recording progress (AVI/MP4, optionally timelapse).
+description: 'Function producer: the recording workers'' named function uses the AVI or MP4 formatter.
+  Function-state family: state is always written; stage only when non-empty; lapse_ms when the timer is
+  started or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits
+  them); route optional. A null or nameless detail sends nothing, and non-working notifications can be
+  suppressed while the function cache still changes, so a receiver cannot rely on seeing every transition.
+  Direct producers: a start event with fps (value family), working events with write_file_fps from the
+  write loop, and fail with code 218 on file-creation failure (state family; code/error only when > 0).
+  Statistics follow writer updates; no guaranteed FPS interval. After stop_record_avi the event ends in
+  `cancel` (no code or error) once the file has been closed; `complete` or `fail` occur only when recording
+  ends by itself. One timelapse start path starts its thread without the wrapper and sends no terminal
+  event (READ); that this holds for all start paths is INFERRED. Recipients: all retained 4700 sockets.
+  No reply-before-event order is established: the RPC reply that starts the worker and the worker''s events
+  can arrive in either order. No fixed cadence. APK consumer expectation, not a firmware field: start_epoch_sec.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: 'static analysis of firmware 9.31, PrintAviRecordState @0x2f4860, PrintMP4RecordState @0x2f4fb0,
+  WriteAviImgData @0x2ed100 (64-bit build); function-state sender SendFuncEvent; thread wrapper terminal
+  mapping (run flag cleared → cancel, code 0 → complete, else fail) after CloseAviFile; plain thread start
+  on one timelapse branch (finding #360)'
+side_effects: Observation only for the receiver. The worker writes the video file.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AviRecord event
+  type: object
+  discriminator: Event
+  description: Function-state members plus recording statistics.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: AviRecord
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AviRecord name literal
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      description: 'Function producer: idle, working, complete, fail, cancel. Direct producers: start
+        (with fps), working (with write_file_fps) and fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; PrintAviRecordState @0x2f4860,
+        PrintMP4RecordState @0x2f4fb0; WriteAviImgData @0x2ed100
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: at fail even if 0. Direct fail: 218 when the AVI file cannot be
+        created (state family: only when code > 0).'
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    saved_frames:
+      type: integer
+      description: Frames written.
+      x-required-when: function producer formatter
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+    raw:
+      type: boolean
+      description: Raw recording mode; the AVI formatter writes a literal true.
+      x-required-when: function producer formatter
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+    file_saved:
+      type: boolean
+      description: 'Valid recording output saved: duration > 0.01, a valid internal file handle and status
+        not 284.'
+      x-required-when: function producer formatter (conditional output)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+    duration_sec:
+      type: number
+      description: Saved duration; seconds INFERRED.
+      x-required-when: valid saved output with duration > 0.01
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+    name:
+      type: string
+      description: Relative output name.
+      x-required-when: valid saved output and the relative path lookup succeeds
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+    note:
+      type: string
+      enum:
+      - mp4 record
+      description: MP4 formatter literal.
+      x-required-when: MP4 recording formatter
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintMP4RecordState @0x2f4fb0
+    timelapse:
+      type: object
+      properties:
+        enable:
+          type: boolean
+          description: Timelapse flag; forced true in the inspected AVI formatter call.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+        delay_sec:
+          type: number
+          description: Delay between frames, seconds.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+        src_dura_min:
+          type: integer
+          description: Configured source duration, minutes, unscaled.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860; unit corroborated
+            by StartWriteAvi @0x2eb8f0, which prints this same saved value unscaled under a debug
+            format string naming it "durMinutes"
+      description: Timelapse settings of the recording.
+      x-required-when: timelapse formatter path; normal-versus-timelapse callback selection unresolved
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+    fps:
+      type: number
+      description: Frames per second at start (INFERRED unit).
+      x-required-when: direct start event
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartWriteAvi via NotifyValueState @0xada80
+    write_file_fps:
+      type: number
+      description: Write-loop frames per second (INFERRED unit).
+      x-required-when: direct write-loop event
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, WriteAviImgData @0x2ed100
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintAviRecordState @0x2f4860
+examples:
+- name: start
+  summary: Direct start (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AviRecord
+    Timestamp: '1234.123456789'
+    state: start
+    fps: 25.0
+- name: complete
+  summary: Recording saved (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AviRecord
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 60000
+    saved_frames: 1500
+    raw: true
+    file_saved: true
+    duration_sec: 60.0
+    name: Video/Example.avi
+    timelapse:
+      enable: true
+      delay_sec: 2.0
+      src_dura_min: 30
+- name: cancel
+  summary: Ended by stop_record_avi (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AviRecord
+    Timestamp: '1234.123456789'
+    state: cancel
+    lapse_ms: 42000
+- name: create-fail
+  summary: Direct fail (READ code; values invented)
+  of: payload
+  payload:
+    Event: AviRecord
+    Timestamp: '1234.123456789'
+    state: fail
+    code: 218
+    error: create file failed
+see_also:
+- start_record_avi
+- stop_record_avi
+- get_app_state
+spec:
+- spec/media/video.md#avirecord-event

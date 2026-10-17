@@ -1,0 +1,10 @@
+title: legacy plan selector params (parse_id form)
+description: Either a selector object, or an array whose first element is a selector object (later elements
+  are ignored; an empty array behaves as omitted; a non-object first element or other container is rejected
+  with 107). Omitting params is accepted and leaves all three ids unspecified.
+oneOf:
+- $ref: ./LegacyPlanSelector.yaml
+- type: array
+  items:
+    $ref: ./LegacyPlanSelector.yaml
+  description: Only the first element is used.

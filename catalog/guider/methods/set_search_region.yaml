@@ -1,0 +1,84 @@
+kind: method
+name: set_search_region
+summary: Set the guider star search region size.
+description: Params is a scalar integer or one-element array holding it. The value is stored directly
+  in the guide object (search region); there is no range check, and the unit is pixels by inference from
+  its use in star search (INFERRED). The accepted path does not guard against an absent guide object.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x73010 (64-bit build) (store @0x730dc)
+side_effects: Writes the guider SearchRegion field (an operational star-search setting). When reached
+  through an imager relay on the main table the same request can additionally trigger the reconnect callback
+  described in the guider service notes (relay eligibility is a separate outer gate).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_search_region request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_search_region
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SetSearchRegionParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x73010 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: params is not an integer (or one-element array of integer)
+  label: expected int param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Behaviour with an absent guide object (possible crash) and downstream search limits are unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 14
+    method: set_search_region
+    params:
+    - 40
+  summary: Array form (shape READ; value invented)
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_search_region
+    result: 0
+    code: 0
+    id: 14
+- name: not-integer
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_search_region
+    error: expected int param
+    code: 104
+    id: 15
+see_also:
+- set_lock_position
+spec:
+- spec/guider/index.md#method-groups

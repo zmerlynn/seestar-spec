@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: get_view_state function node
+type: object
+description: One printed node of the selected View function subtree, keyed in the parent result by runtime
+  function name. Every node carries state, plus stage, lapse_ms and (at fail) code and error; live child
+  functions appear as nested nodes keyed by name. Callback-produced members beyond those listed exist
+  and are not enumerated (unresolved); preserve unknown members.
+required:
+- state
+properties:
+  state:
+    type: string
+    enum:
+    - idle
+    - working
+    - complete
+    - fail
+    - cancel
+    description: Function state. Unknown internal values fall back to idle.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncState @0x6e2100, state-name table @0xae9468
+  stage:
+    type: string
+    description: Present when the node has a stage name (including one copied from an active child). Value
+      set unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncState @0x6e2100, key string @0x72faf8
+  error:
+    type: string
+    description: Error message; present only when state is fail. A failure here sits inside a successful
+      outer reply.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncState @0x6e2100
+  code:
+    type: integer
+    description: The node's own error code; present only when state is fail, unrelated to the outer reply
+      code.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncState @0x6e2100
+  lapse_ms:
+    type: integer
+    description: 'Milliseconds: elapsed while working or, for ended states, end minus start. May be absent.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncState @0x6e2100
+additionalProperties: true
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, S_FUNC_TREE::Print @0x6f21b0

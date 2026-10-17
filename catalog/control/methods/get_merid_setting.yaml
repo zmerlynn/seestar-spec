@@ -1,0 +1,72 @@
+kind: method
+name: get_merid_setting
+summary: Read the meridian-flip recalibrate flag.
+description: Copies the shared meridian settings into request-local storage and replies with merid_recalibrate
+  only. The minute settings that set_merid_setting accepts are not readable through this method. A device
+  was OBSERVED on 2026-10-12 returning this shape (merid_recalibrate only) with code 0.
+grade: PURE GETTER / established (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb7770, GetMeridSetting @0x11fd80 (64-bit build)
+side_effects: None; no device I/O.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_merid_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_merid_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7770, GetMeridSetting @0x11fd80 (64-bit build)
+reply_success:
+  title: get_merid_setting success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetMeridSettingResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb7770, GetMeridSetting @0x11fd80 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error branch.
+examples:
+- name: read
+  of: request
+  payload:
+    id: 105
+    method: get_merid_setting
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_merid_setting
+    result:
+      merid_recalibrate: true
+    code: 0
+    id: 105
+see_also:
+- set_merid_setting
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#meridian-flip

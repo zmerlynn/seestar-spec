@@ -1,0 +1,111 @@
+kind: method
+name: set_page
+summary: Switch the device to a named application page (preview, focus, autosave, pa, stack, rtmp or plan).
+description: Selects the active application page, which changes exposure mode, binning, per-page control
+  values and stream state. The page is written to the device state even when the camera is not connected
+  and the call then fails with 318. A success reply acknowledges the page change, not the completion of
+  any exposure. Page ids are 0 preview, 1 focus, 2 autosave, 3 pa, 4 stack, 5 rtmp and 6 plan; the
+  lookup returns the sentinel 7 for an unknown name, which gives 109, and a non-string params value gives
+  105 before any lookup. Every page other than preview, focus and pa sets exposure mode 2. For plan the
+  handler first checks the exposure worker and returns 268 while it runs. To run a legacy plan a client
+  enables exactly the plan to run, sends set_page plan, then start_exposure. On the exposure worker, mode
+  2 on the plan page runs the enabled-plan runner, and mode 2 on any other page runs the sequence list.
+  stop_exposure stops the run.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd0e20, SetPage @0x129f20, get_page_id @0x146820; CamExpose
+  @0x2189d0 (mode 2 and page 6 compares @0x219208, @0x219268) (64-bit build)
+side_effects: Changes the active page; clears delayed configuration on a change; can stop RTMP streaming
+  or polar alignment when leaving a page; changes exposure mode and binning; calls the camera page setter;
+  restores per-page controls; starts RTMP when entering the rtmp page.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_page request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_page
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetPageParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd0e20, SetPage @0x129f20, get_page_id @0x146820
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params absent, null, or not a string (or an array whose first element is not a string)
+  label: expected string param
+- code: 109
+  trigger: Page name not one of the seven recognised names
+  label: unexpected param
+- code: 318
+  trigger: Camera closed or absent; the page value may nevertheless have been written
+  label: device not connected
+- code: 268
+  trigger: Target is the plan page while the exposure worker thread is running
+  label: operation is in progress
+- code: 207
+  trigger: A helper failed and left error code 0 (reported as fail to operate)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Errors propagated by the exposure-mode, RTMP and binning helpers and by camera callbacks
+  are not enumerated (unresolved); they arrive as unnamed codes from the shared table.
+examples:
+- name: preview
+  summary: Select the preview page (shape INFERRED)
+  of: request
+  payload:
+    id: 21
+    method: set_page
+    params: preview
+- name: array-form
+  summary: Array form, first element used
+  of: request
+  payload:
+    id: 22
+    method: set_page
+    params:
+    - focus
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_page
+    result: 0
+    code: 0
+    id: 21
+- name: unknown-page
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_page
+    error: unexpected param
+    code: 109
+    id: 23
+see_also:
+- get_control_value
+- set_control_value
+- set_subframe
+spec:
+- spec/media/video.md#stream-control-from-4700
+- spec/control/misc.md#page-selection

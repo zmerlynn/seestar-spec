@@ -1,0 +1,33 @@
+title: start_batch_stack params
+type: object
+description: 'Parameters of start_batch_stack as parsed by the 64-bit build. Omitted params default to
+  task deepsky with frame type light. A supplied non-object (null, array, scalar) is rejected with 107.
+  A supplied object must contain at least one of task_type and frame_type ({} is rejected with 105); each
+  supplied key must be a string; a missing counterpart defaults to 0 (deepsky, light). Unknown keys are
+  ignored. No numeric exposure or file-list keys exist. The 32-bit build differs: see the method description.'
+properties:
+  task_type:
+    type: string
+    description: 'Batch task: deepsky, startrail_image, startrail_video or comet (case-sensitive, exact).
+      An unknown string is rejected with 102.'
+    x-default: deepsky
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xda960, StartBatchStack @0x3a6190, parseBatchStartType
+      @0xda680 (64-bit build)
+  frame_type:
+    type: string
+    description: 'Frame type: light, dark, bias or flat (case-insensitive, exact). An unrecognised value
+      maps to an invalid type and is then rejected with 207 for deepsky. The startrail tasks override
+      any supplied value to light; comet requires light (207 otherwise).'
+    x-default: light
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xda960, StartBatchStack @0x3a6190, parseBatchStartType
+      @0xda680 (64-bit build)
+anyOf:
+- required:
+  - task_type
+- required:
+  - frame_type
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xda960, StartBatchStack @0x3a6190, parseBatchStartType
+  @0xda680 (64-bit build)

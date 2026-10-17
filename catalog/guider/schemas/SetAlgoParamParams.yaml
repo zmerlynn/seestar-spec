@@ -1,0 +1,35 @@
+title: set_algo_param params
+type:
+- object
+- array
+description: Object {axis, name, value} or the positional array [axis, name, value]. All three are required.
+  No handler range, clamp or default; valid names and limits are enforced by the selected guide algorithm
+  (rejection gives 322). Names per algorithm (READ) are hysteresis {hysteresis, aggression, minMove}; lowpass
+  {slopeWeight, minMove}; lowpass2 {aggressiveness, minMove}; resist-switch {aggression, fastSwitch, minMove}.
+  Limits (64-bit; 32-bit not checked; READ) are hysteresis.hysteresis 0..1; hysteresis.aggression above 0 up to 2; lowpass2.aggressiveness 0 or more, no upper limit; resist-switch.aggression above 0 up to 1 (a fraction, not scaled); resist-switch.minMove above 0; every other minMove and lowpass.slopeWeight 0 or more; fastSwitch is never rejected (non-zero means on).
+required:
+- axis
+- name
+- value
+properties:
+  axis:
+    type: string
+    description: Guide axis. ra and x address the X algorithm; dec and y address the Y algorithm. A non-string
+      gives 105; behaviour for other strings is not established.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7ebd0 (64-bit build)
+  name:
+    type: string
+    description: Algorithm parameter name from the active algorithm's set (see the schema description).
+      minMove is in pixels (INFERRED); resist-switch aggression is a fraction from 0 to 1 (READ).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7ebd0 (64-bit build)
+  value:
+    type: number
+    description: Parameter value, integer or real. A non-number gives 108; an out-of-range value is rejected
+      by the algorithm (322) after it applies and persists a substitute value; limits in the schema
+      description.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7ebd0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7ebd0 (64-bit build)

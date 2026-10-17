@@ -1,0 +1,13 @@
+title: scope_set_track_mode params
+type:
+- string
+- array
+description: 'Tracking-mode name: a bare string or an array whose first element is the string. Allowed
+  names are not established.'
+items:
+  type: string
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x714d0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x714d0 (64-bit build)

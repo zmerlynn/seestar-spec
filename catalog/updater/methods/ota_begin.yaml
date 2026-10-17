@@ -1,0 +1,203 @@
+kind: method
+name: ota_begin
+summary: 'Updater (firmware 9.75): start an OTA session against a target manifest.'
+description: Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the 64-bit
+  and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The handler
+  clears the thread error code and calls the updater's single OTA manager. The OTA methods do not use
+  the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350 is wrapped
+  is not established. Firmware update is a high-risk operation; do not send this to a real device to test
+  it. Starts an OTA session. The device compares the target manifest with its local manifest and works
+  out which modules need an upgrade, then checks that send_modules is non-empty, has no duplicates, lists
+  only modules of the target manifest, includes no module that does not need upgrading and misses none
+  that does (error 102 with a text naming the problem). Packages received in an earlier session whose
+  size and SHA-256 still match are reused. It creates the working directory, starts the session (stage
+  pending) and starts the upgrade at once if every required module is already present. The reply gives
+  the stage and the received and missing module names, and the device emits an OtaUpdate event with state
+  working. A session in any non-idle stage refuses a new ota_begin with 524 (call ota_abort first, or
+  ota_get_session to wait). The device then expects an ota_prepare_module for each missing module within
+  a pending timeout of 15 s (READ, comparison of 15000 ms in the pending-receive check; the matching session-failure
+  text is 'ota_prepare_module was not called within pending timeout').
+grade: MUTATOR / probable
+side_effect_tier: C
+confidence: READ (firmware 9.75); partly INFERRED, see description
+basis: static analysis of firmware 9.75, updater RPC handler @0x26530 (64-bit build), OTA manager; app
+  3.3.2 OtaService DTOs
+side_effects: Creates an OTA session and a working directory; may start an upgrade at once.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: ota_begin request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: ota_begin
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater dispatcher table, handler @0x26530 (64-bit build)
+    params:
+      type: object
+      description: Object params; the positional array form is not established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, ParseManifest and Begin (64-bit build); app 3.3.2 OtaBeginUpgradeParams
+      required:
+      - target_manifest
+      - send_modules
+      properties:
+        send_modules:
+          type: array
+          description: Names of the modules the client will send. MUST be non-empty, without duplicates,
+            each present in target_manifest.modules, and MUST cover every module that needs upgrading
+            and no module that does not.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          items:
+            type: string
+        target_manifest:
+          type: object
+          description: Target manifest.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, ParseManifest (64-bit build)
+          properties:
+            main_version:
+              type: string
+              description: Target main version string.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            modules:
+              type: array
+              description: Target modules.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+              items:
+                type: object
+                required:
+                - name
+                - version
+                - sha256
+                - size
+                properties:
+                  name:
+                    type: string
+                    description: Module name; must be a safe module name (the exact rule is not described
+                      here).
+                    x-confidence: READ; rule detail unresolved
+                    x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+                  version:
+                    type: string
+                    description: Module version string.
+                    x-confidence: READ
+                    x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+                  sha256:
+                    type: string
+                    description: SHA-256 of the module package file, 64 hexadecimal characters.
+                    x-confidence: READ
+                    x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+                  size:
+                    type: integer
+                    description: Size of the module package file in bytes; an integer greater than 0.
+                    x-confidence: READ (range); unit INFERRED
+                    x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+                    minimum: 1
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        properties:
+          stage:
+            type: string
+            description: 'OTA session stage: idle, pending, receiving, upgrading, complete or fail (firmware
+              9.75 stage names; a value outside them is reported as "unknown").'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            enum:
+            - idle
+            - pending
+            - receiving
+            - upgrading
+            - complete
+            - fail
+          received_modules:
+            type: array
+            description: Names of modules already present (reused).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            items:
+              type: string
+          missing_modules:
+            type: array
+            description: Names of modules still to be sent.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            items:
+              type: string
+        required:
+        - stage
+        - received_modules
+        - missing_modules
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 102
+  trigger: 'Validation failure: bad params or manifest, module not in the manifest or in send_modules,
+    send_modules lists a module that needs no upgrade, or the manifest has no module that needs upgrading'
+  label: invalid parameters
+- code: 107
+  trigger: Missing params
+  label: missing params
+- code: 257
+  trigger: The OTA temporary directory cannot be created
+  label: cannot create directory
+- code: 524
+  trigger: 'Stage conflict or busy: the call is not allowed in the current OTA stage (text names the stage
+    and, where relevant, asks the caller to ota_abort first)'
+  label: stage conflict
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: ota_begin
+    params:
+      send_modules:
+      - example_module
+      target_manifest:
+        main_version: '9.99'
+        modules:
+        - name: example_module
+          version: '1.0'
+          sha256: <64 hex digits>
+          size: 1048576
+  summary: Shape READ; all values invented
+- name: ok
+  of: reply_success
+  summary: Shape READ; all values invented
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: ota_begin
+    result:
+      stage: pending
+      received_modules: []
+      missing_modules:
+      - example_module
+    code: 0
+    id: 100
+see_also:
+- ota_get_current_manifest
+- ota_get_session
+- ota_prepare_module
+- ota_retry_upgrade
+- ota_abort
+- begin_recv
+- OtaUpdate
+spec:
+- spec/updater/index.md#ota-methods-firmware-975
+- spec/updater/ota-package-handling.md#ota-package-handling

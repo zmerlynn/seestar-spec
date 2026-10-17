@@ -1,0 +1,101 @@
+kind: event
+name: SettleDone
+summary: End of a settle phase, successful or failed, with frame counts.
+description: 'Sent when the guide controller finishes settling, on success or failure; one per settle
+  phase is expected (INFERRED), not guaranteed. Status 0 is success; any nonzero value is the failure
+  branch, which adds Error when the message is nonempty. The imager''s legacy Dither and Settle workflows
+  wait for this event. Sent by the guider process (zwoair_guider) on its TCP 4400 event server to every
+  retained connection (G/all). The main imager process, which is a client of 4400, recognises event lines
+  and forwards them unchanged onto TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager
+  process deliberately does not forward 4400 events. The imager''s forwarding test is lexical (the exact
+  text "Event":" in the line). Custom guider producer: there is no lowercase state, code or error member;
+  member names are capitalised as shown and capitalisation is wire-significant. No Android app consumer
+  is established for this name; the imager''s peer-event waiter may consume it. Ordering against RPC replies
+  and other guider events is not guaranteed; no sequence number, replay or fixed cadence exists. Runtime
+  reachability of the retained guiding functionality on every model is unresolved.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30 (64-bit
+  guider build); 32-bit counterpart present
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: SettleDone event
+  type: object
+  discriminator: Event
+  description: Custom guider producer; Error only on the failure branch.
+  required:
+  - Event
+  - Timestamp
+  - Status
+  - TotalFrames
+  - DroppedFrames
+  properties:
+    Event:
+      type: string
+      const: SettleDone
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30
+        (64-bit guider build); 32-bit counterpart present
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    Status:
+      type: integer
+      description: 0 success; nonzero failure branch. Nonzero values are not enumerated.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30
+        (64-bit guider build); 32-bit counterpart present
+    Error:
+      type: string
+      description: Failure message.
+      x-required-when: Status is nonzero and the error text is nonempty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30
+        (64-bit guider build); 32-bit counterpart present
+    TotalFrames:
+      type: integer
+      description: Frames taken during settling.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30
+        (64-bit guider build); 32-bit counterpart present
+    DroppedFrames:
+      type: integer
+      description: Frames dropped during settling.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30
+        (64-bit guider build); 32-bit counterpart present
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettleDone @0x6df30
+    (64-bit guider build); 32-bit counterpart present
+examples:
+- name: success
+  summary: Static example (READ shape, not captured; values invented)
+  of: payload
+  payload:
+    Event: SettleDone
+    Timestamp: '1234.123456789'
+    Status: 0
+    TotalFrames: 6
+    DroppedFrames: 0
+- name: failure
+  summary: Static example of the failure branch (READ shape, not captured; values and text invented)
+  of: payload
+  payload:
+    Event: SettleDone
+    Timestamp: '1234.123456789'
+    Status: 1
+    Error: example settle failure text
+    TotalFrames: 30
+    DroppedFrames: 4
+see_also:
+- guide
+- dither
+spec:
+- spec/guider/index.md#events

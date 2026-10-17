@@ -1,0 +1,37 @@
+title: pi_output_set2 params
+type: object
+description: 'Object only; no positional wrapper. Each member is an object keyed by output name. Names
+  are matched by case-sensitive substring, in order: port, dslr, beep, wide_heater, heater (heater is
+  redirected to wide_heater when the device process type is 2). port<N> takes the first run of decimal
+  digits as a zero-based port index. There is no gpio<N> fallback in this method. A member that is not
+  an object fails with 107 even if its name is unrecognised; unrecognised names are otherwise ignored.
+  An empty object succeeds.'
+properties:
+  heater:
+    $ref: PiOutputSet2Member.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  wide_heater:
+    $ref: PiOutputSet2Member.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  beep:
+    $ref: PiOutputSet2Member.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  dslr:
+    $ref: PiOutputSet2Member.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+additionalProperties:
+  $ref: PiOutputSet2Member.yaml
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+    @0x324650, SetFreq @0x3260a0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+  @0x324650, SetFreq @0x3260a0 (64-bit build)

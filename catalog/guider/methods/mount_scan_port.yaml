@@ -1,0 +1,75 @@
+kind: method
+name: mount_scan_port
+summary: List the cached serial ports available for the mount connection, with the current selection.
+description: Copies the enabled entries of an existing cached serial-device tree into a request-local
+  list and, through the settings getter, may auto-select an enabled cached entry (updating the shared
+  selected device, name and ids and logging it). No device is opened or probed and no hardware command
+  is issued. The reply carries each entry's port string and id plus selected_dev/selected_id, with the
+  outer nesting unresolved. Params are not consumed.
+grade: MUTATOR / established (strict; native handler, 64-bit build)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x83130 (64-bit build); selected-device stores near
+  0x25504, 0x25514, 0x25528
+side_effects: May write the shared selected serial device/name/ids and a log line; discovery/transport-description
+  bookkeeping only. Cache population and freshness are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: mount_scan_port request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: mount_scan_port
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x83130 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: mount_scan_port reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/MountScanPortResult.yaml
+        x-confidence: unresolved
+        x-basis: static analysis of firmware 9.31, handler 0x83130 (64-bit build); shape unresolved
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No explicit numeric error branch was recovered in the direct handler; forwarded thread-local
+  errors are not exhausted.
+examples:
+- name: scan
+  summary: Params omitted
+  of: request
+  payload:
+    id: 70
+    method: mount_scan_port
+see_also:
+- scope_get_connection_mode
+- scope_get_connection_para
+spec:
+- spec/guider/index.md#method-groups

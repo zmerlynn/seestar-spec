@@ -1,0 +1,107 @@
+kind: method
+name: scope_get_slew_rate
+summary: Read the list of slew-rate labels and the currently selected index.
+description: 'Builds a request-local list of slew-rate labels and reads the cached selected index; no
+  serial or driver call is made. Labels matching a numeric "x" suffix pattern are converted by the handler
+  into numbers. The full constant rate list, and how fresh the cached index is, are unresolved. The mapping
+  from index to a physical rate belongs to the controller and is not established. Served by the guider
+  process (TCP 4400); a client on the main command port reaches it through the imager unknown-method relay,
+  which is unavailable to guest-table clients. The native-handler grade below does not describe the relay.
+  No serial traffic (firmware 9.31, READ): returns the stored rate index and names.'
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x84c30 (64-bit build)
+side_effects: Request-local list construction and a read of a cached index; no hardware access and no
+  shared store written.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_slew_rate request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_slew_rate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x84c30 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetSlewRateResult.yaml
+        description: Object {list, index}.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x84c30 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 207
+  trigger: Mount operation failed
+  label: fail to operate
+- code: 210
+  trigger: The connected mount type does not support the operation
+  label: not supported
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+errors_note: The evidence lists 207, 210 and 315 as explicit error arguments.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: scope_get_slew_rate
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_slew_rate
+    result:
+      list:
+      - 1
+      - 2
+      - 4
+      - 8
+      index: 2
+    code: 0
+    id: 5
+- name: err-315
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_slew_rate
+    error: mount is not connected
+    code: 315
+    id: 6
+see_also:
+- scope_get_track_mode
+- scope_is_moving
+- scope_get_state
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

@@ -1,0 +1,12 @@
+title: set_gain params
+description: A single integer, or an array whose first element is the integer. No clamp in the handler;
+  the downstream device call validates and may fail with 207.
+anyOf:
+- type: integer
+- type: array
+  minItems: 1
+  items:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x738d0 (64-bit build)
+x-default: none (required)

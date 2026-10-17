@@ -1,0 +1,62 @@
+title: get_find_star_result result
+type: object
+description: Cached output of the last completed star-detection run; the same object is the result member
+  of the FindStar complete event. It carries no state or code member.
+required:
+- image_id
+- stars
+properties:
+  image_id:
+    type: integer
+    description: Image id, from the unsigned 16-bit image header id.
+    minimum: 0
+    maximum: 65535
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker @0x269780
+      (64-bit build)
+  stars:
+    type: array
+    description: Detected stars; may be empty.
+    items:
+      type: object
+      required:
+      - pixelx
+      - pixely
+      - radius
+      - hfd
+      description: One star; the four members are serialised from float values.
+      properties:
+        pixelx:
+          type: number
+          description: X position. INFERRED image pixels; origin and orientation unresolved.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker
+            @0x269780 (64-bit build)
+        pixely:
+          type: number
+          description: Y position. INFERRED image pixels; origin and orientation unresolved.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker
+            @0x269780 (64-bit build)
+        radius:
+          type: number
+          description: Star radius. INFERRED pixels.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker
+            @0x269780 (64-bit build)
+        hfd:
+          type: number
+          description: Half-flux diameter. INFERRED pixels; convention unresolved.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker
+            @0x269780 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker @0x269780
+      (64-bit build)
+  pixelscale_arcsec:
+    type: number
+    description: Plate scale, INFERRED arcseconds per pixel. Omitted when the pixel-scale query fails.
+    x-required-when: omitted if GetPixelScale fails
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7390, GetFindStarResult @0x269120, worker @0x269780
+      (64-bit build)

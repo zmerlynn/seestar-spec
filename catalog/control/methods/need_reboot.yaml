@@ -1,0 +1,71 @@
+kind: method
+name: need_reboot
+summary: Report whether a reboot is pending (a boot-update marker file exists).
+description: Returns true when a marker file in the device temporary directory exists, false otherwise;
+  a failed access check is not an error. No params are read.
+grade: PURE GETTER / established (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4810, CanAccess @0x6dd6a0 (64-bit build)
+side_effects: Existence check only; a failed check may set the per-request error code, which is not reported.
+  No mutation.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: need_reboot request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: need_reboot
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4810 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: need_reboot reply (success)
+    properties:
+      result:
+        type: boolean
+        description: True when the boot-update marker file exists.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4810 (64-bit build), CanAccess @0x6dd6a0
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: read
+  summary: Bare request
+  of: request
+  payload:
+    id: 57
+    method: need_reboot
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: need_reboot
+    result: false
+    code: 0
+    id: 57
+see_also: []
+spec:
+- spec/control/maintenance.md#update-related-markers

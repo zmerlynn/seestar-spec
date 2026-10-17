@@ -1,0 +1,138 @@
+kind: event
+name: Alert
+summary: Fault notification, in one of two shapes (code/error, or Msg/Type), including the connection-limit
+  rejection.
+description: 'Emitted for operational faults, connection-limit rejection and guider/UI alerts; no universal
+  throttle. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400 (channel G); guider
+  event lines are forwarded onto 4700 by the imager main process. Ordinary alerts go to all retained sockets.
+  Two payload forms exist and must not be merged into one mandatory shape: (1) the fault form from the
+  alert sender, code plus error (message from the shared error-code table), optionally wide_cam (imager
+  camera origin) or required_storage_mb (storage-required fault); (2) the Msg/Type form used by the common
+  server rejection and by guider UI alerts, where the guider maps severity to Type info, error, warning or
+  question. The guider also uses the fault form: during a scope_speed_move its movement-limit worker emits
+  code 532 (move upper limit), 533 (move lower limit), 540 or 541 (both rendered fail to operate, because the
+  guider error table has no text for them), after asking the imager to play a warning sound; it repeats
+  about every 3 s while the limit persists. A client SHOULD stop the move on one of these. The imager raises
+  the fault form from a forwarded ScopeTrack off event that is not a manual transition and carries code 270
+  (below horizon) or 527 (alt exceed limit), with wide_cam; this is how a mount dropping below the horizon
+  surfaces as an Alert during a view or live stack. Connection-limit variant (common server): after accepting a socket, the server rejects it
+  when its count of distinct external source addresses exceeds 2 (guest mode off) or 8 (guest mode on);
+  unverified external sockets count, local internal sockets do not, and other servers are not summed.
+  Only the rejected socket receives Event Alert with code 429, Type error and Msg "Exceed the maximum number
+  of connections", then the socket is closed before normal arrival handling (so no Version greeting).
+  Delivery is attempted, not guaranteed; it is an event followed by EOF, not an RPC error.
+  The code list is not closed: a code in the shared table is not proof that Alert emits it. APK consumers:
+  DeviceEventPart (AlertEvent), DeviceService, ConnectService.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SendAlert @0x125d60, common_netThd @0x6b7430; guider SendAlert
+  @0x6d9a0, NotifyAlert @0x6e290, CheckMoveLimit @0x6dc60, get_err_string table @0x1f24b0, imager
+  CTrackStateChecker::handleTrackState @0x186d10 (64-bit builds)
+side_effects: Observation only. The connection-limit form is followed by the device closing that socket.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Alert event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: Alert
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAlert @0x125d60
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    code:
+      type: integer
+      description: Fault code, or 429 on the connection-limit form. Guider speed-move limit alerts use 532,
+        533, 540 or 541. The imager track-state alert uses 270 (below horizon) or 527 (alt exceed limit).
+      x-required-when: fault form; connection-limit form (429)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAlert @0x125d60, common_netThd @0x6b7430; guider SendAlert
+        @0x6d9a0, CheckMoveLimit @0x6dc60
+    error:
+      type: string
+      description: Message looked up for code. Not part of the Msg/Type form. A code with no table entry
+        (guider 540, 541) falls back to fail to operate.
+      x-required-when: fault form (alert sender)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAlert @0x125d60; guider SendAlert @0x6d9a0, get_err_string
+        table @0x1f24b0
+    wide_cam:
+      type: boolean
+      description: Imager camera-origin flag.
+      x-required-when: when the imager producer includes it
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAlert @0x125d60
+    required_storage_mb:
+      type: integer
+      description: Storage required, megabytes (unit from the member name).
+      x-required-when: storage-required fault branch
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.31, SendAlert @0x125d60
+    Msg:
+      type: string
+      description: Alert text; on the connection-limit form the literal Exceed the maximum number of connections.
+      x-required-when: Msg/Type form (server rejection, guider UI alert)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, common_netThd @0x6b7430, guider NotifyAlert @0x6e290
+    Type:
+      type: string
+      description: Severity. error on the connection-limit form; the guider maps severity to info, error,
+        warning or question.
+      x-required-when: Msg/Type form
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, common_netThd @0x6b7430, guider NotifyAlert @0x6e290
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendAlert @0x125d60, common_netThd @0x6b7430
+examples:
+- name: connection-limit
+  summary: Rejected-socket form (READ literals, not captured)
+  of: payload
+  payload:
+    Event: Alert
+    Timestamp: '1234.123456789'
+    code: 429
+    Type: error
+    Msg: Exceed the maximum number of connections
+- name: fault
+  summary: Fault form (READ shape; code and message invented)
+  of: payload
+  payload:
+    Event: Alert
+    Timestamp: '1234.123456789'
+    code: 999
+    error: example error message
+    wide_cam: false
+- name: speed-move-limit
+  summary: Guider limit alert during a speed move (READ shape and code text)
+  of: payload
+  payload:
+    Event: Alert
+    Timestamp: '1234.123456789'
+    code: 532
+    error: move upper limit
+- name: track-below-horizon
+  summary: Imager alert when the mount drops below the horizon (READ shape and code)
+  of: payload
+  payload:
+    Event: Alert
+    Timestamp: '1234.123456789'
+    code: 270
+    error: below horizon
+    wide_cam: false
+see_also:
+- get_device_state
+- guider/scope_speed_move
+spec:
+- spec/control/events/envelope.md#recipients
+- spec/control/device-state-and-settings.md#guest-mode-client-and-alert-events
+- spec/control/session-handshake.md#connection-lifecycle

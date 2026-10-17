@@ -1,0 +1,402 @@
+title: legacy plan list params
+description: 'Array of plan objects. The root type is not checked: an object whose member values are plan
+  objects is also walked (member names ignored), a bare plan object is not equivalent to a one-plan array,
+  an empty array is accepted, and omitted or null params have no reliable behaviour (the parser dereferences
+  the missing value). Clients MUST send an array.'
+type: array
+items:
+  type: object
+  description: One legacy plan. An existing plan with the same id is copied first, so omitted members
+    keep their prior values.
+  required:
+  - id
+  properties:
+    id:
+      type: integer
+      minimum: -2147483647
+      maximum: 2147483647
+      description: Plan id. Required. A missing, non-integer or INT_MIN id is rejected with 200.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build); id check
+    plan_name:
+      type: string
+      x-default: empty
+      description: Plan name. May be changed while exposing.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72e4a8
+    start_guide:
+      type:
+      - boolean
+      - integer
+      x-default: true
+      description: Start guiding. Integer 0 is false, nonzero true; other types leave the default (new
+        record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f8d0
+    merid_flip:
+      type:
+      - boolean
+      - integer
+      x-default: true
+      description: Allow meridian flip. Integer 0 is false, nonzero true; other types leave the default
+        (new record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ec00
+    mount_go_home:
+      type:
+      - boolean
+      - integer
+      x-default: true
+      description: Park the mount at the end. Integer 0 is false, nonzero true; other types leave the
+        default (new record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f8b0
+    shutdown_pi:
+      type:
+      - boolean
+      - integer
+      x-default: false
+      description: Shut down the device at the end. Integer 0 is false, nonzero true; other types leave
+        the default (new record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ec30
+    focuser_go_home:
+      type:
+      - boolean
+      - integer
+      x-default: false
+      description: Return the focuser at the end. Integer 0 is false, nonzero true; other types leave
+        the default (new record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f8c0
+    enable:
+      type:
+      - boolean
+      - integer
+      x-default: false
+      description: Plan enabled. Integer 0 is false, nonzero true; other types leave the default (new
+        record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x730b68
+    close_cooler:
+      type:
+      - boolean
+      - integer
+      x-default: true
+      description: Switch the cooler off at the end. Integer 0 is false, nonzero true; other types leave
+        the default (new record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ec40
+    wait_cooling:
+      type:
+      - boolean
+      - integer
+      x-default: true
+      description: Wait for cooling before starting. Integer 0 is false, nonzero true; other types leave
+        the default (new record) or prior value (existing record).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f8e0
+    start_time:
+      type: object
+      properties:
+        type:
+          type: string
+          x-default: none
+          description: '"date" selects a clock-hour start; any other string selects none.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build)
+        hour:
+          type: number
+          x-default: indeterminate for a new plan; prior value for an existing plan
+          description: 'Hour of day, read independently of type (units hours: INFERRED). The new-plan
+            record initializes the time type to none but never initializes the hour, so for a new plan
+            whose hour is absent or non-numeric the stored hour is indeterminate (leftover memory; the
+            slot is not reset between plans in one request, so it can carry an earlier plan''s hour).
+            Clients MUST send a numeric hour with type date.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72eaf8;
+            per-plan record init @0x3117c8 writes the type words only, hour stored only by @0x311cbc
+      description: Optional start time. A new plan starts with type none; an existing plan keeps its prior
+        value for omitted members.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f908
+    end_time:
+      type: object
+      properties:
+        type:
+          type: string
+          x-default: none
+          description: '"date" selects a clock-hour end, "dawn" selects end at dawn; any other string
+            selects none.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build)
+        hour:
+          type: number
+          x-default: indeterminate for a new plan; prior value for an existing plan
+          description: 'Hour of day, read independently of type (units hours: INFERRED). As for the start
+            hour, a new plan whose hour is absent or non-numeric stores an indeterminate value (never
+            initialized, not reset between plans in one request).'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build); per-plan record
+            init @0x3117c8, hour stored only by @0x3130f8
+      description: Optional end time. A new plan starts with type none; an existing plan keeps its prior
+        value for omitted members.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x8fd108
+    targets:
+      type: array
+      items:
+        type: object
+        description: One target. Existing targets with the same id are copied first.
+        required:
+        - id
+        properties:
+          id:
+            type: integer
+            minimum: -2147483647
+            maximum: 2147483647
+            description: Target id. Required. A missing, non-integer or INT_MIN id is rejected with 200.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build); id check
+          capture_index:
+            type: integer
+            x-default: 0
+            minimum: -2147483648
+            maximum: 2147483647
+            description: Progress index.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72eca8
+          delay_first:
+            type: integer
+            x-default: 0
+            minimum: -2147483648
+            maximum: 2147483647
+            description: Delay before the first frame, in seconds (the value is passed to a seconds
+              sleep).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ebc8;
+              AutoSavePlan @0x30ea00 sleep(), log format @0x74fbd0
+          delay_between_frame:
+            type: integer
+            x-default: 0
+            minimum: -2147483648
+            maximum: 2147483647
+            description: Delay between frames, in seconds (the value is passed to a seconds sleep).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ebd8;
+              AutosaveFrameSleep @0x211b30 sleep()
+          extra_sec_per_target:
+            type: integer
+            x-default: 0
+            minimum: -2147483648
+            maximum: 2147483647
+            description: Extra seconds budgeted per target.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f938
+          code:
+            type: integer
+            x-default: 0
+            minimum: -2147483648
+            maximum: 2147483647
+            description: Stored per-target error code.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72e348
+          target_name:
+            type: string
+            x-default: empty
+            description: Target name; the device sanitizes it as a file name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x8e2350
+          target_original_img:
+            type: string
+            x-default: empty
+            description: Original image reference.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f950
+          target_original_name:
+            type: string
+            x-default: empty
+            description: Original catalog name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f968
+          real_start_date:
+            type: string
+            x-default: empty
+            description: 'Actual start date text. The parser stores the client string unchanged; the
+              device itself writes device local time as "YYYY-MM-DD HH:MM:SS".'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f980;
+              GetGuideLogTime @0x6dbb80 localtime, format @0x745aa8
+          real_end_date:
+            type: string
+            x-default: empty
+            description: 'Actual end date text. The parser stores the client string unchanged; the
+              device itself writes device local time as "YYYY-MM-DD HH:MM:SS".'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f990;
+              GetGuideLogTime @0x6dbb80 localtime, format @0x745aa8
+          obj_type:
+            type: string
+            x-default: empty
+            description: Object type text.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x750240
+          group_by_slot:
+            type:
+            - boolean
+            - integer
+            x-default: true
+            description: Group captures by slot. Integer 0 is false, nonzero true; other types leave the
+              default (new record) or prior value (existing record).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ebf0
+          enable:
+            type:
+            - boolean
+            - integer
+            x-default: true
+            description: Target enabled. Integer 0 is false, nonzero true; other types leave the default
+              (new record) or prior value (existing record).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x730b68
+          target_coord:
+            type:
+            - array
+            - object
+            x-default: sentinel -999, -999
+            items:
+              type: number
+            properties:
+              ra:
+                type: number
+                description: 'Right ascension (hours: INFERRED). Required in the object form.'
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x736540
+              dec:
+                type: number
+                description: 'Declination (degrees: INFERRED). Required in the object form.'
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x73c450
+            description: Target position as [ra, dec] numbers (first two elements used) or {ra, dec}.
+              Convention RA hours / Dec degrees (INFERRED). When the member is present but malformed the
+              request fails with 108. Absent means the sentinel pair -999/-999 (no position).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x72ec70
+          seqs:
+            type: array
+            items:
+              type: object
+              description: One exposure sequence (slot). Existing sequences with the same id are copied
+                first, so omitted members keep their prior values.
+              required:
+              - id
+              properties:
+                id:
+                  type: integer
+                  minimum: -2147483647
+                  maximum: 2147483647
+                  description: Sequence id. Required. A missing, non-integer or INT_MIN id is rejected
+                    with 200.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build); id check
+                type:
+                  type: string
+                  x-default: light (frame type 0)
+                  description: 'Frame type name: light, dark, bias, flat or unknown. Matching is case-sensitive;
+                    an unrecognized string maps to unknown. The value is read as a string pointer without
+                    a type check, so a non-string has no reliable behaviour.'
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x944ef8
+                filter:
+                  type: integer
+                  x-default: 0
+                  minimum: -2147483648
+                  maximum: 2147483647
+                  description: Filter wheel position index.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72ec80
+                suffix:
+                  type: string
+                  x-default: empty
+                  description: File name suffix. Read as a string without a type check; a non-string has
+                    no reliable behaviour.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72ec88
+                exp:
+                  type: number
+                  x-default: 0
+                  description: Exposure time in seconds (integer or real).
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x74d458
+                gain:
+                  type: integer
+                  x-default: -1
+                  minimum: -2147483648
+                  maximum: 2147483647
+                  description: Sensor gain; -1 is the default.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72e650
+                bin:
+                  type: integer
+                  x-default: 0
+                  minimum: -2147483648
+                  maximum: 2147483647
+                  description: Binning factor; no positivity check in the parser.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72e638
+                repeat:
+                  type: integer
+                  x-default: 0
+                  minimum: -2147483648
+                  maximum: 2147483647
+                  description: Number of frames to capture.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72ec90
+                lapsed:
+                  type: integer
+                  x-default: 0
+                  minimum: -2147483648
+                  maximum: 2147483647
+                  description: Frames already captured (progress counter).
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72ec98
+                capture_index:
+                  type: integer
+                  x-default: 0
+                  minimum: -2147483648
+                  maximum: 2147483647
+                  description: Progress index.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72eca8
+                enable:
+                  type: boolean
+                  x-default: true
+                  description: Sequence enabled. Unlike the plan and target flags this accepts only a
+                    JSON boolean.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x730b68
+                autoexp:
+                  type: boolean
+                  x-default: false
+                  description: Auto exposure. Accepts only a JSON boolean.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key
+                    @0x72eca0
+            x-default: empty
+            description: Sequences. Existing sequences are retained; supplied ids are updated or inserted.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x750250
+      x-default: empty
+      description: Targets. Existing targets are retained; supplied ids are updated or inserted.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ParsePlans @0x311710 (64-bit build), key @0x74f830

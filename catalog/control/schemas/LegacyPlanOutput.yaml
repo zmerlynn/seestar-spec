@@ -1,0 +1,353 @@
+title: legacy plan list
+type: array
+description: Array of legacy plan objects. An empty array is a valid success.
+items:
+  type: object
+  required:
+  - id
+  - plan_name
+  - merid_flip
+  - mount_go_home
+  - focuser_go_home
+  - shutdown_pi
+  - start_guide
+  - close_cooler
+  - wait_cooling
+  - enable
+  - start_time
+  - end_time
+  - targets
+  properties:
+    id:
+      type: integer
+      description: Plan id.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    plan_name:
+      type: string
+      description: Plan name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    merid_flip:
+      type: boolean
+      description: Meridian flip allowed.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    mount_go_home:
+      type: boolean
+      description: Park at end.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    focuser_go_home:
+      type: boolean
+      description: Focuser home at end.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    shutdown_pi:
+      type: boolean
+      description: Shut down at end.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    start_guide:
+      type: boolean
+      description: Start guiding.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    close_cooler:
+      type: boolean
+      description: Cooler off at end.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    wait_cooling:
+      type: boolean
+      description: Wait for cooling.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    enable:
+      type: boolean
+      description: Plan enabled. Does not establish that it is running.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    left_size_m:
+      type: number
+      description: Remaining size estimate (binary megabytes). Only for enabled plans, when the progress
+        flag is on.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    left_time_sec:
+      type: integer
+      description: Remaining time estimate, seconds. Only for enabled plans, progress flag on.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    total_time_sec:
+      type: integer
+      description: Total time estimate, seconds. Only for enabled plans, progress flag on.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    cur_id:
+      type: integer
+      description: Id of the current target; present when set and the progress flag is on, even for a
+        disabled plan.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    start_time:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - none
+          - date
+          description: none or date.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+        hour:
+          type: number
+          description: 'Hour (hours: INFERRED); present when type is date.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+      description: 'Start time: {"type":"none"}, {"type":"date","hour":n}; an empty object for any other
+        stored type.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    end_time:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - none
+          - date
+          - dawn
+          description: none, date or dawn.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+        hour:
+          type: number
+          description: 'Hour (hours: INFERRED); present when type is date.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+      description: 'End time: {"type":"none"}, {"type":"date","hour":n}, {"type":"dawn"}; an empty object
+        for any other stored type.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+    targets:
+      type: array
+      items:
+        type: object
+        required:
+        - delay_first
+        - delay_between_frame
+        - id
+        - capture_index
+        - extra_sec_per_target
+        - left_time_sec
+        - total_time_sec
+        - code
+        - enable
+        - group_by_slot
+        - target_name
+        - target_original_img
+        - target_original_name
+        - real_start_date
+        - real_end_date
+        - obj_type
+        - left_size_m
+        - seqs
+        properties:
+          id:
+            type: integer
+            description: Target id.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          delay_first:
+            type: integer
+            description: Delay before first frame (units unresolved).
+            x-confidence: READ (units unresolved)
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          delay_between_frame:
+            type: integer
+            description: Delay between frames (units unresolved).
+            x-confidence: READ (units unresolved)
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          capture_index:
+            type: integer
+            description: Progress index.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          extra_sec_per_target:
+            type: integer
+            description: Extra seconds per target.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          left_time_sec:
+            type: integer
+            description: Remaining time estimate, seconds.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          total_time_sec:
+            type: integer
+            description: Total time estimate, seconds.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          code:
+            type: integer
+            description: Stored error code.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          enable:
+            type: boolean
+            description: Target enabled.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          group_by_slot:
+            type: boolean
+            description: Group by slot.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          target_name:
+            type: string
+            description: Target name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          target_original_img:
+            type: string
+            description: Original image reference.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          target_original_name:
+            type: string
+            description: Original catalog name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          real_start_date:
+            type: string
+            description: Actual start date text.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          real_end_date:
+            type: string
+            description: Actual end date text.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          obj_type:
+            type: string
+            description: Object type text.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          left_size_m:
+            type: number
+            description: Remaining size estimate in binary megabytes (1024 x 1024 bytes).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          error:
+            type: string
+            description: Message for the stored target code (code 0 gives "no error"). Present only when
+              the progress flag is set (get_plan, get_enabled_plan).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          cur_id:
+            type: integer
+            description: Id of the current sequence. Present only when set and the progress flag is on.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          target_coord:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 2
+            description: '[ra, dec] numbers; present only when both differ from the -999 sentinel by about
+              0.1 or more, otherwise absent (not null). RA hours / Dec degrees (INFERRED).'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+          seqs:
+            type: array
+            items:
+              type: object
+              required:
+              - id
+              - filter
+              - gain
+              - bin
+              - repeat
+              - lapsed
+              - capture_index
+              - type
+              - suffix
+              - exp
+              - enable
+              - autoexp
+              properties:
+                id:
+                  type: integer
+                  description: Sequence id.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                filter:
+                  type: integer
+                  description: Filter index.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                gain:
+                  type: integer
+                  description: Gain.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                bin:
+                  type: integer
+                  description: Binning.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                repeat:
+                  type: integer
+                  description: Frames to capture.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                lapsed:
+                  type: integer
+                  description: Frames captured.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                capture_index:
+                  type: integer
+                  description: Progress index.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                type:
+                  type: string
+                  enum:
+                  - light
+                  - dark
+                  - bias
+                  - flat
+                  - unknown
+                  description: Frame type name.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                suffix:
+                  type: string
+                  description: File name suffix.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                exp:
+                  type: number
+                  description: Exposure seconds.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                enable:
+                  type: boolean
+                  description: Sequence enabled.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+                autoexp:
+                  type: boolean
+                  description: Auto exposure.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+            description: Sequences.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)
+      description: Targets.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPlans @0x3097c0 (64-bit build)

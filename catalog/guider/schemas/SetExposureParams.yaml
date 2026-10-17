@@ -1,0 +1,12 @@
+title: set_exposure params
+description: A single integer, or an array whose first element is the integer. Objects are not unwrapped
+  by key. No range check in the handler.
+anyOf:
+- type: integer
+- type: array
+  minItems: 1
+  items:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x74850 (64-bit build)
+x-default: none (required)

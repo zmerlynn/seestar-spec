@@ -1,0 +1,90 @@
+kind: method
+name: get_focuser_state
+summary: Report whether the focuser is closed, idle or moving, with basic properties when open.
+description: No parameters are read. The state member is close when the focuser is not open. When open,
+  the handler polls the driver (eaf_is_moving) and reports moving or idle, then adds name, id and max_step_range
+  if the property read succeeds. Poll or property failures never produce an error reply. The strict grade
+  is MUTATOR only because the poll refreshes an in-memory timestamp and may write a diagnostic log line;
+  no motion occurs.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbf800, IsMoving @0x15bd70 (64-bit build); 32-bit IsMoving
+  @0xdfd10 independently checked
+side_effects: Refreshes a monotonic-millisecond timestamp stored in the focuser object and may log a poll
+  failure; no motion, open or close.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_focuser_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_focuser_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetFocuserStateResult.yaml
+        description: Focuser state object.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbf800 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error branch exists.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 11
+    method: get_focuser_state
+- name: closed
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_state
+    result:
+      state: close
+    code: 0
+    id: 11
+- name: open-idle
+  summary: Open and idle (values invented)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_state
+    result:
+      state: idle
+      name: Example focuser
+      id: 0
+      max_step_range: 2600
+    code: 0
+    id: 12
+see_also:
+- open_focuser
+- get_focuser_position
+- move_focuser
+spec:
+- spec/control/focus-and-filter.md#lifecycle

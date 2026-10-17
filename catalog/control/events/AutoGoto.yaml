@@ -1,0 +1,181 @@
+kind: event
+name: AutoGoto
+summary: Auto-goto (slew, solve, re-centre) progress from the function detail and the legacy retry notifier.
+description: 'Sent by AutoGotoFunc named transitions (F) and by the legacy NotifyAutoGotoState retry path (start,
+  working, delay, complete, fail with page, tag, func). Function-state family (F): SendFuncEvent formats the named
+  function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal
+  state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail to operate''); cancel
+  omits code and error; route is optional function ancestry. The sender does no deduplication and needs no preceding
+  working event. Detail flags can suppress the working or non-working sends while the cached function tree still
+  changes, so a receiver can miss transitions. Its formatter adds count and hint. Child ScopeGoto, Exposure, PlateSolve
+  and AutoFocus events can arrive before the AutoGoto completion. Mount errors during goto are sent separately as
+  AutoGotoStep. iscope_stop_view with stage AutoGoto stops it. The legacy direct event always carries page and func,
+  and tag when non-empty; start adds target_ra_dec (only when the RA is not the -999 sentinel) and target_name (only
+  when non-empty); working adds count; any legacy state adds error and code when the worker passes a non-zero code.
+  The F path adds hint, target_name and target_ra_dec to the F set. No further members are known; this union is
+  complete (INFERRED: no third producer was found). Channel I (TCP 4700). Delivery: ordinary broadcast
+  to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence,
+  delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500, PrintAutoGotoInfo @0x16e8b0, AutoGotoFunc
+  @0x172d90 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AutoGoto event
+  type: object
+  discriminator: Event
+  description: Auto-goto event, F or legacy producer.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: AutoGoto
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; NotifyAutoGotoState @0x170500, PrintAutoGotoInfo
+        @0x16e8b0, AutoGotoFunc @0x172d90 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      - delay
+      description: 'Union. F: idle, working, complete, fail, cancel. Legacy NotifyAutoGotoState: start, working,
+        delay, complete, fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, NotifyAutoGotoState @0x170500
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: 'F: state is fail. Legacy: any state, when the passed code is non-zero'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0, NotifyAutoGotoState
+        @0x170500 (code test @0x170b10)
+    code:
+      type: integer
+      description: 'F: stored error code, present at fail even when zero. Legacy: the passed code, only when non-zero.'
+      x-required-when: 'F: state is fail. Legacy: any state, when the passed code is non-zero'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0, NotifyAutoGotoState
+        @0x170500 (code test @0x170b10)
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    count:
+      type: integer
+      description: Attempt/step count (callback-retained value); on the legacy producer only with working.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAutoGotoInfo @0x16e8b0; same name in the 32-bit build
+    hint:
+      type: boolean
+      description: From the F formatter.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAutoGotoInfo @0x16e8b0; same name in the 32-bit build
+    page:
+      type: string
+      description: 'Legacy producer: source page.'
+      x-required-when: legacy producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500 (64-bit build)
+    tag:
+      type: string
+      description: 'Legacy producer: tag.'
+      x-required-when: legacy producer, tag non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500 (64-bit build)
+    func:
+      type: string
+      description: 'Legacy producer: auto-goto function step name.'
+      x-required-when: legacy producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500 (64-bit build)
+    target_name:
+      type: string
+      description: Target name (legacy start; F print hook).
+      x-required-when: legacy start with a non-empty name; F print hook (condition unresolved)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500, PrintAutoGotoInfo @0x16e8b0, AutoGotoFunc
+        @0x172d90 (64-bit build)
+    target_ra_dec:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Target coordinate pair (legacy start; F print hook).
+      x-required-when: legacy start when the RA is not the -999 sentinel; F print hook (condition unresolved)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500, PrintAutoGotoInfo @0x16e8b0, AutoGotoFunc
+        @0x172d90 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyAutoGotoState @0x170500, PrintAutoGotoInfo @0x16e8b0, AutoGotoFunc
+    @0x172d90 (64-bit build)
+examples:
+- name: working
+  summary: F progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AutoGoto
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 4200
+    count: 1
+    hint: false
+    route:
+    - View
+- name: legacy-start
+  summary: Legacy start (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AutoGoto
+    Timestamp: '1234.123456789'
+    state: start
+    page: preview
+    tag: example
+    func: example
+    target_name: Example target
+    target_ra_dec:
+    - 5.5
+    - 22.0
+see_also:
+- start_auto_goto
+- start_auto_goto_pixel
+- stop_auto_goto
+- AutoGotoStep
+- get_app_state
+- iscope_get_app_state
+spec:
+- spec/control/solving-and-annotation.md#auto-goto
+- spec/control/events-overview.md

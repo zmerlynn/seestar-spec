@@ -1,0 +1,69 @@
+kind: event
+name: AppState
+summary: Guider application-state update, carrying the state name.
+description: 'Sent on a guider application-state update; callback-driven, no helper throttle. Sent by
+  the guider process (zwoair_guider) on its TCP 4400 event server to every retained connection (G/all).
+  The main imager process, which is a client of 4400, recognises event lines and forwards them unchanged
+  onto TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager process deliberately does
+  not forward 4400 events. The imager''s forwarding test is lexical (the exact text "Event":" in the line).
+  Custom guider producer: there is no lowercase state, code or error member; member names are capitalised
+  as shown and capitalisation is wire-significant. No Android app consumer is established for this name;
+  the imager''s peer-event waiter may consume it. Distinct from the imager''s AppStateChange event (member
+  page). Ordering against RPC replies and other guider events is not guaranteed; no sequence number, replay
+  or fixed cadence exists. Runtime reachability of the retained guiding functionality on every model is
+  unresolved.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyAppState @0x6d2b0 (64-bit
+  guider build); 32-bit counterpart present
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AppState event
+  type: object
+  discriminator: Event
+  description: Custom guider producer with a single State member.
+  required:
+  - Event
+  - Timestamp
+  - State
+  properties:
+    Event:
+      type: string
+      const: AppState
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyAppState @0x6d2b0
+        (64-bit guider build); 32-bit counterpart present
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    State:
+      type: string
+      description: Application-state name produced by the guider's state-name lookup (GetAppStateStr).
+        Capital S. The set of names is not enumerated in the evidence.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyAppState @0x6d2b0
+        (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyAppState @0x6d2b0
+    (64-bit guider build); 32-bit counterpart present
+examples:
+- name: state
+  summary: Static example (READ shape, not captured; value invented)
+  of: payload
+  payload:
+    Event: AppState
+    Timestamp: '1234.123456789'
+    State: Guiding
+see_also:
+- loop
+- guide
+- set_paused
+spec:
+- spec/guider/index.md#events

@@ -1,0 +1,124 @@
+kind: method
+name: start_avi_rtmp
+summary: Start playing a recorded AVI file out through the live-stream output.
+description: 'Resolves the file name, then starts an AVI reading thread that decodes the file and feeds
+  it to the stream output; it does not record a new file. A success reply only means the thread was created:
+  the file is opened inside the worker, so a missing or unreadable file is reported later through an AviRtmp
+  event with state fail, not in the reply. Events from the worker: state start, then complete when the
+  frame loop ends or fail with an error code on initialisation problems (open failure 258, non-video stream
+  or implausible size 220, output stream initialisation failure 283; replaced by 253 aborted if a stop
+  was already requested). The app (3.3.2) defines this command name but never sends it; it only consumes
+  the AviRtmp event. READ (dex).'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: 'static analysis of firmware 9.31, handler @0xd1240 (64-bit build), StartReadAvi @0x2ef280; static
+  analysis of app 3.3.2: CMD_START_RTMP_PLAYBACK and CMD_STOP_RTMP_PLAYBACK constants with no const-string
+  uses (finding #361)'
+side_effects: Starts the AVI reading thread and stream output. Fails if a read thread is already running
+  or a planet stack is active.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_avi_rtmp request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_avi_rtmp
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+        description: 'Bare string: the file name.'
+      - type: array
+        minItems: 1
+        prefixItems:
+        - type: string
+        description: 'Positional form: only the first element is used and it must be a string. An element
+          that is itself an object is not unwrapped.'
+      - type: object
+        required:
+        - name
+        properties:
+          name:
+            type: string
+            description: File name or path of the AVI file to play.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xd1240 (64-bit build), StartReadAvi @0x2ef280
+      description: File to play, as a bare string, as the first element of an array, or as the string
+        member name of an object. Selection happens exactly once (no recursive unwrapping). A name without
+        a directory component is resolved under the Video directory of the image store; a recognised full
+        image path is kept and any other path is prefixed with the image store root. The resolved path
+        is copied into a 256-byte buffer, at most 255 bytes, so a longer path is truncated. An empty string
+        passes validation; no length, extension or existence check is made at request time. Absent params,
+        an empty array, a missing name, an explicit null or a non-string value give 105.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd1240 (64-bit build), StartReadAvi @0x2ef280
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: File name absent, null, not a string, or an array whose first element is not a string
+  label: expected string param
+- code: 268
+  trigger: An AVI reading thread is already running
+  label: operation is in progress
+- code: 524
+  trigger: A planet stack is active
+  label: function conflict
+- code: 212
+  trigger: Reading thread could not be created
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Failures that occur after the thread starts (file open, format, output initialisation) are
+  delivered as AviRtmp events, not as replies.
+examples:
+- name: play-by-name
+  of: request
+  payload:
+    id: 31
+    method: start_avi_rtmp
+    params:
+      name: example.avi
+- name: play-bare-string
+  of: request
+  payload:
+    id: 32
+    method: start_avi_rtmp
+    params: example.avi
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_avi_rtmp
+    result: 0
+    code: 0
+    id: 31
+- name: already-playing
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_avi_rtmp
+    error: operation is in progress
+    code: 268
+    id: 33
+see_also:
+- stop_avi_rtmp
+spec:
+- spec/media/video.md#avi-playback-into-the-stream
+- spec/media/video.md#avi-playback-into-the-stream

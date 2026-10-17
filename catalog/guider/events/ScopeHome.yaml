@@ -1,0 +1,133 @@
+kind: event
+name: ScopeHome
+summary: Mount park/home worker state.
+description: 'F family. The guider''s go-home worker (started by scope_park) is named ScopeHome; its detail
+  printer adds close (arm folded) to every event whenever the axle position can be read, and equ_mode on
+  complete when a mode was requested. A client SHOULD use close on the terminal event to confirm the arm
+  state. Emitted by the guider on TCP 4400 to every retained socket;
+  the main imager process forwards the line unchanged onto TCP 4700 (the auxiliary imager process suppresses
+  guider forwarding). The imager''s factory-test logic listens for a terminal ScopeHome and then emits
+  its own FactoryTestControl event. Arrival, success criteria and reply/event order are not established.
+  APK consumers: the legacy home handler and the device-state home handler.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, ScopeAM5::GoHome @0xf0050, PrintGoHomeMode @0xefde0 (64-bit guider
+  build); 32-bit counterparts present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ScopeHome event
+  type: object
+  discriminator: Event
+  description: Home transition. F fields plus equ_mode and close.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: ScopeHome
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail (64-bit guider build)
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: 'F state table: idle 0, working 1, complete 2, fail 3, cancel 4; an unknown internal
+        code falls back to idle. A formatter''s supported state is not a promise that every run visits
+        it.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: a non-empty stage string is held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or started with no end) uses
+        current monotonic minus start; other terminal states use end minus start.
+      x-required-when: state is working, or the timer was started (terminal states)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Ordered function-tree ancestry when included; a missing route is a legitimate branch.
+        Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    error:
+      type: string
+      description: Message for code; written for state fail even when the stored code is zero. Lookup
+        failure gives 'fail to operate'. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Written for state fail, including a stored zero. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    equ_mode:
+      type: boolean
+      description: Equatorial-mode flag of the requested mode (true for equatorial). Only on complete, and
+        only when scope_park requested a mode.
+      x-required-when: state is complete and a mode was requested
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintGoHomeMode @0xefde0 (64-bit guider build)
+    close:
+      type: boolean
+      description: True when the arm is folded, that is the first axle coordinate is at or below about -85;
+        false otherwise. Written on every event of this function whenever the guider can read the axle
+        coordinates, omitted when that read fails. INFERRED that the unit is degrees and the first axle is
+        elevation.
+      x-required-when: the axle coordinates can be read
+      x-confidence: READ (condition and threshold); INFERRED (degrees, physical meaning)
+      x-basis: static analysis of firmware 9.31, PrintGoHomeMode @0xefde0 calls PrintMountClose @0x15baf0 (threshold -85.0) (64-bit
+        guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, FormatFuncDetail (64-bit guider build)
+examples:
+- name: working
+  summary: Parking (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ScopeHome
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 2000
+    close: false
+- name: complete
+  summary: Parked (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ScopeHome
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 15000
+    close: true
+    equ_mode: false
+see_also:
+- scope_park
+- scope_get_state
+- control/get_device_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#park-home-and-the-arm

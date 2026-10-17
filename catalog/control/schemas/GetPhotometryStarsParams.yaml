@@ -1,0 +1,16 @@
+title: get_photometry_stars params
+type: object
+description: Object, or a positional array whose first element is image_id. Absent, empty or scalar params
+  use the default selection. Unknown members are ignored.
+properties:
+  image_id:
+    type: integer
+    description: Image to read. Integer narrowed to an unsigned 16-bit value with no range check (wraps
+      modulo 65536). 65535 selects the greatest cached image-map key, which is the latest image only by
+      key order, not proven by wall time across rollover. A present member of another type, including
+      null, gives 104.
+    x-default: 65535 (latest cached image)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe2d10 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe2d10 (64-bit build)

@@ -1,0 +1,116 @@
+kind: event
+name: ScopeTrack
+summary: Mount tracking switched on or off.
+description: Custom guider producer (not S or F). Sent by the guider's tracking-state check on tracking
+  transitions, including the forced check after scope_set_track_state (whether the controller command
+  succeeded or not) and checks reached from coordinate reads and from slew completion. The check stores
+  the last tracking flag and code and emits only when one of them changes, so there is no periodic tracking
+  timer; a reader (a tracking or coordinate getter, goto arrival, or the imager's focus and position polling)
+  drives the emission. When not tracking, the fault code is the mount controller's tracking reason mapped by
+  the guider, 270 (below horizon), 527 (alt exceed limit), 203 during a home or horizon move, or 207 (fail to
+  operate) for a reply the guider does not recognise; the below-horizon decision is the controller's, not a
+  guider altitude computation. Emitted by the
+  guider on TCP 4400 to every retained socket; the main imager process forwards the line unchanged onto
+  TCP 4700 (the auxiliary imager process suppresses guider forwarding). The event can precede the reply
+  to the command that caused it; order is not established. The APK's generic state mapper does not know
+  on/off; its tracking branch reads the tracking member.
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0, CheckTrackState @0x41be0, getTrackReason
+  @0xf1770 (64-bit guider build); 32-bit counterpart present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ScopeTrack event
+  type: object
+  discriminator: Event
+  description: Tracking transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  - tracking
+  - manual
+  properties:
+    Event:
+      type: string
+      const: ScopeTrack
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    state:
+      type: string
+      enum:
+      - 'on'
+      - 'off'
+      description: on or off.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+    tracking:
+      type: boolean
+      description: Tracking state.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+    manual:
+      type: boolean
+      description: Manual-transition flag (set when a tracking command forced the check).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+    error:
+      type: string
+      description: Fault message.
+      x-required-when: positive fault code
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+    code:
+      type: integer
+      description: Fault code, only when positive.
+      x-required-when: positive fault code
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+    route:
+      type: array
+      items:
+        type: string
+      description: Function ancestry when a named parent is active.
+      x-required-when: a named parent function is active
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendTrackEvent @0x412d0 (64-bit guider build)
+examples:
+- name: 'on'
+  summary: Tracking enabled by a command (READ shape)
+  of: payload
+  payload:
+    Event: ScopeTrack
+    Timestamp: '1234.123456789'
+    state: 'on'
+    tracking: true
+    manual: true
+- name: off-below-horizon
+  summary: Tracking off below the horizon (READ shape; code and text from the error table)
+  of: payload
+  payload:
+    Event: ScopeTrack
+    Timestamp: '1234.123456789'
+    state: 'off'
+    tracking: false
+    manual: false
+    error: below horizon
+    code: 270
+see_also:
+- scope_set_track_state
+- scope_get_track_mode
+- scope_get_ra_dec
+- control/get_device_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#tracking

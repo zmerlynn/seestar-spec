@@ -1,0 +1,89 @@
+kind: method
+name: get_camera_16bit
+summary: Report whether the camera pixel format is the two-bytes-per-pixel format.
+description: Params are not read. Returns a boolean that is true when the backend's bytes-per-pixel is
+  2. The backend maps format 2 to two bytes per pixel and format 3 to one; any other cached format yields
+  210. Format 2 is 16-bit raw and format 3 gained 8-bit Bayer, so true means 16-bit raw capture is selected.
+  The result is not a hardware capability bit. Note the interplay with set_camera_16bit, whose true selects
+  format 3, after which this returns false. The 32-bit build maps formats the same way (2 to two bytes, 3
+  to one, otherwise 210) (READ, 32-bit build).
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4c70, GetBytesPerPix @0x11e920 (64-bit build); 32-bit
+  build bytes-per-pixel get switch in the camera class; image-type enum from the camera library debug information
+side_effects: Reads the cached pixel format; writes only caller output and thread-local error state.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_camera_16bit request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_camera_16bit
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4c70 (64-bit build)
+reply_success:
+  title: get_camera_16bit success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: boolean
+        description: True when bytes per pixel equals 2.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4c70 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Camera or backend is closed
+  label: device not connected
+- code: 210
+  trigger: Cached format is neither 2 nor 3
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 53
+    method: get_camera_16bit
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_16bit
+    result: false
+    code: 0
+    id: 53
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_16bit
+    error: device not connected
+    code: 318
+    id: 54
+see_also:
+- set_camera_16bit
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

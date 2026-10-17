@@ -1,0 +1,22 @@
+type: object
+description: Calculation object only. It builds a temporary planner from the current camera size and returns
+  {estimated_hours} immediately; later members are skipped. It does not apply the capture mosaic parameters,
+  start a goto or set a deadline. star_map_angle is not read. With no scale nothing is calculated. No range
+  check or clamp. A closed or absent camera gives 318.
+properties:
+  scale:
+    type:
+    - integer
+    - number
+    description: Optional; when present angle is required.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  angle:
+    type:
+    - integer
+    - number
+    description: Required when scale is present; missing or wrong type 102.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

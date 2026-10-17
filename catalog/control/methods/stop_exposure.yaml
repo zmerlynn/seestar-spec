@@ -1,0 +1,122 @@
+kind: method
+name: stop_exposure
+summary: Abort the running exposure or capture, optionally waiting for the worker to finish.
+description: Records capture error 253 (aborted), logs a manual stop, sets the stop flag and notifies
+  pending requests; a single exposure in progress is stopped at the camera. With wait true (the default)
+  the handler blocks until the capture worker thread ends, with no short timeout; wait false returns at
+  once. Result 0 acknowledges the stop path, not a frame outcome. The underlying routine returns success
+  on all ordinary paths (an internal 318 for a hardware abort without an open camera is not reported).
+  This is also the RPC stop path for a running legacy plan. The plan runs inside the exposure worker and
+  polls its stop flag, so stopping the worker ends the plan run. stop_func with ViewPlan and clear_view_plan
+  do not affect a legacy plan run. Any other action that stops exposure (closing the camera, stopping
+  continuous exposure, starting a view) also ends it.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe63c0 (CCaptureErr::Set @0xe6464, "Stop Autorun Manually"),
+  StopExposure @0x213580, CamExpose @0x2189d0 passing its stop flag to AutoSavePlan @0x30ea00 (call @0x219b54)
+  (64-bit build)
+side_effects: Sets the capture abort error and stop flag, writes a log line, notifies pending requests,
+  may abort the camera exposure and joins the capture worker when wait is true. Ends a running legacy plan
+  run.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_exposure request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_exposure
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Optional. Either an object with wait, or an array whose first element is the wait value.
+        Absent, scalar and empty-array forms use the default.
+      anyOf:
+      - type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe63c0 (64-bit build)
+        properties:
+          wait:
+            description: 'Boolean or integer (zero false, non-zero true). Default true: block until the
+              capture worker has finished. False returns without that wait. Wrong types, including null,
+              fail with 106.'
+            type:
+            - boolean
+            - integer
+            x-default: 'true'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe63c0 (64-bit build)
+      - type: array
+        description: 'Positional form: first element is wait.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe63c0 (64-bit build)
+        items:
+          type:
+          - boolean
+          - integer
+          description: The wait value.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xe63c0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe63c0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: wait present with a type other than boolean or integer (including null)
+  label: expected bool param
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Exceptional and SDK-level paths are not established.
+examples:
+- name: nowait
+  of: request
+  payload:
+    id: 33
+    method: stop_exposure
+    params:
+      wait: false
+- name: default
+  of: request
+  payload:
+    id: 34
+    method: stop_exposure
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_exposure
+    result: 0
+    code: 0
+    id: 33
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_exposure
+    error: expected bool param
+    code: 106
+    id: 35
+see_also:
+- start_exposure
+- close_camera
+spec:
+- spec/control/viewing-and-exposure.md#exposures

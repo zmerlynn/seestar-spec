@@ -1,0 +1,90 @@
+kind: method
+name: get_camera_binning
+summary: Read the guide camera bin factor and its maximum.
+description: Params are not consumed. Returns {bin, max_bin} from cached camera state. Fails with 318
+  when no device is connected. The method is registered in the guider command table (TCP 4400); a request
+  that reaches the main imager and is relayed to the guider is a separate route with its own side effects,
+  outside this entry's tier.
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x75c40 (64-bit build)
+side_effects: None. Reads cached camera binning.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_camera_binning request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_camera_binning
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x75c40 (64-bit build)
+reply_success:
+  title: get_camera_binning success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetCameraBinningResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x75c40 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: No guide camera device connected
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 10
+    method: get_camera_binning
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_binning
+    result:
+      bin: 1
+      max_bin: 2
+    code: 0
+    id: 10
+- name: error-318
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_binning
+    error: device not connected
+    code: 318
+    id: 11
+see_also:
+- get_exposure
+spec:
+- spec/guider/index.md#method-groups

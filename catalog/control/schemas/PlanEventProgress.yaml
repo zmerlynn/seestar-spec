@@ -1,0 +1,110 @@
+title: legacy plan progress
+type: object
+description: Legacy autosave plan progress, built by the same formatter that fills the progress object
+  of get_app_state. Carried by legacy Target (start, complete) and Sequence (frame_start, frame_complete)
+  events; no event is named Plan. Every member is always written. When no current target or sequence
+  exists the object is still complete. Both ids are -2147483648 (INT32 minimum), every total and lapse is
+  0, target_name is empty, frame_type is unknown and plan_end is false. Clients SHOULD treat -2147483648
+  as none.
+properties:
+  targets:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: Planned target total.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      lapse:
+        type: integer
+        description: Completed planned target count (a count, not milliseconds); 'completed' is inferred
+          from the counter names.
+        x-confidence: READ; completed-count meaning INFERRED
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+  cur_plan:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: Current-plan total.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      lapse:
+        type: integer
+        description: Completed current-plan count (a count, not milliseconds); 'completed' is inferred
+          from the counter names.
+        x-confidence: READ; completed-count meaning INFERRED
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+  cur_target:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: Target total.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      lapse:
+        type: integer
+        description: Completed target count (a count, not milliseconds); 'completed' is inferred from
+          the counter names.
+        x-confidence: READ; completed-count meaning INFERRED
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      target_name:
+        type: string
+        description: Current target name; empty when there is no current target.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      id:
+        type: integer
+        description: Target id; -2147483648 when there is no current target.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90; default stored by NotifyPlan
+          @0xb2120..0xb2158, GetPlanProgress @0x3037e0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+  cur_seq:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: Sequence frame total.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      lapse:
+        type: integer
+        description: Completed sequence frame count (a count, not milliseconds); 'completed' is inferred
+          from the counter names.
+        x-confidence: READ; completed-count meaning INFERRED
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      frame_type:
+        type: string
+        description: Frame type name. light, dark, bias or flat for codes 0 to 3; unknown otherwise, including
+          when there is no current sequence.
+        enum:
+        - light
+        - dark
+        - bias
+        - flat
+        - unknown
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+      id:
+        type: integer
+        description: Sequence id; -2147483648 when there is no current sequence.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90; default stored by NotifyPlan
+          @0xb2120..0xb2158, GetPlanProgress @0x3037e0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+  plan_end:
+    type: boolean
+    description: End flag; false when no plan run is current.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, FormatPlanProgress @0x308e90; defaults initialised by NotifyPlan
+  @0xb2120..0xb2158, get_app_state near @0xc52d0 and GetExpProgress @0x310fc0 (64-bit build)

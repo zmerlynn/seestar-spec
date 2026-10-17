@@ -1,0 +1,29 @@
+title: scope_set_eq_mode params
+description: Required. Object {equ_mode} or an array whose first element is the value; a bare scalar is
+  ignored by the params reader and then fails with 106. The value is a boolean; a nonzero integer counts
+  as true. Missing, null or wrong type gives 106.
+anyOf:
+- type: object
+  required:
+  - equ_mode
+  properties:
+    equ_mode:
+      type:
+      - boolean
+      - integer
+      description: true selects equatorial mode (INFERRED from the key name). A nonzero integer is true.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x7cff0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x7cff0 (64-bit build)
+- type: array
+  minItems: 1
+  prefixItems:
+  - type:
+    - boolean
+    - integer
+  description: Positional form [equ_mode].
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x7cff0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x7cff0 (64-bit build)

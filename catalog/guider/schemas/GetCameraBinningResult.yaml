@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: GetCameraBinningResult
+type: object
+required:
+- bin
+- max_bin
+properties:
+  bin:
+    type: integer
+    minimum: 1
+    description: Current bin factor.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x75c40 (64-bit build)
+  max_bin:
+    type: integer
+    minimum: 1
+    description: Maximum bin factor the camera supports.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x75c40 (64-bit build)

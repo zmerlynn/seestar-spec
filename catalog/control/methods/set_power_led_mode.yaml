@@ -1,0 +1,90 @@
+kind: method
+name: set_power_led_mode
+summary: Set the power LED mode.
+description: Forwards an integer mode to the power-LED helper, which sets hardware mode and brightness
+  and caches the mode. Requires an initialised power-LED handle; when uninitialised the helper logs and
+  returns failure. Some already-current-mode paths succeed without a write. Present in the 64-bit build
+  only; the 32-bit build has no such handler. The error text for a bad params type says expected object
+  although an integer is required.
+grade: MUTATOR / probable (64-bit build only; not registered in the 32-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcb200, SetPowerLedMode @0x3221e0, S50PSetPowerLedMode
+  @0x321970 (64-bit build); vendor ASI_POWERLED_SetMode (archived library)
+side_effects: Changes the power LED hardware mode and brightness and caches the mode.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_power_led_mode request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_power_led_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: integer
+      description: 'Power LED mode. Must be a bare JSON integer: no object key or array form is accepted.
+        The handler applies no range restriction; the helper forwards the value to the vendor power-LED
+        call (and has special handling in one internal state). With the ring-pattern LED driver modes 0 to
+        20 are accepted, each starting a flash, breathe or static pattern, and larger values fail as a helper failure;
+        with the character-device driver the value is written as given. The visual meaning of each mode
+        is unresolved.'
+      x-confidence: READ (range and pass-through; vendor library from an archived copy); unresolved (meanings)
+      x-basis: static analysis of firmware 9.31, handler @0xcb200, SetPowerLedMode @0x3221e0, S50PSetPowerLedMode
+        @0x321970 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null or not an integer (message says object)
+  label: expected object param
+- code: 207
+  trigger: Helper returned failure and set no error code of its own (power-LED handle uninitialised or
+    API failure); a helper-assigned code would be forwarded instead
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Which error codes the power-LED API can produce is unresolved; the helper maps no new error.
+examples:
+- name: set-mode
+  summary: Mode value invented
+  of: request
+  payload:
+    id: 40
+    method: set_power_led_mode
+    params: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_power_led_mode
+    result: 0
+    code: 0
+    id: 40
+- name: bad-params
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_power_led_mode
+    error: expected object param
+    code: 107
+    id: 41
+see_also:
+- get_power_supply
+spec:
+- spec/control/power-and-storage.md#power-led-and-auxiliary-outputs

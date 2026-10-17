@@ -1,0 +1,222 @@
+kind: method
+name: get_dark_files
+summary: List the temperature dark library (firmware 9.75).
+description: 'New in firmware 9.75, app 3.4.0. Lists the folders (one per exposure) or the master-dark
+  files of one folder in the temperature dark library. It does not use the image path. Params may be absent,
+  a bare string or an object with a string name; any other type gives 105. The name selects the listing:
+  empty or darklibrary lists folders (path darklibrary, list_type folder); darklibrary/<N>s with N in
+  1..2147483 lists the files of that folder (path is the full name, list_type file). Any other name, or
+  a failure while building the listing, gives 207. An empty or unreadable directory gives files [] with
+  success. The result carries path and list_type, and list is an array holding one element {group_name,
+  files}; group_name is always empty. File entries are ordered by temperature (0.05 tolerance) and then
+  by name; the order of folder entries (ascending exposure) is INFERRED.'
+grade: PURE GETTER / READ
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build @0x5ed6c (parity
+  INFERRED)
+side_effects: None.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_dark_files request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_dark_files
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      description: Optional. May be absent or null (root), a string (the name), or an object with an optional
+        name. Other types, or a non-string name, give 105.
+      oneOf:
+      - type: 'null'
+      - type: string
+      - type: object
+        properties:
+          name:
+            type: string
+            description: Folder to list.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build), @0x5ed6c (32-bit
+              build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build), @0x5ed6c (32-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build), @0x5ed6c (32-bit build)
+reply_success:
+  title: get_dark_files reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: object
+        required:
+        - path
+        - list_type
+        - list
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build @0x5ed6c
+          (parity INFERRED)
+        properties:
+          path:
+            type: string
+            description: darklibrary for the root listing, otherwise the requested name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build @0x5ed6c
+              (parity INFERRED)
+          list_type:
+            type: string
+            description: folder or file.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build @0x5ed6c
+              (parity INFERRED)
+            enum:
+            - folder
+            - file
+          list:
+            type: array
+            description: One element.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build @0x5ed6c
+              (parity INFERRED)
+            items:
+              type: object
+              required:
+              - group_name
+              - files
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build
+                @0x5ed6c (parity INFERRED)
+              properties:
+                group_name:
+                  type: string
+                  description: Always empty.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build
+                    @0x5ed6c (parity INFERRED)
+                files:
+                  type: array
+                  description: Entries. Folder entries carry name, thn, count, type, exposure_sec; file
+                    entries carry name, thn, type, exposure_sec, date, temperature, expired.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit build
+                    @0x5ed6c (parity INFERRED)
+                  items:
+                    type: object
+                    required:
+                    - name
+                    - type
+                    - exposure_sec
+                    x-confidence: READ
+                    x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                      build @0x5ed6c (parity INFERRED)
+                    properties:
+                      name:
+                        type: string
+                        description: Folder name (<N>s) or master-dark file name.
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      thn:
+                        type: string
+                        description: 'Folder entries: always empty. File entries: the thumbnail name when
+                          one exists, else empty.'
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      count:
+                        type: integer
+                        description: Number of master-dark files in the folder, may be 0. Folder entries
+                          only.
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      type:
+                        type: integer
+                        description: 0 folder, 1 file.
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      exposure_sec:
+                        type: number
+                        description: 'Exposure in seconds (folder entries: one decimal).'
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      date:
+                        type: string
+                        description: File timestamp, YYYY-MM-DD HH:MM:SS. File entries only.
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      temperature:
+                        type: number
+                        description: Sensor temperature of the dark, degrees C, rounded to 0.1. File entries
+                          only.
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+                      expired:
+                        type: boolean
+                        description: True when the dark is older than 15,552,000 s (180 days). File entries
+                          only.
+                        x-confidence: READ
+                        x-basis: static analysis of firmware 9.75, handler @0xfa890 (64-bit build); 32-bit
+                          build @0x5ed6c (parity INFERRED)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params is not absent, a string or an object, or name is not a string
+  label: expected string
+- code: 207
+  trigger: name is not darklibrary or darklibrary/<N>s, or the listing could not be built
+  label: invalid path
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: An empty or missing directory is success with files [].
+examples:
+- name: request
+  of: request
+  payload:
+    id: 93
+    method: get_dark_files
+  summary: root listing; READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_dark_files
+    result:
+      path: darklibrary
+      list_type: folder
+      list:
+      - group_name: ''
+        files:
+        - name: 10s
+          thn: ''
+          count: 2
+          type: 0
+          exposure_sec: 10.0
+    code: 0
+    id: 93
+  summary: values invented
+see_also:
+- start_create_dark
+- stop_create_dark
+- get_setting
+- set_setting
+spec:
+- spec/control/calibration-frames/dark-library.md#temperature-dark-library-firmware-975

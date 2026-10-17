@@ -1,0 +1,166 @@
+kind: event
+name: DarkLibrary
+summary: Progress and state of dark-frame (dark library) creation, from the imager or the guider.
+description: 'Sent while a master dark is captured and built. Imager producer: StartDark/StartBlockDark
+  run a named DarkLibrary function, so the payload follows the function-state family. Function-state family
+  (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms when the timer is started
+  or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits them);
+  route optional. A null or nameless detail sends nothing, and non-working notifications can be suppressed
+  while the function cache still changes, so a receiver cannot rely on seeing every transition. The guider
+  (TCP 4400) has its own dark-library producer with states start, building, complete and fail; the imager
+  forwards guider event lines unchanged onto TCP 4700 (the auxiliary imager process suppresses that forwarding).
+  Recipients: every retained socket of the emitting server (no verified/master filter). No fixed progress
+  rate. No reply-before-event order is established: the RPC reply that starts the worker and the worker''s
+  events can arrive in either order. Working events are sent only when the whole-number percentage changes,
+  so a client must not expect one event per frame. Stack processing can also start this workflow. Imager
+  worker: on the main-camera process it moves the filter wheel to slot 0 (the wide-camera process has no
+  light-blocking step and the mount is not moved), sets the stack exposure and sensor hot-pixel correction
+  on (gain unchanged), captures five raw frames, rejects a frame whose mean exceeds the model''s dark threshold
+  (the first rejection repeats the wheel move once; a second, or any without a wheel, fails with 320), averages
+  the accepted frames into MasterDark_<exposure>_<YYYYMMDD-hhmmss>.fit in the private dark-library directory
+  (named by exposure and local time, not temperature), deletes older masters with the same exposure, and
+  restores the previous filter slot (READ). Failure codes: 238 (exposure), 249 (memory), 300 (frame size),
+  320 (bright frame not cured by one filter retry), 207 (other), or the filter-move error (READ). A stop (stop_create_dark, or stop_func naming DarkLibrary) ends the run with
+  cancel, which carries no code or error on the wire (internal code 253, not sent); INFERRED from the F rules.
+  iscope_stop_view {stage: DarkLibrary} reaches only a dark run nested under View (READ).
+  APK consumer expectation, not a firmware field: an app-state DTO declares has_offset for DarkLibrary;
+  no producer of it is established.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, StartDark @0x3b9c00, StartBlockDark @0x3b9ee0, FormatPercent @0x3b8050,
+  ResetDarkProgress @0x3b99c0, CreateDarkFunc @0x3bf770, CreateMasterDarkFrame @0x3be3f0, StopViewStage @0x3c1870,
+  GetDarkNamePrefix @0x3b9400, GetDarksDir @0x3b8900, GetDarkThreshold @0x124910, HasFilter @0x125440,
+  HasDark @0x3be090, InitialiseFunc @0x3c0000;
+  guider DarksDialog @0xf8360 (64-bit builds)
+side_effects: Observation only for the receiver. The underlying worker captures frames and writes calibration
+  files.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: DarkLibrary event
+  type: object
+  discriminator: Event
+  description: Function-state members plus percent. Guider-originated events use the guider's own state
+    literals.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: DarkLibrary
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartDark @0x3b9c00
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      - building
+      description: 'Imager function producer: idle, working, complete, fail, cancel. Guider dark-library
+        producer (separate custom code): start, building, complete, fail. A receiver must accept both
+        sets.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; StartDark @0x3b9c00, StartBlockDark
+        @0x3b9ee0; guider DarksDialog::OnStart @0xf8360
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    percent:
+      type: number
+      minimum: 0
+      maximum: 100
+      description: 'Imager producer: on every event, a number from 0 to 100, completed exposure time over
+        total exposure time, 0 before any progress (READ for working events; INFERRED for end states, from
+        the shared formatter). The guider frame-construction path also writes it as a double.'
+      x-required-when: 'imager producer: every event (end states INFERRED); guider producer: build progress updates'
+      x-confidence: READ (imager formatter and working events); INFERRED (end states)
+      x-basis: static analysis of firmware 9.31, FormatPercent @0x3b8050, CreateMasterDarkFrame @0x3be3f0 (imager);
+        guider DarksDialog::CreateMasterDarkFrame @0xf7b30
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, StartDark @0x3b9c00, SendFuncEvent @0x6e4e20
+examples:
+- name: working
+  summary: Imager build progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: DarkLibrary
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 41250
+    percent: 60.0
+    route:
+    - View
+    - DarkLibrary
+- name: guider-building
+  summary: Guider producer build step (READ shape; values invented)
+  of: payload
+  payload:
+    Event: DarkLibrary
+    Timestamp: '1234.123456789'
+    state: building
+    percent: 33.3
+- name: fail
+  summary: Function fail (READ shape; values invented)
+  of: payload
+  payload:
+    Event: DarkLibrary
+    Timestamp: '1234.123456789'
+    state: fail
+    lapse_ms: 1200
+    percent: 0.0
+    code: 238
+    error: exposure failed
+see_also:
+- start_create_dark
+- stop_create_dark
+- stop_func
+- iscope_stop_view
+- iscope_get_app_state
+spec:
+- spec/control/calibration-frames/dark-library.md#building-the-dark-library
+- spec/control/events-overview.md

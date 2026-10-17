@@ -1,0 +1,15 @@
+title: remote_rebind_device_user params
+type: object
+description: Parameters of remote_rebind_device_user. Must be an object; unknown keys are ignored.
+required:
+- userId
+properties:
+  userId:
+    type: string
+    description: User identifier to report as the new binding of this device. No minimum length, empty-string
+      restriction or default is shown; a non-string value is rejected with 105.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe0ca0, reportDeviceBindInfo @0x1a2570 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe0ca0, reportDeviceBindInfo @0x1a2570 (64-bit build)

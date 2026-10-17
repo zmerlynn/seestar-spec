@@ -1,0 +1,23 @@
+title: scope_get_cap result
+type: array
+description: Capability names for which the scope's virtual capability test returns true, in the order
+  listed in the enum. Only supported capabilities are present.
+items:
+  type: string
+  enum:
+  - position
+  - park
+  - sync
+  - time
+  - location
+  - move
+  - move_timed
+  - guide_rate
+  - ctrl_track
+  - goto
+  - track_mode
+  - horiz_coord
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler 0x78ae0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x78ae0 (64-bit build)

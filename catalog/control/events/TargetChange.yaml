@@ -1,0 +1,49 @@
+kind: event
+name: TargetChange
+summary: Legacy autosave plan moved to another target (no members).
+description: 'N family: only Event and Timestamp. Sent by the legacy autosave plan worker when its current
+  target changes. Broadcast on TCP 4700 to every retained socket. The event carries no target data; read
+  get_app_state progress.cur_target to learn the new target. No APK consumer is established. A 32-bit
+  counterpart emitter exists.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, AutoSavePlan @0x30ea00 (64-bit build); 32-bit counterpart present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: TargetChange event
+  type: object
+  discriminator: Event
+  description: Event and Timestamp only.
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: TargetChange
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AutoSavePlan @0x30ea00 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, AutoSavePlan @0x30ea00 (64-bit build)
+examples:
+- name: bare
+  summary: The only shape (READ; value invented)
+  of: payload
+  payload:
+    Event: TargetChange
+    Timestamp: '1234.123456789'
+see_also:
+- Target
+- Sequence
+- get_app_state
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#legacy-plan-events
+- spec/control/events-overview.md

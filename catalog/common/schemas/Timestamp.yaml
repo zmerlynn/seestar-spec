@@ -1,0 +1,12 @@
+title: Timestamp
+type: string
+description: >-
+  Decimal string `<seconds>.<nanoseconds>` with exactly nine fractional digits, formatted with
+  `%ld.%09ld` from clock_gettime clock id 1. Linux clock id 1 is CLOCK_MONOTONIC, so the value is
+  monotonic time, not wall-clock or Unix time (INFERRED from the clock id). On replies it is added by
+  the socket layer and is normally present; receivers MUST NOT require it on replies (absent on a
+  stop_func relay-failure reply). On events it is always written by the event constructor.
+x-confidence: READ; wire shape also OBSERVED (2026-10-12)
+x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60 (format literal @0x967a70), JRpcResponse
+  constructor @0x6f7c50 and Ev constructor @0x6f74c0 (64-bit imager build); 32-bit getTimestamp @0x69b2c0;
+  wire observation 2026-10-12

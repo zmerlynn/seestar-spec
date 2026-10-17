@@ -1,0 +1,42 @@
+#!/bin/sh
+# Git pre-push hook: keeps the permalink branch compatible (see CONVENTIONS.md, Permalink compatibility).
+# Install once: ln -s ../../tools/pre-push .git/hooks/pre-push
+#
+# While the spec is at major N (tools/MAJOR on the pushed commit), main and vN move together:
+#  - a push of main must also push vN to the same commit, and the reverse;
+#  - vN only fast-forwards and never loses a permalink (tools/permalinks.py check);
+#  - branches of earlier majors are frozen; no v* branch is ever deleted.
+set -eu
+zero=$(printf '%040d' 0)
+top=$(git rev-parse --show-toplevel)
+updates=$(cat)
+fail() { echo "pre-push: $*" >&2; exit 1; }
+sha_for() { printf '%s\n' "$updates" | awk -v r="$1" '$3 == r { print $2 }'; }
+
+printf '%s\n' "$updates" | while read -r lref lsha rref rsha; do
+    [ -n "$rref" ] || continue
+    case "$rref" in
+    refs/heads/main | refs/heads/v[0-9]*) ;;
+    *) continue ;;
+    esac
+    [ "$lsha" != "$zero" ] || fail "refusing to delete $rref"
+    major=$(git show "$lsha:tools/MAJOR" 2>/dev/null | tr -d '[:space:]') || fail "$lsha has no tools/MAJOR"
+    branch=refs/heads/v$major
+    case "$rref" in
+    refs/heads/main)
+        [ "$(sha_for "$branch")" = "$lsha" ] ||
+            fail "push main together with v$major at the same commit: git push --atomic origin HEAD:main HEAD:v$major" ;;
+    "$branch")
+        [ "$(sha_for refs/heads/main)" = "$lsha" ] ||
+            fail "push v$major together with main at the same commit: git push --atomic origin HEAD:main HEAD:v$major"
+        [ "$(git rev-parse HEAD)" = "$lsha" ] && [ -z "$(git status --porcelain)" ] ||
+            fail "check out the commit being pushed, with a clean tree, so lint can run"
+        python3 -B "$top/tools/lint.py" >/dev/null || { python3 -B "$top/tools/lint.py" | tail -20 >&2; fail "lint failed"; }
+        if [ "$rsha" = "$zero" ]; then
+            python3 -B "$top/tools/permalinks.py" check --initial --ref "$lsha" || fail "v$major: problems at its first commit"
+        else
+            python3 -B "$top/tools/permalinks.py" check --base "$rsha" --ref "$lsha" || fail "v$major must fast-forward and keep every permalink"
+        fi ;;
+    *) fail "$rref is frozen (the spec is at major $major)" ;;
+    esac
+done

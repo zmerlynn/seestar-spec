@@ -1,0 +1,51 @@
+title: get_controls result
+description: 'Array of the entries in the device''s control table, built when the camera opens; possibly
+  empty. Imager ids and names: 0 Gain, 1 Exposure, 4 Temperature (read-only), 19 Red, 20 Blue, 23 HPC, 24
+  ISP_Gain, 25 ISP_Exposure always; 5 CoolPowerPerc, 6 TargetTemp, 7 CoolerOn, 8 AntiDewHeater and (64-bit
+  build only) 22 FanHalfSpeed on cooled cameras (READ; the cooled-camera reading of the condition INFERRED).
+  Ids are not sent. Limits are fixed in the firmware except the maximum gain and maximum exposure, which come
+  from the camera at open (per-camera values unresolved); see spec/control/viewing-and-exposure.md R17. Units
+  (READ, camera library, except exposure): exposure microseconds (INFERRED); gain tenths of a dB on
+  multiplicative-gain sensors, raw analogue gain otherwise; target temperature degrees C, clamped to -40..30;
+  cooler power percent; cooler on boolean; red/blue white balance gain with 100 as unity, affecting only pixel
+  format 3.'
+type: array
+items:
+  type: object
+  required:
+  - name
+  - min
+  - max
+  - read_only
+  properties:
+    name:
+      type: string
+      description: Control name, usable as the name argument of get_control_value and set_control_value
+        (matched case-insensitively there).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+        @0x1537d0 (64-bit build)
+    min:
+      type: integer
+      description: Lower limit, signed integer, in the control's unit (see the schema description; exposure
+        microseconds INFERRED, other units READ).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+        @0x1537d0 (64-bit build)
+    max:
+      type: integer
+      description: Upper limit, signed integer, in the control's unit (see the schema description; exposure
+        microseconds INFERRED, other units READ).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+        @0x1537d0 (64-bit build)
+    read_only:
+      type: boolean
+      description: True when the control cannot be set.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+        @0x1537d0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb41d0, GetControls @0x11d720, camera GetControls
+  @0x1537d0, OpenCamera table build @0x1526f0, name table @0xaacdf0 (64-bit build); 32-bit GetControls @0xabf1c;
+  control-set unit handling from the camera library debug information

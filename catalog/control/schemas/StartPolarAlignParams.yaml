@@ -1,0 +1,38 @@
+title: start_polar_align params
+type: object
+properties:
+  is_one_star:
+    type:
+    - boolean
+    - integer
+    description: In equatorial mode, true selects the one-star gyro procedure (eq_1p) and false the
+      equatorial three-point procedure (eq_3p); ignored in alt-azimuth mode. Boolean or integer (nonzero
+      true); a wrong type keeps the default.
+    default: false
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe10e0, StartPAFunc @0x15fcc0 (64-bit build)
+  restart:
+    type:
+    - boolean
+    - integer
+    description: When the worker is running or an equatorial-mode session is active, stop the alignment
+      threads and restore and clear the session before starting, so an equatorial start is fresh; it does
+      not let a paused alt-azimuth session restart (268 until stop). Boolean or integer (nonzero true); a
+      wrong type keeps the default.
+    default: false
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe10e0, StartPAFunc @0x15fcc0 (64-bit build)
+  dec_pos_index:
+    type: integer
+    minimum: 1
+    maximum: 5
+    default: 3
+    description: Declination position index. Valid 1..5; an integer outside it gives 204. A wrong type
+      keeps the default.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe10e0, StartPAFunc @0x15fcc0 (64-bit build)
+description: Optional. Only an object is read; absent, null, scalar or array params run with the defaults
+  (arrays are not positional alternatives). Unknown members are ignored. Observed app encoders send is_one_star
+  alone, or restart with an optional dec_pos_index.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe10e0, StartPAFunc @0x15fcc0 (64-bit build)

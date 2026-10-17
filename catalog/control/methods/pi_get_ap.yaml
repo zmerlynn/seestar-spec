@@ -1,0 +1,102 @@
+kind: method
+name: pi_get_ap
+summary: Read the SSID and key of the device access point.
+description: Runs the network script's AP state query and returns the parsed SSID and key. No request
+  parameters are read. The reply exposes the AP key in clear text (firmware 9.31).
+  Firmware 9.75 (64-bit build, app 3.4.0) requires a crypto session established by verify_client. The
+  reply stays flat, {ssid, passwd}, and passwd is an enc1 token; there is no wifi object (wifi is only a
+  cipher context string). A connection with no active session gets error 570 (secure-communication chapter).
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbfc70, ns_net::pi_get_AP @0x702510 (64-bit build); firmware 9.75 handler @0xcda20 (session check @0xcda7c-0xcdab4, encode call @0xcdca0)
+side_effects: Runs a shell command synchronously (no timeout) and overwrites the process-wide cached AP
+  ssid, key and key-management strings while parsing; the only inspected effects are these cache writes.
+  Observer tier B.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_get_ap request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_get_ap
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbfc70 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_get_ap success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/PiGetApResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbfc70, ns_net::pi_get_AP @0x702510 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 570
+  trigger: 'Firmware 9.75: no active crypto session on this connection (571 to 573 for encode failures)'
+  label: encrypted session required
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 223
+  trigger: AP state script produced empty output
+  label: no result from command
+- code: 221
+  trigger: The SSID pattern could not be matched in the script output
+  label: fail to find words
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other helper failure codes are unresolved. The grade is MUTATOR because the shared AP caches
+  are overwritten while parsing, although the reply is observational.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 41
+    method: pi_get_ap
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_get_ap
+    result:
+      ssid: ExampleAP
+      passwd: example-key-1
+    code: 0
+    id: 41
+- name: no-output
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_get_ap
+    error: no result from command
+    code: 223
+    id: 42
+see_also:
+- pi_set_ap
+- pi_get_ap_channel
+spec:
+- spec/control/network.md#access-point
+- spec/control/secure-communication.md#encrypted-wi-fi-strings

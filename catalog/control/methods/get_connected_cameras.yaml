@@ -1,0 +1,86 @@
+kind: method
+name: get_connected_cameras
+summary: List the cameras held in the device's discovery cache.
+description: Rebuilds the shared camera list from the cached MIPI entries (a simulator configuration substitutes
+  simulator entries) and returns it as an array of {name, id, path}. No live hardware discovery is performed
+  by this handler in the 64-bit build. Params are not read and may be omitted; any shape is ignored. The
+  id member is the zero-based list ordinal, the value open_camera takes.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd47d0, GetCameraList @0x130670 (64-bit build)
+side_effects: Clears and rebuilds the shared camera list cache; diagnostic logging and XML lock-file bookkeeping.
+  No hardware is opened and no setting is saved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_connected_cameras request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_connected_cameras
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd47d0 (64-bit build)
+reply_success:
+  title: get_connected_cameras success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetConnectedCamerasResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd47d0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The handler has no error branch of its own.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: get_connected_cameras
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_connected_cameras
+    result:
+    - name: Example camera
+      id: 0
+      path: example-path-0
+    code: 0
+    id: 21
+- name: ok-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_connected_cameras
+    result: []
+    code: 0
+    id: 22
+see_also:
+- get_camera_info
+- open_camera
+- get_camera_state
+spec:
+- spec/control/viewing-and-exposure.md#camera-lifecycle

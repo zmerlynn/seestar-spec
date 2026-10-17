@@ -1,0 +1,115 @@
+kind: method
+name: check_photometry
+summary: Start the photometry check view stage.
+description: 'Starts ViewStar stage 5 with no stage parameters: stops any existing view, changes view
+  mode, clears the subframe, selects page 0 (and may change the view size on some wide or model branches)
+  and starts the named View worker asynchronously. Success acknowledges the start. The worker sets camera
+  exposure control 1 to 2000000 (READ), that is 2 s in microseconds (unit INFERRED from the camera library''s
+  conversion of the value to sensor lines), then captures, solves the frame and validates the target pixel
+  position; its failures (exposure failed, solve failed, out of image, aborted, conversion error) are
+  asynchronous function status, not RPC codes. The CheckPhotoMetry event can carry a completion coordinate
+  pair (ra_dec_deg_j2000, RA and Dec in degrees, J2000 INFERRED) in its completed state; the binding to
+  the exact event envelope is not established here. Firmware 9.75, app 3.4.0: optional params magV (default
+  13.0) and offsetDeg (default 2.5, degrees INFERRED) select the reference-star magnitude limit and search
+  offset; the worker may download reference stars when the internet is reachable. The download is an outbound HTTP(S) request to a vendor catalogue service (address not recorded; unresolved), and the CheckPhotoMetry event gains has_download_ref_star at complete. Firmware 9.31: params
+  not read.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc7db0, StartViewStarStage @0x3c1570 (64-bit build);
+  camera library ASI_CAM_SetControlValue @0x38dc0, SetExposure @0x38680 (control 1 exposure conversion);
+  firmware 9.75 request members from the 9.75 reports
+side_effects: 'Interrupts existing imaging: stops the current view, changes view mode and page, then starts
+  an asynchronous worker that changes exposure control and captures. Open camera required. No request
+  timeout. Every full call also makes the shared diagnostic log writes.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: check_photometry request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: check_photometry
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Firmware 9.31: not read. Firmware 9.75: optional object; a non-object gives 107.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc7db0, StartViewStarStage @0x3c1570 (64-bit
+        build)
+      type: object
+      properties:
+        magV:
+          type: number
+          description: Magnitude limit, default 13.0. Not a number gives 102.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, app 3.4.0 reports, check_photometry handler (64-bit
+            build)
+        offsetDeg:
+          type: number
+          description: Offset, default 2.5 (degrees INFERRED from the name). Not a number gives 102; 0
+            or less gives 204.
+          x-confidence: READ; unit INFERRED
+          x-basis: static analysis of firmware 9.75, app 3.4.0 reports, check_photometry handler (64-bit
+            build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Camera not opened
+  label: device not connected
+- code: 102
+  trigger: 'Firmware 9.75: magV or offsetDeg is not a number'
+  label: invalid argument
+- code: 204
+  trigger: 'Firmware 9.75: offsetDeg is 0 or less'
+  label: out of range
+- code: 107
+  trigger: 'Firmware 9.75: params is not an object'
+  label: expected object
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Starting the same stage while it is already running returns success early. Other worker-start,
+  stop and page failures forward the thread-local code and are not enumerated.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 91
+    method: check_photometry
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: check_photometry
+    result: 0
+    code: 0
+    id: 91
+- name: camera-closed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: check_photometry
+    error: device not connected
+    code: 318
+    id: 92
+see_also:
+- get_photometry_result_json
+- get_photometry_stars
+- get_photometry_wcs
+- set_photometry
+spec:
+- spec/control/solving-and-annotation.md#photometry

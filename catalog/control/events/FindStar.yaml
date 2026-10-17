@@ -1,0 +1,109 @@
+kind: event
+name: FindStar
+summary: 'Star-detection worker notification: start, complete with the detected stars, or fail.'
+description: 'State/value family (S + V), not F: FindStarFunc sends start, then complete with result, or fail. The
+  state helper adds error and code only when the supplied code is > 0 (unlike F); there is no lapse_ms or route.
+  The complete event''s result is the same object the getter caches (get_find_star_result), embedded as JSON, not
+  a string. stop_find_star adds no event of its own, but after a stop a run that had not completed ends with fail,
+  code 253 when the stop coincided with a capture abort and 514 otherwise; a run that had already completed sends
+  complete.
+  Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest
+  and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other
+  events. APK 3.3.2 defines the name as a constant only.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, FindStarFunc @0x269780 (stop-code substitution @0x269e78-0x269ea0, fail
+  notify @0x269bdc) (64-bit build); NotifyState @0xb0430, NotifyValueState @0xadc90
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: FindStar event
+  type: object
+  discriminator: Event
+  description: S/V-family star-detection event.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: FindStar
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; FindStarFunc @0x269780 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - complete
+      - fail
+      description: Literal states of the worker.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FindStarFunc @0x269780 (64-bit build)
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Supplied error code (> 0). After stop_find_star, 253 (stop during a capture abort) or 514
+        (interrupt).
+      x-required-when: supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    result:
+      $ref: ../schemas/GetFindStarResult.yaml
+      description: Detected stars; same object as the get_find_star_result cache.
+      x-required-when: state is complete
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FindStarFunc @0x269780 (64-bit build), NotifyValueState @0xadc90
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, FindStarFunc @0x269780 (64-bit build)
+examples:
+- name: complete
+  summary: Detection finished (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FindStar
+    Timestamp: '1234.123456789'
+    state: complete
+    result:
+      image_id: 41
+      stars:
+      - pixelx: 512.4
+        pixely: 300.8
+        radius: 3.2
+        hfd: 2.9
+      pixelscale_arcsec: 2.4
+- name: stopped
+  summary: Run interrupted by stop_find_star (READ shape and code)
+  of: payload
+  payload:
+    Event: FindStar
+    Timestamp: '1234.123456789'
+    state: fail
+    error: interrupt
+    code: 514
+- name: start
+  summary: Worker started (READ shape)
+  of: payload
+  payload:
+    Event: FindStar
+    Timestamp: '1234.123456789'
+    state: start
+see_also:
+- start_find_star
+- stop_find_star
+- get_find_star_result
+spec:
+- spec/control/solving-and-annotation.md#find-star
+- spec/control/events-overview.md

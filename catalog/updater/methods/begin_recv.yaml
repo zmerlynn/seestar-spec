@@ -1,0 +1,112 @@
+kind: method
+name: begin_recv
+summary: 'Updater: open the destination file and begin receiving a firmware/file upload.'
+description: 'Updater method on TCP 4350, paired with stop_recv. Params are an object or a one-element array
+  whose element is that object; the handler reads file_name (string), run_update (integer; nonzero is true),
+  file_len (integer) and md5 (string). It validates file_name, creates the target file for writing in the
+  updater''s private directory under the device user''s home, and arms the caller''s own 4361 connection
+  (copying the file record into it, allocating a buffer and timestamping it). A client must open 4361 before
+  sending begin_recv. Success is result 0; the app then streams the raw bytes on 4361. After the transfer
+  the updater checks the file MD5 against md5, then a package signature with a built-in key; either failure
+  ends with a failing Receive state. READ. That file_len is the expected byte count that ends the receive
+  and that run_update gates installation is INFERRED. The app sends run_update as JSON true; that the integer
+  read accepts true is INFERRED (the type test was not traced). Firmware 9.75 (64-bit build, READ; the 32-bit
+  build has the method and the run_update string but no legacy-lock code, INFERRED from absence) types the
+  members strictly. file_len is accepted only as a JSON integer (a float or a string such as 123.0 is
+  ignored and file_len stays 0), file_name and md5 must be strings, and run_update is accepted only as
+  the JSON literal true or false (a numeric 1 is not accepted and the flag stays false). A file_len of 0
+  or an empty file_name gives error 1 with the text expected param. With run_update true the destination
+  is the legacy update package directory plus file_name and the handler does not open the file itself;
+  with run_update false it is a temporary path and the handler creates the file (258 on failure). The
+  handler validates, then calls the shared receive preparation, which for run_update true takes a
+  non-blocking legacy update lock (524 failed to acquire legacy update lock when held), clears the legacy
+  update directory (257 failed to prepare legacy update directories when that fails), reserves the receive
+  and releases the lock before returning; the lock does not cover the transfer or the install. On any
+  preparation failure a failed update result is recorded and the error is returned.'
+grade: 'MUTATOR / established (64-bit build; 32-bit build matches (READ))'
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, updater begin_recv @0x26e10, prepareRecv @0x28840 and networkThread
+  @0xf150 (64-bit build); 32-bit build carries the same strings; firmware 9.75 begin_recv @0x292e0 and
+  prepareRecv @0x2d490 (64-bit build), 32-bit begin_recv @0x2e5c0; app 3.3.2 DeviceFwFragment.handleVersionEvent
+  emitter
+side_effects: 'Creates (truncates) the destination file for writing and arms shared receive state on the
+  caller''s 4361 connection; a failed arm also records a failed update result. Pairs with stop_recv. The
+  byte transfer itself is over the separate upload channel.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: begin_recv request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: begin_recv
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater dispatch table (command/event)
+    params:
+      $ref: ../schemas/BeginRecvParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater begin_recv @0x26e10 (json_array2obj); app 3.3.2
+        DeviceFwFragment.handleVersionEvent
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: No params object
+  label: expected object param
+- code: 1
+  trigger: A required member is missing or has the wrong type; in firmware 9.75 also file_len of 0 or an
+    empty file_name
+  label: expected param (firmware 9.75; 9.31 text not stated)
+- code: 102
+  trigger: Invalid file_name (leading dot, contains "..", longer than 255 bytes, or characters other than
+    letters, digits, "-" and "_")
+  label: invalid file_name
+- code: 258
+  trigger: The target file cannot be created for writing
+  label: fail to create file
+- code: 257
+  trigger: Firmware 9.75 (64-bit build) the legacy update directories could not be prepared
+  label: failed to prepare legacy update directories
+- code: 524
+  trigger: Cannot arm the receive (no 4361 connection from this client, a receive already running, or an
+    update already running); a failed update result is also recorded
+  label: per cause, e.g. binary port is not connected, receive is already running, is already updating, failed to acquire legacy update lock (firmware 9.75)
+errors_note: 207 was not seen in this handler; the app special-cases 207 and 524 when displaying an error.
+  MD5 and signature failures are reported later through Receive, not in this reply. Dispatcher rows are
+  not listed.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: begin_recv
+    params:
+    - file_name: air
+      run_update: true
+      file_len: 1048576
+      md5: <32 hex digits>
+  summary: Shape READ from the app emitter (id 100 is what the app uses); length and digest invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: begin_recv
+    result: 0
+    code: 0
+    id: 100
+see_also:
+- stop_recv
+- Receive
+- Update
+spec:
+- spec/updater/index.md#legacy-upload-flow-begin_recv

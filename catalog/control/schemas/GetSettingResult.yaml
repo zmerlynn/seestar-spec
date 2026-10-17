@@ -1,0 +1,777 @@
+title: get_setting result
+type: object
+description: 'Settings object. Open: members are conditional on process type, camera, capability and helper
+  success, and a few are D64-only. Unselected or failed members are omitted. Duplicate keys (beep_volume,
+  ae_bri_percent, effect_offset_deg) can occur in the serialized text; consumers must tolerate them. The
+  key rtsp_roi_index appears only in filtered Setting events, never here. Firmware 9.75 adds
+  annotation (object), sky_replay, can_encrypt, comet_max_frame_num, enable_dark_library, motion_monitor
+  (object), preview.raw_bin2, exp_ms.more_exposure, stack.startrails_duration_min and stack.startrail_mode;
+  see the members. Several of them are gated by process type or by the wide camera. The 32-bit build
+  was not compared member by member (it has no motion monitor).'
+properties:
+  calib_location:
+    type: integer
+    description: 'Full non-P2 output only. Location-calibration source (the persisted test setting calibrate_location):
+      1 ordinary location-offset calibration, 2 offset derived from three-point polar alignment; other
+      values (0) mean no calibration offset is applied. The location-offset routines only read it as a
+      mode gate (ordinary path requires 1, the three-point path requires 2). It is held in the S_TEST_SETTING
+      struct and persisted as an integer under config key setting2/imager/test/calibrate_location by the
+      test-setting serializer. set_setting and set_test_setting do not assign it, and no runtime routine
+      that assigns 1 or 2 to the in-memory field was located by static reading; how it comes to be set
+      remains unresolved.'
+    x-confidence: READ (1, 2; persisted key; read-as-gate); off meaning INFERRED; runtime writer unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, PrintClibLoc @0xafcd0,
+      GetCalibLocatOffset @0x160fe0 (==1, else 210), GetCalibLocatOffset3PPA @0x160ea0 and SetCalibLocatOffset3PPA
+      @0x160f30 (==2), test-setting serializer SetTestSetting @0x11fef0 writing config key setting2/imager/test/calibrate_location
+      via SettingConfig::Write, only string xref (64-bit build)
+  effect_offset_deg:
+    type: array
+    description: Full non-P2 output only. Pair of numbers. The key can appear twice in one reply (ordinary
+      pair, then 3PPA pair); the two pairs may differ. JSON object parsers that keep only one occurrence
+      will lose one of them.
+    prefixItems:
+    - type: number
+    - type: number
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  offset_deg:
+    type: array
+    description: Full non-P2 output only. Ordinary calibration offset pair, present when both components
+      differ from the -999 sentinel.
+    prefixItems:
+    - type: number
+    - type: number
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  offset_deg_3ppa:
+    type: array
+    description: Full non-P2 output only. Three-point polar alignment offset pair, present when both components
+      differ from the -999 sentinel.
+    prefixItems:
+    - type: number
+    - type: number
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  center_xy:
+    type: array
+    description: Full non-P2 output only. Autofocus centre [x, y] in display pixels (unit INFERRED); present
+      only if the query succeeds.
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  temp_unit:
+    type: string
+    description: Full non-P2 output only. Temperature unit.
+    enum:
+    - C
+    - F
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  beep_volume:
+    type: string
+    description: 'Full non-P2 output only. Beep volume name. The key is emitted twice on full non-P2 output.
+      The getter maps the stored volume via a code-name table: 0 close, 60 backyard, 90 field; any other
+      value yields the literal string unknown. Setter accepts close, backyard, field (mapping to 0, 60,
+      90).'
+    enum:
+    - close
+    - backyard
+    - field
+    - unknown
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, GPIOController::GetBeepVolume
+      @0x324cc0, get_code_name @0x6d6790, p_volume_name table @0xaadae8, default p_str_unknown (64-bit
+      build)
+  lang:
+    type: string
+    description: 'Full non-P2 output only. Language code. The getter maps the stored id via a code-name
+      table: 0 zh, 1 en, 2 fr, 3 ja, 4 ko; any other id yields the literal string unknown.'
+    enum:
+    - zh
+    - en
+    - fr
+    - ja
+    - ko
+    - unknown
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, GetLang @0x122fc0,
+      get_lang_name @0x6e10c0, lang name table @0xae94c8, default p_str_unknown (64-bit build)
+  stack_lenhance:
+    type: boolean
+    description: Full non-P2 output only. True when the filter wheel position is 2.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  heater_enable:
+    type: boolean
+    description: Full non-P2 output only. Present only if the heater GPIO read succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  expt_heater_enable:
+    type: boolean
+    description: Full non-P2 output only. Exposure-heater flag (setter key is expt_set_heater_enable).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  auto_power_off:
+    type: boolean
+    description: Full non-P2 output only. Test setting.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  auto_af:
+    type: boolean
+    description: Full non-P2 output only. Test setting.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  frame_calib:
+    type: boolean
+    description: Full non-P2 output only. Test setting, not persisted, starts false. While true, dark,
+      bias and flat calibration is applied in place to each frame read for viewing, exposure or stacking.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, set_setting @0xedf40,
+      CalibImage @0x3ba090, img_cam_mipi::ReadCamImg @0x1593c0 (64-bit build)
+  wide_cam:
+    type: boolean
+    description: Full non-P2 output only. Whether this camera is the wide camera; present only if camera
+      info query succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  stack_after_goto:
+    type: boolean
+    description: Full non-P2 output only. Stack setting.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  wide_4k:
+    type: boolean
+    description: Full non-P2 output only. Test setting. 64-bit build only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  main_8k:
+    type: boolean
+    description: Full non-P2 output only. Test setting. 64-bit build only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  guest_mode:
+    type: boolean
+    description: Full non-P2 output only. Server guest-mode state.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  user_stack_sim:
+    type: boolean
+    description: Full non-P2 output only. Stack setting.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  auto_master_dark:
+    type: boolean
+    description: 'Full non-P2 output only. Stack setting, persisted. Only on S30 Plus-class, S30 Pro,
+      S50 Pro and S80 (the can_dark_correction models): with expert_mode also on, stack start ensures
+      a master dark for the stack exposure; with stack.wide_denoise on, the master dark is subtracted
+      during frame calibration. No effect on the S50, which always ensures a master dark at stack start.
+      Changing it clears the live stack. Frame calibration itself runs only while frame_calib is on.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, ShouldMinusDark
+      @0x195420, NeedInitAutoMasterDarkForDesignatedModel @0x195470, SkipInitAutoMasterDarkForDesignatedModel
+      @0x1954e0, InitialiseFunc @0x3c0000, CalibImage @0x3ba090, IsStackMoved @0x1941b0 (64-bit build)
+  usb_en_eth:
+    type: boolean
+    description: Full non-P2 output only. Storage hotplug flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  dark_mode:
+    type: boolean
+    description: Full non-P2 output only. Dark mode flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  plan_target_af:
+    type: boolean
+    description: Full non-P2 output only. Focus setting.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  viewplan_gohome:
+    type: boolean
+    description: Full non-P2 output only. Test setting.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  light_brightness:
+    type: integer
+    description: LED brightness. Full output, or when the key is selected in a filtered Setting event;
+      setter accepts 0, 50, 100. Absent on the 32-bit build.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  remote_joined:
+    type: boolean
+    description: Full formatter only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  auto_3ppa_calib:
+    type: boolean
+    description: Full formatter only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  expert_mode:
+    type: boolean
+    description: 'Full formatter only. Firmware 9.75 still emits it (boolean, full output only), but set_setting no longer accepts the key (it gives 109).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  wifi_country:
+    type: string
+    description: Full formatter only; present only if the country query succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  rec_res_index:
+    type: integer
+    description: 'Recording resolution index: a raw integer forwarded from the stored RTMP setting (persisted
+      config key setting2/imager/rtmp/rec_res_index). Emission is gated by a capability helper that is
+      a stub returning false on both the 64-bit and 32-bit builds, so this member is never present in
+      firmware 9.31. The firmware applies no index-to-resolution enum; the mapping is device/app defined
+      and not established here.'
+    x-confidence: READ; never emitted in 9.31 (capability stub)
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, CanSetRecRes stub
+      @0x14fca0 (64-bit) / @0xd4400 (32-bit) both return 0, value from GetRtmpSetting()+0x40 (64-bit build)
+  ap_changed:
+    type: boolean
+    description: Present only on devices with NFC.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  typec_mode:
+    type: string
+    description: Type-C mode, file or net; present only if the query succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  alpaca_enable:
+    type: boolean
+    description: Present only if the Alpaca status script returns a definite running/not-running status.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  password:
+    type: string
+    description: Connection password in clear. Treat as sensitive; not redacted or enc1 encoded by the device. Firmware 9.75 omits it when get_setting is sent with include_sensitive false.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  connect_lock:
+    type: boolean
+    description: Connection-lock flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  preview:
+    type: object
+    description: Preview settings.
+    properties:
+      rtsp_quality:
+        type: string
+        description: 'Preview stream quality. The getter maps the enum: 0 Smooth, 1 HighQuality; any other
+          value yields the literal string unknown.'
+        enum:
+        - Smooth
+        - HighQuality
+        - unknown
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, getPreviewRtspQualityName
+          @0x2e7470 (64-bit build)
+      image_transfer_mode:
+        type: string
+        description: 'Image transfer mode. The getter maps the enum: 0 Jpg, 1 Raw; any other value yields
+          the literal string unknown. Built-in default Raw, overridden by the stored config. Governs 4800/4804
+          image encoding (READ); no effect on RTSP (INFERRED).'
+        enum:
+        - Jpg
+        - Raw
+        - unknown
+        x-confidence: READ; RTSP effect INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, getImageTransferModeName
+          @0x2e7500 (64-bit build); shouldTransferJpg (mode 0), name table, config loader (finding
+      raw_bin2:
+        type: boolean
+        description: 'Firmware 9.75: binned raw preview option. Emitted whenever the preview object is emitted, in either process, after image_transfer_mode and before rtsp_width. Not present in firmware 9.31.'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      rtsp_width:
+        type: integer
+        description: Preview stream width (smaller dimension), pixels INFERRED; present only if the size
+          calculation succeeds.
+        minimum: 0
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      rtsp_height:
+        type: integer
+        description: Preview stream height (larger dimension), pixels INFERRED; present only if the size
+          calculation succeeds.
+        minimum: 0
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  timelapse:
+    type: object
+    description: Timelapse settings.
+    properties:
+      solar_sys:
+        type: object
+        description: Solar-system timelapse config.
+        properties:
+          delay_sec:
+            type: number
+            description: Delay in seconds (unit INFERRED); default 1.0.
+            x-default: 1.0
+            x-confidence: READ; unit INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+          src_dura_min:
+            type: integer
+            description: Source duration in minutes, unscaled; default -1.
+            x-default: -1
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit
+              build); unit confirmed by StartWriteAvi @0x2eb8f0, which prints this same saved value
+              unscaled under a debug format string naming it "durMinutes"
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      scenery:
+        type: object
+        description: Scenery timelapse config.
+        properties:
+          delay_sec:
+            type: number
+            description: Delay in seconds (unit INFERRED); default 1.0.
+            x-default: 1.0
+            x-confidence: READ; unit INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+          src_dura_min:
+            type: integer
+            description: Source duration in minutes, unscaled; default -1.
+            x-default: -1
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit
+              build); unit confirmed by StartWriteAvi @0x2eb8f0, which prints this same saved value
+              unscaled under a debug format string naming it "durMinutes"
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      starry_sky:
+        type: object
+        description: Only on the wide camera.
+        properties:
+          src_dura_min:
+            type: integer
+            description: Source duration in minutes, unscaled.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit
+              build); unit confirmed by StartWriteAvi @0x2eb8f0, which prints this same saved value
+              unscaled under a debug format string naming it "durMinutes"
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  wide_cross_offset:
+    type: array
+    description: 'Wide camera only: [x, y] sensor pixels (INFERRED).'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  wide_cross_offset_show:
+    type: array
+    description: 'Wide camera only: [x, y] display coordinates (INFERRED).'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  mosaic:
+    type: object
+    description: Mosaic parameters.
+    properties:
+      scale:
+        type: number
+        description: Dimensionless scale (INFERRED); the stored value, not proof that a capture used it.
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build);
+          32-bit GetSetting @0x7f420 builds and streams this field the same way
+      angle:
+        type: number
+        description: Degrees (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build);
+          32-bit GetSetting @0x7f420 builds and streams this field the same way
+      estimated_hours:
+        type: number
+        description: Hours (INFERRED). Estimate for one round of the live planner's centers, not a timeout.
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build),
+          where the value is a stack float widened to double with no scaling before being streamed under
+          the key string. 32-bit GetSetting @0x7f420 does the same float-to-double widen, same key, same
+          field order, confirmed via the literal-pool loads feeding the key-string constructor
+      star_map_angle:
+        type: number
+        description: Degrees (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build),
+          unscaled float-to-double widen before streaming; 32-bit GetSetting @0x7f420 matches (same widen,
+          key and field order)
+      star_map_ratio:
+        type: number
+        description: Dimensionless (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build),
+          unscaled float-to-double widen before streaming; 32-bit GetSetting @0x7f420 matches (same widen,
+          key and field order)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build); the
+      mosaic field-emission block (scale, angle, estimated_hours, star_map_angle, star_map_ratio, in that
+      order) is structurally the same in 32-bit GetSetting @0x7f420, located via the same key-string
+      literals at a +0x10000 file-offset-to-vaddr shift (.rodata vaddr 0x709c60, file offset 0x6f9c60)
+  stack:
+    type: object
+    description: Stack settings. Filtered Setting events always carry light_duration_min, brightness,
+      contrast, saturation and dbe_enable.
+    properties:
+      dbe:
+        type: boolean
+        description: Background-extraction flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      star_correction:
+        type: boolean
+        description: Star correction flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      airplane_line_removal:
+        type: boolean
+        description: Airplane line removal flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      drizzle2x:
+        type: boolean
+        description: 2x drizzle flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      wide_denoise:
+        type: boolean
+        description: Wide denoise flag.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      cont_capt:
+        type: boolean
+        description: 'Full only: capture type is continuous.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      capt_type:
+        type: string
+        description: 'Full only: capture type. The getter maps the stored id via a code-name table: 0
+          stack, 1 cont_capt, 2 photometry, 4 startrails, 5 timelapse (no id 3); any other id yields the
+          literal string unknown.'
+        enum:
+        - stack
+        - cont_capt
+        - photometry
+        - startrails
+        - timelapse
+        - unknown
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600, get_capt_type_name
+          @0x195570, capture_type table @0xaad230 (64-bit build)
+      goto:
+        type: boolean
+        description: Full only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      move_sleep_sec:
+        type: integer
+        description: Full only; seconds (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      save_discrete_frame:
+        type: boolean
+        description: Full only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      save_discrete_ok_frame:
+        type: boolean
+        description: Full only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      save_meteor_frame:
+        type: boolean
+        description: Full only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      save_video:
+        type: boolean
+        description: Full only and wide camera only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      wide_size_index:
+        type: integer
+        description: Full only and wide camera only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      scene_separate:
+        type: boolean
+        description: Full only and wide camera only. The setter takes an integer here, not a boolean.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      scene_shooting_duration_min:
+        type: integer
+        description: Full only and wide camera only; minutes (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      auto_lenhance:
+        type: boolean
+        description: Full only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      capt_num:
+        type: integer
+        description: Full only; frame count (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      light_duration_min:
+        type: integer
+        description: Always emitted, even in filtered events; minutes (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      brightness:
+        type: number
+        description: 'Always emitted: image adjustment.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      contrast:
+        type: number
+        description: 'Always emitted: image adjustment.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      saturation:
+        type: number
+        description: 'Always emitted: image adjustment.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      dbe_enable:
+        type: boolean
+        description: Always emitted.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      startrails_duration_min:
+        type: integer
+        description: 'Firmware 9.75: star trail session limit in minutes; -1 or 0 means no limit (default -1). Full output only, wide camera only.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      startrail_mode:
+        type: integer
+        description: 'Firmware 9.75: star trail output mode, 0 maximum-image video, 1 decay video, 2 both. Full output only, wide camera only. set_setting accepts 0 to 2.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  rtsp_roi_scale:
+    type: number
+    description: Preview ROI scale, dimensionless. Absent on the 32-bit build.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  hdr:
+    type: boolean
+    description: HDR flag. Absent on the 32-bit build.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  ae_bri_percent:
+    type: number
+    description: Auto-exposure target brightness, percent, validated 0 to 100. Emitted twice on full output.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  manual_exp:
+    type: boolean
+    description: Full only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  isp_range_gain:
+    type: array
+    description: 'Full only: [min, max] gain control bounds; present only if the control query succeeds.'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  isp_range_exp_us:
+    type: array
+    description: 'Full only: [min, max] exposure bounds, microseconds (INFERRED).'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  isp_range_exp_us_scenery:
+    type: array
+    description: 'Full only: [lower, 1000000], microseconds (INFERRED); emitted even if the control query
+      failed, in which case the lower value can be stale.'
+    prefixItems:
+    - type: integer
+    - type: integer
+    minItems: 2
+    maxItems: 2
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  focal_pos:
+    type: integer
+    description: 'Full only: configured focuser motor position (INFERRED).'
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  factory_focal_pos:
+    type: integer
+    description: 'Full only: factory focus position (INFERRED).'
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  stack_dither:
+    type: object
+    description: Full only.
+    properties:
+      pix:
+        type: integer
+        description: Pixels (INFERRED).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      interval:
+        type: integer
+        description: Frames between dithers (INFERRED).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      enable:
+        type: boolean
+        description: Dither enable.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  exp_ms:
+    type: object
+    description: Full only.
+    properties:
+      stack_l:
+        type: integer
+        description: Stack exposure, milliseconds (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      more_exposure:
+        type: boolean
+        description: 'Firmware 9.75: extended exposure option. Full output only; not gated by camera on output (set_setting is tele camera only). Sits between stack_l and continuous. Meaning INFERRED from the name.'
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      continuous:
+        type: integer
+        description: Continuous exposure, milliseconds (INFERRED).
+        x-confidence: READ; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+      stack_l_auto:
+        type: boolean
+        description: Wide camera only.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  second_camera:
+    type: object
+    description: 'Process type 1 only, and only if the peer query succeeds: the peer''s complete settings
+      object, same shape as this result.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)
+  sky_replay:
+    type: boolean
+    description: 'Firmware 9.75: main process only. Always false: the feature is force-disabled and the getter clears the stored flag (see function-states.md: Sky replay).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+  annotation:
+    type: object
+    description: 'Firmware 9.75: annotation options. Main process only; emitted on the full path or when exactly the key annotation is selected. All four members are always present.'
+    properties:
+      stargazing_deepsky:
+        type: boolean
+        description: Stargazing deep-sky annotation switch.
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      stargazing_supernovae:
+        type: boolean
+        description: Stargazing supernovae annotation switch.
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      milkyway_lines:
+        type: boolean
+        description: Milky Way lines annotation switch.
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      milkyway_background:
+        type: boolean
+        description: Milky Way background annotation switch.
+        x-confidence: READ; meaning INFERRED
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+  can_encrypt:
+    type: boolean
+    description: 'Firmware 9.75: constant true. Main process only; full path or exact key. set_setting accepts only true, as a no-op. Whether it relates to the secure-communication switch is INFERRED.'
+    x-confidence: READ; meaning INFERRED
+    x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+  comet_max_frame_num:
+    type: integer
+    description: 'Firmware 9.75: constant 200. Main process only; full path only. Output only: set_setting has no such key. It is the maximum number of input frames of a comet batch stack (enforced by start_batch_stack and the batch worker with err_code 204).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+  motion_monitor:
+    type: object
+    description: 'Firmware 9.75: motion monitor options. Either process; full path or exact key. All five members are always present. Not in the 32-bit build, which has no motion monitor.'
+    properties:
+      mode:
+        type: string
+        enum:
+        - auto_track
+        - auto_capture
+        - unknown
+        description: Monitor mode; unknown for an unrecognised stored value.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      return_to_origin:
+        type: boolean
+        description: Return to the starting position after tracking.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      sensitivity:
+        type: string
+        enum:
+        - low
+        - middle
+        - high
+        - unknown
+        description: Detection sensitivity; selects the detector area threshold 5, 10 or 20 (pixel area, unit INFERRED).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      waiting_time:
+        type: integer
+        description: Seconds to wait for a lost target before returning; used only when return_to_origin is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+      duration_min:
+        type: integer
+        description: Monitoring duration in minutes; -1 means unlimited.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+  enable_dark_library:
+    type: boolean
+    description: 'Firmware 9.75: temperature dark library enable flag. Main process only; full path only. Effect INFERRED inert or reserved.'
+    x-confidence: READ; effect INFERRED
+    x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf23c0, GetSetting @0xea600 (64-bit build)

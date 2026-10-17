@@ -1,0 +1,85 @@
+title: solve result
+type: object
+required:
+- state
+- duration_ms
+description: 'Plate-solve status object written by the formatter. Coordinate-valid path: ra_dec, fov,
+  focal_len, angle, image_id, state "complete", duration_ms and a conditional star_number. Status-only
+  path (either coordinate near the internal -999 sentinel): state "solving" while the worker runs or "fail"
+  when it does not, duration_ms and a conditional star_number. star_number is emitted only when its stored
+  value is not -1. RA is in hours and Dec, fov and angle in degrees; focal_len is computed by the device. The members shown as coordinate-valid
+  are all present together or all absent.'
+properties:
+  ra_dec:
+    type: array
+    items:
+      type: number
+    minItems: 2
+    maxItems: 2
+    description: Solved centre as [RA, Dec], RA in hours (0 to 24) and Dec in degrees; the solver reports
+      degrees and the device divides RA by 15. J2000 unless the solve was configured for precession, in which
+      case the centre is first converted to the epoch of date (meaning of the flag INFERRED). Coordinate-valid
+      path only.
+    x-confidence: READ (units); INFERRED (epoch-flag meaning)
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+      @0x200450, SolveFunc @0x2076e0 (RA divided by 15 @0x208c74) (64-bit build)
+  fov:
+    type: array
+    items:
+      type: number
+    minItems: 2
+    maxItems: 2
+    description: Field of view in degrees, in the order the solver prints its field size (arcminute output
+      is divided by 60); taken to be image width then height. Coordinate-valid path only.
+    x-confidence: READ (unit); INFERRED (axis order)
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, FormatSolveRes @0x200450, SolveFunc @0x2076e0
+      (arcminute conversion @0x2096c4) (64-bit build)
+  focal_len:
+    type: number
+    description: Effective focal length computed by the device as the sensor's long side divided by the
+      larger field angle in radians; stored only when it lies between 0 and 1000. Millimetres (pixel size
+      taken as micrometres). Coordinate-valid path only.
+    x-confidence: READ (formula); unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, FormatSolveRes @0x200450, SolveFunc
+      focal-length block @0x2091c4 (64-bit build)
+  angle:
+    type: number
+    description: The solver's field rotation in degrees, normalised to -180..180; taken to be the image-up
+      direction measured east of north. Coordinate-valid path only.
+    x-confidence: READ (unit and normalisation); INFERRED (east-of-north meaning)
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, FormatSolveRes @0x200450, SolveFunc
+      (range180 @0x6dcc50) (64-bit build)
+  image_id:
+    type: integer
+    minimum: 0
+    maximum: 65535
+    description: Image id from an unsigned 16-bit value. Coordinate-valid path only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+      @0x200450 (64-bit build)
+  state:
+    type: string
+    enum:
+    - complete
+    - solving
+    - fail
+    description: complete for valid coordinates; otherwise solving while the status worker runs, or fail
+      when it does not.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+      @0x200450 (64-bit build)
+  star_number:
+    type: integer
+    description: Detected star count; present only when not -1.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+      @0x200450 (64-bit build)
+  duration_ms:
+    type: integer
+    description: Solve duration; milliseconds INFERRED from the key name. Present on every formatter path.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+      @0x200450 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb8be0, GetSolveResult @0x1fb350, FormatSolveRes
+  @0x200450 (64-bit build)

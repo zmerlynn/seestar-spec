@@ -1,0 +1,119 @@
+kind: method
+name: guide_pulse
+summary: Issue a manual guide pulse in one direction for a duration in milliseconds.
+description: Parses direction (string, case-insensitive compass or up/down/left/right names) and amount
+  (integer milliseconds) and performs a native manual Move on the mount or the optional AO device. It
+  refuses while calibrating or guiding. A success reply (result 0) is returned after the Move call; whether
+  the move has physically finished depends on the selected device subtype. Completion and guide events
+  are unresolved.
+grade: MUTATOR / established (native handler, 64-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x7f0d0 (64-bit build)
+side_effects: Sends a manual guide pulse to the mount or AO device through the virtual Move call; no duration
+  range check.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: guide_pulse request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: guide_pulse
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/GuidePulseParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: guide_pulse reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: integer
+        const: 0
+        description: Integer 0 after the Move call returns.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: amount missing or not an integer
+  label: expected int param
+- code: 105
+  trigger: direction missing or not a string (two string-type check sites exist; the second, possibly
+    the which selector, is unresolved)
+  label: expected string param
+- code: 318
+  trigger: Target guide device not connected
+  label: device not connected
+- code: 319
+  trigger: Guider is calibrating or guiding
+  label: cannot issue guide pulse while calibrating or guiding
+- code: 320
+  trigger: The native Move call fails
+  label: move failed
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: object
+  summary: Values invented
+  of: request
+  payload:
+    id: 50
+    method: guide_pulse
+    params:
+      direction: north
+      amount: 500
+- name: positional
+  summary: Values invented
+  of: request
+  payload:
+    id: 51
+    method: guide_pulse
+    params:
+    - East
+    - 250
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: guide_pulse
+    result: 0
+    code: 0
+    id: 50
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: guide_pulse
+    error: cannot issue guide pulse while calibrating or guiding
+    code: 319
+    id: 52
+see_also:
+- guide
+- scope_fine_move
+spec:
+- spec/guider/guiding.md#guiding-workflow

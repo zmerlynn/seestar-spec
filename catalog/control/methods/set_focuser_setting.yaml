@@ -1,0 +1,89 @@
+kind: method
+name: set_focuser_setting
+summary: Update focuser and autofocus settings (any subset).
+description: Starts from the current settings, overlays the supplied members, validates the result and
+  writes changed fields to configuration, then copies the full settings into the focuser object. There
+  is no open-focuser precondition, no motion, no rollback and no wait. Configuration write failures propagate
+  the thread error code (zero becomes 207); memory may still be updated when some writes fail. Integer
+  comparisons are unsigned, so negatives are rejected.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcc570, SetSetting @0x15aaf0 (64-bit build); tier INFERRED
+side_effects: Writes changed settings to configuration storage and updates the in-memory focuser settings.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_focuser_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_focuser_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetFocuserSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, empty array or not an object
+  label: expected object param
+- code: 109
+  trigger: Unknown key or a recognised member of the wrong type
+  label: unexpected param
+- code: 204
+  trigger: A value is outside its allowed range or af_bin is out of range
+  label: out of limit
+- code: 207
+  trigger: Configuration write failure with no thread error code set (exact write error codes unresolved)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 28
+    method: set_focuser_setting
+    params:
+      fine_step: 60
+      af_before_capture: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_focuser_setting
+    result: 0
+    code: 0
+    id: 28
+- name: out-of-range
+  summary: fine_step above 5000
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_focuser_setting
+    error: out of limit
+    code: 204
+    id: 29
+see_also:
+- get_focuser_setting
+- start_auto_focuse
+spec:
+- spec/control/focus-and-filter.md#values-and-settings

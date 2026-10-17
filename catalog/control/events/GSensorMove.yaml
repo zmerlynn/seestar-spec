@@ -1,0 +1,47 @@
+kind: event
+name: GSensorMove
+summary: Envelope-only notification that the motion sensor detected the device or mount being moved.
+description: 'Broadcast on TCP 4700 (channel I) from the sensor sampling timer when it detects mount or
+  device motion; the same branch clears the three-point polar-alignment calibration and notifies that
+  the mount moved. No fixed delivery rate. Family N (Event and Timestamp only). APK consumer: none established.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, sendSensorData @0x132ca0 (64-bit build)
+side_effects: Observation only for the receiver. On the device the detecting branch clears the three-point
+  polar-alignment calibration.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: GSensorMove event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: GSensorMove
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, sendSensorData @0x132ca0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, sendSensorData @0x132ca0
+examples:
+- name: moved
+  summary: READ shape, not captured
+  of: payload
+  payload:
+    Event: GSensorMove
+    Timestamp: '1234.123456789'
+see_also:
+- BalanceSensor
+- start_polar_align
+- get_device_state
+spec:
+- spec/control/polar-alignment.md#three-point-progress-3ppa

@@ -1,0 +1,26 @@
+title: get_albums params
+type: object
+description: Object form. The handler also accepts a bare string (taken as name) and a positional array
+  [name, filter] (first two items only); an empty array, absent params, null or a non-string scalar mean
+  empty name and no filter. Clients SHOULD send the object form.
+properties:
+  name:
+    type: string
+    description: Album directory to list, default empty. The path is normalised; an empty or unmatched
+      name selects the default works folder. No length or range validation. A present non-string member
+      (including null) is rejected with 105.
+    x-default: empty string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+  filter:
+    type: string
+    description: 'Result filter. 64-bit build: "stack" selects 1, "stacked" 2, "startrail" 3, "meteor"
+      4; firmware 9.75 (64-bit) adds "comet" 5 and "video_stack" 6 and gives 106 for a non-string filter; any other string (including empty) selects 0 (no filter), not an error. 32-bit build recognises
+      only "stack" and "stacked"; startrail, meteor and everything else mean no filter. With an empty
+      name and "startrail" the 64-bit build lists a startrail sub-folder of the works folder; this is
+      not established on the 32-bit build. A present non-string member is rejected with 105 (firmware 9.75, 64-bit: 106 for the filter).'
+    x-default: no filter
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)

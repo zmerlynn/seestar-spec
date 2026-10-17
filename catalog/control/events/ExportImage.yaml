@@ -1,0 +1,92 @@
+kind: event
+name: ExportImage
+summary: Progress of copying or moving saved images between storage volumes.
+description: 'Custom progress producer NotifyExportProgress, called by the export worker at start, on
+  progress and at the end. Always writes state, lapse, total, keep and dst_storage; no lapse_ms, route,
+  code or error. Units of lapse/total are caller-specific counts. No timer cap. Recipients: all retained
+  4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the
+  worker''s events can arrive in either order. No fixed cadence. get_app_state reports the same counts
+  under different names. The APK defines the name only; no app event branch is established.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810, export worker @0x13b470 (64-bit
+  build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ExportImage event
+  type: object
+  discriminator: Event
+  description: Export progress.
+  required:
+  - Event
+  - Timestamp
+  - state
+  - lapse
+  - total
+  - keep
+  - dst_storage
+  properties:
+    Event:
+      type: string
+      const: ExportImage
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - frame_complete
+      - complete
+      description: Caller-supplied stage. The export worker passes start, frame_complete and complete;
+        complete is also sent after a requested stop, so it does not prove every copy succeeded.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810, export worker @0x13b470
+    lapse:
+      type: integer
+      description: Completed units (files or frames); not a duration.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810
+    total:
+      type: integer
+      description: Total units.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810
+    keep:
+      type: boolean
+      description: Keep-source option (false allows removing each source after copying).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810
+    dst_storage:
+      type: string
+      description: Destination storage type.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyExportProgress @0x127810
+examples:
+- name: progress
+  summary: Progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ExportImage
+    Timestamp: '1234.123456789'
+    state: frame_complete
+    lapse: 7
+    total: 20
+    keep: true
+    dst_storage: udisk
+see_also:
+- start_export_image
+- stop_export_image
+- get_app_state
+spec:
+- spec/control/stacking.md#export-to-other-storage
+- spec/control/events-overview.md

@@ -1,0 +1,86 @@
+kind: method
+name: get_connected
+summary: Read which mount, auxiliary mount and camera the guider has connected.
+description: Params are not consumed. Returns an object with optional mount/aux selection indices (each
+  with a matching *_name string) and an optional camera {name, path}. Members for absent equipment are
+  omitted, so the result may be an empty object. D32 schema parity is unresolved. The method is registered
+  in the guider command table (TCP 4400); a request that reaches the main imager and is relayed to the
+  guider is a separate route with its own side effects, outside this entry's tier.
+grade: PURE GETTER / probable (64-bit build; 32-bit build matches (READ))
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build), GearDialog::GetConnected
+  @0xdbe60
+side_effects: None established for the handler; the mount and auxiliary name getters are virtual calls
+  whose targets are not closed.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_connected request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_connected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build)
+reply_success:
+  title: get_connected success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetConnectedResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build), GearDialog::GetConnected
+          @0xdbe60
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No handler-specific error was recovered.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 10
+    method: get_connected
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_connected
+    result:
+      mount: 0
+      mount_name: Example mount
+      camera:
+        name: Example camera
+        path: cam-0
+    code: 0
+    id: 10
+see_also:
+- get_camera_binning
+spec:
+- spec/guider/index.md#method-groups

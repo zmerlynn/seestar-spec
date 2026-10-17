@@ -1,0 +1,83 @@
+kind: method
+name: set_test_setting
+summary: Change the device test/hot settings (heater, cooler, 5 GHz station, goto simulation flags).
+description: Copies the current test and hot settings, applies the members that are present and correctly
+  typed, and writes both back, persisting configuration. Six members are assigned (auto_open_heater,
+  auto_open_cooler, station_5g, goto_simulate, new_solve_exec and autogoto_threshold). autogoto_threshold
+  is persisted when it differs from the stored value. Booleans may be sent as integers; wrong member types
+  are ignored silently. Other internally persisted flags not read by this call are written back as copied.
+  plan_simulate has no setter here. autogoto_threshold is a unitless fraction of the smaller field-of-view
+  dimension (see get_test_setting); the other flags' semantics are unresolved beyond the member names.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc9860 (new_solve_exec stored @0xc9c24/@0xc9c28,
+  autogoto_threshold parsed @0xc9adc and stored @0xc9c30/@0xc9c34), SetTestSetting @0x11fef0 (writes
+  autogoto_threshold when it differs), SetHotSetting @0x120270 (64-bit build)
+side_effects: Updates the operational test/hot setting globals and writes configuration files. No timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_test_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_test_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetTestSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null or not an object
+  label: expected object param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No member type or range errors are emitted. The inspected setter always reports success.
+examples:
+- name: heater
+  summary: Enable automatic heater
+  of: request
+  payload:
+    id: 50
+    method: set_test_setting
+    params:
+      auto_open_heater: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_test_setting
+    result: 0
+    code: 0
+    id: 50
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_test_setting
+    error: expected object param
+    code: 107
+    id: 51
+see_also:
+- get_test_setting
+spec:
+- spec/control/device-state-and-settings.md#app-and-test-settings

@@ -1,0 +1,27 @@
+title: scope_get_track_mode result
+type: object
+required:
+- name
+- list
+- index
+description: Tracking mode state.
+properties:
+  name:
+    type: string
+    description: Current tracking mode name. Type INFERRED from the key name.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build)
+  list:
+    type: array
+    description: Selectable mode labels as formatted from the driver list. Element type INFERRED.
+    items:
+      type: string
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build)
+  index:
+    type: integer
+    description: Index of the current mode. Relation to list unresolved.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build); member types INFERRED

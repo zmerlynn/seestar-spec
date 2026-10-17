@@ -1,0 +1,102 @@
+kind: method
+name: scope_get_time
+summary: Read the mount clock as a pair of strings (offset and UTC).
+description: 'Queries the connected mount for its time and returns a two-string array described by the
+  evidence as offset and UTC. The text format and the zone-offset convention are unresolved. Served by
+  the guider process (TCP 4400); a client on the main command port reaches it through the imager unknown-method
+  relay, which is unavailable to guest-table clients. The native-handler grade below does not describe
+  the relay. Mount serial (firmware 9.31, READ): :GL, :GC, :GG.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x79560 (64-bit build)
+side_effects: Live query of the connected mount through the native mount layer; no motion or setting change
+  is established. Tier C rests on the supplied native mount query path; other runtime-selected mount implementations
+  are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_time request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_time
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x79560 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetTimeResult.yaml
+        description: Two-string array [offset, UTC].
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x79560 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 207
+  trigger: Mount operation failed
+  label: fail to operate
+- code: 210
+  trigger: The connected mount type does not support the operation
+  label: not supported
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+errors_note: Further branches forward the error code recorded by the native mount layer; those codes are
+  not exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: scope_get_time
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_time
+    result:
+    - +01:00
+    - '2026-01-31T12:00:00'
+    code: 0
+    id: 5
+- name: err-315
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_time
+    error: mount is not connected
+    code: 315
+    id: 6
+see_also:
+- scope_get_location
+- scope_get_state
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

@@ -1,0 +1,102 @@
+kind: method
+name: get_photometry_result
+summary: List the photometry result CSV files stored on the device.
+description: 'Enumerates the CSV files in the photometry results folder of the current image storage root
+  and parses each synchronously for a star name and coordinates. A file that cannot be opened or parsed
+  still appears, with an empty star_name and has_ra_dec_deg_j2000 false. When the enumeration returns
+  nothing (or the folder cannot be opened) the reply is an error whose code is inherited and normalised
+  to 207. Firmware 9.75, app 3.4.0: each entry also carries is_variable (bool). The new get_photometry_result_json
+  returns the rows of one file.'
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+side_effects: Reads the directory and every CSV file; may block with no timeout or file-count bound. No
+  request filter and no hardware change. The only writes are shared diagnostic log entries (after a successful
+  directory open, and on a CSV open failure).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_photometry_result request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_photometry_result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_photometry_result success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetPhotometryResultResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: No entries found, or the folder could not be opened (inherited thread-local code, zero normalised)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The exact inherited code on an empty enumeration is unresolved; 207 is the documented fallback.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 141
+    method: get_photometry_result
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_photometry_result
+    result:
+      path: MyWorks/PhotoMetry
+      files:
+      - name: example_result.csv
+        last_save_time: '2026-01-31 21:30:00'
+        star_name: Example target
+        has_ra_dec_deg_j2000: true
+        ra_dec_deg_j2000:
+        - 210.8
+        - 54.3
+      - name: other_result.csv
+        last_save_time: '2026-01-30 20:00:00'
+        star_name: ''
+        has_ra_dec_deg_j2000: false
+    code: 0
+    id: 141
+- name: empty
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_photometry_result
+    error: fail to operate
+    code: 207
+    id: 142
+see_also:
+- get_photometry_result_json
+- get_saved_photometry_stars
+spec:
+- spec/control/solving-and-annotation.md#photometry

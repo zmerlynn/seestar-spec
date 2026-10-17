@@ -1,0 +1,45 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: set_test_setting params
+type: object
+description: Test/hot settings to change. Every member is optional; a missing or wrongly typed member
+  is silently ignored and keeps its current value. No ranges are checked and unknown keys are ignored.
+  There is no setter for plan_simulate here.
+properties:
+  new_solve_exec:
+    type: &id001
+    - boolean
+    - integer
+    description: Accepted as boolean or integer and stored in the test-setting record (assigned).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build), key @0x72e6d8, store @0xc9c24/@0xc9c28
+  autogoto_threshold:
+    type: number
+    description: Accepted as float or integer and stored in the test-setting record (assigned); persisted
+      when it differs from the stored value. Unitless fraction of the smaller field-of-view dimension (FOV
+      divisor INFERRED); see get_test_setting.
+    x-confidence: READ; FOV divisor INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build), key @0x72e6e8, parse @0xc9adc,
+      store @0xc9c30/@0xc9c34; SetTestSetting @0x11fef0
+  auto_open_heater:
+    type: *id001
+    description: Open the heater automatically (assigned).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build), key @0x72e700
+  auto_open_cooler:
+    type: *id001
+    description: Open the cooler automatically (assigned).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build), key @0x72e718
+  station_5g:
+    type: *id001
+    description: Station-mode 5 GHz flag (assigned).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build), key @0x72e730
+  goto_simulate:
+    type: *id001
+    description: Simulate goto (assigned).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build), key @0x7340e8
+additionalProperties: true
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc9860 (64-bit build)

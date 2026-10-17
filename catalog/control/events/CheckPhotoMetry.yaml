@@ -1,0 +1,141 @@
+kind: event
+name: CheckPhotoMetry
+summary: State of the photometry check stage, with the solved coordinate at completion.
+description: 'The view stage started by check_photometry runs CheckPhotoMetryFunc as a named function
+  before capture. Function-state family (SendFuncEvent): state is always written; stage only when non-empty;
+  lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored
+  code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely on
+  seeing every transition. Its formatter adds ra_dec_deg_j2000 only in complete; it is not present while
+  working. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC
+  reply that starts the worker and the worker''s events can arrive in either order. No fixed cadence.
+  The RPC reference leaves the Event-name binding unresolved; the events audit reads it.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, CheckPhotoMetryFunc @0x1fd5f0, PrintCheckPhotoMetry @0x1fa810,
+  PrintFuncState @0x6e2100 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: CheckPhotoMetry event
+  type: object
+  discriminator: Event
+  description: Function-state members plus the completion coordinate.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: CheckPhotoMetry
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CheckPhotoMetryFunc @0x1fd5f0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; CheckPhotoMetryFunc @0x1fd5f0,
+        StartCheckPhotoMetry @0x1feaf0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'At fail, even if 0. Worker codes named by the RPC reference: 238 exposure failed,
+        251 solve failed, 204 out of image, 253 aborted, 300 conversion error.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    ra_dec_deg_j2000:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Cached coordinate pair (RA, Dec). RA is stored as hours times 15 (READ); degrees and
+        J2000 are INFERRED from the key name and that conversion. No validity test after the state check.
+      x-required-when: state complete only
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintCheckPhotoMetry @0x1fa810
+    has_download_ref_star:
+      type: boolean
+      description: 'Firmware 9.75, app 3.4.0: written next to ra_dec_deg_j2000 at the same state check (printed as a raw true or false) and reporting a stored flag, most likely whether the reference stars were downloaded (meaning INFERRED from the name). The condition that sets it was not traced. Absent in firmware 9.31.'
+      x-required-when: state complete (same check as ra_dec_deg_j2000; firmware 9.75)
+      x-confidence: READ (existence, place); meaning INFERRED
+      x-basis: static analysis of firmware 9.75, resolver report E, PrintCheckPhotoMetry @0x221bd0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintCheckPhotoMetry @0x1fa810
+examples:
+- name: complete
+  summary: Completion (READ shape; values invented)
+  of: payload
+  payload:
+    Event: CheckPhotoMetry
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 9100
+    ra_dec_deg_j2000:
+    - 120.5
+    - 20.25
+    route:
+    - View
+    - CheckPhotoMetry
+- name: fail
+  summary: Solve failure (READ shape; values invented)
+  of: payload
+  payload:
+    Event: CheckPhotoMetry
+    Timestamp: '1234.123456789'
+    state: fail
+    lapse_ms: 4000
+    code: 251
+    error: solve failed
+see_also:
+- check_photometry
+- get_photometry_result
+- iscope_get_app_state
+spec:
+- spec/control/solving-and-annotation.md#photometry
+- spec/control/events-overview.md

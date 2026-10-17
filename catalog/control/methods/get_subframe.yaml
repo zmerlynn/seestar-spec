@@ -1,0 +1,84 @@
+kind: method
+name: get_subframe
+summary: Read the current crop (sub-frame) rectangle.
+description: On the focus page returns the video-capture rectangle; elsewhere reads the camera crop under
+  the camera lock. On the focus page a missing cached bin or non-positive cached dimensions trigger camera
+  queries that initialise shared video-capture parameters, which is why the strict grade is MUTATOR although
+  the effect is a cache refresh.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100 (64-bit
+  build)
+side_effects: Initialises the shared video-capture parameter cache from read-only camera queries; no crop
+  is set and no worker is started.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_subframe request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_subframe
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100
+        (64-bit build)
+reply_success:
+  title: get_subframe success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetSubframeResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbbfc0, GetSubframe, GetVideoCapParam @0x20e100
+          (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Camera absent or closed (non-focus pages)
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other failures from the bin query or the SDK crop getter are forwarded unnamed; a closed
+  list is unresolved.
+examples:
+- name: read
+  of: request
+  payload:
+    id: 75
+    method: get_subframe
+- name: ok
+  summary: Values invented
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_subframe
+    result:
+      width: 1080
+      height: 1920
+      x: 0
+      y: 0
+    code: 0
+    id: 75
+see_also:
+- set_subframe
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

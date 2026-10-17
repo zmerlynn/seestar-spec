@@ -1,0 +1,43 @@
+title: start_export_image params
+type: object
+description: Optional parameters of start_export_image. A single-element array [object] is also accepted;
+  absent, null, scalar and empty-array params behave as an empty object. An unknown key, or a files member
+  that is not an array, is rejected with 109. Duplicate keys are processed in order, and file selections
+  resolve against the source in force at that point, so a later src does not rebase earlier selections.
+properties:
+  keep:
+    type: boolean
+    description: Keep source files after copying. false permits the worker to delete sources. A boolean
+      or integer is accepted (zero false, non-zero true); a failed conversion silently leaves the current
+      value.
+    x-default: 'true'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit build)
+  src:
+    type: string
+    description: Source storage name (emmc, sd or udisk), matched case-insensitively and exactly; unknown
+      names map to an invalid storage. The handler reads the member without a type check, so a non-string
+      has no safe canonical reply.
+    x-default: the current storage
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit build)
+  dst:
+    type: string
+    description: Destination storage name; same matching as src. Must differ from src.
+    x-default: the current destination setting
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit build)
+  files:
+    type: array
+    description: 'Entries under the source image path to export. Each string selects a path: an existing
+      regular file adds the file and its accessories, a directory enumerates its media and adds a directory
+      marker, a missing path is skipped. Non-string entries are skipped. When files is omitted the whole
+      source image path is enumerated. An empty or all-invalid selection is rejected with 267. No path
+      sanitisation or bounds are shown.'
+    items:
+      type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit build)
+additionalProperties: false
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd5ad0, StartExportImage @0x130190 (64-bit build)

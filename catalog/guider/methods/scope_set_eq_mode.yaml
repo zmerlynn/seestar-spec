@@ -1,0 +1,114 @@
+kind: method
+name: scope_set_eq_mode
+summary: Switch the mount between equatorial and alt-azimuth operation.
+description: 'Needs a connected mount (315) and a valid equ_mode (106). The driver mode setter reads the
+  controller status and requires the mount to be at its home (folded) position; otherwise it fails with
+  254 and sends nothing (INFERRED that the status flag tested means "at home"). It then sends the controller''s
+  equatorial or alt-azimuth mode command; a failed write replies with the thread error code, no specific
+  code being set. After a successful write it reloads the stored user location and re-applies it to the
+  mount for the new mode (failures there are only logged), emits MountMode with equ_mode, and the handler
+  replies 0. A client SHOULD park first, or use scope_park with equ_mode. Served by the guider process
+  (TCP 4400); a client on the main command port reaches it through the imager unknown-method relay, which
+  is unavailable to guest-table clients. The native-handler grade below does not describe the relay. Mount
+  serial (firmware 9.31, READ): requires the home flag H in :GU, then :AA (alt-az) or :AP (equatorial).'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x7cff0 (64-bit build); driver SetEqMode @0xf2900 (status
+  read, "not home pos" branch sets 254), SetEqModeCmd @0xf0aa0 (mode command, LoadUserLocation, location
+  re-apply, MountMode emit)
+side_effects: Changes the mount mode and re-applies the stored site location to the mount. MountMode with
+  equ_mode is emitted only after a successful mode write (READ; see mount-and-motion R40).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_eq_mode request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_eq_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetEqModeParams.yaml
+      description: Mode flag.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x7cff0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 106
+  trigger: equ_mode missing, null or not a boolean/integer
+  label: expected bool param
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+- code: 254
+  trigger: The mount is not at its home (folded) position; nothing is sent
+  label: mount operation failed
+errors_note: A failed mode write replies with the current thread error code, which the driver does not
+  set to a specific value; those codes are not exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 51
+    method: scope_set_eq_mode
+    params:
+      equ_mode: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_eq_mode
+    result: 0
+    code: 0
+    id: 51
+- name: err-106
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_eq_mode
+    error: expected bool param
+    code: 106
+    id: 52
+- name: not-home
+  summary: Mount not at its home position
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_eq_mode
+    error: mount operation failed
+    code: 254
+    id: 53
+see_also:
+- MountMode
+- scope_park
+- scope_get_mode
+- scope_get_pierside
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#equatorial-mode
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

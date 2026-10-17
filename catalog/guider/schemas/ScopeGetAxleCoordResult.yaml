@@ -1,0 +1,11 @@
+title: scope_get_axle_coord result
+type: array
+minItems: 2
+maxItems: 2
+description: Two numbers, the mount's axle coordinates. Axis order, units and frame are not established.
+items:
+  type: number
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler 0x78e20 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x78e20 (64-bit build)

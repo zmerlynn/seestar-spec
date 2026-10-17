@@ -1,0 +1,136 @@
+title: set_focuser_setting params
+description: 'Object of any subset of the 14 setting members (positional form: an array whose first element
+  is the object). Absent members keep their current value (the handler starts from a snapshot of the current
+  settings). An empty object still runs validation and apply. Unknown keys and wrongly typed recognised
+  members give 109. No position, max_step or backlash input is accepted here. Absent, empty array or non-object
+  gives 107.'
+type: object
+properties:
+  fine_step:
+    type: integer
+    minimum: 0
+    maximum: 5000
+    description: Optional; absent keeps the current value. Fine focus step in UI steps (INFERRED unit).
+      Range 0..5000.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)
+  coarse_step:
+    type: integer
+    minimum: 0
+    maximum: 5000
+    description: Optional; absent keeps the current value. Coarse focus step in UI steps (INFERRED unit).
+      Range 0..5000.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)
+  af_temp_span:
+    type: integer
+    minimum: 0
+    maximum: 50
+    description: 'Optional; absent keeps the current value. Autofocus temperature trigger in degrees Celsius:
+      with af_temp_change_on set, autofocus runs before a light frame when the focuser temperature differs
+      from the temperature at the last autofocus by more than this value (READ). Range 0..50.'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_init_step:
+    type: integer
+    minimum: 0
+    maximum: 500
+    description: Optional; absent keeps the current value. Autofocus initial step in UI steps (INFERRED
+      unit). Range 0..500.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)
+  af_bin:
+    type: integer
+    description: Optional; absent keeps the current value. Autofocus binning factor (INFERRED). Range
+      changed value must be 1..camera maximum bin (4 when the maximum cannot be queried); an unchanged
+      value bypasses the check.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)
+  af_exp_sec:
+    type: number
+    minimum: 0
+    maximum: 30
+    description: Optional; absent keeps the current value. Autofocus exposure in seconds (INFERRED unit).
+      Integer or real, range 0..30.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)
+  af_time_span_hour:
+    type: number
+    minimum: 0
+    maximum: 24
+    description: 'Optional; absent keeps the current value. Autofocus time trigger in hours since the last
+      autofocus: with af_time_change_on set, autofocus runs when more than this many hours have passed (READ).
+      Integer or real, range 0..24.'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_temp_change_on:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Enables the temperature trigger (af_temp_span);
+      third in the trigger order (READ). Boolean or integer (zero is false).'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_time_change_on:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Enables the time trigger (af_time_span_hour);
+      fourth in the trigger order (READ). Boolean or integer (zero is false).'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_wheel_change:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Autofocus before a light frame when the filter
+      slot changed; second in the trigger order (READ). Boolean or integer (zero is false).'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_before_capture:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Autofocus before the first capture of a run; first
+      in the trigger order (READ; first frame INFERRED from the frame-index test). Boolean or integer (zero is
+      false).'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_merid_flip:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Autofocus after an automatic meridian flip when
+      the focuser is open and the frame is a light frame through a non-dark filter (READ). Boolean or integer
+      (zero is false).'
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_track_on:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Stored and returned; nothing in the firmware reads
+      it (READ). Boolean or integer (zero is false).'
+    x-confidence: 'READ'
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+  af_only_one:
+    type:
+    - boolean
+    - integer
+    description: 'Optional; absent keeps the current value. Passed to the focus algorithm as an option; it
+      does not trigger autofocus. Its exact effect in the algorithm is unresolved. Boolean or integer (zero is
+      false).'
+    x-confidence: 'READ (storage); unresolved (effect)'
+    x-basis: 'static analysis of firmware 9.31, handler @0xcc570, AutoSaveExpProcess(EXP_SEQUENCE) @0x216e20,
+      AutoSaveExpProcess(plan) @0x30cc70, MeridianFlip @0x188530, AutoFocusFunc @0x26e240 (64-bit build)'
+additionalProperties: false
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcc570 (64-bit build)

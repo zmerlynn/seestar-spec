@@ -1,0 +1,183 @@
+type: object
+description: 'Applied in D64 order: adjustment/dbe_enable, dbe, star_correction, drizzle2x, wide_denoise,
+  wide_size_index, scene_separate, scene_shooting_duration_min, capt_type (cont_capt only if capt_type
+  absent), capt_num, save_*, goto, move_sleep_sec, light_duration_min, auto_lenhance, airplane_line_removal.
+  An empty object is a no-op success. The 32-bit build supports a reduced member set and ignores unknown
+  nested keys.'
+properties:
+  brightness:
+    type:
+    - integer
+    - number
+    description: Image adjustment. brightness, contrast and saturation must all be valid to apply the
+      adjustment; a partial triple is silently skipped (the internal 108 is not returned).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  contrast:
+    type:
+    - integer
+    - number
+    description: See brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  saturation:
+    type:
+    - integer
+    - number
+    description: See brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  dbe_enable:
+    type:
+    - boolean
+    - integer
+    description: Applied with the adjustment triple only; default false. Boolean or integer (nonzero is
+      true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  dbe:
+    type:
+    - boolean
+    - integer
+    description: Malformed 106. Queues a Setting event. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  star_correction:
+    type:
+    - boolean
+    - integer
+    description: Malformed 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  drizzle2x:
+    type:
+    - boolean
+    - integer
+    description: Malformed 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_denoise:
+    type:
+    - boolean
+    - integer
+    description: Malformed 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  wide_size_index:
+    type: integer
+    description: Wrong type 104; no range check.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  scene_separate:
+    type: integer
+    description: Integer only (zero is false); a JSON boolean gives 104.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  scene_shooting_duration_min:
+    type: integer
+    description: Minutes (INFERRED); noninteger 104; no bound.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  capt_type:
+    type: string
+    description: stack, cont_capt, photometry, startrails, timelapse. Nonstring 105; unknown string is
+      silently ignored (and skips the cont_capt fallback); a recognised type not allowed for the camera
+      gives 209; 259 while stacking; 536 during a view plan. Wide camera allows ids 0, 4, 5.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  cont_capt:
+    type:
+    - boolean
+    - integer
+    description: Read only when capt_type is absent; false is stack, true is cont_capt. Malformed 106;
+      true on a wide camera 209. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  capt_num:
+    type: integer
+    description: Wrong type 104; no range check.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  save_discrete_frame:
+    type:
+    - boolean
+    - integer
+    description: Invalid gives 104 despite the boolean parser. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  save_discrete_ok_frame:
+    type:
+    - boolean
+    - integer
+    description: Invalid gives 104. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  save_meteor_frame:
+    type:
+    - boolean
+    - integer
+    description: Invalid gives 104. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  save_video:
+    type:
+    - boolean
+    - integer
+    description: Invalid gives 104. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  goto:
+    type:
+    - boolean
+    - integer
+    description: Invalid gives 104. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  move_sleep_sec:
+    type: integer
+    description: Seconds (INFERRED); wrong type 104.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  light_duration_min:
+    type: integer
+    description: Minutes (INFERRED); wrong type 104. A value above 360 is rejected internally with 204
+      but this branch ignores the failure.
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  auto_lenhance:
+    type:
+    - boolean
+    - integer
+    description: Malformed 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  airplane_line_removal:
+    type:
+    - boolean
+    - integer
+    description: Malformed 106. Boolean or integer (nonzero is true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  startrail_mode:
+    type: integer
+    minimum: 0
+    maximum: 2
+    description: 'Firmware 9.75, app 3.4.0: star-trail output mode, 0 maximum-image video, 1 decay video, 2
+      both. Non-integer 104; wide camera only (210 otherwise); a value above 2 or a negative value gives
+      209. No running-stack check: a change clears the stack. The video is written only when save_video
+      is true. Persisted as stack.startrail_mode. Not in firmware 9.31; no 32-bit counterpart string found
+      (string-level only).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting handler @0x10c238,
+      SetStackSetting @0x1c3c30, config-change handler @0x1bc3e4 (64-bit build)
+  startrails_duration_min:
+    type: integer
+    description: 'Firmware 9.75, app 3.4.0: star-trail session limit in minutes; -1 (default) or 0 means no
+      limit. Non-integer 104; wide camera only (210); 259 while a stack runs; no range check. The value is
+      copied when the session starts. When the elapsed time reaches it the stack worker takes the normal
+      end-of-stack path; the final event or state is unresolved. Persisted as stack.startrails_duration_min.'
+    x-confidence: READ; final event unresolved
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting handler @0x10c42c,
+      StackFunc @0x1c5060 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

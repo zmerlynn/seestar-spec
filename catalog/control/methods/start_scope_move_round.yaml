@@ -1,0 +1,89 @@
+kind: method
+name: start_scope_move_round
+summary: Start the scope movement round used while sampling compass data (requires an active compass sampling
+  run).
+description: 'No parameters are read. Requires the compass calibration state to be 1 (sampling, see start_compass_calibration);
+  under the mutex it then starts the scope-move worker thread. The reply is a start acknowledgement only:
+  there is no wait for the round to finish and no timeout. The exact slew trajectory and rate are not
+  established by this wrapper. The round reports through two events (READ for each emitter): its move
+  step sends CompassCalibration events, including failure codes 241, 300 and 320, and the round worker
+  thread sends one ScopeMoveRound event with result success or fail when it ends. That the thread started
+  here runs that worker is INFERRED from the function names: the start wrapper starts a thread object
+  whose entry function is not visible in it.'
+grade: MUTATOR / established (64-bit build and 32-bit build, command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8940 (64-bit build); helper startScopeMoveRound (64-bit
+  build); move step scopeMoveRound @0x184160, round worker scopeMoveRoundThreadFunc @0x119e40
+side_effects: Starts a worker thread that moves the mount. Full command-socket calls also incur the shared
+  diagnostic (logging) writes; this is why the strict grade is MUTATOR even for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_scope_move_round request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_scope_move_round
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc8940 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Compass state is not 1; the helper logs and returns false without setting a code, so the dispatcher
+    default applies
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: If the worker thread fails to start, the error code comes from the thread helper and is unresolved.
+  A mutex failure throws.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 27
+    method: start_scope_move_round
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_scope_move_round
+    result: 0
+    code: 0
+    id: 27
+- name: not-sampling
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_scope_move_round
+    error: fail to operate
+    code: 207
+    id: 28
+see_also:
+- ScopeMoveRound
+- CompassCalibration
+- start_compass_calibration
+- stop_compass_calibration
+- not_move
+- can_move
+spec:
+- spec/control/polar-alignment.md#compass-calibration

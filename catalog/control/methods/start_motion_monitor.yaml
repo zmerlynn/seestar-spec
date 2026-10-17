@@ -1,0 +1,140 @@
+kind: method
+name: start_motion_monitor
+summary: 'Start the motion monitor: watch the scene for movers, then track or capture (firmware 9.75,
+  64-bit only).'
+description: New in firmware 9.75, app 3.4.0, 64-bit build only (the 32-bit build has no such method).
+  Runs a worker that detects motion, then either tracks the object or captures, then optionally returns
+  the mount to its origin. Requires scenery view mode (view mode 1). All members are optional and omitted
+  members keep their persisted values; the settings are saved. The detection area follows from sensitivity
+  and is not client-settable. Progress is reported by the MotionMonitor event.
+grade: MUTATOR / READ
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+side_effects: Saves the motion-monitor settings, stops any object track (remembering its state), and starts
+  a worker thread that drives detection, tracking or capture and mount return.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_motion_monitor request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_motion_monitor
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      description: All members optional; params may be absent. A non-object gives 107.
+      properties:
+        mode:
+          type: string
+          description: auto_track (0) or auto_capture (1). Other string 209, other type 105.
+          enum:
+          - auto_track
+          - auto_capture
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+        sensitivity:
+          type: string
+          description: low (0), middle (1) or high (2). Other string 209, other type 105.
+          enum:
+          - low
+          - middle
+          - high
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+        return_to_origin:
+          type: boolean
+          description: Return the mount to its start position afterwards. Wrong type 106.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+        waiting_time:
+          type: integer
+          description: Waiting time setting (unit unresolved). Wrong type 104.
+          x-confidence: READ; unit unresolved
+          x-basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+        duration_min:
+          type: integer
+          description: 'Run length in minutes: -1 for unlimited, otherwise 1 to 35791394. Out of range
+            209, wrong type 104.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0xf0010 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params is not an object
+  label: expected object
+- code: 209
+  trigger: a member value is out of range
+  label: invalid argument
+- code: 105
+  trigger: mode or sensitivity is not a string
+  label: expected string
+- code: 106
+  trigger: return_to_origin is not a bool
+  label: expected bool
+- code: 104
+  trigger: waiting_time or duration_min is not an integer (meaning INFERRED)
+  label: expected int
+- code: 524
+  trigger: smart follow, mount, AVI record, motion detection or object track conflicts
+  label: busy
+- code: 300
+  trigger: RTSP not running, or the second-camera query got no valid answer
+  label: not ready
+- code: 268
+  trigger: already running
+  label: already running
+- code: 210
+  trigger: view mode is not scenery mode
+  label: wrong mode
+- code: 254
+  trigger: stopping the track failed or the alt/az origin could not be read
+  label: track stop failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Exact precondition order is in the handler and is not tabulated. Whether the whole call relays
+  by target camera is INFERRED.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 84
+    method: start_motion_monitor
+    params:
+      mode: auto_track
+      sensitivity: middle
+      return_to_origin: true
+      duration_min: -1
+  summary: READ shape, not captured; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_motion_monitor
+    result: 0
+    code: 0
+    id: 84
+see_also:
+- stop_motion_monitor
+- set_motion_detection
+- start_smart_follow
+- MotionMonitor
+spec:
+- spec/control/function-states.md#motion-monitor

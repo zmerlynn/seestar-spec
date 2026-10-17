@@ -1,0 +1,21 @@
+title: move_focuser result
+description: Integer 0 when ret_step is false; otherwise an object with the reported step.
+oneOf:
+- type: integer
+  const: 0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)
+- type: object
+  required:
+  - step
+  properties:
+    step:
+      type: integer
+      description: The requested step clamped to 0 and the cached logical maximum position (not a measured
+        final position).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build), GetValue(control 3)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)

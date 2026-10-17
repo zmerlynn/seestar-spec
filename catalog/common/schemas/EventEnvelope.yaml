@@ -1,0 +1,18 @@
+title: event envelope
+type: object
+discriminator: Event
+description: >-
+  Every unsolicited device-to-client message. The Event member names the event. The envelope adds no
+  id, but some events carry an event-specific id member (for example Sequence), so receivers MUST
+  classify a message as an event by the presence of Event, not by the absence of id.
+required: [Event, Timestamp]
+properties:
+  Event:
+    type: string
+    description: Event name, for example ViewPlan.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20
+  Timestamp:
+    $ref: './Timestamp.yaml'
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0

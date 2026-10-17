@@ -1,0 +1,92 @@
+kind: method
+name: set_settings
+summary: Apply serial connection settings (baud rate, word size, stop bits, parity) on the guider ser2net
+  control endpoint.
+description: 'This method belongs to the guider ser2net control table (raw serial bridge control), not
+  to the main guider command table, and is not automatically relayed from the imager. Params is {"setting":
+  {...}} or a positional array whose first element is the setting object; only the integer children baudrate,
+  word_size, stop_bits and parity are processed, each defaulting to -1. A negative value, or one equal
+  to the current value, leaves that setting unchanged; if anything changed the device is reopened with
+  the new settings and, on success, they are saved and persist. The reply is always result 0 once the
+  shape check passes, even if the settings could not be applied (failures are only logged); a client must
+  not treat result 0 as proof that the line settings changed. An invalid root shape or a missing
+  or non-object setting gives 107; the positional array root is accepted. Served by the guider''s ser2net
+  control server on TCP 4040 (all interfaces; in the client-verification set). The raw bridge on 4030 accepts
+  a client only while its IP is verified on 4040. READ.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build); CFdHandler::set_setting
+  @0x26520; open_serial @0x246b0
+side_effects: Applies serial connection settings to the underlying serial device (operational configuration).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_settings request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_settings
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SetSettingsParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ser2net control handler @0x1ff00 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Root shape invalid, or setting missing or not an object
+  label: expected object param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 107 is the only handler error; apply failures are not reported (result 0). Whether the 4040
+  server also gives the 4400 dispatcher's 101 (unparseable) and 103 (unregistered method) is not stated.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 16
+    method: set_settings
+    params:
+      setting:
+        baudrate: 9600
+        word_size: 8
+        stop_bits: 1
+        parity: 0
+  summary: Shape READ; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_settings
+    result: 0
+    code: 0
+    id: 16
+- name: no-setting
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_settings
+    error: expected object param
+    code: 107
+    id: 17
+see_also: []
+spec:
+- spec/guider/serial-bridge.md#set_settings
+- spec/guider/serial-bridge.md#control-table
+- spec/transport/ports.md#ports-a-client-does-not-normally-use

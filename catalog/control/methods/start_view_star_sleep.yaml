@@ -1,0 +1,87 @@
+kind: method
+name: start_view_star_sleep
+summary: Start the Sleep view stage (view stage 4) on the open camera.
+description: No request parameters are read. If the view thread is already running stage 4 the call succeeds
+  without restarting. Otherwise it requires an open camera, stops any current view, sets stage 4 and view
+  mode 0, clears the camera subframe, selects page 0 and starts a named view thread, then returns without
+  waiting for the stage to finish. On failure the reply carries the thread-local error code (207 when
+  none was set). The stage reports through the Sleep function-state event, with working on entry, then cancel
+  when a new view or stop request ends it (internal code 253, not sent), otherwise complete or fail. The
+  stage only waits, in 60-second steps, while it runs. Emission READ; state-name mapping INFERRED.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc94b0 (64-bit build), StartViewStarStage @0x3c1570; Sleep
+  emission from ViewFunc sleep stage @0x3c5d64
+side_effects: Stops the current view, resets view mode and camera subframe, switches the displayed page
+  and starts the Sleep view thread. Blocking time of the prior view stop is not established.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_view_star_sleep request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_view_star_sleep
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc94b0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: The camera is not open
+  label: device not connected
+- code: 212
+  trigger: The named view thread could not be created
+  label: fail to create thread
+- code: 207
+  trigger: The helper failed without assigning a code
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other codes propagated from camera, page and thread helpers may occur; that set is unresolved.
+examples:
+- name: start
+  of: request
+  payload:
+    id: 61
+    method: start_view_star_sleep
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_view_star_sleep
+    result: 0
+    code: 0
+    id: 61
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_view_star_sleep
+    error: device not connected
+    code: 318
+    id: 62
+see_also:
+- iscope_stop_view
+spec:
+- spec/control/viewing-and-exposure.md#view-stages-started-directly
+- spec/control/power-and-storage.md#shutdown-reboot-and-sleep

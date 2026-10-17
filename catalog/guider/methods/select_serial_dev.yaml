@@ -1,0 +1,88 @@
+kind: method
+name: select_serial_dev
+summary: Select the active serial device from the enumerated serial list.
+description: Enumerates the serial devices, matches the supplied name or id and changes the active serial
+  device through the file-descriptor handler setting. Exact name validation, rescan ordering and reconnect
+  side effects are unresolved. Via the imager command port (4700) the request reaches this handler only
+  as a forwarded unknown method; see the control service for the relay.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x829c0 (64-bit build)
+side_effects: Changes the active serial device configuration.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: select_serial_dev request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: select_serial_dev
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/SelectSerialDevParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x829c0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 102
+  trigger: Parameter of an unsupported shape
+  label: invalid params
+- code: 105
+  trigger: String expected but another type supplied
+  label: expected string param
+- code: 209
+  trigger: No serial device matches the name or id
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 48
+    method: select_serial_dev
+    params: ttyUSB0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: select_serial_dev
+    result: 0
+    code: 0
+    id: 48
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: select_serial_dev
+    error: invalid value
+    code: 209
+    id: 49
+see_also:
+- select_mount_list_index
+spec:
+- spec/guider/index.md#method-groups

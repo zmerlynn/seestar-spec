@@ -1,0 +1,47 @@
+kind: event
+name: CameraStateChange
+summary: Envelope-only notification that the camera was opened or closed.
+description: 'Broadcast on TCP 4700 (channel I) to all retained sockets when open_camera succeeds or close_camera
+  succeeds; no timer. Carries no camera state, name or path: query the camera getter for the new state.
+  Family N (Event and Timestamp only). APK: the name is a defined constant; no Event branch established.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, open_camera @0xd0bc0, close_camera @0xd09b0 (64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: CameraStateChange event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: CameraStateChange
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, open_camera @0xd0bc0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, open_camera @0xd0bc0, close_camera @0xd09b0
+examples:
+- name: opened
+  summary: READ shape, not captured
+  of: payload
+  payload:
+    Event: CameraStateChange
+    Timestamp: '1234.123456789'
+see_also:
+- open_camera
+- close_camera
+- get_camera_state
+spec:
+- spec/control/viewing-and-exposure.md#camera-lifecycle
+- spec/control/events-overview.md

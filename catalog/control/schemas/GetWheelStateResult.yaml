@@ -1,0 +1,45 @@
+title: get_wheel_state result
+type: object
+required:
+- state
+description: Wheel status. Only state is always present.
+properties:
+  state:
+    type: string
+    description: close when no wheel is selected. Otherwise calibrating or moving while the movement thread
+      runs (calibrating when the calibration flag is set), idle when stopped with status code 0, error
+      when stopped with a nonzero status code.
+    enum:
+    - close
+    - idle
+    - moving
+    - calibrating
+    - error
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbaa0 (64-bit build)
+  id:
+    type: integer
+    description: Selected wheel id. Absent when state is close.
+    x-required-when: state is not close
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbaa0 (64-bit build)
+  unidirection:
+    type: boolean
+    description: Unidirection flag. Always false in the 64-bit status routine. Absent when state is close.
+    x-required-when: state is not close
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbaa0, GetWheelStatus @0x3018a0 (64-bit build)
+  error:
+    type: string
+    description: Error message for the nested status code. Present only when state is error.
+    x-required-when: state is error
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbaa0 (64-bit build)
+  code:
+    type: integer
+    description: Nested status code. Present only when state is error; independent of the envelope code.
+    x-required-when: state is error
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbbaa0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbbaa0 (64-bit build)

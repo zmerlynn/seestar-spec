@@ -1,0 +1,112 @@
+kind: method
+name: clear_app_state
+summary: Mark a named function state as ignored so it drops out of the app-state reports.
+description: Resolves the named function in the device function tree and marks its state ignored; the
+  helper result is discarded, so an unknown name is not an error. In some secondary-camera and view-mode
+  conditions the same request is also relayed to the secondary process. Related tree callback effects
+  and relay failure behaviour are unresolved. The app sends it with {name}. Firmware 9.75, the relay check is the type-0 form (no occupancy test, relay only), so this method gives no 203 or 524. READ (64-bit, call form; 9.31 not diffed).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc83e0, IgnoreFunc @0x6e3320, RelayUsrData2Slave @0xae0a0
+  (64-bit build); firmware 9.75 relay check @0xbc980
+side_effects: Marks a function-tree entry ignored (hidden from state reports) and possibly relays the
+  change to the secondary process. No timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_app_state request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_app_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+        description: Function name to mark ignored. No enum, range or emptiness check; an unknown name
+          has an unresolved effect and is not reported.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc83e0 (64-bit build)
+      - type: array
+        items:
+          type: string
+          description: Function name to mark ignored. No enum, range or emptiness check; an unknown name
+            has an unresolved effect and is not reported.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc83e0 (64-bit build)
+        description: 'Positional form: first element only.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc83e0 (64-bit build)
+      - type: object
+        required:
+        - name
+        properties:
+          name:
+            type: string
+            description: Function name to mark ignored. No enum, range or emptiness check; an unknown
+              name has an unresolved effect and is not reported.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xc83e0 (64-bit build)
+        additionalProperties: true
+        description: Keyed form.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc83e0 (64-bit build)
+      description: Required name as a string, the first element of an array, or an object member name.
+        Absent, null, missing key, empty array and non-strings are rejected with 105.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc83e0 (64-bit build), key @0x93a280
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: name missing or not a string
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: IgnoreFunc errors are ignored. Slave relay failures are unresolved.
+examples:
+- name: clear
+  summary: Keyed form, invented function name
+  of: request
+  payload:
+    id: 59
+    method: clear_app_state
+    params:
+      name: ExampleFunction
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_app_state
+    result: 0
+    code: 0
+    id: 59
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_app_state
+    error: expected string param
+    code: 105
+    id: 60
+see_also:
+- get_view_state
+- iscope_get_app_state
+spec:
+- spec/control/device-state-and-settings.md#application-state

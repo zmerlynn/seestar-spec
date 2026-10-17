@@ -1,0 +1,36 @@
+title: get_fits_file params
+description: File name and compress flag, as an object or as a positional array [name, compress].
+oneOf:
+- type: object
+  required:
+  - name
+  properties:
+    name:
+      type: string
+      description: File name. Required; omission yields error 105. No range check.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f3480 (64-bit imager build)
+    compress:
+      type:
+      - boolean
+      - integer
+      description: Compress the file before sending. Optional; a missing or badly typed flag keeps the
+        default (true).
+      x-default: 'true'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f3480 (64-bit imager build)
+- type: array
+  minItems: 1
+  prefixItems:
+  - type: string
+    description: File name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x1f3480 (64-bit imager build)
+  - type:
+    - boolean
+    - integer
+    description: Compress flag; bad type keeps the default (true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x1f3480 (64-bit imager build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x1f3480 (64-bit imager build)

@@ -1,0 +1,30 @@
+title: pi_set_5g params
+description: 'Whether the access point should use the 5 GHz band. Three spellings: a bare boolean, a one-element
+  array holding a boolean, or an object with is5g. Integers are rejected here. The app-side description
+  of this call names the member enabled, which does not match the firmware key is5g; the firmware key
+  is authoritative.'
+oneOf:
+- type: boolean
+  description: Bare boolean. true selects 5 GHz.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xcdee0, ns_net::pi_run_5g @0x6fbbd0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    type: boolean
+    description: First element is the flag; further elements are ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcdee0, ns_net::pi_run_5g @0x6fbbd0 (64-bit build)
+- type: object
+  required:
+  - is5g
+  properties:
+    is5g:
+      type: boolean
+      description: true selects the 5 GHz band, false the 2.4 GHz band. Integers and other types are rejected
+        with 106.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcdee0, ns_net::pi_run_5g @0x6fbbd0 (64-bit
+        build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcdee0, ns_net::pi_run_5g @0x6fbbd0 (64-bit build)

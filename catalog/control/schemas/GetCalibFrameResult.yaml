@@ -1,0 +1,109 @@
+title: get_calib_frame result
+type: object
+properties:
+  simulate:
+    type: boolean
+    description: Hot-setting simulate flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+  dark:
+    type: object
+    properties:
+      frame_name:
+        type: string
+        description: Stored calibration file name; may be empty.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+      enable:
+        type: boolean
+        description: Whether the frame is enabled.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+      frame_size:
+        type: array
+        minItems: 2
+        maxItems: 2
+        items:
+          type: integer
+        description: '[width, height] in pixels, from stored metadata.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+    description: Calibration frame metadata for one frame type.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+  bias:
+    type: object
+    properties:
+      frame_name:
+        type: string
+        description: Stored calibration file name; may be empty.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+      enable:
+        type: boolean
+        description: Whether the frame is enabled.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+      frame_size:
+        type: array
+        minItems: 2
+        maxItems: 2
+        items:
+          type: integer
+        description: '[width, height] in pixels, from stored metadata.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+    description: Calibration frame metadata for one frame type.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+  flat:
+    type: object
+    properties:
+      frame_name:
+        type: string
+        description: Stored calibration file name; may be empty.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+      enable:
+        type: boolean
+        description: Whether the frame is enabled.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+      frame_size:
+        type: array
+        minItems: 2
+        maxItems: 2
+        items:
+          type: integer
+        description: '[width, height] in pixels, from stored metadata.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+    description: Calibration frame metadata for one frame type.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+  frame_name:
+    type: string
+    description: 'Selected-type form only: stored file name; may be empty.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+  enable:
+    type: boolean
+    description: 'Selected-type form only: whether the frame is enabled.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+  frame_size:
+    type: array
+    minItems: 2
+    maxItems: 2
+    items:
+      type: integer
+    description: 'Selected-type form only: [width, height] in pixels.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510
+required:
+- simulate
+description: Calibration state. simulate is always present. With no selector, dark, bias and flat objects
+  are present (a frame type whose helper fails is skipped). With a selector, the frame_name, enable and
+  frame_size members of that type are placed directly in result, not under a type key.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, get_calib_frame @0xbe690, GetCalibrateFrame @0x193510

@@ -1,0 +1,167 @@
+title: get_stack_info fit_header
+type: object
+description: Stack header summary emitted by the fit_header branch. Members marked as conditional are
+  omitted when their source value is unset. The 32-bit build emits the same member names in the same order
+  with the same omission conditions, the same date format and the same Bayer mapping (READ) for every
+  member except star_type_custom, which the 32-bit build's JSON header printer omits entirely (firmware 9.75;
+  that member is 64-bit-build only). READ.
+required:
+- header_date
+- bayer_pat
+- creator
+properties:
+  header_date:
+    type: string
+    description: 'UTC date and time as YYYY-MM-DDTHH:MM:SS.ffffff (ISO 8601 with six-digit microseconds and
+      no zone suffix), READ. The same string is the FITS DATE-OBS value. It comes from the header of the
+      most recent frame the stacker took, and is taken when that frame''s parameters are gathered, before
+      the wait for exposure end, READ; that this is the exposure start is INFERRED. The microseconds are
+      read separately from the seconds, so the two are not taken atomically (READ).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520; GetImgParams @0x210190 calls GetUtcData
+      @0x6dd5c0 (time, gmtime, gettimeofday; format string @0x968700) at 0x210f2c before CamWaitExposure in
+      ExpOneFrame @0x215c70; last_img_header @0xb18280 assigned in StackFunc at 0x19c834 and 0x19d370;
+      WriteFitHeader @0x69d3b8 (DATE-OBS) (64-bit build); GetUtcData @0x6a048c, format @0x94b5b0 (32-bit build)
+  obj_type:
+    type: string
+    description: Object type string. Present only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      presence gated on a nonzero flag at offset 0x198, same condition (32-bit build)
+  bayer_pat:
+    type: string
+    description: 'Bayer pattern: one of RGGB, GRBG, GBRG, BGGR, unknown, or the empty string. For a colour
+      camera the first two letters of the camera''s debayer pattern (GR, RG, BG or GB, matched without
+      regard to case) map to GRBG, RGGB, BGGR and GBRG; anything else, including an empty pattern, gives
+      unknown. Empty when the camera is mono, when the camera information cannot be read, or when the
+      camera''s flip control reads non-zero. READ.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520; GetImgParams @0x210190 (GetCamInfo
+      @0x11df20, is_color test at 0x210dec, GetControlVal(9 = ASI_CAM_FLIP) near 0x211390, mapping to
+      0x211a68), GetDebayerByBayer @0x14da20 (64-bit build); GetImgParams flip check at 0x19f8fc and mapping
+      0x19f958-0x19fb98 (32-bit build)
+  creator:
+    type: string
+    description: Creator string; may be empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      unconditional like bayer_pat, same position immediately after it (32-bit build)
+  size:
+    type: array
+    items:
+      type: integer
+    minItems: 2
+    maxItems: 2
+    description: Image size as [width, height]. Present only when both dimensions are non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      width and height each checked non-negative before the field at 0x6733a0 fires, same condition
+      (32-bit build)
+  img_type:
+    type: integer
+    description: 'Image type code: 5 when the internal type is 3, otherwise 1. Present only when the internal
+      type is non-negative.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x6734a4 gated on the same non-negative check and the same ==3 vs otherwise comparison
+      yielding 5 vs 1 (32-bit build)
+  obj_name:
+    type: string
+    description: Object name. Present only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x6734fc gated on a nonzero length check, same condition (32-bit build)
+  lon_lat:
+    type: array
+    items:
+      type: number
+    minItems: 2
+    maxItems: 2
+    description: Site longitude and latitude as [lon, lat] numbers. Present only when both are valid (not
+      the -999 sentinel). Units INFERRED to be degrees.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x6732b0 gated on both values failing a fabs(x+999)-vs-epsilon sentinel test, same
+      condition (32-bit build)
+  stack_num:
+    type: integer
+    description: Number of stacked frames. Present when the frame count is positive, which holds in the
+      successful header branch.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x6735d4 gated on the frame count being positive, same condition (32-bit build)
+  exp_sec:
+    type: number
+    description: Per-frame exposure. Unit INFERRED seconds from the name. Present when valid (not the
+      -999 sentinel).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x67365c gated on the same fabs(x+999)-vs-epsilon sentinel test (32-bit build)
+  tot_exp_sec:
+    type: number
+    description: 'Total exposure, emitted together with exp_sec: the stored total when valid, otherwise
+      max(frame count, 1) times exp_sec. Unit INFERRED seconds.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x67368c emitted in the same block as exp_sec with the same max(frame count, 1) fallback
+      (32-bit build)
+  eqmode:
+    type: integer
+    description: Equatorial-mode flag as an integer. Present only when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x673590 gated on the same non-negative check (32-bit build)
+  is_wide:
+    type: integer
+    description: Wide-camera flag as an integer, not a JSON boolean. Present only when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build); PrintHeader @0x6730b4,
+      field at 0x673544 gated on the same non-negative check, same plain-integer constructor (32-bit build)
+  star_type_custom:
+    type: string
+    description: 'Firmware 9.75: whether the object is user-defined; "true" when the header value is 1, otherwise
+      "false". Present only when the header value is non-negative. Same source as the FITS keyword OB_CU.
+      The JSON quoting (string, not boolean) is INFERRED. The 32-bit build''s JSON header printer has no equivalent
+      code path and never emits this member at all (READ, firmware 9.75; this member is 64-bit-build only).'
+    x-confidence: READ; quoting INFERRED
+    x-basis: static analysis of firmware 9.75, PrintHeader @0x71a090 (64-bit build); 32-bit build PrintHeader
+      compared and has no star_type_custom branch
+  W_FM_MD:
+    type: integer
+    description: 'Firmware 9.75: wide-field framing mode (FITS keyword W_FM_MD). Present only when non-negative
+      AND is_wide == 1 (gated on the same wide-camera flag reported as is_wide). What sets it is unresolved.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, PrintHeader @0x71a090 (64-bit build); same gating confirmed
+      on the 32-bit build
+  mosaic:
+    type: object
+    description: 'Firmware 9.75: telephoto framing data (FITS keywords T_FM_RO, T_FM_ZM and T_FM_PS). The whole
+      mosaic member is emitted only when is_wide == 0 (gated on the same wide-camera flag reported as
+      is_wide, and mutually exclusive with W_FM_MD); within that, each member is present only when its
+      header value differs from the unset sentinel -999.0; the nesting under mosaic is
+      INFERRED. What sets the values is unresolved.'
+    properties:
+      angle:
+        type: number
+        description: Framing rotation in degrees (FITS T_FM_RO).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, PrintHeader @0x71a090 (64-bit build); is_wide==0 gating
+          confirmed on the 32-bit build
+      scale:
+        type: number
+        description: Framing zoom ratio (FITS T_FM_ZM).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, PrintHeader @0x71a090 (64-bit build); is_wide==0 gating
+          confirmed on the 32-bit build
+      star_map_angle:
+        type: number
+        description: Frame position angle on the star map (FITS T_FM_PS).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, PrintHeader @0x71a090 (64-bit build); is_wide==0 gating
+          confirmed on the 32-bit build
+    x-confidence: READ; nesting INFERRED
+    x-basis: static analysis of firmware 9.75, PrintHeader @0x71a090 (64-bit build); is_wide==0 gating
+      confirmed on the 32-bit build
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, PrintHeader @0x6a4520 (64-bit build) and @0x6730b4 (32-bit
+  build), same members, order and conditions; get_stack_info @0xe0670 (64-bit) and @0x5d3e0 (32-bit)

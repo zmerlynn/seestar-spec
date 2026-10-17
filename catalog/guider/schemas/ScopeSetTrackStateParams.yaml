@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: scope_set_track_state params
+description: Required. A bare boolean, the first element of an array, or an object {tracking}. The parser
+  unwraps the first array element and selects the member tracking when that element is an object; the
+  Android app sends a bare boolean.
+anyOf:
+- type: &id001
+  - boolean
+  - integer
+  description: true (or a nonzero integer) turns tracking on, false (or zero) turns it off. Floats, strings
+    and null are rejected with 106.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x71c50 (64-bit guider build)
+- type: object
+  required:
+  - tracking
+  properties:
+    tracking:
+      type: *id001
+      description: true (or a nonzero integer) turns tracking on, false (or zero) turns it off. Floats,
+        strings and null are rejected with 106.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x71c50 (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x71c50 (64-bit guider build)
+- type: array
+  minItems: 1
+  description: 'Positional form: first element is a boolean, an integer or an object {tracking}.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x71c50 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x71c50 (64-bit guider build)

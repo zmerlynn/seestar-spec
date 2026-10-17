@@ -1,0 +1,26 @@
+title: rename_list params
+description: Object with old and new, or a positional array of two strings [old, new]. Any other container
+  yields an empty map and therefore 105. No length, range or default handling.
+oneOf:
+- type: object
+  required:
+  - old
+  - new
+  properties:
+    old:
+      type: string
+      description: Current display name of the list.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, rename_list @0xe8050, key literal @0x7303b8 (64-bit build)
+    new:
+      type: string
+      description: New display name; must not already exist (225).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, rename_list @0xe8050, key literal @0x7303b0 (64-bit build)
+- type: array
+  minItems: 2
+  items:
+    type: string
+x-basis: static analysis of firmware 9.31, handler @0xe8050, Params two-name constructor @0x1003c0 (64-bit
+  build)
+x-confidence: READ

@@ -1,0 +1,104 @@
+kind: method
+name: start_track_object
+summary: Start tracking an object inside a user-supplied rectangle on the live image.
+description: 'Object params with integer x, y, width and height. The request may first be forwarded to
+  the other process (relay checks run before local validation). Locally it requires view mode 1 or the
+  wide camera selected, the RTSP stream running, an existing tracker and a usable camera subframe; the
+  RTMP setting must be zero. It initialises the tracker with the rectangle and centre and launches an
+  object-tracking thread. The reply acknowledges the launch, not any tracking result. Firmware 9.75, app
+  3.4.0: while smart follow runs, the rectangle is passed to the smart-follow worker instead; the rectangle
+  is corrected when is_manual_selection is false and the tracker takes more arguments; error 106 is new. If smart follow runs, a rejected submit returns an error code from the thread error state (unresolved). Before the relay check, in a dual-camera main process the handler probes the other process with is_func_work for SmartFollow and ObjectTrack (10000 ms each). The relay check gives 203 (mount occupied) or 524 (AviRecord or MotionMonitor working). The 32-bit build has no is_manual_selection string and probably differs.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdbbf0, StartObjTrack @0x3dd560 (64-bit build); firmware
+  9.75 handler @0xef280, relay check @0xbc980, smart-follow submit @0x4711e0
+side_effects: Initialises the tracker region of interest and centre and starts an object-tracking worker
+  thread. Forwarded requests have a delegated wait of 10000 ms, which is not a whole-call deadline. No
+  explicit RPC timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_track_object request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_track_object
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartTrackObjectParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: params absent or not an object, or any of x, y, width, height missing, null or not an integer
+  label: expected int param
+- code: 300
+  trigger: View mode or camera not allowed, tracker missing, RTSP not running, camera subframe unavailable,
+    RTMP setting active, or forwarding context null
+  label: internal error
+- code: 268
+  trigger: A competing tracking worker is running
+  label: operation is in progress
+- code: 203
+  trigger: Relay occupancy check finds the local or other-process mount occupied
+  label: equipment is moving
+- code: 212
+  trigger: The tracking thread could not be created
+  label: fail to create thread
+- code: 524
+  trigger: 'Firmware 9.75: AviRecord or MotionMonitor works locally or in the other process'
+  label: function conflict
+- code: 106
+  trigger: 'Firmware 9.75: is_manual_selection is not a bool'
+  label: expected bool
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Tracker virtual-call failures and relay or waiter failures are propagated and unresolved.
+  The list is not claimed exhaustive.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 110
+    method: start_track_object
+    params:
+      x: 400
+      y: 300
+      width: 120
+      height: 120
+- name: ok
+  of: reply_success
+  payload:
+    method: start_track_object
+    result: 0
+    code: 0
+    id: 110
+- name: bad-rectangle
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_track_object
+    error: expected int param
+    code: 104
+    id: 111
+see_also:
+- start_smart_follow
+- stop_track_object
+spec:
+- spec/control/special-modes.md#object-tracking
+- spec/control/function-states.md#smart-follow

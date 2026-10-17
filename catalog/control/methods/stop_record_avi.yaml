@@ -1,0 +1,74 @@
+kind: method
+name: stop_record_avi
+summary: Ask the AVI recording threads to stop, or relay the stop to the peer unit.
+description: No request parameters are read. In the local case the handler sets the stop flag on the two
+  recording threads and marks the recording status aborted, without waiting for them; the immediate reply
+  therefore does not mean the file has been closed or flushed. In the relayed case (on a device that forwards
+  recording to a second unit) the request is forwarded and the reply is built from the peer reply, waiting
+  up to 10 s. Observable state changes may follow as AviRecord events. Firmware 9.75, app 3.4.0 replaces the old view-mode test with the relay-only form of the common relay check (it relays to the peer process when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75), the wire effect is INFERRED and the 32-bit build was not checked.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: 'static analysis of firmware 9.31, handler @0xca3b0 (64-bit build), StopWriteAviThr @0x2ee4b0;
+  writer loop exit then CloseAviFile before the thread wrapper emits the terminal event (finding #360)'
+side_effects: Sets stop flags on the recording threads and an internal aborted status (code 253, not sent
+  to the client); in the relayed case forwards the stop to the peer unit. The writer then closes the file,
+  and only after that does the AviRecord event end in `cancel`, with no code or error. Recording settings
+  and caches are not cleared.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_record_avi request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_record_avi
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca3b0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 300
+  trigger: 'Relayed case only: no user-data context available for the relay'
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The local path has no error branch and ignores the helper result. In the relayed case a failure
+  of the relay request is forwarded as the peer or transport error code; the complete relayed and timeout
+  error set is unresolved.
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 21
+    method: stop_record_avi
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_record_avi
+    result: 0
+    code: 0
+    id: 21
+see_also:
+- start_record_avi
+spec:
+- spec/media/video.md#avi-and-mp4-recording
+- spec/media/video.md#avi-and-mp4-recording

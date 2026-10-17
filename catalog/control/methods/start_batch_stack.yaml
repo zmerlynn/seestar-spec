@@ -1,0 +1,115 @@
+kind: method
+name: start_batch_stack
+summary: Start the batch stacking worker over the configured input list.
+description: Stops the AVI reader, resets the global batch status and progress, stores the selected task
+  and frame type, installs the progress formatter and starts the BatchStack worker thread asynchronously.
+  The input list is configured separately (see get_batch_stack_setting) and no hardware-open check is
+  made here; the worker can fail later, for example on an empty list, since there is no immediate empty-list
+  check. A success reply means the worker was started. In the 32-bit build only an optional object with
+  frame_type is read (omitted or {} defaults to light; null, array or scalar gives 107; a non-string frame_type
+  gives 105), task_type is ignored and the deepsky task is always started; its deeper error codes are
+  unresolved. Firmware 9.75, app 3.4.0 (64-bit build) limits the comet task to 200 input frames, checked at start (204) and again in the worker on the input list and on the expanded list (err_code 204; how worker failures reach the BatchStack event is unresolved). A new comet preflight finds the first frame with a comet and fails with 9005 if none, 9002 if its detector cannot start; too few candidates give 9004. The comet list is separate from the deepsky list, and its key_frame is the reference frame. The star-trail task honours the list's batch_startrails_mode (0 maximum video, 1 decay video, 2 both). While running, the worker reports function-state events whose payload adds percent (number),
+  frame_type and task_type (strings), stacked_img and total_img (integers), remaining_sec (integer, only
+  when non-negative; INFERRED seconds), input_thn (string, when non-empty) and output_file (an object,
+  when available); the producer of output_file members and the exact Event name are unresolved.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xda960, StartBatchStack @0x3a6190, parseBatchStartType
+  @0xda680 (64-bit build); firmware 9.75 comet limit and preflight from resolver report E (StartBatchStack @0x3eba10, BatchStackFunc @0x3f3840, FindFirstBatchCometFrame @0x3e8990)
+side_effects: Stops the AVI reader, resets batch status and progress, and starts the BatchStack worker
+  thread, which reads the input list and writes result files.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_batch_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_batch_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartBatchStackParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xda960, StartBatchStack @0x3a6190, parseBatchStartType
+        @0xda680 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 204
+  trigger: Firmware 9.75, app 3.4.0, comet task only; the comet input list holds more than 200 frames (the comet_max_frame_num constant). The err_code is stored under the batch lock and the start fails; that this code is the reply is INFERRED from the stored err_code
+  label: out of limit
+- code: 107
+  trigger: params supplied but not an object
+  label: expected object param
+- code: 105
+  trigger: Object has neither selector, or a supplied selector is not a string
+  label: expected string param
+- code: 102
+  trigger: task_type is an unknown string
+  label: invalid params
+- code: 207
+  trigger: Invalid task and frame combination (for example comet with a non-light frame, or an unrecognised
+    frame_type for deepsky)
+  label: fail to operate
+- code: 524
+  trigger: A stack status is active or a dark-frame creation function is running
+  label: function conflict
+- code: 536
+  trigger: A ViewPlan worker is running
+  label: view plan is already running
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Errors from starting the named worker are forwarded with their own codes and are not enumerated.
+examples:
+- name: omitted
+  of: request
+  payload:
+    id: 131
+    method: start_batch_stack
+- name: comet
+  of: request
+  payload:
+    id: 132
+    method: start_batch_stack
+    params:
+      task_type: comet
+      frame_type: light
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_batch_stack
+    result: 0
+    code: 0
+    id: 131
+- name: plan-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_batch_stack
+    error: view plan is already running
+    code: 536
+    id: 133
+see_also:
+- stop_batch_stack
+- clear_batch_stack
+- get_batch_stack_setting
+- set_batch_stack_setting
+- start_stack
+spec:
+- spec/control/stacking.md#batch-stack

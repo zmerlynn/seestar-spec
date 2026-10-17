@@ -1,0 +1,17 @@
+title: get_stack_info params
+type: object
+description: Optional parameters of get_stack_info. Only object-form params are read; any non-object value
+  (arrays and scalars included) is treated as an empty object and returns the dimensions. Unknown keys
+  are ignored.
+properties:
+  info_type:
+    type: string
+    description: Case-sensitive selector. The exact value fit_header selects the header branch. Absent,
+      null, non-string or any other string returns the dimensions. No bad-selector error exists.
+    x-default: absent (dimensions)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+      @0x191ef0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+  @0x191ef0 (64-bit build)

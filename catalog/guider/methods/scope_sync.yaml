@@ -1,0 +1,111 @@
+kind: method
+name: scope_sync
+summary: Tell the mount that it is currently pointing at the given coordinates (a sync), without moving
+  it.
+description: 'The handler always stores the supplied pair as the guider''s fallback coordinates. If a
+  mount is connected and sync-capable it then sends the target coordinates and the sync command to the
+  controller, reads the acknowledgment and, on driver success, also records the pair in recovery storage.
+  It does not slew and starts no worker. A success reply is returned even when no connected sync-capable
+  mount exists (only the stored fallback changed); an error is returned only when an attempted driver
+  sync fails. RA is in hours and declination in degrees (the Android app sends the RA already divided
+  by 15 as hours); epoch is unresolved. Durability of the alignment (session versus persisted) is unresolved.
+  Mount serial (firmware 9.31, READ): :CM.'
+grade: 'MUTATOR / established (64-bit build; 32-bit build: C / MUTATOR established independently, full
+  contract parity unresolved)'
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7bbc0 (64-bit guider build); driver Sync @0xeef40;
+  32-bit handler @0x77178
+side_effects: Overwrites the guider fallback RA/Dec pair; with a connected mount sends the target and
+  sync command to the controller and updates recovery storage, changing the coordinate model.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_sync request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_sync
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/ScopeSyncParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7bbc0 (64-bit guider build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 108
+  trigger: ra or dec missing or not a number
+  label: expected float param
+- code: 270
+  trigger: Mount replied e5# to the sync command
+  label: below horizon
+- code: 209
+  trigger: Mount replied e11# to the sync command
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Further branches forward an error code set by the mount driver or a helper; the codes are
+  not exhausted by this table.
+examples:
+- name: positional
+  summary: Positional form, as the app sends it (values invented)
+  of: request
+  payload:
+    id: 31
+    method: scope_sync
+    params:
+    - 5.5
+    - 20.25
+- name: named
+  of: request
+  payload:
+    id: 32
+    method: scope_sync
+    params:
+      ra: 5.5
+      dec: 20.25
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_sync
+    result: 0
+    code: 0
+    id: 31
+- name: bad-param
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_sync
+    error: expected float param
+    code: 108
+    id: 33
+see_also:
+- scope_goto
+- scope_get_ra_dec
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#sync
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

@@ -1,0 +1,107 @@
+kind: method
+name: set_batch_stack_setting
+summary: Replace one of the batch-stack input file lists and persist it.
+description: Replaces the selected cached batch-stack input list with the supplied file names and writes
+  the list to its persisted file. Refused while a batch stack worker is running. Neither deletes the named
+  media nor starts capture or stacking. Success means the list was replaced; a flush or sync failure during
+  persistence can still accompany a success reply. Firmware 9.75, app 3.4.0 (the request may also carry key_frame (deepsky, comet) or batch_startrails_mode (startrail), and the comet list has its own persisted file; the 102 rules are on the params schema).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)
+side_effects: Replaces the cached list for the selected batch type and rewrites that type's persisted
+  JSON list file synchronously (flush and sync). Lock and file write may block with no timeout. Partial
+  replacement is not rolled back on a parse or persistence failure. Every full call also makes the shared
+  diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_batch_stack_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_batch_stack_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetBatchStackSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null, scalar or array
+  label: expected object param
+- code: 259
+  trigger: A batch stack worker is active; checked before parsing
+  label: stack is already running
+- code: 102
+  trigger: Bad type selector (firmware 9.75, an unknown or non-string type; absent means deepsky), a non-string key_frame, a non-integer or out-of-range batch_startrails_mode (firmware 9.75), or files missing, not an array, or an element that is not an object with
+    a string name
+  label: invalid params
+- code: 258
+  trigger: Persisted list file could not be opened for writing
+  label: open file failed
+- code: 218
+  trigger: Short write while persisting the list
+  label: fail to write file
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Failures inside the file write forward the thread-local code; codes originating deeper than
+  the inspected operation are unresolved. Flush or sync failure sets 218 but still returns success.
+examples:
+- name: set-list
+  summary: Replace the deep-sky list (shape from the app DTO; values invented)
+  of: request
+  payload:
+    id: 41
+    method: set_batch_stack_setting
+    params:
+      type: deepsky
+      files:
+      - name: Example/frame_001.fit
+      - name: Example/frame_002.fit
+- name: clear-list
+  summary: Clear the default list
+  of: request
+  payload:
+    id: 42
+    method: set_batch_stack_setting
+    params:
+      files: []
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_batch_stack_setting
+    result: 0
+    code: 0
+    id: 41
+- name: worker-active
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_batch_stack_setting
+    error: stack is already running
+    code: 259
+    id: 43
+see_also:
+- get_batch_stack_setting
+- del_batch_stack_file
+spec:
+- spec/control/stacking.md#batch-stack

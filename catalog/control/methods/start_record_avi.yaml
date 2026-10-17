@@ -1,0 +1,115 @@
+kind: method
+name: start_record_avi
+summary: Start recording the live view to a video file, optionally as a timelapse.
+description: 'Updates the recording settings, then starts the recording worker and replies with integer result
+  0 once the worker exists. Settings can change even if the start fails; there is no rollback. Needs the live
+  image thread running and no planet stack active. Recording format 0 (wide camera, or raw false) writes an
+  MP4 from the processed YUV stream; formats 1 (raw omitted) and 2 (raw true) write a raw-frame AVI; how 2
+  differs from 1 is unresolved. Depending on process and view mode the request may first be relayed to a
+  secondary unit (wait up to 10000 ms for its occupancy check). Progress comes from AviRecord events: a start
+  event with numeric fps, a fail event with code 218 on file creation failure, and worker state events with
+  timelapse (enable, delay_sec, src_dura_min), saved_frames, raw, file_saved and, when saved, duration_sec and
+  optional name; their full presence rules are unresolved.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+  @0x2ee3f0 (64-bit build)
+side_effects: Copies and overrides the live-view recording settings, may persist the timelapse config,
+  applies the settings, enables the write thread and creates image/video files under the works directory
+  with time-derived names. Shell, storage and setup can add unbounded time.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_record_avi request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_record_avi
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartRecordAviParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdfcb0, StartWriteAvi @0x2eb8f0, EnableWriteAviThr
+        @0x2ee3f0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: The live image thread is not running, or an unspecified transitive failure
+  label: fail to operate
+- code: 524
+  trigger: A planet stack is active locally, or the secondary unit reports the function busy
+  label: function conflict
+- code: 268
+  trigger: The write thread is already running or an AVI file is already open
+  label: operation is in progress
+- code: 209
+  trigger: Timelapse enabled with delay_sec not greater than 0
+  label: invalid value
+- code: 208
+  trigger: Not enough disk space
+  label: disk is full
+- code: 212
+  trigger: The worker thread could not be created
+  label: fail to create thread
+- code: 300
+  trigger: Relay to the secondary unit has no request context
+  label: internal error
+- code: 218
+  trigger: AVI file creation failed (also reported by the AviRecord fail event)
+  label: fail to write file
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The complete set of relayed, crop-sync, disk and codec error codes is unresolved.
+examples:
+- name: plain
+  of: request
+  payload:
+    id: 151
+    method: start_record_avi
+- name: timelapse
+  of: request
+  payload:
+    id: 152
+    method: start_record_avi
+    params:
+      raw: false
+      timelapse:
+        enable: true
+        delay_sec: 5
+        src_dura_min: 30
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_record_avi
+    result: 0
+    code: 0
+    id: 151
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_record_avi
+    error: function conflict
+    code: 524
+    id: 153
+see_also: []
+spec:
+- spec/media/video.md#avi-and-mp4-recording
+- spec/media/video.md#avi-and-mp4-recording

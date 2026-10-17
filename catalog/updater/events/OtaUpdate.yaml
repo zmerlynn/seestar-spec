@@ -1,0 +1,145 @@
+kind: event
+name: OtaUpdate
+summary: 'Updater (firmware 9.75): OTA session progress, failure, cancellation or completion.'
+description: 'Emitted by the updater''s OTA manager on the TCP 4350 JSON server during an OTA session.
+  Members appear in this order: state, stage (when the stage is not idle), module (when non-empty), code
+  (when nonzero), error (when non-empty), then route (an empty array). state is working, fail or cancel.
+  Completion is a separate form with state complete, main_version, need_reboot and route. It is sent only
+  when an event server is set. Both the progress form and the completion form are broadcast: the 64-bit
+  build passes no socket or requester address to the event server (firmware 9.75, READ), unlike Update, which is
+  addressed to one client. Whether every retained event socket is eligible, and the 32-bit recipient rule,
+  were not separately audited. This event is new in firmware 9.75; firmware 9.31 had no emitter.
+  App 3.3.2 consumes it (state, stage, optional code and error, main_version, optional need_reboot); the
+  firmware adds module and the cancel state. A pending receive whose binary connection does not arrive
+  within 15 s fails with code 546 (ota module binary connection timeout; firmware 9.75, 64-bit, READ).
+  When the completion form has need_reboot true the device schedules a reboot 2 s later (READ, 64-bit).'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ (firmware 9.75); 32-bit recipient rule unresolved
+basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+  @0x2ff20 (64-bit build); 32-bit build has the same strings
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: OtaUpdate event
+  type: object
+  discriminator: Event
+  description: Progress form (working, fail, cancel) and completion form (complete). Members other than
+    Event, Timestamp, state and route are conditional.
+  required:
+  - Event
+  - Timestamp
+  - state
+  - route
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+    @0x2ff20 (64-bit build); 32-bit build has the same strings
+  properties:
+    Event:
+      type: string
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      const: OtaUpdate
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> (as other updater events).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, updater Ev constructor; assumed unchanged in 9.75 INFERRED
+    state:
+      type: string
+      description: working, fail, cancel, or complete for the completion form.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      enum:
+      - working
+      - fail
+      - cancel
+      - complete
+    stage:
+      type: string
+      description: OTA stage name (see ota_get_session).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      enum:
+      - pending
+      - receiving
+      - upgrading
+      - complete
+      - fail
+      x-required-when: stage is not idle (progress form)
+    module:
+      type: string
+      description: Module concerned.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      x-required-when: non-empty
+    code:
+      type: integer
+      description: Failure code (546 for a pending-receive timeout, firmware 9.75; other values in the
+        error table of the updater chapter).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      x-required-when: nonzero
+    error:
+      type: string
+      description: Failure text.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      x-required-when: non-empty
+    main_version:
+      type: string
+      description: Main version now installed.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      x-required-when: state is complete
+    need_reboot:
+      type: boolean
+      description: true when the device reboots after the upgrade.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+      x-required-when: state is complete
+    route:
+      type: array
+      items:
+        type: string
+      maxItems: 0
+      description: Always an empty array.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater OTA manager NotifyUpdateEvent @0x313e0 and NotifyCompleteEvent
+        @0x2ff20 (64-bit build); 32-bit build has the same strings
+examples:
+- name: working
+  summary: Shape READ; values invented
+  of: payload
+  payload:
+    Event: OtaUpdate
+    Timestamp: '1234.123456789'
+    state: working
+    stage: receiving
+    module: example_module
+    route: []
+- name: complete
+  summary: Shape READ; values invented
+  of: payload
+  payload:
+    Event: OtaUpdate
+    Timestamp: '1234.123456789'
+    state: complete
+    main_version: '9.99'
+    need_reboot: true
+    route: []
+see_also:
+- ota_begin
+- ota_get_session
+- Update
+spec:
+- spec/updater/index.md#ota-methods-firmware-975

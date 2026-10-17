@@ -1,0 +1,88 @@
+kind: method
+name: delete_plan
+summary: Delete a legacy plan, target or sequence.
+description: Removes the selected plan, target or sequence from the legacy plan map. With no selector
+  (params omitted or all ids unspecified) every plan is deleted. Accepts the selector as an object or
+  a one-element array.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcfb60, DeletePlan @0x30dca0 (64-bit build)
+side_effects: Removes the selected entries from the global plan map and persists the map (the save result
+  is ignored; deeper file failures are not established as RPC errors). No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: delete_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: delete_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/LegacyPlanSelectorParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcfb60, DeletePlan @0x30dca0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Selector container is malformed
+  label: expected object param
+- code: 209
+  trigger: target_id without plan_id, or seq_id without target_id
+  label: invalid value
+- code: 224
+  trigger: Exposure mode 2 is active and the plan exposure worker is running
+  label: cannot edit sequence unless reset the progress
+- code: 204
+  trigger: The selected plan, target or sequence does not exist
+  label: out of limit
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: one-plan
+  summary: Delete plan 1 (values invented)
+  of: request
+  payload:
+    id: 61
+    method: delete_plan
+    params:
+      plan_id: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: delete_plan
+    result: 0
+    code: 0
+    id: 61
+- name: target-without-plan
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: delete_plan
+    error: invalid value
+    code: 209
+    id: 62
+see_also:
+- reset_plan
+- clear_plan
+- get_plan
+- set_plan
+spec:
+- spec/control/legacy-plans-and-sequences/plans.md#selectors

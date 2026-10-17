@@ -1,0 +1,100 @@
+kind: method
+name: clear_plan
+summary: Empty legacy plans or targets without deleting them.
+description: 'For each selector: with plan_id only, all targets of that plan are cleared; with plan_id
+  and target_id, all sequences of that target are cleared. seq_id is dependency-checked but never selects
+  a single sequence: the whole sequence map of the target is cleared. An all-unspecified selector is not
+  an all-plans clear. Selectors are applied one by one and the call is not transactional: after the first
+  failure earlier clears remain.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcf7f0, ParsePlanIds @0x311180, ClearPlan @0x30da50
+  (64-bit build)
+side_effects: Clears target or sequence maps of the global plan map; persists and marks the plan changed
+  only when the cleared map was non-empty (save result not reported).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/LegacyClearPlanParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf7f0, ParsePlanIds @0x311180, ClearPlan @0x30da50
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Selector list parse failed (no error code is set by the parser, so the default applies)
+  label: fail to operate
+- code: 209
+  trigger: Invalid selector dependency during clearing
+  label: invalid value
+- code: 204
+  trigger: Selected plan or target does not exist
+  label: out of limit
+- code: 224
+  trigger: Exposure mode 2 is active and the plan exposure worker is running
+  label: cannot edit sequence unless reset the progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: clear-targets
+  summary: Clear all targets of plan 1 (values invented)
+  of: request
+  payload:
+    id: 71
+    method: clear_plan
+    params:
+    - plan_id: 1
+- name: clear-sequences
+  summary: Clear the sequences of one target
+  of: request
+  payload:
+    id: 72
+    method: clear_plan
+    params:
+    - plan_id: 1
+      target_id: 2
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_plan
+    result: 0
+    code: 0
+    id: 71
+- name: bad-params
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_plan
+    error: fail to operate
+    code: 207
+    id: 73
+see_also:
+- delete_plan
+- reset_plan
+- set_plan
+spec:
+- spec/control/legacy-plans-and-sequences/plans.md#selectors

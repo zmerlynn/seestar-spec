@@ -1,0 +1,67 @@
+kind: method
+name: clear_downgrade
+summary: Append the downgrade-acknowledgement marker to the update marker file, unless already present.
+description: No request parameters are read. The handler checks the fixed marker file for the acknowledgement
+  marker; if it is absent, it runs a shell command that appends the marker text to the file (nothing is
+  removed from the file). The command runs synchronously with no timeout and its exit status is not tested.
+  After this, is_downgraded reports false.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc95d0 (64-bit build), cmpFile @0x6e25f0
+side_effects: Appends a marker line to a log file on the device through a privileged shell command.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_downgrade request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_downgrade
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc95d0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The shell command could not be started
+  label: fail to run command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'A shell command that starts but fails is masked: success is reported once output reaches
+  end of file.'
+examples:
+- name: acknowledge
+  of: request
+  payload:
+    id: 52
+    method: clear_downgrade
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_downgrade
+    result: 0
+    code: 0
+    id: 52
+see_also:
+- is_downgraded
+spec:
+- spec/control/maintenance.md#update-related-markers

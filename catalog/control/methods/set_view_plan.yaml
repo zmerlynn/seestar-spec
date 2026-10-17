@@ -1,0 +1,118 @@
+kind: method
+name: set_view_plan
+summary: Start the ViewPlan scheduling worker, either with a new inline plan or by re-running the plan
+  the device holds.
+description: With params containing plan_name, the device replaces its held plan with the supplied one
+  and starts the worker. Without plan_name (omitted params, or params without it) the device re-runs its
+  held plan, optionally updating the two plan flags. A success reply means the worker thread was launched,
+  not that the plan ran or completed.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc7fe0, StartViewPlan @0x40ba10 (64-bit build)
+side_effects: Replaces or resets the held plan and plan flags, clears capture progress, disables the stack
+  simulator if enabled, stops the demonstration function, starts the ViewPlan worker and, on the 64-bit build where
+  model and process allow, sets the plan indicator LED from the launch result.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_view_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_view_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetViewPlanParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 268
+  trigger: The View function is working
+  label: operation is in progress
+- code: 536
+  trigger: A ViewPlan worker is already running
+  label: view plan is already running
+- code: 106
+  trigger: plan_target_af or viewplan_gohome present with a type other than boolean or integer
+  label: expected bool param
+- code: 102
+  trigger: A recognized mosaic number has a non-numeric type, or mosaic.scale is present without a numeric
+    mosaic.angle
+  label: invalid params
+- code: 207
+  trigger: Any other full-plan parse failure (bad plan_name, list missing/empty/not an array, non-object
+    element, missing or mistyped required target member, bad camera_mode, bad wide/dual nested member),
+    or a retained-list restart with no targets. Default when no helper assigned a code.
+  label: fail to operate
+- code: 212
+  trigger: Worker thread could not be created; the new plan and flags stay committed
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: restart-held-plan
+  summary: Re-run the plan the device holds (OBSERVED, iOS app, 2026-10-12)
+  of: request
+  payload:
+    id: 7
+    method: set_view_plan
+- name: inline-plan
+  summary: Whole plan inline, one telescope-camera target (shape OBSERVED; values invented)
+  of: request
+  payload:
+    id: 8
+    method: set_view_plan
+    params:
+      plan_name: Example plan
+      update_time_seestar: 2026.01.31
+      plan_target_af: false
+      viewplan_gohome: true
+      list:
+      - target_id: 1790000000
+        target_name: Example target
+        alias_name: Example
+        target_ra_dec:
+        - 12
+        - 30
+        start_min: 1200
+        duration_min: 90
+        camera_mode: tele
+        lp_filter: false
+        skip: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_view_plan
+    result: 0
+    code: 0
+    id: 8
+- name: already-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_view_plan
+    error: view plan is already running
+    code: 536
+    id: 9
+see_also:
+- clear_view_plan
+- ViewPlan
+spec:
+- spec/control/plan-scheduling.md#starting-a-plan
+- spec/control/mosaic.md#parameters-and-acceptance

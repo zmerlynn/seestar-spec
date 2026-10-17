@@ -1,0 +1,91 @@
+kind: method
+name: start_scan_planet
+summary: Launch the sun/moon scan worker.
+description: No parameters are read, and the handler does not parse a planet name despite the method name.
+  After the relay check the handler clears a scan flag and starts the named scan worker; it does not wait
+  for the scan to finish. A success reply means the worker was launched. Which scan the worker performs,
+  and the event it reports through, are not established from the starter.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcb6f0, StartScanSun @0x2efae0, CheckRelayReq2Slave
+  @0xae1e0 (64-bit build); firmware 9.75 call site @0xd97e4, CheckRelayReq2Slave @0xbc980 (arguments relay false, type 1)
+side_effects: Runs the relay check (occupy type 1; in firmware 9.75 it is called with relaying disabled, so it only tests occupancy and always continues locally; in firmware 9.31 the call form was not diffed), clears a
+  scan flag and launches the scan worker thread.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_scan_planet request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_scan_planet
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it. The app code passes a null params for this call (READ in the app); the exact wire
+        form is not established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcb6f0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 524
+  trigger: 'StartScanSun: function state is not 1 or view mode is not one of 2, 3, 4'
+  label: function conflict
+- code: 203
+  trigger: 'Relay check: the local or second-camera mount is occupied'
+  label: equipment is moving
+- code: 212
+  trigger: Worker thread could not be created or has no thread function
+  label: fail to create thread
+- code: 300
+  trigger: Relay forwarding helper has a null context
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: In the wide-route case the original request is relayed and the forwarded reply is returned
+  in place of the local one; the second device's replies, errors and latency (the relay waits up to 10000
+  ms) are unresolved, as is the worker-start error set below 212. Event name and payload of the scan worker
+  are unresolved (no direct emitter in the starter).
+examples:
+- name: start
+  of: request
+  payload:
+    id: 101
+    method: start_scan_planet
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_scan_planet
+    result: 0
+    code: 0
+    id: 101
+- name: wrong-mode
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_scan_planet
+    error: function conflict
+    code: 524
+    id: 102
+see_also:
+- start_planet_stack
+- stop_planet_stack
+spec:
+- spec/control/special-modes.md#scan

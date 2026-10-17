@@ -1,0 +1,71 @@
+kind: method
+name: close_camera
+summary: Close the open camera, stopping any view and exposure first.
+description: Params are not read. Stops the view and any exposure, releases image buffers, clears delayed
+  configuration writes, closes and deletes the camera object and resets the temperature checker. Closing
+  when no camera is open succeeds. The call can block on locks and worker waits; no short timeout is established.
+  On success the device emits a CameraStateChange event. Reply result is the integer 0.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd09b0, CloseCamera @0x11cfc0 (64-bit build)
+side_effects: Initialises ViewPlan and stack shutdown, stops the view (StopView) and exposure (StopExposure),
+  releases image buffers, clears delayed config writes, closes the camera, resets the temperature checker.
+  Emits CameraStateChange on success.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: close_camera request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: close_camera
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd09b0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Codes raised below the inspected operation are not established.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 28
+    method: close_camera
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: close_camera
+    result: 0
+    code: 0
+    id: 28
+see_also:
+- open_camera
+- stop_exposure
+- get_camera_state
+spec:
+- spec/control/viewing-and-exposure.md#camera-lifecycle

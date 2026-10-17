@@ -1,0 +1,100 @@
+kind: method
+name: set_paused
+summary: Pause or resume acquisition/guiding, optionally with a full pause.
+description: paused false requests mode 0 (running) and bypasses type validation entirely. paused true
+  requests mode 1 (ordinary pause) by default or for any other string, or mode 2 (full pause) when type
+  is the string "full". In an ordinary pause exposures and frame processing continue but guide corrections are
+  skipped (while guiding a neutral deferred move is scheduled instead). In a full pause each arriving frame is
+  dropped and no further exposure is scheduled; leaving it runs extra resume handling. READ. The result 0
+  is a synchronous handler return.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7cdb0 (64-bit build); MyDev::SetPaused @0x95090;
+  Guider::SetPaused @0xe7a80; MyDev::OnExposeComplete @0x96740
+side_effects: Changes the acquisition/guiding pause mode of the guide camera device. When reached through
+  an imager relay on the main table the same request can additionally trigger the reconnect callback described
+  in the guider service notes (relay eligibility is a separate outer gate).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_paused request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_paused
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SetPausedParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7cdb0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: paused missing or of a type other than boolean or integer
+  label: expected bool param
+- code: 105
+  trigger: paused is true and type is present but not a string
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Downstream error codes from the device helper are not exhausted.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 11
+    method: set_paused
+    params:
+      paused: true
+      type: full
+  summary: Full pause (shape READ; example invented)
+- name: resume
+  of: request
+  payload:
+    id: 12
+    method: set_paused
+    params:
+      paused: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_paused
+    result: 0
+    code: 0
+    id: 12
+- name: bad-type
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_paused
+    error: expected string param
+    code: 105
+    id: 13
+see_also:
+- stop_capture
+- set_lock_position
+spec:
+- spec/guider/guiding.md#guiding-workflow

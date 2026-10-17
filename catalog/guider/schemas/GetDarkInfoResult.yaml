@@ -1,0 +1,29 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: GetDarkInfoResult
+type: array
+description: One entry per dark image found in the dark directory. The formatter includes camera, gain
+  and file_name members and extracts gain and a user-note from FITS keywords; the complete object schema
+  is unresolved.
+items:
+  type: object
+  additionalProperties: true
+  properties:
+    camera:
+      description: Camera identification for the dark. Type unresolved.
+      x-confidence: unresolved
+      x-basis: static analysis of firmware 9.31, guider handler @0x83770 (64-bit build), handler @0x837e0,
+        enum_image @0x154750
+    gain:
+      description: Gain recorded for the dark (from the FITS GAIN keyword). Type unresolved.
+      x-confidence: unresolved
+      x-basis: static analysis of firmware 9.31, guider handler @0x83770 (64-bit build), handler @0x837e0,
+        enum_image @0x154750
+    file_name:
+      type: string
+      description: Dark file name.
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, guider handler @0x83770 (64-bit build), handler @0x837e0,
+        enum_image @0x154750
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x83770 (64-bit build), handler @0x837e0, enum_image
+  @0x154750

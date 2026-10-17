@@ -1,0 +1,113 @@
+kind: method
+name: verify_client
+summary: Prove the client application by returning a signature over this socket's challenge.
+description: >-
+  Second step of client verification, after get_verify_str on the same socket. Matched by the
+  authentication preprocessor before any method table, so it is answered on an unverified external
+  connection. The client signs the challenge bytes and sends the base64 signature as sign together with
+  the unchanged challenge as data. The device decodes sign and checks it over the exact data bytes with
+  SHA-1 and an RSA public key compiled into the firmware (a 1024-bit
+  modulus, READ; the 32-bit build carries the same key), and requires data to equal this socket's stored challenge. On success it sets the
+  socket's verified flag and replies result 0, code 0. A failure does not clear an existing verified flag
+  and an error reply does not by itself close the socket. The scheme authenticates the client
+  application, not the user: the matching private signing key is held by the official app and is not part
+  of this specification, so a client that cannot produce a valid signature cannot use an external
+  connection (INFERRED). Internal (exact localhost-address) connections are treated as verified without
+  this call. Only single requests get this dedicated reply; a batch from an unverified client is consumed
+  silently. Ports with this preprocessor: 4700, 4701, 4702, 4400 and 4040. Verification on 4040 also gates
+  the 4030 serial bridge by source IP (ports.md R3a).
+firmware_9_75: >-
+  Firmware 9.75 (app 3.4.0): on a successful verification the 64-bit and 32-bit imagers create a
+  secure-communication session and reply with result.key_envelope (see VerifyClientResult and
+  spec/control/secure-communication.md) in place of numeric result 0. Session creation failure gives
+  error 207. On the 64-bit build, enforcement of this call is conditional on the secure_communication
+  configuration switch; the 32-bit build keeps port-based enforcement.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0, set_cli_verified @0x6b5ff0
+  (64-bit imager build; key literal written to the public-key file there, modulus parsed as 1024 bits); 32-bit preprocessClientAuth @0x6814d8; app 3.3.2 VerifyAction and VerifyClientCmd
+side_effects: Normal path sets this socket's verified flag (connection-local) and writes scratch files for
+  the verification utility. Omitting data selects a factory path that verifies hardware serial bytes and
+  can set process-wide factory mode, which is why the tier is C.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: verify_client request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: verify_client
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (name matched before table
+        dispatch)
+    params:
+      $ref: ../schemas/VerifyClientParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (64-bit imager build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: verify_client success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/VerifyClientResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75 (codex lane), verify_client handler in the imager; 9.31 returned numeric 0
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: sign or data present but not a string
+  label: expected string param
+- code: 207
+  trigger: Signature does not verify, data does not match this socket's challenge, or no challenge was
+    fetched on this socket
+  label: fail to operate
+- code: 200
+  trigger: Request has no id; reply has id null and no method member
+  label: invalid id
+errors_note: Behaviour with params absent or of another JSON type is unresolved. The app requires code 0
+  and ends its session on any other code.
+examples:
+- name: request
+  summary: sign and data are placeholders, not captured values
+  of: request
+  payload:
+    id: 2
+    method: verify_client
+    params:
+      sign: c2lnbmF0dXJlLXBsYWNlaG9sZGVy
+      data: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: verify_client
+    result: 0
+    code: 0
+    id: 2
+- name: bad-signature
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: verify_client
+    error: fail to operate
+    code: 207
+    id: 2
+see_also:
+- get_verify_str
+- pi_is_verified
+- set_setting
+spec:
+- spec/control/session-handshake/verification-and-roles.md#client-verification

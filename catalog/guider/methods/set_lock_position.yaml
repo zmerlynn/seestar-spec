@@ -1,0 +1,110 @@
+kind: method
+name: set_lock_position
+summary: Set the guider lock position, either exactly or snapped to the star at that position.
+description: Params is an object {x, y, exact} or a positional array [x, y, exact]. x and y are required
+  numbers (pixels, unchecked). With exact true the lock position is set to the given point; otherwise
+  the guider selects the star at that position. The call is refused while the guider is calibrating or
+  guiding.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7a620 (64-bit build); Guider::SetLockPosition
+  @0xe9370, SetLockPosToStarAtPosition @0xe9670
+side_effects: Changes the guide target (lock position) inside the guider. When reached through an imager
+  relay on the main table the same request can additionally trigger the reconnect callback described in
+  the guider service notes (relay eligibility is a separate outer gate).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_lock_position request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_lock_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SetLockPositionParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7a620 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 108
+  trigger: x or y missing or not a number
+  label: expected float param
+- code: 106
+  trigger: exact present with a type other than boolean or integer
+  label: expected bool param
+- code: 300
+  trigger: Internal failure (no guider object or star selection failed)
+  label: internal error
+- code: 304
+  trigger: Guider is in the calibrating or guiding state (exposed states 2 or 3)
+  label: could not set lock position when calibrate or guide
+- code: 305
+  trigger: Lock position could not be set (other refusal)
+  label: could not set lock position
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: The exact trigger split between 300 and 305 is not established beyond the labels.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 8
+    method: set_lock_position
+    params:
+      x: 640.5
+      y: 360.0
+      exact: false
+  summary: Object form (shape READ; values invented)
+- name: array
+  of: request
+  payload:
+    id: 9
+    method: set_lock_position
+    params:
+    - 512
+    - 300
+    - true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_lock_position
+    result: 0
+    code: 0
+    id: 8
+- name: busy
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_lock_position
+    error: could not set lock position when calibrate or guide
+    code: 304
+    id: 10
+see_also:
+- set_search_region
+- set_paused
+spec:
+- spec/guider/guiding.md#guiding-workflow

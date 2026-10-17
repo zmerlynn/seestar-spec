@@ -1,0 +1,22 @@
+title: success with result
+type: object
+description: >-
+  Reply envelope on success for methods that return data. Same members as ReplySuccess, but
+  `result` is defined by the method. Use `allOf` with this schema and a method-specific
+  `properties.result` schema.
+required: [method, result, code, id]
+properties:
+  jsonrpc:
+    $ref: './ReplySuccess.yaml#/properties/jsonrpc'
+  Timestamp:
+    $ref: './Timestamp.yaml'
+  method:
+    $ref: './ReplySuccess.yaml#/properties/method'
+  result:
+    description: Method-specific result; see the method.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+  code:
+    $ref: './ReplySuccess.yaml#/properties/code'
+  id:
+    $ref: './Id.yaml'

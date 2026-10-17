@@ -1,0 +1,104 @@
+kind: method
+name: factory_test_control
+summary: Run one factory-test operation (park, delete user data, set language, enter shipping mode).
+description: 'Every successfully parsed request replies with integer result 0 and code 0, even when the
+  operation itself fails; operation outcome, pending status and failures are reported in a FactoryTestControl
+  event (members Event, Timestamp, operation, state complete or fail, optional error and code, optional
+  record, optional pending). Parse failures return an error reply with no result. The event is broadcast
+  before the RPC reply unless the event object contains the exact raw text "pending":true (a raw substring
+  search, not a parsed check), in which case the completion event comes later from a deferred worker.
+  The record member is normally an array of metadata record objects but a single object for enterShippingMode;
+  each record may carry userId, timestamp, platform, appVersion and osVersion. Destructive: do not send
+  to a device you are not prepared to wipe or shut down.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+side_effects: scopePark homes the mount. delUserImages deletes the stored user images and saves a record.
+  delLicense remounts read-write and deletes licence files. setLangEn sets the language to English and
+  forwards the setting to the secondary unit on that branch. enterShippingMode performs a privileged hardware
+  register write, clears shipping records and on success schedules a shutdown. Synchronous operations
+  can block on shell and record I/O; no upper bound on elapsed time is established.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: factory_test_control request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: factory_test_control
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/FactoryTestControlParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Params not an object
+  label: expected object param
+- code: 105
+  trigger: operation missing or not a string, or a string metadata member of the wrong type
+  label: expected string param
+- code: 104
+  trigger: timestamp present and not an integer
+  label: expected int param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Operation failures (including unsupported operation strings, helper code 102) are reported
+  only through the FactoryTestControl event, not as RPC error replies.
+examples:
+- name: set-language
+  of: request
+  payload:
+    id: 51
+    method: factory_test_control
+    params:
+      operation: setLangEn
+- name: with-metadata
+  of: request
+  payload:
+    id: 52
+    method: factory_test_control
+    params:
+      operation: scopePark
+      userId: example-user
+      timestamp: 1700000000
+      platform: Android
+      appVersion: 1.0.0
+      osVersion: '14'
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: factory_test_control
+    result: 0
+    code: 0
+    id: 51
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: factory_test_control
+    error: expected object param
+    code: 107
+    id: 53
+see_also: []
+spec:
+- spec/control/maintenance.md#factory-test-and-shipping

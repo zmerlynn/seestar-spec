@@ -1,0 +1,58 @@
+kind: method
+name: stop_motion_monitor
+summary: Stop the motion monitor (firmware 9.75, 64-bit only).
+description: New in firmware 9.75, app 3.4.0, 64-bit build only. Takes no parameters, may relay to the
+  other camera, otherwise stops the worker and replies success. No error path was found, so it is idempotent.
+grade: MUTATOR / READ
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xd6500 (64-bit build)
+side_effects: Stops the motion-monitor worker if it runs.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_motion_monitor request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_motion_monitor
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No local error branch was found.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 85
+    method: stop_motion_monitor
+  summary: READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_motion_monitor
+    result: 0
+    code: 0
+    id: 85
+see_also:
+- start_motion_monitor
+- MotionMonitor
+spec:
+- spec/control/function-states.md#motion-monitor

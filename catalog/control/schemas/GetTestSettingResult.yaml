@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: get_test_setting result
+type: object
+description: Current test/hot settings. The six main members are always present; new_solve_exec is added
+  only when the solver-executable check succeeds.
+required:
+- autogoto_threshold
+- auto_open_heater
+- auto_open_cooler
+- station_5g
+- plan_simulate
+- goto_simulate
+properties:
+  autogoto_threshold:
+    type: number
+    description: Auto-goto centring threshold, a unitless fraction of the smaller field-of-view dimension.
+      After a plate solve, auto-goto treats the target as centred when the angular offset between target
+      and solve divided by min(FOV width, FOV height) is at most this value. For the wide camera the
+      threshold is scaled by the wide/main FOV ratio.
+    x-confidence: READ; FOV divisor INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x72e6e8; IsSolveResCentered
+      @0x189690, IsCentered @0x16e2a0, SetAcWideCamThres @0x1256e0
+  auto_open_heater:
+    type: boolean
+    description: Automatic heater flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x72e700
+  auto_open_cooler:
+    type: boolean
+    description: Automatic cooler flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x72e718
+  station_5g:
+    type: boolean
+    description: Station-mode 5 GHz flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x72e730
+  plan_simulate:
+    type: integer
+    description: 'Test-only auto-goto simulation level (persisted as the hot setting simulate/ac_lev): 0
+      normal; any value above 0 skips the initial angle step; 1 ends after the goto and 2 after the first
+      solve, both reporting success without real centring; values above 2 only skip the initial angle.
+      Clients MUST NOT set nonzero values in normal use. set_test_setting does not set it.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x72e740; AutoGotoFunc
+      branches @0x174670 (>0), @0x173428 (==1), @0x173ad0 (==2)
+  goto_simulate:
+    type: boolean
+    description: Goto simulation flag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x7340e8
+  new_solve_exec:
+    type: boolean
+    x-required-when: solver executable check succeeds
+    description: New solver executable available. Present only when the executable access check succeeds;
+      omitted otherwise while the reply still succeeds.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build), key @0x72e6d8
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb9500 (64-bit build)

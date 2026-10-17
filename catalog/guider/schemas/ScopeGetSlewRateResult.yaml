@@ -1,0 +1,24 @@
+title: scope_get_slew_rate result
+type: object
+required:
+- list
+- index
+description: Slew-rate list and selected index.
+properties:
+  list:
+    type: array
+    description: Rate list. Items whose label matches a numeric x-suffix pattern are numbers; the form
+      of non-matching items is not established (INFERRED to stay strings).
+    items:
+      type:
+      - number
+      - string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x84c30 (64-bit build)
+  index:
+    type: integer
+    description: Cached selected index into list. Bounds relative to list are not established.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x84c30 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x84c30 (64-bit build)

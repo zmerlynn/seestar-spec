@@ -1,0 +1,108 @@
+kind: method
+name: is_img_file_annotated
+summary: Report whether a saved image file carries annotation (WCS) metadata.
+description: Checks the named image file (or its sidecar) for plate-solution keywords and returns a boolean.
+  An unreadable, missing or unannotated file yields false in a normal success reply, not an error. Reading
+  the keywords writes shared log state even when file logging is disabled, so the strict grade is MUTATOR
+  while the observer tier is B. Whether any event relates to this check is not established.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc77d0, IsImgFileAnnotated @0x1fe960, read_wcs_key
+  @0x69fca0 (64-bit build); 32-bit handler compared statically (same callees and strings)
+side_effects: Opens the FITS file read-only to look for WCS keywords; missing or invalid keyword paths
+  write log state. No processing starts.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_img_file_annotated request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: is_img_file_annotated
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+        description: Image file name; the device prefixes its image directory. No path or emptiness check.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc77d0 (64-bit build)
+      - type: array
+        items:
+          type: string
+          description: Image file name; the device prefixes its image directory. No path or emptiness
+            check.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc77d0 (64-bit build)
+        description: 'Positional form: only the first element is used.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc77d0 (64-bit build)
+      description: Required. A string, or the first element of an array. Absent, null, empty array, non-string
+        and object are rejected with 105.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc77d0 (64-bit build), json_array2obj @0x6fa450
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: is_img_file_annotated reply (success)
+    properties:
+      result:
+        type: boolean
+        description: True when the file is annotated; false also covers unreadable or unannotated files.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc77d0 (64-bit build), IsImgFileAnnotated
+          @0x1fe960
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params missing, null, empty array, not a string, or an object
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler error for a failed WCS check. The 32-bit build matches (READ), including
+  the FITS error path.
+examples:
+- name: check
+  summary: Invented file name
+  of: request
+  payload:
+    id: 48
+    method: is_img_file_annotated
+    params: Example_frame.fit
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_img_file_annotated
+    result: false
+    code: 0
+    id: 48
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_img_file_annotated
+    error: expected string param
+    code: 105
+    id: 49
+see_also:
+- start_annotate
+- get_annotate_result
+spec:
+- spec/control/solving-and-annotation.md#annotation
+- spec/media/files-and-album.md#album-methods-on-4700

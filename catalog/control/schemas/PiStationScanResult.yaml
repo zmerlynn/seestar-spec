@@ -1,0 +1,104 @@
+title: pi_station_scan result
+description: 'List of visible networks, possibly empty. An array by default; an object {value: array}
+  when ret_obj was true. Before native parsing the packaged script keeps only entries with signal level
+  at or above -80 and sorts them strongest first (both builds'' scripts do the same). The native side
+  then drops empty SSIDs, keeps only the first (strongest) entry for each SSID within a band (5 GHz means
+  a frequency above 4999 MHz), and keeps only entries in the same band as the device''s own access point,
+  so networks in the other band never appear. If the access-point band cannot be read, only 5 GHz entries
+  are kept (INFERRED effect of the default). A missing SSID is not proof that the network is absent.'
+oneOf:
+- type: array
+  description: Default form.
+  items:
+    type: object
+    required:
+    - freq
+    - sig_lev
+    - flags
+    - ssid
+    properties:
+      freq:
+        type: integer
+        description: Frequency in MHz.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+          (64-bit build)
+      sig_lev:
+        type: integer
+        description: Signal level in dBm (negative; entries below -80 are not listed).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+          (64-bit build)
+      flags:
+        type: string
+        description: Capability flags text from the scan tool (security and mode tokens).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+          (64-bit build)
+      ssid:
+        type: string
+        description: Network name; entries with an empty SSID are dropped by the helper.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+          (64-bit build)
+    description: One visible network.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0 (64-bit
+      build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0 (64-bit
+    build)
+- type: object
+  required:
+  - value
+  description: Wrapped form when ret_obj is true.
+  properties:
+    value:
+      type: array
+      description: Same array as the default form.
+      items:
+        type: object
+        required:
+        - freq
+        - sig_lev
+        - flags
+        - ssid
+        properties:
+          freq:
+            type: integer
+            description: Frequency in MHz.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+              (64-bit build)
+          sig_lev:
+            type: integer
+            description: Signal level in dBm (negative; entries below -80 are not listed).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+              (64-bit build)
+          flags:
+            type: string
+            description: Capability flags text from the scan tool (security and mode tokens).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+              (64-bit build)
+          ssid:
+            type: string
+            description: Network name; entries with an empty SSID are dropped by the helper.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+              (64-bit build)
+        description: One visible network.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0
+          (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0 (64-bit
+        build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0 (64-bit
+    build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe4510, ns_net::pi_station_scan @0x702ac0, ns_net::pi_get_AP
+  @0x702510 (de-duplication @0x702fdc, band gate @0x703054) (64-bit build); packaged network scripts (both
+  builds)

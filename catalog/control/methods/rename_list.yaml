@@ -1,0 +1,91 @@
+kind: method
+name: rename_list
+summary: Change the display name of an existing object list.
+description: Changes the stored list-name attribute of the list called old to new. Objects inside the
+  list are untouched.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe8050, ObjListConfig::RenameList @0x6c38b0 (64-bit
+  build)
+side_effects: Rewrites the list-name attribute in the persistent XML configuration, synchronously.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: rename_list request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: rename_list
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/RenameListParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe8050 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: old or new missing, null or not a string (or wrong params container)
+  label: expected string param
+- code: 236
+  trigger: The configuration root or the old list is not found
+  label: xml item is not found
+- code: 225
+  trigger: A list with the new display name already exists
+  label: xml item already exists
+- code: 234
+  trigger: 'Lower SetAttr step: configuration file name storage is empty'
+  label: xml file name is empty
+- code: 229
+  trigger: 'Lower SetAttr step: the XML key could not be opened'
+  label: fail to open xml key
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Lower-level codes 234 and 229 are established for the 64-bit SetAttr only; 32-bit equivalence
+  is not asserted.
+examples:
+- name: rename
+  of: request
+  payload:
+    id: 61
+    method: rename_list
+    params:
+      old: Winter targets
+      new: Winter 2026
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: rename_list
+    result: 0
+    code: 0
+    id: 61
+- name: name-taken
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: rename_list
+    error: xml item already exists
+    code: 225
+    id: 62
+see_also:
+- add_list
+- del_list
+- get_list
+spec:
+- spec/control/object-lists.md#user-object-lists

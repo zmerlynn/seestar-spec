@@ -1,0 +1,15 @@
+title: check_pa_alt result
+type: object
+required:
+- is_valid
+properties:
+  is_valid:
+    type: boolean
+    description: True when the mount is not in equatorial mode, when the mode cannot be read, or in equatorial
+      mode when the float-rounded value abs((90 - balance_angle) - abs(latitude)) is below 5.0 degrees.
+      In equatorial mode with a failed location load it is true and an error is also present in the same
+      reply.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb61a0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb61a0

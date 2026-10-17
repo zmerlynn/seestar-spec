@@ -1,0 +1,123 @@
+kind: method
+name: pi_output_get2
+summary: Read auxiliary output state as objects, for all ports, one named output or a raw GPIO pin.
+description: Object-valued variant of pi_output_get. Uses the same GPIO read helper, which refreshes shared
+  work-mode and PWM caches (hence MUTATOR grade with tier B). No partial data is returned on errors.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70, Read
+  @0x323e70 (64-bit build)
+side_effects: Refreshes the shared GPIO work-mode and PWM caches and may write log output; no hardware
+  motion or persistent setting change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_output_get2 request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_output_get2
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Optional selector. Absent: all indexed ports. Integer: raw GPIO number (not a port
+        index), no handler bounds. String: case-sensitive substring selecting reset, then beep, then wide_heater,
+        then heater (heater is redirected to wide_heater when the process type is 2); an unrecognised
+        string fails with 109. Null, object, array, float and boolean fail with 102.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+        Read @0x323e70 (64-bit build)
+reply_success:
+  title: pi_output_get2 success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/PiOutputGet2Result.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+          Read @0x323e70 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 102
+  trigger: params present but null, object, array, float or boolean
+  label: invalid params
+- code: 109
+  trigger: String selector matches no known output
+  label: unexpected param
+- code: 204
+  trigger: Invalid internal port index in the all-ports read
+  label: out of limit
+- code: 273
+  trigger: GPIO or PWM driver or connection failure
+  label: GPIO operation failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Raw GPIO driver rejection range is unresolved. Error replies carry no result.
+examples:
+- name: all-ports
+  of: request
+  payload:
+    id: 30
+    method: pi_output_get2
+- name: by-name
+  of: request
+  payload:
+    id: 31
+    method: pi_output_get2
+    params: heater
+- name: ok-one
+  summary: Invented values
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_get2
+    result:
+      type: other
+      state: true
+      value: 50.0
+      is_pwm: true
+      freq: 1000
+    code: 0
+    id: 31
+- name: ok-all
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_get2
+    result:
+    - type: other
+      state: false
+      value: 100.0
+      is_pwm: false
+    code: 0
+    id: 30
+- name: bad-selector
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_get2
+    error: unexpected param
+    code: 109
+    id: 32
+see_also:
+- pi_output_get
+- pi_output_set2
+- pi_output_set
+spec:
+- spec/control/power-and-storage.md#power-led-and-auxiliary-outputs

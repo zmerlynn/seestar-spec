@@ -1,0 +1,29 @@
+title: get_obj entry
+type: object
+required:
+- name
+- coord
+- type
+properties:
+  name:
+    type: string
+    description: Object display name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_obj @0xb57f0, key literal @0x93a280 (64-bit build)
+  coord:
+    type: array
+    description: 'Two numbers: RA (hours, INFERRED from add_obj storage) and Dec (degrees, INFERRED).'
+    minItems: 2
+    maxItems: 2
+    items:
+      type: number
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_obj @0xb57f0, key literal @0x7407e8 (64-bit build)
+  type:
+    type: integer
+    description: Opaque client-defined integer, returned exactly as add_obj stored it; the device never acts
+      on it.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_obj @0xb57f0, key literal @0x944ef8 (64-bit build)
+x-basis: static analysis of firmware 9.31, get_obj @0xb57f0 (64-bit build)
+x-confidence: READ

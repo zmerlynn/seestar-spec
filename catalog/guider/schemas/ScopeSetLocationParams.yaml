@@ -1,0 +1,26 @@
+title: scope_set_location params
+type:
+- object
+- array
+description: Object with latitude and longitude, or the positional array [latitude, longitude]. Both are
+  required; integer or real accepted (reals are widened from 32-bit float). The handler applies no range,
+  clamp or default; geographic validity is left to the mount driver, which negates the longitude for the
+  mount's west-positive site command.
+required:
+- latitude
+- longitude
+properties:
+  latitude:
+    type: number
+    description: 'Site latitude in degrees (INFERRED sign convention: north positive).'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, guider handler @0x7b950 (64-bit build)
+  longitude:
+    type: number
+    description: Site longitude in decimal degrees, positive east (INFERRED, strong; the driver negates it
+      for the mount's west-positive site command). Wrap not established.
+    x-confidence: READ (negation); INFERRED (east-positive convention)
+    x-basis: static analysis of firmware 9.31, guider handler @0x7b950, ScopeAM5::SetSiteLatLong (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7b950 (64-bit build)

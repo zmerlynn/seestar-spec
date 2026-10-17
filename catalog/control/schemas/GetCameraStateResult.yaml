@@ -1,0 +1,26 @@
+title: get_camera_state result
+type: object
+required:
+- state
+description: Camera open/closed state. name and path are present only when the camera is open and its
+  info lookup succeeded; if the lookup fails both are silently omitted and the call still succeeds.
+properties:
+  state:
+    type: string
+    description: close when no camera is open; otherwise idle. The handler does not test for an exposure
+      in progress, so idle does not mean not exposing.
+    enum:
+    - close
+    - idle
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc22e0 (64-bit build)
+  name:
+    type: string
+    description: Camera model name of the open camera.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc22e0 (64-bit build)
+  path:
+    type: string
+    description: Camera path string of the open camera.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc22e0 (64-bit build)

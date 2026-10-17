@@ -1,0 +1,18 @@
+title: get_camera_exp_and_bin result
+type: object
+required:
+- exposure
+- bin
+description: Both members are emitted together, only after both queries succeed.
+properties:
+  exposure:
+    type: integer
+    description: Exposure in microseconds (camera control 1); 10 s is 10000000. Bounds come from the camera's
+      control limits.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc3a0, ExpRetryTag @0x2165d0 (64-bit build)
+  bin:
+    type: integer
+    description: Bin factor.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc3a0 (64-bit build)

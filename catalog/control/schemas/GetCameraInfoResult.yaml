@@ -1,0 +1,72 @@
+title: get_camera_info result
+type: object
+required:
+- chip_size
+- pixel_size_um
+- unity_gain
+- has_cooler
+- is_color
+- is_usb3_host
+- has_hpc
+description: Static camera description. bins is omitted when the bin list is empty; debayer_pattern is
+  emitted only when is_color is true.
+properties:
+  chip_size:
+    type: array
+    description: Sensor dimensions; INFERRED to be pixels ordered width, height (order taken from the
+      record layout).
+    items:
+      type: integer
+      description: One dimension.
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+    minItems: 2
+    maxItems: 2
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  bins:
+    type: array
+    description: Supported bin factors, in the camera's own order. Omitted when the list is empty. These
+      are the values set_camera_bin accepts on the ordinary camera page.
+    items:
+      type: integer
+      description: A bin factor.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  pixel_size_um:
+    type: number
+    description: Pixel size; micrometres taken from the member name (INFERRED unit).
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  unity_gain:
+    type: integer
+    description: Unity-gain setting of the sensor. The gain unit and scale are unresolved.
+    x-confidence: READ (type); unit unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  has_cooler:
+    type: boolean
+    description: Camera reports a cooler.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  is_color:
+    type: boolean
+    description: Camera is a colour sensor (low bit of the flag).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  is_usb3_host:
+    type: boolean
+    description: Camera is attached to a USB 3 host.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  has_hpc:
+    type: boolean
+    description: Camera reports the HPC capability flag. Meaning not established.
+    x-confidence: READ (flag); meaning unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)
+  debayer_pattern:
+    type: string
+    description: Bayer pattern name. Present only when is_color is true. The set of values is unresolved.
+    x-confidence: READ (presence); values unresolved
+    x-basis: static analysis of firmware 9.31, handler @0xc09c0 (64-bit build)

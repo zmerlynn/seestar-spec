@@ -1,0 +1,117 @@
+kind: event
+name: GoPixel
+summary: Function-state notification of the centre-on-pixel function, with the current pixel position.
+description: 'Sent for the centre-on-pixel function started by start_func with name GoPixel (StartCenterPixel / CenterPixelFunc).
+  The event name GoPixel is INFERRED: the APK recognises an event of that name, but the binding of the firmware
+  function detail to that name is not read, and the request name need not equal the event name.
+  Function-state family (F): SendFuncEvent formats the named function detail. state is always present; stage only
+  when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even when the stored
+  code is zero; lookup failure gives ''fail to operate''); cancel omits code and error; route is optional function
+  ancestry. The sender does no deduplication and needs no preceding working event. Detail flags can suppress the
+  working or non-working sends while the cached function tree still changes, so a receiver can miss transitions.
+  The formatter adds cur_pix when it can calculate it. Channel I (TCP 4700). Delivery: ordinary broadcast to every
+  retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery
+  or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ (emitter and payload members); INFERRED (event name)
+basis: static analysis of firmware 9.31, StartCenterPixel @0x17da50, CenterPixelFunc @0x1855d0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: GoPixel event
+  type: object
+  discriminator: Event
+  description: F-family event plus cur_pix.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: GoPixel
+      description: Discriminator.
+      x-confidence: INFERRED (event name not read from the emitter)
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; StartCenterPixel @0x17da50, CenterPixelFunc
+        @0x1855d0 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: F state table; unknown internal codes fall back to idle.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, state-name table @0xae9468
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: state is fail (F formatter)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Stored error code; present at fail even when zero.
+      x-required-when: state is fail (F formatter)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    cur_pix:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Current pixel position, two values. The event chapter types them as numbers; the method reference
+        says integers.
+      x-required-when: formatter can calculate it
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartCenterPixel @0x17da50, CenterPixelFunc @0x1855d0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, StartCenterPixel @0x17da50, CenterPixelFunc @0x1855d0 (64-bit build)
+examples:
+- name: working
+  summary: Centring (READ shape; values invented)
+  of: payload
+  payload:
+    Event: GoPixel
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 900
+    cur_pix:
+    - 512
+    - 300
+see_also:
+- start_func
+- stop_func
+- iscope_get_app_state
+spec:
+- spec/control/solving-and-annotation.md#goto-to-a-pixel
+- spec/control/events-overview.md

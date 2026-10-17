@@ -1,0 +1,49 @@
+title: set_subframe params
+description: A crop rectangle object, or an array whose first element is that object. A positional [width,
+  height, x, y] array is not accepted. `width` and `height` are required positive integers; `x` and `y`
+  are optional signed integers (default -1, meaning centred; other JSON types are ignored). There is no
+  upper bound in the handler; the helpers reject sizes exceeding the sensor (204).
+oneOf:
+- type: object
+  required:
+  - width
+  - height
+  properties:
+    width:
+      type: integer
+      minimum: 1
+      description: Crop width in pixels, scaled by the current bin factor on the focus page. Missing,
+        non-integer or non-positive gives 209.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+        @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)
+    height:
+      type: integer
+      minimum: 1
+      description: Crop height in pixels. Missing, non-integer or non-positive gives 209.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+        @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)
+    x:
+      type: integer
+      description: Left offset. Negative means centred; nonnegative values are clamped to the sensor extent
+        and forced even.
+      x-default: '-1'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+        @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)
+    y:
+      type: integer
+      description: Top offset, same rules as x.
+      x-default: '-1'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+        @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    type: object
+  description: First element is the rectangle object; the rest are ignored.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+  @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)

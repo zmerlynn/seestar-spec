@@ -1,0 +1,57 @@
+title: pi_set_time params
+type: object
+description: Calendar fields and zone name. Wrong-typed and unknown members are ignored. The calendar
+  is applied only when all six calendar members differ from -1; the zone only when nonempty. There is
+  no native calendar range validation.
+properties:
+  year:
+    type: integer
+    description: Calendar year. Signed 32-bit; default -1 meaning not supplied. No range check.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+  mon:
+    type: integer
+    description: Month number. Default -1 meaning not supplied.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+  day:
+    type: integer
+    description: Day of month. Default -1 meaning not supplied.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+  hour:
+    type: integer
+    description: Hour. Default -1 meaning not supplied.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+  min:
+    type: integer
+    description: Minute. Default -1 meaning not supplied.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+  sec:
+    type: integer
+    description: Second. Default -1 meaning not supplied.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+  time_zone:
+    type: string
+    description: Zone name passed to a host timezone script. Default empty (no zone change). The value
+      reaches a shell command unquoted; clients SHOULD send only a plain IANA zone name without spaces.
+      Acceptance differs by build. The 64-bit script rejects an empty name and any name without a matching
+      zoneinfo file, and exits early if the zone is unchanged; the 32-bit script has neither check and
+      leaves acceptance to the system time service. Both report a rejection as output containing error
+      (216). Valid IANA names are accepted by both (INFERRED for the 32-bit build).
+    x-confidence: READ (scripts); INFERRED (32-bit acceptance of IANA names)
+    x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached
+      from the main imager by relay
+x-default: all six calendar members -1, time_zone empty
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x72650 (64-bit guider build), reached from
+  the main imager by relay

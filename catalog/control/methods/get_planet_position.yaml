@@ -1,0 +1,160 @@
+kind: method
+name: get_planet_position
+summary: Return the current Moon and Sun positions as RA/Dec in degrees, computed by running a packaged
+  script.
+description: No request parameters are read. The device loads the user location (refreshing a memoised
+  copy from configuration when needed, falling back to the mount site), then synchronously runs the packaged
+  planetary calculation script with longitude, latitude and UTC offset hours, and returns the script's
+  Moon and Sun coordinates. The coordinates are degrees, not RA hours.
+grade: MUTATOR / established (strict grade; 64-bit build; 32-bit build probable). Observer tier B
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit build);
+  script units from the packaged script text
+side_effects: Refreshes a memoised location and timestamp from configuration and runs an external calculation
+  command synchronously with no explicit deadline. Does not persist a location setting or command hardware
+  motion.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_planet_position request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_planet_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf5010 (64-bit build)
+reply_success:
+  title: get_planet_position reply (success)
+  type: object
+  description: Success envelope with an object result. Member order and the socket-layer members are as
+    in the common success envelope.
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: object
+      required:
+      - moon
+      - sun
+      description: Positions from the packaged calculation script. The handler inserts the script's captured
+        numbers into the reply as raw JSON text without numeric validation, so a damaged or replaced script
+        could yield a reply that is not valid JSON; receivers SHOULD be prepared for that.
+      properties:
+        moon:
+          type: array
+          minItems: 2
+          maxItems: 2
+          description: Moon position as [RA, Dec], both in degrees (not RA hours).
+          prefixItems:
+          - type: number
+            description: Right ascension, degrees.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+              build)
+          - type: number
+            description: Declination, degrees.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+              build)
+          items: false
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+            build)
+        sun:
+          type: array
+          minItems: 2
+          maxItems: 2
+          description: Sun position as [RA, Dec], both in degrees (not RA hours).
+          prefixItems:
+          - type: number
+            description: Right ascension, degrees.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+              build)
+          - type: number
+            description: Declination, degrees.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+              build)
+          items: false
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf5010, LoadUserLocation @0x6dd2c0 (64-bit
+        build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The calculation command could not be run
+  label: fail to run command
+- code: 207
+  trigger: The script output did not match the capture pattern, or fewer than five captures were found
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Geographic-location lookup failures are ignored after the fallback. Empty or malformed numeric
+  text from the script is not detected and can produce a malformed reply rather than a typed error.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 30
+    method: get_planet_position
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_planet_position
+    result:
+      moon:
+      - 201.5
+      - -9.2
+      sun:
+      - 210.8
+      - -13.4
+    code: 0
+    id: 30
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_planet_position
+    error: fail to run command
+    code: 214
+    id: 31
+see_also:
+- scope_sync_planet
+spec:
+- spec/control/object-lists.md#sun-and-moon-positions

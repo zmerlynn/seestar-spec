@@ -1,0 +1,136 @@
+kind: event
+name: EqModePA
+summary: State of the equatorial-mode polar-alignment worker, with the error at completion.
+description: 'StartPAFunc names the function EqModePA instead of 3PPA when the PA type is equatorial.
+  Function-state family (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms
+  when the timer is started or the state is terminal; code and error at fail even when the stored code
+  is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working notifications
+  can be suppressed while the function cache still changes, so a receiver cannot rely on seeing every
+  transition. The equatorial one-point branch sets complete before entering ongoing gyro work and can
+  send further complete events while the worker is still alive; a guard-generated cancel can follow on
+  stop. So complete does not mean the worker ended. total, x and y are added together only for complete
+  with valid PA error components; completion alone does not guarantee them. None of 3PPA''s percent, calib_fail_autogoto
+  or offset members are added. Recipients: all retained 4700 sockets. No reply-before-event order is established:
+  the RPC reply that starts the worker and the worker''s events can arrive in either order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, StartPAFunc @0x15fcc0, PA PrintState @0x15dcf0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: EqModePA event
+  type: object
+  discriminator: Event
+  description: Function-state members plus the completion error.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: EqModePA
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartPAFunc @0x15fcc0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; StartPAFunc @0x15fcc0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    total:
+      type: number
+      description: Total polar-axis error. Degrees INFERRED from the shared polar-align error fields.
+      x-required-when: state complete, equatorial PA type, both error components valid (not the -999 sentinel)
+      x-confidence: READ; unit INFERRED (degrees)
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0
+    x:
+      type: number
+      description: Error component; added together with total.
+      x-required-when: state complete, equatorial PA type, both error components valid (not the -999 sentinel)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0
+    y:
+      type: number
+      description: Error component; added together with total.
+      x-required-when: state complete, equatorial PA type, both error components valid (not the -999 sentinel)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0, SendFuncEvent @0x6e4e20
+examples:
+- name: complete
+  summary: Completed with valid error (READ shape; values invented)
+  of: payload
+  payload:
+    Event: EqModePA
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 18000
+    total: 0.42
+    x: 0.3
+    y: -0.29
+- name: cancel
+  summary: Guard cancel after stop (READ shape; values invented)
+  of: payload
+  payload:
+    Event: EqModePA
+    Timestamp: '1234.123456789'
+    state: cancel
+    lapse_ms: 95000
+see_also:
+- start_polar_align
+- stop_polar_align
+- get_3p_pa_state
+spec:
+- spec/control/polar-alignment.md#equatorial-mode-alignment-eqmodepa

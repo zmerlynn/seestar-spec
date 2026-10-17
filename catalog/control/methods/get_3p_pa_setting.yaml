@@ -1,0 +1,83 @@
+kind: method
+name: get_3p_pa_setting
+summary: Read the three-point polar-alignment setting.
+description: Returns whether three-point alignment is selected and the stored rotation angle.
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes
+  shared diagnostics); the handler itself is a probable pure getter (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xba2e0, Get3PPaSetting @0x120360 (64-bit build)
+side_effects: Copies a small stored setting; only the shared request/reply diagnostics are written.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_3p_pa_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_3p_pa_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xba2e0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_3p_pa_setting success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/Get3pPaSettingResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The inspected handler returns no handler-specific error code.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 111
+    method: get_3p_pa_setting
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_3p_pa_setting
+    result:
+      is_pa_3p: true
+      rotate_angle: 30
+    code: 0
+    id: 111
+see_also:
+- set_3p_pa_setting
+spec:
+- spec/control/polar-alignment.md#settings

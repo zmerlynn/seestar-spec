@@ -1,0 +1,20 @@
+title: get_focuser_value params
+description: A control name as a scalar string, or an array whose first element is the name. Absent, empty,
+  null or non-string gives 105. Matching is a case-insensitive substring search of the given string within
+  each canonical name (max_step, backlash, reset_step); the first match wins and an empty string matches
+  nothing (109).
+anyOf:
+- type: string
+  minLength: 1
+  description: Control name.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd3480 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    type: string
+  description: Name in the first element; others ignored.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd3480 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd3480 (64-bit build)

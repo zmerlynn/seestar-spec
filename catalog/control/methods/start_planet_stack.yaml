@@ -1,0 +1,114 @@
+kind: method
+name: start_planet_stack
+summary: Stack a recorded planetary, lunar or solar video file into an image on a worker thread.
+description: Copies file, mode and region into the global stack parameters, stops any AVI reading, resolves
+  the input path, checks free disk and starts the PlanetStack worker. The output name is built from the
+  mode and the current date and time with a .fit extension. A success reply establishes only that the
+  worker was launched, not that the input is usable, that the disk was measured, or that an image was
+  produced. Progress and the final state arrive as PlanetStack events; failure also produces a PlanetStack
+  event with state fail and a code and error string.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe2120, StartPlanetStack @0x333ee0 (64-bit build)
+side_effects: Writes shared stack parameters and status, stops AVI reading, resolves paths, and starts
+  the named PlanetStack worker thread. Does not wait for the final image.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_planet_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_planet_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartPlanetStackParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe2120 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 102
+  trigger: file missing or not a string, params not an object, rect present but malformed or null, or
+    mode not given and not detectable from the file name
+  label: invalid params
+- code: 268
+  trigger: The PlanetStack worker thread is running (as read from the handler; exact check unresolved)
+  label: operation is in progress
+- code: 524
+  trigger: A batch stack, View or continuous-exposure function conflicts
+  label: function conflict
+- code: 536
+  trigger: A ViewPlan worker is running
+  label: view plan is already running
+- code: 208
+  trigger: Free-space query succeeded and reported at most 199 binary megabytes
+  label: disk is full
+- code: 212
+  trigger: Worker thread could not be created
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: If the free-disk query itself fails, the disk guard is bypassed and the request can still
+  succeed (64-bit build; not re-derived for the 32-bit build). Other path and delegated failure codes
+  are not exhaustively established. Later input, disk and worker failures are reported through events,
+  not this reply.
+examples:
+- name: stack-with-mode
+  of: request
+  payload:
+    id: 111
+    method: start_planet_stack
+    params:
+      file: Video_Example.avi
+      mode: planet
+- name: stack-with-rect
+  of: request
+  payload:
+    id: 112
+    method: start_planet_stack
+    params:
+      file: Video_Example.avi
+      mode: lunar
+      rect:
+      - 100
+      - 80
+      - 640
+      - 480
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_planet_stack
+    result: 0
+    code: 0
+    id: 111
+- name: plan-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_planet_stack
+    error: view plan is already running
+    code: 536
+    id: 113
+see_also:
+- stop_planet_stack
+- start_scan_planet
+spec:
+- spec/control/stacking.md#planet-stack
+- spec/control/stacking.md#planet-stack

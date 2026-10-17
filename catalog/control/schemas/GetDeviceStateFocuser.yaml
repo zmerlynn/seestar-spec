@@ -1,0 +1,28 @@
+title: get_device_state focuser
+type: object
+description: Focuser info.
+required:
+- state
+properties:
+  state:
+    type: string
+    description: Focuser state during the query; it may differ from the state before the call because
+      the query can open and close the focuser.
+    enum:
+    - close
+    - idle
+    - moving
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  max_step:
+    type: integer
+    description: Present only when the focuser is open and the value query succeeds; motor steps (INFERRED).
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+  step:
+    type: integer
+    description: Present only when the focuser is open and the position query succeeds; motor steps (INFERRED).
+    x-confidence: READ; unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)

@@ -1,0 +1,77 @@
+kind: method
+name: clear_planet_stack
+summary: Reset the planet-stack result and detail buffers when the planet-stack worker is not running.
+description: No request parameters are read. When the planet-stack worker thread is stopped the device
+  resets its held planet-stack return and detail buffers; it does not delete any input or output image.
+  While the worker is running the helper returns failure without assigning an error code, so the reply
+  carries the default code 207, not 268.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xca100, ClearPlanetStack @0x332910 (64-bit build; helper
+  not decompiled, called directly from the handler)
+side_effects: Resets the held planet-stack return and detail buffers, which later state and result reads
+  can show. No image file is deleted. No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_planet_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_planet_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca100 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: The planet-stack worker is running (the helper fails without setting a code, so the default
+    is reported)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No other failure branch was found in the inspected helper. Events from deeper workers are
+  not established; no event emitter appears in the handler.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: clear_planet_stack
+- name: ok
+  of: reply_success
+  payload:
+    method: clear_planet_stack
+    result: 0
+    code: 0
+    id: 21
+- name: worker-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_planet_stack
+    error: fail to operate
+    code: 207
+    id: 22
+see_also: []
+spec:
+- spec/control/stacking.md#planet-stack
+- spec/control/stacking.md#planet-stack

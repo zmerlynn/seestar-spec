@@ -1,0 +1,16 @@
+title: scope_set_connection_mode params
+description: Scalar integer or one-element integer array; anything else gives 104. No handler range, default
+  or clamp. The meaning of mode indices, the invalid-index behaviour and reconnect or persistence effects
+  are unresolved.
+anyOf:
+- type: integer
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x71ab0 (64-bit build)
+- type: array
+  prefixItems:
+  - type: integer
+  description: Positional form [mode].
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x71ab0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x71ab0 (64-bit build)

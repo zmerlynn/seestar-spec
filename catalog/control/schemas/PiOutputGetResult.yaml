@@ -1,0 +1,31 @@
+title: pi_output_get result
+description: 'Output value as a bare scalar. Per output: a boolean when the output is in digital mode,
+  or a number (PWM duty percent; 0 when the state is off) when it is in PWM mode. With no selector the
+  result is an array of those scalars in port-index order (empty when there are no ports).'
+anyOf:
+- type: boolean
+  description: Selected output, digital mode.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70,
+    Read @0x323e70 (64-bit build)
+- type: number
+  description: 'Selected output, PWM mode: duty percent, 0 when the state is off.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70,
+    Read @0x323e70 (64-bit build)
+- type: array
+  description: All ports in index order.
+  items:
+    type:
+    - boolean
+    - number
+    description: Per-port digital state or PWM percent.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70,
+      Read @0x323e70 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70,
+    Read @0x323e70 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd36a0, GPIOController::ReadByIndex @0x324a70, Read
+  @0x323e70 (64-bit build)

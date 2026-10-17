@@ -1,0 +1,31 @@
+title: scope_get_connection_para result
+type: object
+description: Driver connection parameters, mode dependent. In Serial mode the object carries a baud_rate
+  list/index representation; in TCP mode it carries address, port and connection_type. Precise nesting
+  and the Serial formatting are retained in the native formatter and are unresolved. No fixed runtime
+  peer value is implied.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, ScopeAM5::GetConnectionPara @0xf2df0
+properties:
+  baud_rate:
+    description: 'Serial mode: baud-rate choices and the current one as a list/index representation. Exact
+      shape unresolved.'
+    x-confidence: unresolved
+    x-basis: static analysis of firmware 9.31, ScopeAM5::GetConnectionPara @0xf2df0; Serial formatting
+      unresolved
+  address:
+    type: string
+    description: 'TCP mode: peer address string.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ScopeAM5::GetConnectionPara @0xf2df0
+  port:
+    type: integer
+    description: 'TCP mode: peer port.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ScopeAM5::GetConnectionPara @0xf2df0
+  connection_type:
+    type: string
+    description: 'TCP mode: the literal string TCP.'
+    const: TCP
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ScopeAM5::GetConnectionPara @0xf2df0

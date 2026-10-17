@@ -1,0 +1,89 @@
+kind: method
+name: set_polar_align_image
+summary: Save the latest plate-solve WCS into one of two polar-alignment image slots.
+description: Copies the temporary solve file into slot 0 or 1 and records the solve time for that slot.
+  Without params the slot alternates (first implicit selection is slot 0 on the 64-bit build). A copy
+  that is identical (by MD5) to the file in the other slot is rejected. The copy may already have happened
+  when an error is reported.
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcbdb0 (64-bit build), GetSolveTimet
+side_effects: Writes a pa_N WCS file, updates the stored solve date for that slot and advances the slot
+  selection, only on full success.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_polar_align_image request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_polar_align_image
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Optional. An integer, or an array whose first element is an integer, selects slot 0
+        or 1. Anything else (absent, null, empty array, non-integer, object) keeps the alternating default
+        (previous slot + 1) mod 2 with no type error. A negative integer or an integer above 1 gives 204.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcbdb0 (64-bit build); initial slot index from
+        process data
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 204
+  trigger: Explicit or defaulted slot index outside 0..1
+  label: out of limit
+- code: 207
+  trigger: File identical to the other slot, copy failed, or solve time could not be read
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A failed MD5 computation bypasses the duplicate check and the copy is still attempted.
+examples:
+- name: first-image
+  summary: Save into slot 0
+  of: request
+  payload:
+    id: 51
+    method: set_polar_align_image
+    params: 0
+- name: alternate
+  of: request
+  payload:
+    id: 52
+    method: set_polar_align_image
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_polar_align_image
+    result: 0
+    code: 0
+    id: 51
+- name: same-file
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_polar_align_image
+    error: fail to operate
+    code: 207
+    id: 53
+see_also:
+- get_polar_align_image
+- rm_polar_align_image
+spec:
+- spec/control/polar-alignment.md#results-and-image-slots

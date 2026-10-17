@@ -1,0 +1,85 @@
+kind: method
+name: remote_rebind_device_user
+summary: Report a supplied user identifier to the cloud remote service as the owner binding of this device.
+description: 'Collects the supplied userId together with the device name, access-point information and
+  hardware identity and hands them to the remote-access component, which reports the binding. Failure
+  to read the access-point or hardware information does not fail the call, and no failure of the report
+  is reflected in the reply: after the report helper returns, the handler always acknowledges 0. A success
+  reply therefore does not show that the cloud rebind completed (unresolved: transport timing, any resulting
+  events, which binding fields are stored). params must be an object; positional arrays are not accepted.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe0ca0, reportDeviceBindInfo @0x1a2570 (64-bit build)
+side_effects: Queues or sends a binding report to the remote service; the local binding state may be updated
+  (INFERRED; completion unresolved). No local hardware or motion change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: remote_rebind_device_user request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: remote_rebind_device_user
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/RemoteRebindDeviceUserParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe0ca0, reportDeviceBindInfo @0x1a2570 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null, or not an object (arrays included)
+  label: expected object param
+- code: 105
+  trigger: userId missing or not a string
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The report helper's result is not checked, so no network or cloud failure is surfaced as
+  an error.
+examples:
+- name: rebind
+  of: request
+  payload:
+    id: 21
+    method: remote_rebind_device_user
+    params:
+      userId: example-user-1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remote_rebind_device_user
+    result: 0
+    code: 0
+    id: 21
+- name: missing-user-id
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remote_rebind_device_user
+    error: expected string param
+    code: 105
+    id: 22
+see_also: []
+spec:
+- spec/auth/account-login/boundaries.md#firmware-boundary
+- spec/control/network.md#remote-access-enrolment

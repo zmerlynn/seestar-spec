@@ -1,0 +1,309 @@
+kind: event
+name: 3PPA
+summary: Three-point polar-alignment progress, from two different producers under one Event name.
+description: 'Two payload contracts share Event 3PPA; select by members, not by name. (1) Function producer
+  (ThreePointPaFunc named 3PPA): Function-state family (SendFuncEvent): state is always written; stage
+  only when non-empty; lapse_ms when the timer is started or the state is terminal; code and error at
+  fail even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail sends
+  nothing, and non-working notifications can be suppressed while the function cache still changes, so
+  a receiver cannot rely on seeing every transition. It adds percent and calib_fail_autogoto in every
+  state, and offset / equ_offset when their components are valid. (2) Polar-align status producer (SendPaEvent
+  then FormatPaStatus), the same structure get_3p_pa_state returns: state is a stage name with state_code;
+  auto_move, auto_update and paused always; detail, lapse_ms, retry_cnt and (with valid offsets) pa_error
+  only when the status active flag is set. Do not validate the status producer''s state against the function
+  enum. Top-level total/x/y belong to EqModePA, not to this event. The equatorial (one-point) worker reports
+  as EqModePA instead. Recipients: all retained 4700 sockets; start_polar_align also records the calling
+  connection as the recipient of alignment results, and removing that socket stops alignment. Gyro alignment
+  events are not fully audited. No reply-before-event order is established: the RPC reply that starts
+  the worker and the worker''s events can arrive in either order. No fixed cadence. APK consumer expectation:
+  DTOs declare has_offset and stage members that the inspected formatters do not write.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SendPaEvent @0x1626c0, FormatPaStatus @0x161860, ThreePointPaFunc
+  @0x162800, StartPAFunc @0x15fcc0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: 3PPA event
+  type: object
+  discriminator: Event
+  description: Union of the function-producer and polar-align status-producer members; see the x-required-when
+    hints for which producer writes each.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: 3PPA
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendPaEvent @0x1626c0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      - exp1
+      - solve1
+      - calc1
+      - move1
+      - delay1
+      - exp2
+      - solve2
+      - calc2
+      - move2
+      - delay2
+      - exp3
+      - solve3
+      - calc3
+      - exp4
+      - solve4
+      - calc4
+      description: 'Two producers share this member. Function producer: idle, working, complete, fail,
+        cancel. Polar-align status producer: the stage name for state_code (0=idle, 1=start, 2=exp1, 3=solve1,
+        4=calc1, 5=move1, 6=delay1, 7=exp2, 8=solve2, 9=calc2, 10=move2, 11=delay2, 12=exp3, 13=solve3,
+        14=calc3, 15=exp4, 16=solve4, 17=calc4); an unrecognised code gives a shared fallback string.
+        Stage values are retained progress (also after pause) and are never terminal.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; ThreePointPaFunc @0x162800;
+        FormatPaStatus @0x161860, stage table @0xaad0b0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Function producer: elapsed milliseconds per the function-state rule. Polar-align status
+        producer: unsigned milliseconds since the stored status start, present when the status active
+        flag is set.'
+      x-required-when: 'function producer: timer started or terminal; status producer: status active flag
+        set'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, FormatPaStatus @0x161860
+    code:
+      type: integer
+      description: 'Function producer only: present at fail even when the stored code is 0. No closed
+        list: 207 (guard default), 252 (auto-goto failure) and copied downstream codes are established.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    percent:
+      type: number
+      description: Alignment progress percentage.
+      x-required-when: function producer, every state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0, ThreePointPaFunc @0x162800
+    calib_fail_autogoto:
+      type: boolean
+      description: false when the ordinary offset pair is valid, otherwise the stored flag.
+      x-required-when: function producer, every state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0, ThreePointPaFunc @0x162800
+    offset:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Ordinary offset pair; degrees INFERRED.
+      x-required-when: function producer, when both components are valid (not the -999 sentinel)
+      x-confidence: READ; unit INFERRED (degrees)
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0, ThreePointPaFunc @0x162800
+    equ_offset:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Equatorial offset pair, gated independently of offset; degrees INFERRED.
+      x-required-when: function producer, when both equatorial components are valid (not -999)
+      x-confidence: READ; unit INFERRED (degrees)
+      x-basis: static analysis of firmware 9.31, PA PrintState @0x15dcf0, ThreePointPaFunc @0x162800
+    state_code:
+      type: integer
+      minimum: 0
+      description: Polar-align stage number 0-17 (see state). Not an error code.
+      x-required-when: polar-align status producer (always there)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0, stage
+        table @0xaad0b0
+    auto_move:
+      type: boolean
+      description: Automatic-move setting of the run.
+      x-required-when: polar-align status producer (always there)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+    auto_update:
+      type: boolean
+      description: Automatic-update setting of the run.
+      x-required-when: polar-align status producer (always there)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+    paused:
+      type: boolean
+      description: True when the alignment worker thread is not running.
+      x-required-when: polar-align status producer (always there)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+    retry_cnt:
+      type: integer
+      description: Retry counter of the run.
+      x-required-when: polar-align status producer, status active flag set
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+    detail:
+      type: object
+      properties:
+        lapse_ms:
+          type: integer
+          minimum: 0
+          description: Exposure or wait elapsed, milliseconds.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        total_ms:
+          type: integer
+          minimum: 0
+          description: Exposure or wait target, milliseconds; 4000 for delay stages.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        star_number:
+          type: integer
+          minimum: 0
+          description: Stars found by the solver; solve stages only, when non-negative.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+      description: 'Per-stage progress. Exposure stages (2, 7, 12, 15): lapse_ms and total_ms. Solve stages
+        (3, 8, 13, 16): lapse_ms and, when non-negative, star_number. Delay stages (6, 11): lapse_ms and
+        total_ms of 4000. Other stages: may be an empty object. No operation or stage member.'
+      x-required-when: polar-align status producer, status active flag set
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+    pa_error:
+      type: object
+      properties:
+        total:
+          type: number
+          description: Total polar-axis error, degrees.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        x:
+          type: number
+          description: Error component, degrees.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        y:
+          type: number
+          description: Error component, degrees.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        total_arcsec:
+          type: number
+          description: total times 3600.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        x_arcsec:
+          type: number
+          description: x times 3600.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+        y_arcsec:
+          type: number
+          description: y times 3600.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+      description: Polar-axis error.
+      x-required-when: polar-align status producer, active flag set and both offsets valid (not -999)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatPaStatus @0x161860, SendPaEvent @0x1626c0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendPaEvent @0x1626c0, SendFuncEvent @0x6e4e20
+examples:
+- name: status-exposure
+  summary: Status producer during the second exposure (READ shape; values invented)
+  of: payload
+  payload:
+    Event: 3PPA
+    Timestamp: '1234.123456789'
+    state: exp2
+    state_code: 7
+    auto_move: true
+    auto_update: true
+    paused: false
+    detail:
+      lapse_ms: 1500
+      total_ms: 2000
+    lapse_ms: 21000
+    retry_cnt: 0
+- name: status-result
+  summary: Status producer with an error result (READ shape; values invented)
+  of: payload
+  payload:
+    Event: 3PPA
+    Timestamp: '1234.123456789'
+    state: calc3
+    state_code: 14
+    auto_move: true
+    auto_update: true
+    paused: false
+    detail: {}
+    lapse_ms: 52000
+    retry_cnt: 1
+    pa_error:
+      total: 0.5
+      x: 0.3
+      y: 0.4
+      total_arcsec: 1800.0
+      x_arcsec: 1080.0
+      y_arcsec: 1440.0
+- name: function-working
+  summary: Function producer (READ shape; values invented)
+  of: payload
+  payload:
+    Event: 3PPA
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 30500
+    percent: 45.0
+    calib_fail_autogoto: false
+    offset:
+    - 0.25
+    - -0.5
+see_also:
+- start_polar_align
+- pause_polar_align
+- stop_polar_align
+- clear_polar_align
+- get_3p_pa_state
+- iscope_stop_view
+spec:
+- spec/control/events/nested-schemas.md#polar-align-stages-3ppa-custom-formatter
+- spec/control/polar-alignment.md#three-point-progress-3ppa

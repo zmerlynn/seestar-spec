@@ -1,0 +1,14 @@
+# zwoair_updater JSON control/event server (TCP 4350) and binary upload socket (TCP 4361).
+service: updater
+entries:
+  - {kind: method, name: begin_recv, file: methods/begin_recv.yaml}
+  - {kind: method, name: ota_abort, file: methods/ota_abort.yaml}
+  - {kind: method, name: ota_begin, file: methods/ota_begin.yaml}
+  - {kind: method, name: ota_get_current_manifest, file: methods/ota_get_current_manifest.yaml}
+  - {kind: method, name: ota_get_session, file: methods/ota_get_session.yaml}
+  - {kind: method, name: ota_prepare_module, file: methods/ota_prepare_module.yaml}
+  - {kind: method, name: ota_retry_upgrade, file: methods/ota_retry_upgrade.yaml}
+  - {kind: method, name: stop_recv, file: methods/stop_recv.yaml}
+  - {kind: event, name: OtaUpdate, file: events/OtaUpdate.yaml}
+  - {kind: event, name: Receive, file: events/Receive.yaml}
+  - {kind: event, name: Update, file: events/Update.yaml}

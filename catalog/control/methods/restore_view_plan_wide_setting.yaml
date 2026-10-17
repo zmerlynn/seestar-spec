@@ -1,0 +1,80 @@
+kind: method
+name: restore_view_plan_wide_setting
+summary: Re-apply the stack and camera settings saved by set_view_plan_wide_setting, if any.
+description: No request parameters are read. Only on device process type 2. If a saved snapshot exists
+  it is applied through the same path as set_view_plan_wide_setting, and the snapshot is discarded only
+  when the apply succeeds, so a failed apply can be retried. With no saved snapshot the call succeeds
+  and does nothing. A restored exposure goes through the same state-dependent normalisation, so a code-0
+  reply does not prove the saved exposure was retained. Registered in the 64-bit build only.
+grade: MUTATOR / probable (64-bit build; absent from the 32-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc9360, RestoreViewPlanStackSetting @0x1a0dd0 (64-bit
+  build only)
+side_effects: Applies saved stack and camera settings synchronously, clears the snapshot flag on success,
+  and may emit a Setting event listing the changed fields. No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: restore_view_plan_wide_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: restore_view_plan_wide_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9360 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Device process type is not 2
+  label: not supported
+- code: 524
+  trigger: Apply failed because the stack simulator is still enabled while the exposure changes
+  label: function conflict
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other state-dependent apply failures are reachable and are not exhaustively enumerated. The
+  snapshot is kept after a failed apply.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 60
+    method: restore_view_plan_wide_setting
+- name: ok
+  of: reply_success
+  payload:
+    method: restore_view_plan_wide_setting
+    result: 0
+    code: 0
+    id: 60
+- name: conflict
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: restore_view_plan_wide_setting
+    error: function conflict
+    code: 524
+    id: 61
+see_also:
+- set_view_plan_wide_setting
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#viewplan-wide-camera-helpers

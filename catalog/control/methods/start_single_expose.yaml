@@ -1,0 +1,92 @@
+kind: method
+name: start_single_expose
+summary: Switch to the exposure page and start one asynchronous exposure.
+description: Sets the application page and exposure mode to the default values, restores cached camera
+  binning and controls, then starts the capture worker. Success acknowledges the start, not the image.
+  Unlike the general start-exposure call, this handler does not check for a running polar-alignment function.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc9020, SetPage @0x129f20, StartExposure @0x2130a0
+  (64-bit build)
+side_effects: Changes page and exposure mode, restores cached camera bin and controls, may stop RTMP or
+  polar-alignment page work and clear delayed config writes, then starts the capture worker asynchronously.
+  The page can change even when the call fails with 318; there is no rollback. Every full call also makes
+  the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_single_expose request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_single_expose
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9020, SetPage @0x129f20, StartExposure @0x2130a0
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Camera not opened
+  label: device not connected
+- code: 206
+  trigger: Capture already active (from the exposure start)
+  label: capture is active
+- code: 524
+  trigger: Function conflict (from the exposure start)
+  label: function conflict
+- code: 102
+  trigger: Exposure mode 3 at the exposure start; not expected on the normal path, because the page switch first selects exposure mode 0
+  label: invalid params
+- code: 208
+  trigger: Storage full (from the exposure start)
+  label: disk is full
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Failures of the page switch or of the exposure start forward the thread-local code; hardware
+  error codes from exposure-mode switching and restore are unresolved and no full list is given.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 61
+    method: start_single_expose
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_single_expose
+    result: 0
+    code: 0
+    id: 61
+- name: camera-closed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_single_expose
+    error: device not connected
+    code: 318
+    id: 62
+see_also:
+- start_exposure
+spec:
+- spec/control/viewing-and-exposure.md#exposures

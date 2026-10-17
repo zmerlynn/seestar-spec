@@ -1,0 +1,118 @@
+title: Setting event stack member
+type: object
+description: 'Stack settings inside a Setting event. On the filtered (NotifySettingChange) path the serializer
+  always adds light_duration_min, brightness, contrast, saturation and dbe_enable, plus any selected filterable
+  member. Members marked full-only in get_setting appear in an event only when a direct producer writes
+  them: SetStackSetting writes the changed member alone; SetImgAdjustParams writes brightness, contrast,
+  saturation and dbe_enable.'
+properties:
+  light_duration_min:
+    type: integer
+    description: Minutes. Unconditional on the filtered path; also a SetStackSetting direct member.
+    x-confidence: READ; unit INFERRED on the filtered path
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetStackSetting @0x19b230
+  brightness:
+    type: number
+    description: Image adjustment. Unconditional on the filtered path; also written by SetImgAdjustParams.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetImgAdjustParams @0x1955b0
+  contrast:
+    type: number
+    description: As brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetImgAdjustParams @0x1955b0
+  saturation:
+    type: number
+    description: As brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetImgAdjustParams @0x1955b0
+  dbe_enable:
+    type: boolean
+    description: As brightness.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetImgAdjustParams @0x1955b0
+  dbe:
+    type: boolean
+    description: Filtered path when the dbe key is selected (not when the outer stack key is selected).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+  star_correction:
+    type: boolean
+    description: Filtered path when selected.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+  airplane_line_removal:
+    type: boolean
+    description: Filtered path when selected; also a SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetStackSetting @0x19b230
+  drizzle2x:
+    type: boolean
+    description: Filtered path when selected.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+  wide_denoise:
+    type: boolean
+    description: Filtered path when selected.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+  save_discrete_frame:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  save_discrete_ok_frame:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  save_meteor_frame:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  save_video:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  wide_size_index:
+    type: integer
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  scene_separate:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  scene_shooting_duration_min:
+    type: integer
+    description: Minutes. SetStackSetting direct member; not written by the 32-bit setter path.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  auto_lenhance:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  goto:
+    type: boolean
+    description: SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  move_sleep_sec:
+    type: integer
+    description: Seconds. SetStackSetting direct member.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  capt_num:
+    type: integer
+    description: SetStackSetting direct member; frame-count meaning INFERRED.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+  capt_type:
+    type: string
+    description: SetStackSetting direct member; capture type name (see set_setting for accepted names).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230

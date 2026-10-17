@@ -1,0 +1,71 @@
+title: get_photometry_result result
+type: object
+required:
+- path
+- files
+description: Photometry CSV result files found on storage. Sorted by last_save_time descending (lexical),
+  then name ascending. Sent as a result only when enumeration finds at least one entry.
+properties:
+  path:
+    type: string
+    const: MyWorks/PhotoMetry
+    description: Relative result directory, with trailing slash removed.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+  files:
+    type: array
+    items:
+      type: object
+      required:
+      - name
+      - last_save_time
+      - star_name
+      - has_ra_dec_deg_j2000
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+      properties:
+        name:
+          type: string
+          description: File name.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+        last_save_time:
+          type: string
+          description: Last save time string; format and time zone unresolved.
+          x-confidence: unresolved
+          x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+        star_name:
+          type: string
+          description: Star name from the file's Name column; empty when CSV parsing fails or the column
+            is missing.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+        has_ra_dec_deg_j2000:
+          type: boolean
+          description: True when a coordinate pair was extracted. The coordinates come from the first
+            row whose Type matches reference star (case-insensitive), otherwise the first row with valid
+            numeric RA and DEC columns. Numbers use a tolerant strtod parse; trailing text is not rejected.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+        ra_dec_deg_j2000:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: RA and Dec in degrees (INFERRED J2000 from the key name; no RA scaling shown).
+            Present only when has_ra_dec_deg_j2000 is true.
+          x-confidence: INFERRED
+          x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+        is_variable:
+          type: boolean
+          description: 'Firmware 9.75, app 3.4.0: variable-star flag read from the CSV Is Variable column.
+            Reported per entry; placement among the file-list members was not separately verified.'
+          x-confidence: READ; placement unresolved
+          x-basis: static analysis of firmware 9.75, app 3.4.0 reports, get_photometry_result handler
+            (64-bit build)
+    description: One entry per CSV file.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)

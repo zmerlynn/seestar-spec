@@ -1,0 +1,100 @@
+kind: method
+name: start_create_dark
+summary: Start the dark-frame creation worker.
+description: Refused with 524 first if a View function is active, before params are read. Starts the named
+  dark-creation worker locally, or relays the request to the peer for the wide camera. Success acknowledges
+  the start, not any dark frame. Progress is reported by DarkLibrary function events. The worker captures five raw frames
+  at the current stack exposure and camera gain and averages them into a master dark named by exposure and local
+  time (not temperature), replacing any older master for the same exposure (see the DarkLibrary event card).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdd9d0, StartDark @0x3b9c00, CreateMasterDarkFrame @0x3be3f0,
+  GetDarkNamePrefix @0x3b9400 (64-bit build)
+side_effects: Requires an opened camera and, on models with a filter wheel, an open wheel. Installs the
+  dark-creation worker detail and starts an asynchronous thread; no completion timeout in the handler.
+  Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_create_dark request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_create_dark
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartCreateDarkParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdd9d0, StartDark @0x3b9c00 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 524
+  trigger: A View function is active; checked before params
+  label: function conflict
+- code: 210
+  trigger: wide_cam true but the model cannot do wide star view
+  label: not supported
+- code: 318
+  trigger: Camera closed, or filter wheel closed on a model that needs it
+  label: device not connected
+- code: 268
+  trigger: A dark worker is already running
+  label: operation is in progress
+- code: 206
+  trigger: View work active (from the worker start)
+  label: capture is active
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Thread-start and relay failures forward the thread-local code and are not fully enumerated.
+examples:
+- name: default
+  summary: Local dark creation
+  of: request
+  payload:
+    id: 71
+    method: start_create_dark
+- name: wide
+  summary: Wide camera (shape from the app DTO)
+  of: request
+  payload:
+    id: 72
+    method: start_create_dark
+    params:
+      wide_cam: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_create_dark
+    result: 0
+    code: 0
+    id: 71
+- name: view-active
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_create_dark
+    error: function conflict
+    code: 524
+    id: 73
+see_also:
+- stop_create_dark
+- start_create_calib_frame
+spec:
+- spec/control/calibration-frames/dark-library.md#building-the-dark-library

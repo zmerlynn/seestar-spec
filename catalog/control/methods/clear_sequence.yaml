@@ -1,0 +1,80 @@
+kind: method
+name: clear_sequence
+summary: Clear all sequence entries from memory.
+description: No params are read. Succeeds on an empty map. The clear is not saved; it erases only the
+  in-memory map and does not delete the per-sequence settings records (one per id), which only set_sequence
+  writes. At imager start-up every stored record is loaded back into the map, so the cleared sequences
+  come back after an imager restart (READ, 64-bit; 32-bit not checked). A client that needs the change to last MUST also delete or rewrite each sequence. The grade reflects the
+  whole request/reply path, which reaches the shared diagnostic logger; it does not by itself mean the
+  method changes device settings.
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd0280, ClearSequence @0x20f1d0 (no settings calls), SaveSequence
+  @0x20e550 (sole caller SetSequence @0x21a5e0), SaveSequenceSetting @0x20e940 (sole caller SetAutosaveSetting),
+  LoadSequence @0x219dc0 (called from LoadSetting @0x131590 in DevInit
+  @0x132050; enumerates setting2/imager/sequences; reads id, capture_index, type, filter, suffix, exp, gain,
+  bin, repeat, enable, autoexp but not lapsed, which defaults to 0) (64-bit build)
+side_effects: Clears the in-memory sequence map under its mutex; nothing is saved. Every call also performs shared request/reply
+  diagnostic logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_sequence request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_sequence
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 224
+  trigger: 'Exposure mode 2 is active and either the capture thread is running or the total lapsed count of enabled
+    entries is neither zero nor equal to their total repeat count'
+  label: cannot edit sequence unless reset the progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: clear
+  summary: Bare request
+  of: request
+  payload:
+    id: 101
+    method: clear_sequence
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_sequence
+    result: 0
+    code: 0
+    id: 101
+- name: locked
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_sequence
+    error: cannot edit sequence unless reset the progress
+    code: 224
+    id: 102
+see_also:
+- set_sequence
+- delete_sequence
+- reset_sequence_progress
+spec:
+- spec/control/legacy-plans-and-sequences/sequences.md#the-stand-alone-sequence-list

@@ -1,0 +1,42 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: scope_goto params
+description: Target coordinates, as {ra, dec} or positional [ra, dec]. A bare scalar is not bound. Both
+  values are required.
+anyOf:
+- type: object
+  required:
+  - ra
+  - dec
+  description: Named form.
+  properties:
+    ra:
+      type: number
+      description: Right ascension in hours. Integer or real accepted (a real is a 32-bit float widened
+        to double). No range check, clamp or default in the handler; a missing or non-numeric value is
+        rejected with 108. Epoch and frame unresolved.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)
+    dec:
+      type: number
+      description: Declination in degrees. Integer or real accepted. No range check, clamp or default
+        in the handler; a missing or non-numeric value is rejected with 108. Epoch and frame unresolved.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)
+- type: array
+  minItems: 2
+  prefixItems:
+  - type: number
+    description: Right ascension in hours.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)
+  - type: number
+    description: Declination in degrees.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)
+  description: 'Positional form: [ra, dec]. Further elements are ignored.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build)

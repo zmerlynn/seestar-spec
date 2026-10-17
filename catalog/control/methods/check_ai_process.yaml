@@ -1,0 +1,95 @@
+kind: method
+name: check_ai_process
+summary: Check a mosaic image for black gaps before AI processing.
+description: Reads (or relays to the peer process by the same routing as start_ai_process) and tests the
+  current or named image for black gaps, optionally after rotating and cropping with the first eight crop
+  integers. Neither starts a worker nor saves output. Image-load failure is reported as gap_ok true, not
+  as an error. No event is emitted. Although the app calls it from a mosaic-completion routine, it is not a
+  signal that the device finished all mosaic centers and does not end a mosaic round or plan item (INFERRED). Firmware 9.75, app 3.4.0 replaces the old view-mode test with the relay-only form of the common relay check (it relays to the peer process when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75), the wire effect is INFERRED and the 32-bit build was not checked.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)
+side_effects: Allocates temporary image buffers; relay and logging bookkeeping only. Nothing is saved
+  and no worker starts.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: check_ai_process request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: check_ai_process
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/CheckAiProcessParams.yaml
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/CheckAiProcessResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: name present but not a string
+  label: expected string param
+- code: 102
+  trigger: crop present but not an array
+  label: invalid params
+- code: 104
+  trigger: A crop element among the first eight is not an integer
+  label: expected int param
+- code: 300
+  trigger: 'Relay: main-process user context is null'
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Transport error codes on relay failure are unresolved.
+examples:
+- name: current
+  summary: Default check (invented)
+  of: request
+  payload:
+    id: 51
+    method: check_ai_process
+    params: {}
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: check_ai_process
+    result:
+      gap_ok: true
+    code: 0
+    id: 51
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: check_ai_process
+    error: expected string param
+    code: 105
+    id: 52
+see_also:
+- start_ai_process
+spec:
+- spec/control/solving-and-annotation.md#ai-processing
+- spec/control/mosaic/timing-and-errors.md#error-propagation

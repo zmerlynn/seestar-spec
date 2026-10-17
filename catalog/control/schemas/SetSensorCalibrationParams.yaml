@@ -1,0 +1,87 @@
+title: set_sensor_calibration params
+type: object
+description: 'Top-level object required: absent, null, scalar and array params (including an array holding
+  an object) give 107. Unknown members ignored. Neither nested object reads exist.'
+properties:
+  balanceSensor:
+    type: object
+    properties:
+      x:
+        type: number
+        description: X offset, number (integer or float); default -999.
+        x-default: '-999'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      y:
+        type: number
+        description: Y offset, number; default 0.
+        x-default: '0'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      z:
+        type: number
+        description: Z offset, number; default 0.
+        x-default: '0'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+    description: 'Balance sensor replacement values. A non-object is treated as empty. Each occurrence
+      REPLACES the stored values (not a patch): omitted x defaults to -999 (the sentinel, which invalidates
+      the sensor''s exist flag), omitted y and z default to 0. A component within 0.1 of -999 is rejected
+      inside the helper (209 set internally, ignored by the handler).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration @0x123c60
+  compassSensor:
+    type: object
+    properties:
+      x:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      y:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      z:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      x11:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      x12:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      y11:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+      y12:
+        type: number
+        description: Compass calibration value, float token only; units not established.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration
+          @0x123c60
+    description: Compass sensor values. Presence alone sets the sensor's exist flag true, even for empty
+      or malformed input. Each member is read ONLY when it is a JSON float token; integer-valued tokens
+      (such as 1) are ignored, and missing or ignored members retain the stored value.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration @0x123c60
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration @0x123c60

@@ -1,0 +1,95 @@
+kind: method
+name: scope_get_target_pierside
+summary: Read the target pier side (not supported by the supplied mount types).
+description: 'In every supplied mount implementation this getter has no success path: with no mount connected
+  it replies 315, and with a connected mount it replies 210. The declared list/cursel and integer-zero
+  formatter paths exist in the handler but are not produced by the supplied native target bodies; other
+  firmware implementations may differ. Clients SHOULD NOT rely on it. Served by the guider process (TCP
+  4400); a client on the main command port reaches it through the imager unknown-method relay, which is
+  unavailable to guest-table clients. The native-handler grade below does not describe the relay.'
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x80df0 (64-bit build)
+side_effects: None. Capability check and unsupported stubs only record a thread-local error code; no hardware
+  access and no shared store written.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_target_pierside request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_target_pierside
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x80df0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetTargetPiersideResult.yaml
+        description: Declared but unproduced result form.
+        x-confidence: unresolved
+        x-basis: static analysis of firmware 9.31, handler @0x80df0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+- code: 210
+  trigger: A mount is connected (the supplied mount types do not implement the getter)
+  label: not supported
+errors_note: The 315 branch is an explicit argument; 210 is forwarded from the unsupported native stub.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: scope_get_target_pierside
+- name: err-210
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_target_pierside
+    error: not supported
+    code: 210
+    id: 5
+- name: err-315
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_target_pierside
+    error: mount is not connected
+    code: 315
+    id: 6
+see_also:
+- scope_get_pierside
+- scope_get_state
+spec:
+- spec/guider/index.md#method-groups

@@ -1,0 +1,77 @@
+kind: event
+name: LockPositionSet
+summary: Guider notification that the guide lock position was updated.
+description: Custom emitter (reached through the guiding-log notifier), sent on a lock-position update. No
+  lowercase state, code or error members; the capitalized member names are distinct from the imager's lowercase
+  state fields. Cadence is callback-driven with no helper throttle. Sent by the guider (zwoair_guider) event
+  server on TCP 4400 to every retained connection, with no verified or master/guest filter. The main imager
+  process, which holds a client connection to 4400, recognizes peer event lines by the exact substring "Event":"
+  and re-broadcasts the original line unchanged to all retained connections on TCP 4700, so ordinary 4700 clients
+  see it too; the auxiliary imager process (4702) deliberately does not forward 4400 events, avoiding a duplicate
+  copy. Because the forwarding test is lexical, the forwarded line is byte-identical to the guider's. No universal
+  order relative to RPC replies or other events, no sequence number, no replay. The imager's peer-event waiter
+  may also consume this event internally; no APK consumer is established. Exact pairing with a guider getter
+  (calibration state, lock position) is unresolved. 32-bit payload parity beyond the counterpart emitters is
+  unresolved.
+grade: PURE GETTER (shape only; observation for the receiver)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, GuidingLog::NotifySetLockPosition @0x4aad0 and socket_json_guider_server_event::NotifySetLockPosition
+  @0x6d030 (64-bit guider build); 32-bit counterparts @0x4b840, @0x694a4
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: LockPositionSet event
+  type: object
+  discriminator: Event
+  description: Event, Timestamp, X and Y.
+  required:
+  - Event
+  - Timestamp
+  - X
+  - Y
+  properties:
+    Event:
+      type: string
+      const: LockPositionSet
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GuidingLog::NotifySetLockPosition @0x4aad0 and socket_json_guider_server_event::NotifySetLockPosition
+        @0x6d030 (64-bit guider build); 32-bit counterparts @0x4b840, @0x694a4
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    X:
+      type: number
+      description: Lock position x coordinate. Pixel units are not established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GuidingLog::NotifySetLockPosition @0x4aad0 and socket_json_guider_server_event::NotifySetLockPosition
+        @0x6d030 (64-bit guider build); 32-bit counterparts @0x4b840, @0x694a4
+    Y:
+      type: number
+      description: Lock position y coordinate. Pixel units are not established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GuidingLog::NotifySetLockPosition @0x4aad0 and socket_json_guider_server_event::NotifySetLockPosition
+        @0x6d030 (64-bit guider build); 32-bit counterparts @0x4b840, @0x694a4
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, GuidingLog::NotifySetLockPosition @0x4aad0 and socket_json_guider_server_event::NotifySetLockPosition
+    @0x6d030 (64-bit guider build); 32-bit counterparts @0x4b840, @0x694a4
+examples:
+- name: set
+  summary: Lock position set (READ shape, values invented)
+  of: payload
+  payload:
+    Event: LockPositionSet
+    Timestamp: '1234.123456789'
+    X: 300.5
+    Y: 220.0
+see_also:
+- set_lock_position
+- get_lock_position
+- find_star
+spec:
+- spec/guider/index.md#events

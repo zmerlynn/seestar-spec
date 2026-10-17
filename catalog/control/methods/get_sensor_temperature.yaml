@@ -1,0 +1,91 @@
+kind: method
+name: get_sensor_temperature
+summary: Read the temperature reported by the onboard inertial sensor.
+description: Reads a temperature from the IMU, a sensor chosen by hardware model, and returns it as result.temperature.
+  The name suggests the imaging sensor but the handler reads the inertial sensor; its unit and range are
+  unresolved. Any nonzero helper status, including a missing IMU, is reported as 108 (expected float param),
+  which does not mean a float param was expected.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb6cf0, gsensor_temperature @0x3c71b0 (64-bit build)
+side_effects: On first use lazily constructs and caches a shared IMU object; construction writes IMU enable,
+  accelerometer and angular-velocity scale and sampling-frequency settings through the sysfs interface.
+  Each call then runs a short subprocess I2C read and refills shared static buffers. Hence tier C although
+  the temperature read itself is a register read. No opened-camera precondition. Every full call also
+  makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sensor_temperature request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_sensor_temperature
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb6cf0, gsensor_temperature @0x3c71b0 (64-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sensor_temperature success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetSensorTemperatureResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb6cf0, gsensor_temperature @0x3c71b0 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 108
+  trigger: Any nonzero status from the IMU temperature read, including no IMU available
+  label: expected float param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Bus and subprocess latency, and which IMU model is fitted at run time, are unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 33
+    method: get_sensor_temperature
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_sensor_temperature
+    result:
+      temperature: 31.5
+    code: 0
+    id: 33
+- name: imu-unavailable
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_sensor_temperature
+    error: expected float param
+    code: 108
+    id: 34
+see_also:
+- get_sensor_calibration
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

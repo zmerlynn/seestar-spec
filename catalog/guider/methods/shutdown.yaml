@@ -1,0 +1,74 @@
+kind: method
+name: shutdown
+summary: Stop the guider event server; does not power off the host.
+description: No parameters are read (absent, null or any other shape behaves the same). The handler builds
+  the success reply, then tail-calls the server stop routine that stops the guider event server. This
+  does not call a host shutdown or reboot. The reply may not be delivered because the endpoint stops as
+  part of the call.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x73be0 (64-bit build); socket_json_server::stopServer
+  @0x1146a0
+side_effects: Stops the guider event server (the TCP listener of this service); the connection may close
+  before or without a reply. When reached through an imager relay on the main table the same request can
+  additionally trigger the reconnect callback described in the guider service notes (relay eligibility
+  is a separate outer gate).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: shutdown request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: shutdown
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      description: Not read. Omission, null and any other shape take the same path. Clients SHOULD omit
+        it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x73be0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No explicit handler error is reachable. Delivery of the reply is not guaranteed.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 18
+    method: shutdown
+  summary: Shape READ; example invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: shutdown
+    result: 0
+    code: 0
+    id: 18
+see_also:
+- stop_capture
+spec:
+- spec/guider/index.md#method-groups

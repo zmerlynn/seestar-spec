@@ -1,0 +1,73 @@
+kind: method
+name: get_img_file
+summary: Fetch an image from the device starting at a transfer offset.
+description: Served by the imager process (4801). Params select a file by name and an optional offset.
+  The reply is the file data from the offset as a binary transfer, or a text error. The offset and length
+  are clamped to the file; an offset past the end gives a reply with payload length 0, not an error (READ).
+  The unit is bytes (INFERRED). Path normalisation and FITS loader effects are unresolved.
+grade: 'MUTATOR / established (64-bit imager build: conditional diagnostics; 32-bit build matches (READ))'
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build); offset and length clamp
+  in the file-server result writer
+side_effects: Writes native diagnostic output. Further file, image, database and compression effects are
+  unresolved (tier D).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_file request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_file
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetImgFileParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+reply_success:
+  title: get_img_file success reply
+  description: File data from the offset; payload length 0 when the offset is past the end. Not an ordinary
+    JSON result envelope. 80-byte big-endian header (spec/media/image-sockets.md#reply-framing), then
+    the payload; errors are text replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+reply_error:
+  title: get_img_file error reply
+  description: 'Text reply (imgType 0, dataType 1): the payload is the fixed text for the error code (spec/media/files-and-album.md#parameter-rules-read-handlers,
+    R9). No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x1f5a60 (64-bit imager build)
+errors:
+- code: 105
+  trigger: name missing or not a string
+  label: expected string param
+- code: 249
+  trigger: Image load failure (exact condition unresolved)
+  label: malloc buffer failed
+examples:
+- name: object-form
+  of: request
+  payload:
+    id: 43
+    method: get_img_file
+    params:
+      name: example.fit
+      offset: 0
+- name: array-form
+  of: request
+  payload:
+    id: 44
+    method: get_img_file
+    params:
+    - example.fit
+see_also: []
+spec:
+- spec/media/files-and-album.md#parameter-rules-read-handlers
+- spec/transport/ports.md#ports-a-client-uses

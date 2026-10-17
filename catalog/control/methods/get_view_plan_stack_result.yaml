@@ -1,0 +1,181 @@
+kind: method
+name: get_view_plan_stack_result
+summary: Read the saved stack output (filename, image id, stacked seconds, error code) of the last view-plan
+  target.
+description: 'No request parameters are read. Only on device process type 2. A device with no saved output
+  still replies with code 0, has_output false and an error_code in the result. Observer tier A: only caller-owned
+  outputs are written.'
+grade: PURE GETTER / established (64-bit build only; absent from the 32-bit build)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940 (64-bit build
+  only)
+side_effects: None beyond request-local data; reads global output variables and copies them out. No timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_view_plan_stack_result request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_view_plan_stack_result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbe150 (64-bit build)
+reply_success:
+  title: get_view_plan_stack_result reply (success)
+  type: object
+  description: Success envelope with an object result. Member order and the socket-layer members are as
+    in the common success envelope.
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: object
+      required:
+      - has_output
+      - image_id
+      - stack_total_sec
+      - error_code
+      description: Saved stack output of the last view-plan target, not the whole queue and not the current
+        frame counter. Always carries the four members; saved_fullname appears only when has_output is
+        true.
+      properties:
+        has_output:
+          type: boolean
+          description: True when a non-empty saved filename exists.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940
+            (64-bit build only)
+        saved_fullname:
+          type: string
+          description: Saved output filename. Present only when has_output is true; then error_code is
+            0.
+          x-required-when: has_output is true
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940
+            (64-bit build only)
+        image_id:
+          type: integer
+          minimum: 0
+          maximum: 65535
+          description: Image id, from an unsigned 16-bit value. The value 65535 is the reset value set
+            by set_view_plan_wide_setting (INFERRED role as a no-image marker).
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940
+            (64-bit build only)
+        stack_total_sec:
+          type: number
+          description: Total stacked time, seconds.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940
+            (64-bit build only)
+        error_code:
+          type: integer
+          description: Result data, not the envelope code. 0 when an output exists; otherwise chosen from
+            the stack or frame failure state, with 267 (no image) for no meaningful output and benign
+            abort paths.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940
+            (64-bit build only)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940 (64-bit
+        build only)
+      allOf:
+      - if:
+          properties:
+            has_output:
+              const: true
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, handler @0xbe150, GetViewPlanStackResult @0x193940
+                (64-bit build only)
+          required:
+          - has_output
+        then:
+          required:
+          - saved_fullname
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Device process type is not 2. A reply with this code was also seen on a device while a stored
+    plan appeared to be imaging, so other triggers are unresolved
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No other handler error exists; empty output is a success with error_code data.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 80
+    method: get_view_plan_stack_result
+- name: with-output
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_view_plan_stack_result
+    result:
+      has_output: true
+      saved_fullname: Example_stack.fit
+      image_id: 3
+      stack_total_sec: 180.0
+      error_code: 0
+    code: 0
+    id: 80
+- name: no-output
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_view_plan_stack_result
+    result:
+      has_output: false
+      image_id: 65535
+      stack_total_sec: 0
+      error_code: 267
+    code: 0
+    id: 81
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_view_plan_stack_result
+    error: not supported
+    code: 210
+    id: 82
+see_also:
+- set_view_plan
+- set_view_plan_wide_setting
+- ViewPlan
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#viewplan-wide-camera-helpers
+- spec/control/errors.md#replies-with-extra-or-missing-members

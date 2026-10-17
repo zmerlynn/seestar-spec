@@ -1,0 +1,76 @@
+kind: method
+name: stop_focuser
+summary: Stop any focuser motion.
+description: No parameters are read (no direction or step). Calls eaf_stop synchronously on the open focuser;
+  there is no join and no explicit poll timeout in the helper.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xccbf0, Stop @0x15bcd0 (64-bit build); tier INFERRED
+side_effects: Commands the focuser motor to stop.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_focuser request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_focuser
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xccbf0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Focuser is not open
+  label: device not connected
+- code: 300
+  trigger: eaf_stop returns nonzero
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 23
+    method: stop_focuser
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_focuser
+    result: 0
+    code: 0
+    id: 23
+- name: closed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_focuser
+    error: device not connected
+    code: 318
+    id: 24
+see_also:
+- move_focuser
+- close_focuser
+spec:
+- spec/control/focus-and-filter.md#lifecycle

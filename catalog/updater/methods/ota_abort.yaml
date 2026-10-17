@@ -1,0 +1,75 @@
+kind: method
+name: ota_abort
+summary: 'Updater (firmware 9.75): cancel the current OTA session.'
+description: Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the 64-bit
+  and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The handler
+  clears the thread error code and calls the updater's single OTA manager. The OTA methods do not use
+  the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350 is wrapped
+  is not established. Firmware update is a high-risk operation; do not send this to a real device to test
+  it. Cancels the OTA session. Refused with 524 while the stage is upgrading. Otherwise the device emits
+  an OtaUpdate event with state cancel, deletes temporary files except the received packages (which a
+  later session can reuse) and resets the session to idle. A successful abort also stops the binary
+  receive for the caller's address. The success result is the integer 0, including when the session is
+  idle (firmware 9.75, 64-bit build; the 32-bit build has the same integer result, READ). This method is new relative to the app 3.3.2 DTOs, which have no abort call.
+grade: MUTATOR / probable
+side_effect_tier: C
+confidence: READ (firmware 9.75)
+basis: static analysis of firmware 9.75, updater RPC handler @0x265e0 (64-bit build), OTA manager abort @0x38d10
+  (upgrading check @0x38d4c, zero result @0x38dfc, 524 @0x38e98), 32-bit counterpart @0x3a150; app 3.3.2
+  OtaService DTOs
+side_effects: Resets the OTA session and removes temporary OTA files (not the received packages).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: ota_abort request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: ota_abort
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater dispatcher table, handler @0x265e0 (64-bit build)
+    params:
+      description: Not read by the handler. The app omits it. Clients SHOULD omit it.
+      x-confidence: READ (app 3.3.2 emitter); firmware handler reads no params INFERRED
+      x-basis: app 3.3.2 OtaService; firmware 9.75 handler @0x265e0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 524
+  trigger: ota_abort is not allowed while ota is upgrading
+  label: upgrade running
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: ota_abort
+  summary: Shape READ; params omitted
+- name: ok
+  of: reply_success
+  summary: Shape READ (result 0 even when idle); values invented
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: ota_abort
+    result: 0
+    code: 0
+    id: 100
+see_also:
+- ota_get_current_manifest
+- ota_get_session
+- ota_begin
+- ota_prepare_module
+- ota_retry_upgrade
+- begin_recv
+- OtaUpdate
+spec:
+- spec/updater/index.md#ota-methods-firmware-975
+- spec/updater/ota-package-handling.md#ota-package-handling

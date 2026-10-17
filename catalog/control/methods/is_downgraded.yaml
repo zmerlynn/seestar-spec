@@ -1,0 +1,75 @@
+kind: method
+name: is_downgraded
+summary: Report whether a downgrade is pending acknowledgement, from a marker file.
+description: No request parameters are read. The handler scans a fixed log file on the device (up to two
+  reads) and returns true when it contains the text updating and does not yet contain the acknowledgement
+  marker that clear_downgrade appends. If the file cannot be opened the handler returns false with code
+  0 (the open failure is only logged). The reply result is a bare boolean, not an object.
+grade: MUTATOR / established (both builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4970 (both builds), cmpFile @0x6e25f0
+side_effects: Synchronous file reads; a missing or unreadable file only updates the shared logging state
+  and log files. No hardware or settings change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: is_downgraded request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: is_downgraded
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4970 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: is_downgraded success reply
+    properties:
+      result:
+        type: boolean
+        description: True when the update marker file contains the text updating and does not contain
+          the acknowledgement marker. A missing or unreadable marker file gives false, not an error. Indicates
+          the presence of the marker text, not a version comparison.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4970 (both builds), cmpFile @0x6e25f0
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable; file-open failure is logged and reported as false.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 51
+    method: is_downgraded
+- name: ok-false
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: is_downgraded
+    result: false
+    code: 0
+    id: 51
+see_also:
+- clear_downgrade
+spec:
+- spec/control/maintenance.md#update-related-markers

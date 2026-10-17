@@ -1,0 +1,69 @@
+kind: event
+name: AutoOpenCamera
+summary: Guider notification that the guide camera was reopened automatically.
+description: 'Custom emitter. Sent when the guider''s ZWO camera scan reopens the guide camera after an automatic
+  reconnect succeeds. No state, code or error members. Sent by the guider (zwoair_guider) event server on TCP
+  4400 to every retained connection, with no verified or master/guest filter. The main imager process, which
+  holds a client connection to 4400, recognizes peer event lines by the exact substring "Event":" and re-broadcasts
+  the original line unchanged to all retained connections on TCP 4700, so ordinary 4700 clients see it too;
+  the auxiliary imager process (4702) deliberately does not forward 4400 events, avoiding a duplicate copy.
+  Because the forwarding test is lexical, the forwarded line is byte-identical to the guider''s. No universal
+  order relative to RPC replies or other events, no sequence number, no replay. The imager installs a local
+  AutoOpenCamera callback; that does not establish a different wire shape. Related method data: guider camera
+  connection status. No name-specific 32-bit emitter attribution is established; do not assume the 32-bit build
+  sends it.'
+grade: PURE GETTER (shape only; observation for the receiver)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, Camera_ZWO::ScanZWOCams @0xfcde0 (64-bit guider build); 32-bit counterpart
+  unresolved
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AutoOpenCamera event
+  type: object
+  discriminator: Event
+  description: Event, Timestamp and device.
+  required:
+  - Event
+  - Timestamp
+  - device
+  properties:
+    Event:
+      type: string
+      const: AutoOpenCamera
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Camera_ZWO::ScanZWOCams @0xfcde0 (64-bit guider build); 32-bit
+        counterpart unresolved
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    device:
+      type: string
+      description: Guider camera identifier.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Camera_ZWO::ScanZWOCams @0xfcde0 (64-bit guider build); 32-bit
+        counterpart unresolved
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, Camera_ZWO::ScanZWOCams @0xfcde0 (64-bit guider build); 32-bit
+    counterpart unresolved
+examples:
+- name: reopened
+  summary: Guide camera reopened (READ shape, values invented)
+  of: payload
+  payload:
+    Event: AutoOpenCamera
+    Timestamp: '1234.123456789'
+    device: Example guide camera
+see_also:
+- get_connected
+- set_connected
+- set_camera_idx
+spec:
+- spec/guider/index.md#event-forwarding
+- spec/control/events-overview.md

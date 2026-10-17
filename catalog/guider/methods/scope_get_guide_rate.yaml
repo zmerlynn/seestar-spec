@@ -1,0 +1,94 @@
+kind: method
+name: scope_get_guide_rate
+summary: Query the mount guide rate; for the supplied scope drivers this always fails.
+description: The success path would return a numeric guide rate, but every supplied scope implementation
+  either is disconnected (315) or reports no guide-rate capability (210), so no success reply can be produced
+  by the audited firmware. No controller guide-rate range or unit is established, and other firmware implementations
+  were not audited. Params are not consumed. No serial traffic (firmware 9.31, READ).
+grade: PURE GETTER / established (native handler, 64-bit build)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x799a0 (64-bit build); formatter sites @0x79a58 (207)
+side_effects: 'None: the capability slots map to false-returning bodies and the unsupported stubs only
+  set a thread-local error; no hardware call or shared operational store. Tier A is for the native handler;
+  an eligible front-imager relay path can still reach C.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_guide_rate request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_guide_rate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x799a0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: scope_get_guide_rate reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        description: Declared numeric success result. Unreachable with the supplied scope implementations,
+          so type, unit and range are unresolved.
+        x-confidence: unresolved
+        x-basis: static analysis of firmware 9.31, handler 0x799a0 (64-bit build); success path not producible
+          by supplied drivers
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 210
+  trigger: Mount connected but guide-rate capability is false (always, for supplied drivers)
+  label: not supported
+- code: 207
+  trigger: Operation failure (precise trigger unresolved)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No successful result is producible by the supplied scope types; the success schema documents
+  only the declared shape.
+examples:
+- name: query
+  summary: Params omitted
+  of: request
+  payload:
+    id: 150
+    method: scope_get_guide_rate
+- name: unsupported
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_guide_rate
+    error: not supported
+    code: 210
+    id: 150
+see_also:
+- scope_get_cap
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

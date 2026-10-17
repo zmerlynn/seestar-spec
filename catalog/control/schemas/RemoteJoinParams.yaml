@@ -1,0 +1,55 @@
+title: remote_join params
+type: object
+description: 'Remote (cloud relay) join credentials. Object form only: the credential parser reads named
+  members, so no successful positional spelling is established. All five credential members are required
+  strings; any missing or wrong-typed one fails the whole parse with code 259. No non-empty or numeric-range
+  check is made in the immediate parser. Unknown keys are ignored. The companion app sends exactly the
+  five credential members.'
+required:
+- host
+- productKey
+- deviceName
+- deviceSecret
+- port
+properties:
+  host:
+    type: string
+    description: Relay host name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+      @0x1a2260 (64-bit build)
+  productKey:
+    type: string
+    description: Relay product key.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+      @0x1a2260 (64-bit build)
+  deviceName:
+    type: string
+    description: Relay device name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+      @0x1a2260 (64-bit build)
+  deviceSecret:
+    type: string
+    description: Relay device secret. Sensitive; not logged here.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+      @0x1a2260 (64-bit build)
+  port:
+    type: string
+    description: Relay port, sent as a string, not a number.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+      @0x1a2260 (64-bit build)
+  timeout_sec:
+    type: integer
+    description: Seconds the handler waits for the join call to return; multiplied by 1000 in a signed
+      int with no clamp (overflow behaviour unresolved). Wrong type fails with 104.
+    x-default: '2'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+      @0x1a2260 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin @0x1a2260
+  (64-bit build)

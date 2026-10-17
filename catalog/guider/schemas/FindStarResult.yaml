@@ -1,0 +1,12 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: FindStarResult
+type: array
+minItems: 2
+maxItems: 2
+description: Selected star lock position as a two-number array [x, y] in guide-camera image pixel coordinates
+  (axis order and units INFERRED from the point formatter).
+items:
+  type: number
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x783d0 (64-bit build), AutoSelect @0x63dc0
+  (point formatter)

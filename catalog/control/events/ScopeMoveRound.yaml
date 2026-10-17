@@ -1,0 +1,64 @@
+kind: event
+name: ScopeMoveRound
+summary: End-of-round notification from the scope move-round worker, carrying only a success/fail result.
+description: 'Custom producer: sent once when the move-round worker thread ends (READ). That this worker
+  is the thread started by start_scope_move_round is INFERRED from the function names; the start wrapper
+  starts a thread object whose entry function is not visible in it. It carries no state, lapse_ms, code
+  or error member. Progress and failure codes (241, 300, 320) of the move step are reported separately
+  through CompassCalibration events (READ); a client SHOULD watch both. Channel I (TCP 4700). Delivery:
+  ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified
+  sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events.
+  No APK consumer is established.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, scopeMoveRoundThreadFunc @0x119e40 (64-bit build); move step
+  scopeMoveRound @0x184160 (sends the CompassCalibration events)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ScopeMoveRound event
+  type: object
+  discriminator: Event
+  description: Custom event; result literal only.
+  required:
+  - Event
+  - Timestamp
+  - result
+  properties:
+    Event:
+      type: string
+      const: ScopeMoveRound
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; scopeMoveRoundThreadFunc @0x119e40 (64-bit
+        build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    result:
+      type: string
+      enum:
+      - success
+      - fail
+      description: Literal from the worker's end branch.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, scopeMoveRoundThreadFunc @0x119e40 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, scopeMoveRoundThreadFunc @0x119e40 (64-bit build)
+examples:
+- name: success
+  summary: Round finished (READ shape; values invented)
+  of: payload
+  payload:
+    Event: ScopeMoveRound
+    Timestamp: '1234.123456789'
+    result: success
+see_also:
+- start_scope_move_round
+- start_compass_calibration
+- CompassCalibration
+spec:
+- spec/control/polar-alignment.md#compass-calibration

@@ -1,0 +1,82 @@
+kind: method
+name: clear_autosave_err
+summary: Clear the stored capture error, or the last error of the current enabled legacy-plan target.
+description: Without an object params the device clears its global capture error code and sets the error-changed
+  flag. With an object params carrying plan_last true it clears the last error of the current enabled
+  target of the legacy (set_plan) plan store, if there is one; a missing current target is not an error.
+  An object without a true plan_last is rejected.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdfa50, ClearCurrentTargetErr @0x3078b0 (64-bit build)
+side_effects: Resets the global capture error code and its flag, or the last-error field of the current
+  enabled legacy-plan target, which users see as the autosave or capture error. Takes the relevant lock.
+  No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_autosave_err request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_autosave_err
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/ClearAutosaveErrParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: Object params whose plan_last is absent, null, of the wrong type, false or 0
+  label: expected bool param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The result of the target-error clear is ignored, so a missing current target still replies
+  with success.
+examples:
+- name: request
+  summary: Clear the capture error
+  of: request
+  payload:
+    id: 40
+    method: clear_autosave_err
+- name: plan-last
+  summary: Clear the current plan target's last error
+  of: request
+  payload:
+    id: 41
+    method: clear_autosave_err
+    params:
+      plan_last: true
+- name: ok
+  of: reply_success
+  payload:
+    method: clear_autosave_err
+    result: 0
+    code: 0
+    id: 40
+- name: plan-last-false
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_autosave_err
+    error: expected bool param
+    code: 106
+    id: 42
+see_also:
+- set_view_plan
+spec:
+- spec/control/legacy-plans-and-sequences/plans.md#selectors

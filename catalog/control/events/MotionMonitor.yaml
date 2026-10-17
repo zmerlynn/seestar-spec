@@ -1,0 +1,125 @@
+kind: event
+name: MotionMonitor
+summary: State of the motion-monitor worker (firmware 9.75, 64-bit only).
+description: New in firmware 9.75, app 3.4.0, 64-bit build only. The function name is MotionMonitor and
+  its state printer reports the members below. It is sent through the shared function-state envelope
+  (the common formatter with the printer attached); exactly which states are visited is unresolved, so the
+  state enum is INFERRED. A receiver MUST NOT depend on seeing every transition.
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: INFERRED
+basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: MotionMonitor event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: MotionMonitor
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name; INFERRED to follow the shared function-state formatter.
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build); state set assumed from the shared function-state formatter, envelope unresolved
+    mode:
+      type: string
+      enum:
+      - auto_track
+      - auto_capture
+      description: Configured mode.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    stage:
+      type: string
+      enum:
+      - idle
+      - detecting
+      - starting_track
+      - tracking
+      - returning
+      description: Worker stage. The printer's value set includes starting_track (resolver report).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    return_to_origin:
+      type: boolean
+      description: Configured return-to-origin flag.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    sensitivity:
+      type: string
+      enum:
+      - low
+      - middle
+      - high
+      description: Configured sensitivity.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    waiting_time:
+      type: integer
+      description: Configured waiting time in seconds (the time to wait for a lost target before returning; used only when return_to_origin is true).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    duration_min:
+      type: integer
+      description: Configured duration in minutes, -1 for unlimited.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+    remaining_sec:
+      type: integer
+      description: Seconds remaining (unit INFERRED from the name).
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+        build)
+  x-confidence: INFERRED
+  x-basis: static analysis of firmware 9.75, app 3.4.0 reports, MotionMonitor worker @0x46ccf0 (64-bit
+    build)
+examples:
+- name: detecting
+  summary: INFERRED envelope, not captured; values invented
+  of: payload
+  payload:
+    Event: MotionMonitor
+    Timestamp: '1234.123456789'
+    state: working
+    mode: auto_track
+    stage: detecting
+    return_to_origin: true
+    sensitivity: middle
+    waiting_time: 10
+    duration_min: -1
+    remaining_sec: 0
+see_also:
+- start_motion_monitor
+- stop_motion_monitor
+- set_motion_detection
+spec:
+- spec/control/function-states.md#motion-monitor

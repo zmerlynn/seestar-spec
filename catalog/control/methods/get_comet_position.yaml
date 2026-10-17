@@ -1,0 +1,110 @@
+kind: method
+name: get_comet_position
+summary: List current comet positions, optionally filtered to one comet by exact name.
+description: Runs a supplied ephemeris script synchronously and parses its scratch output. The user location
+  is loaded, or on failure fetched from the guider connection. Positions are computed on the device for
+  that site at the current time (no refraction); ra and dec are apparent coordinates of date, not J2000,
+  and size is the apparent diameter in arcseconds (INFERRED from the ephemeris library). The device only echoes size; the plan runner reads only ra and dec of a comet (READ). A success result is a non-empty array;
+  if the final list is empty the call fails with 207. A regex failure partway through can still return
+  the rows parsed so far as a success. Classified C because the location fallback can reconnect the guider
+  and re-apply the LED state.
+grade: MUTATOR / established (both builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb3680, GetCometData @0x13a3b0 (callers get_comet_position,
+  SortTarget @0x30e7a0 name match only, AutoSavePlan @0x30ea00 reads ra/dec @0x31060c) (64-bit build)
+side_effects: Writes a scratch ephemeris output file and logs. If loading the stored location fails, falls
+  back to a guider geographic query which can trigger a guider reconnect callback that sends a movement-scale/ratio
+  update and re-applies the power LED. No timeout and no mode or park guard.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_comet_position request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_comet_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: string
+      description: 'Optional comet-name filter. Only a JSON string is used: exact, case-sensitive, full-length
+        match. An empty string is a real filter (matches nothing useful), not the default. Absent params
+        or any other type (object, array, null, number, boolean) means an unfiltered query; there is no
+        positional-array conversion and no error for the wrong type.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb3680, GetCometData @0x13a3b0 (64-bit build)
+reply_success:
+  title: get_comet_position reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetCometPositionResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb3680, GetCometData @0x13a3b0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The script command cannot be started
+  label: fail to run command
+- code: 258
+  trigger: The scratch output file cannot be opened
+  label: open file failed
+- code: 207
+  trigger: Malformed ephemeris data, or the final comet list is empty (zero error normalised to 207)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Location-helper error leakage and script failures masked by a successful command start are
+  unresolved.
+examples:
+- name: all
+  of: request
+  payload:
+    id: 111
+    method: get_comet_position
+- name: filtered
+  of: request
+  payload:
+    id: 112
+    method: get_comet_position
+    params: Example Comet
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_comet_position
+    result:
+    - id: 0
+      name: Example Comet
+      mag: 9.5
+      ra: 5.25
+      dec: 12.5
+      size: 3.2
+    code: 0
+    id: 111
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_comet_position
+    error: fail to operate
+    code: 207
+    id: 113
+see_also: []
+spec:
+- spec/control/object-lists.md#comets

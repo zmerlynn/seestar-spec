@@ -1,0 +1,68 @@
+kind: method
+name: stop_avi_rtmp
+summary: Stop the AVI playback thread started by start_avi_rtmp and wait for it to exit.
+description: No request parameters are read. The handler stops the reading thread; the stop can block
+  until the thread exits and no timeout is supplied. It is not an error if nothing is running. The worker
+  may still emit an AviRtmp complete event after its frame loop ends. File name and recording settings
+  are not cleared. The app (3.3.2) defines this command name but never sends it; it only consumes the
+  AviRtmp event. READ (dex).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: 'static analysis of firmware 9.31, handler @0xca2e0 (64-bit build), StopReadAvi @0x2ef370, CMyThread::Stop
+  @0x6d98c0; static analysis of app 3.3.2: CMD_START_RTMP_PLAYBACK and CMD_STOP_RTMP_PLAYBACK constants
+  with no const-string uses (finding #361)'
+side_effects: Stops and joins the AVI reading thread, which ends the stream output of the played file.
+  May block with no finite deadline.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_avi_rtmp request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_avi_rtmp
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca2e0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable; helper results are not tested.
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 34
+    method: stop_avi_rtmp
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_avi_rtmp
+    result: 0
+    code: 0
+    id: 34
+see_also:
+- start_avi_rtmp
+spec:
+- spec/media/video.md#avi-playback-into-the-stream
+- spec/media/video.md#avi-playback-into-the-stream

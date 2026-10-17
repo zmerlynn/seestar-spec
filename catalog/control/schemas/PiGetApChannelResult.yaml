@@ -1,0 +1,31 @@
+title: pi_get_ap_channel result
+type: object
+required:
+- is_5g
+- channel
+- freq
+description: Current access-point radio channel. All three members are emitted together on success. If
+  the script output is malformed some values may be unassigned; sane values are then not established.
+properties:
+  is_5g:
+    type: boolean
+    description: True when freq is in [5000, 6000) MHz.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbb710, ns_net::pi_get_ap_channel @0x6ffa50 (64-bit
+      build)
+  channel:
+    type: integer
+    description: Channel number parsed from the AP state output.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbb710, ns_net::pi_get_ap_channel @0x6ffa50 (64-bit
+      build)
+  freq:
+    type: integer
+    minimum: 0
+    description: Frequency in MHz. Parsed from MHz text, or from GHz text multiplied by 1000.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbb710, ns_net::pi_get_ap_channel @0x6ffa50 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbb710, ns_net::pi_get_ap_channel @0x6ffa50 (64-bit
+  build)

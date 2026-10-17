@@ -1,0 +1,74 @@
+kind: method
+name: list_mass_storage
+summary: Count attached USB mass-storage devices by USB speed class.
+description: Runs a shell pipeline over the USB device tree listing, filters mass-storage lines, extracts
+  the speed with a regular expression and tallies usb2 (speed <= 480) and usb3 (>= 481). The process result
+  is ignored, so a failing or empty command yields zero counts. The command blocks with no timeout. Nothing
+  is reported about the devices themselves.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf7a10 (64-bit build), run_popen @0x6d7500
+side_effects: Spawns a subprocess and writes logging state (shared date/time buffers, possibly log files)
+  even when file logging is disabled; no storage change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: list_mass_storage request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: list_mass_storage
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf7a10 (64-bit build), run_popen @0x6d7500
+reply_success:
+  title: list_mass_storage success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/ListMassStorageResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf7a10 (64-bit build), run_popen @0x6d7500
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error branch; a helper failure alone does not produce an error reply.
+examples:
+- name: count
+  of: request
+  payload:
+    id: 50
+    method: list_mass_storage
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: list_mass_storage
+    result:
+      usb2: 0
+      usb3: 1
+    code: 0
+    id: 50
+see_also:
+- eject_disk
+spec:
+- spec/control/power-and-storage.md#querying

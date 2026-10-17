@@ -1,0 +1,50 @@
+title: start_create_calib_frame params
+type: object
+description: Object only; absent, null, scalar or array params behave as an empty object (no positional
+  form). Unknown keys are ignored. exp_us, adu_min and adu_max are read only when type is a string.
+properties:
+  wide_cam:
+    type:
+    - boolean
+    - integer
+    description: Target the wide camera. Wrong type is treated as false. true requires wide-camera star
+      view support (else 210); the request is relayed to the peer process before the remaining parsing.
+    x-default: 'false'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420
+  customer_library:
+    type:
+    - boolean
+    - integer
+    description: Write into the customer library (a directory may be created). A present value of another
+      type gives 106.
+    x-default: 'false'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420
+  type:
+    type: string
+    description: Calibration kind. The literal bias selects bias; any other string selects flat (with
+      a filter wheel, the wheel position decides the flat kind). Missing or non-string selects the automatic
+      calibration worker. Not the same enum as the frame type used by set_calib_frame.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420
+  exp_us:
+    type: integer
+    description: Exposure in microseconds. Missing or wrong type is logged and left at -1 (device default).
+      No parser bound.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420
+  adu_min:
+    type: integer
+    description: 'Lower ADU bound. Custom ranges must satisfy 0 <= adu_min <= adu_max <= 60000, else 204.
+      If either ADU key is missing or mistyped, BOTH are replaced by defaults (flat: 10000 to 40000; bias:
+      0 to the dark threshold).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420
+  adu_max:
+    type: integer
+    description: Upper ADU bound; see adu_min.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420

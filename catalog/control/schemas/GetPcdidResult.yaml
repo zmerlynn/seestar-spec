@@ -1,0 +1,21 @@
+title: get_pcdid result
+type: object
+description: Hardware board identifier derived from a sysfs ADC reading. Only this member is returned,
+  not the raw ADC value or voltage.
+required:
+- pcbid
+properties:
+  pcbid:
+    type: integer
+    enum:
+    - 0
+    - 1
+    - 2
+    description: 'Board identifier. The raw ADC reading is scaled as raw*1800/1023 (INFERRED to be millivolts):
+      1 when the scaled value is 851..949 inclusive, 2 when 1301..1399 inclusive, otherwise 0.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8f60 (both builds; handler symbol is named
+      for a PCB id)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb8f60 (both builds; handler symbol is named for
+  a PCB id)

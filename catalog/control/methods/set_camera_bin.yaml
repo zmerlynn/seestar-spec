@@ -1,0 +1,114 @@
+kind: method
+name: set_camera_bin
+summary: Set the camera bin factor.
+description: Required integer, scalar or first array element. On the ordinary camera page the value must
+  be in the camera's supported bin list (get_camera_info bins); on application page 1 (video capture)
+  it must satisfy 1 <= value <= the maximum bin. There is no default. Result 0 means the bin was applied;
+  no acquisition wait is involved. A closed camera fails with 318.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcf680, SetBin @0x11f2b0 (64-bit build)
+side_effects: Updates the selected camera's bin (under the camera lock) or, on application page 1, the
+  video-capture bin.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_camera_bin request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_camera_bin
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Required bin factor. Absent, empty array, null or a non-integer fails with 104.
+      anyOf:
+      - type: integer
+        description: Scalar form.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcf680 (64-bit build)
+      - type: array
+        description: 'Array form: only the first element is inspected, the rest are ignored. An empty
+          array is treated as an absent value.'
+        items:
+          type: integer
+          description: The value.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xcf680 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcf680 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf680 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Params missing, empty array, null or not an integer
+  label: expected int param
+- code: 318
+  trigger: Camera is closed (ordinary page)
+  label: device not connected
+- code: 210
+  trigger: Bin not in the camera's supported list (ordinary page)
+  label: not supported
+- code: 204
+  trigger: Video-page bin outside 1..maximum
+  label: out of limit
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The source does not say whether the bin takes effect for an exposure already in progress.
+examples:
+- name: array
+  of: request
+  payload:
+    id: 39
+    method: set_camera_bin
+    params:
+    - 2
+- name: scalar
+  of: request
+  payload:
+    id: 40
+    method: set_camera_bin
+    params: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_camera_bin
+    result: 0
+    code: 0
+    id: 39
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_camera_bin
+    error: not supported
+    code: 210
+    id: 41
+see_also:
+- get_camera_bin
+- get_camera_info
+- set_camera_exp_and_bin
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

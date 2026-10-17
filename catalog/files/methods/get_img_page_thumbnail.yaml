@@ -1,0 +1,66 @@
+kind: method
+name: get_img_page_thumbnail
+summary: Fetch the thumbnail image for a page of the image list.
+description: Served by the imager process (4801). Params carry an integer page number. The reply is a
+  thumbnail transfer, or a text error or no-image response. No default or clamp is applied by the handler;
+  page validity is delegated to the page-thumbnail builder. Page numbering and range, and thumbnail assembly
+  and caching, are unresolved.
+grade: 'MUTATOR / established (64-bit imager build: conditional diagnostics; 32-bit build matches (READ))'
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)
+side_effects: Writes native diagnostic output. Further file, image, database and compression effects are
+  unresolved (tier D).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_page_thumbnail request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_page_thumbnail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetImgPageThumbnailParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)
+reply_success:
+  title: get_img_page_thumbnail success reply
+  description: Thumbnail image data. Not an ordinary JSON result envelope. 80-byte big-endian header (spec/media/image-sockets.md#reply-framing),
+    then the payload; errors are text replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)
+reply_error:
+  title: get_img_page_thumbnail error reply
+  description: 'Text reply (imgType 0, dataType 1): the payload is the fixed text for the error code (spec/media/files-and-album.md#parameter-rules-read-handlers,
+    R9). No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x1f4480 (64-bit imager build)
+errors:
+- code: 104
+  trigger: page missing or not an integer
+  label: expected int param
+examples:
+- name: object-form
+  of: request
+  payload:
+    id: 45
+    method: get_img_page_thumbnail
+    params:
+      page: 1
+- name: array-form
+  of: request
+  payload:
+    id: 46
+    method: get_img_page_thumbnail
+    params:
+    - 1
+see_also: []
+spec:
+- spec/media/files-and-album.md#methods

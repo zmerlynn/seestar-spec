@@ -1,0 +1,136 @@
+kind: method
+name: list_plan
+summary: List the legacy autosave plans in brief.
+description: Returns id, name, enabled flag and target count of every legacy plan. No request parameters
+  are read. An empty array was OBSERVED during an imaging run (2026-10-12), so it does not identify the
+  ViewPlan state either.
+grade: PURE GETTER / established (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+side_effects: Copies the plan map under its lock into a local map and serializes summaries; nothing is
+  written. The lock wait has no explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: list_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: list_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array take the same path. Clients SHOULD
+        omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: list_plan success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: list_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      type: array
+      items:
+        type: object
+        required:
+        - id
+        - plan_name
+        - enable
+        - target_cnt
+        properties:
+          id:
+            type: integer
+            description: Plan id.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+          plan_name:
+            type: string
+            description: Plan name.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+          enable:
+            type: boolean
+            description: Plan enabled.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+          target_cnt:
+            type: integer
+            description: Number of targets in the plan.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+      description: Summaries of all legacy plans, possibly empty. Says nothing about the ViewPlan held
+        by set_view_plan, which uses a separate store.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb47f0 (64-bit build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 268
+  trigger: The plan loader thread is running
+  label: operation is in progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: list
+  summary: Typical request
+  of: request
+  payload:
+    id: 51
+    method: list_plan
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: list_plan
+    result:
+    - id: 1
+      plan_name: Example plan
+      enable: true
+      target_cnt: 2
+    code: 0
+    id: 51
+- name: ok-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: list_plan
+    result: []
+    code: 0
+    id: 52
+see_also:
+- get_plan
+- set_plan
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#legacy-plan-reply-format
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#observing-plans

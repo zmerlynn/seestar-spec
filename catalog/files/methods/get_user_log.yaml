@@ -1,0 +1,63 @@
+kind: method
+name: get_user_log
+summary: Package the diagnostic log files into a ZIP and return it as a binary transfer.
+description: Registered in the imager file table of both builds. The handler removes any previous user_log.* scratch archive
+  through a shell command, zips the Autorun_Log*.txt files under the configured log path into user_log.zip,
+  reads the archive and logs the transfer size. The reply is a binary payload via the endpoint's result
+  writer, not an ordinary command-JSON reply; failures are textual. Params are not consumed.
+grade: MUTATOR / established (strict; native handler, 64-bit build)
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x1f0f40 (64-bit build)
+side_effects: Runs shell commands that delete a previous scratch archive and create user_log.zip from
+  the diagnostic logs under the configured log path; logs the transfer size. Likely a scratch/diagnostic
+  effect (candidate B) but the shell and zip descendant set is not fully read, so tier D is retained.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_user_log request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_user_log
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager file table (64-bit and 32-bit builds)
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x1f0f40 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_user_log reply_success
+  description: Binary ZIP archive (dataType 3) delivered by the file endpoint's response writer. Not an
+    ordinary command-JSON reply; no JSON shape is defined. 80-byte big-endian header (spec/media/image-sockets.md#reply-framing),
+    then the payload; errors are text replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler 0x1f0f40 (imager 64-bit build)
+reply_error:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_user_log reply_error
+  description: Text reply (imgType 0, dataType 1) with the standard 80-byte header; the payload is the
+    error text. No top-level JSON code field.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler 0x1f0f40; error framing not established
+errors: []
+errors_note: Failures are returned as textual errors on the binary endpoint; they do not establish a top-level
+  JSON code field, and the ordinary dispatcher codes are not shown to apply. Exact runtime directory,
+  wildcard matches and zip/shell behaviour are unresolved.
+examples:
+- name: fetch
+  summary: Params omitted; wire form symbolic
+  of: request
+  payload:
+    id: 3
+    method: get_user_log
+see_also: []
+spec:
+- spec/media/files-and-album.md#methods

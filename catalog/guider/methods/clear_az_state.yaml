@@ -1,0 +1,98 @@
+kind: method
+name: clear_az_state
+summary: Reset the guider's shared mount-azimuth initialisation state.
+description: No parameters are read. The handler tail-calls the helper that clears the azimuth initialisation
+  state used by the coordinate and motion logic, and the logger also runs. Unlike its siblings it does
+  not construct a result or code fragment, so the reply may carry neither; a client MUST NOT assume result
+  0 and SHOULD treat an absent error member as success. The downstream lifetime of the azimuth state is
+  unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x68cd0 (64-bit guider build); clear helper @0xf15b0
+side_effects: Resets shared mount-azimuth initialisation state; the logger writes a diagnostic line.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_az_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_az_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x68cd0 (64-bit guider build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_az_state reply_success
+  description: The handler tail-calls the clear helper without building a result or code fragment, so
+    the success envelope may lack result and code (the exact serialization of the empty success is unresolved).
+    If present they follow the ordinary success form.
+  required:
+  - method
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/Timestamp.yaml
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: integer
+      description: Not established. If present it is 0; clients MUST NOT require it.
+      const: 0
+      x-confidence: unresolved
+      x-basis: static analysis of firmware 9.31, guider handler @0x68cd0 (64-bit guider build)
+    code:
+      type: integer
+      description: Not established. If present it is 0; clients MUST NOT require it.
+      const: 0
+      x-confidence: unresolved
+      x-basis: static analysis of firmware 9.31, guider handler @0x68cd0 (64-bit guider build)
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No handler-specific error branch was recovered.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 91
+    method: clear_az_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: clear_az_state
+    id: 91
+see_also:
+- scope_sync
+- clear_calibration
+spec:
+- spec/guider/index.md#method-groups

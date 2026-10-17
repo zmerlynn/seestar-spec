@@ -1,0 +1,87 @@
+title: get_factory_test_state result
+type: object
+description: Factory-test status.
+required:
+- items
+properties:
+  items:
+    type: array
+    description: Four items, always in the order scopePark, delUserImages, delLicense, setLangEn.
+    items:
+      type: object
+      description: One operation status.
+      required:
+      - operation
+      - state
+      properties:
+        operation:
+          type: string
+          description: Operation name.
+          enum:
+          - scopePark
+          - delUserImages
+          - delLicense
+          - setLangEn
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+        state:
+          type: string
+          description: 'Status string from shared state. For scopePark: complete if the altitude query
+            succeeds and altitude is at or below -85 degrees, else idle; delLicense: complete if no licence
+            files, else idle; setLangEn: complete if language is English, else idle; delUserImages: idle
+            while a deletion is running and while any user image remains, else complete. Only idle and
+            complete occur here; fail and pending appear only in the FactoryTestControl event.'
+          enum:
+          - idle
+          - complete
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+        record:
+          type: array
+          description: Emitted only if the record list was read and is nonempty.
+          items:
+            type: object
+            description: One factory-test record.
+            properties:
+              userId:
+                type: string
+                description: Emitted only if nonempty.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit
+                  build)
+              platform:
+                type: string
+                description: Emitted only if nonempty.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit
+                  build)
+              appVersion:
+                type: string
+                description: Emitted only if nonempty.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit
+                  build)
+              osVersion:
+                type: string
+                description: Emitted only if nonempty.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit
+                  build)
+              timestamp:
+                type: integer
+                description: Emitted only if greater than 0; units unresolved.
+                x-confidence: READ; units unresolved
+                x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit
+                  build)
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+    minItems: 4
+    maxItems: 4
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)

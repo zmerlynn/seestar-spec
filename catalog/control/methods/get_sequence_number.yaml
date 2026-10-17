@@ -1,0 +1,86 @@
+kind: method
+name: get_sequence_number
+summary: Return the number of stored sequence entries.
+description: No params are read. The count includes disabled entries. The grade reflects the whole request/reply
+  path, which reaches the shared diagnostic logger; it does not by itself mean the method changes device
+  settings.
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd3040 (64-bit build)
+side_effects: Reads the sequence map size under its mutex. Every call also performs shared request/reply
+  diagnostic logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sequence_number request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_sequence_number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sequence_number reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      type: integer
+      minimum: 0
+      description: Number of entries in the sequence map.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSequenceNum @0x20f2d0
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: count
+  summary: Bare request
+  of: request
+  payload:
+    id: 71
+    method: get_sequence_number
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_sequence_number
+    result: 2
+    code: 0
+    id: 71
+see_also:
+- get_sequence
+- set_sequence
+- delete_sequence
+- clear_sequence
+spec:
+- spec/control/legacy-plans-and-sequences/sequences.md#the-stand-alone-sequence-list

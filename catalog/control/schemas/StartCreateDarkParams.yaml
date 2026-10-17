@@ -1,0 +1,17 @@
+title: start_create_dark params
+type: object
+description: Optional object. Absent, null, scalar, array, or a wrong-typed wide_cam all take the local
+  default branch; unknown members are ignored. No exposure, count or path input exists.
+properties:
+  wide_cam:
+    type:
+    - boolean
+    - integer
+    description: Request the wide camera. Boolean or integer (nonzero is true). On wide-camera-capable
+      models with a process-type-1 role the whole request is relayed to the peer process; true on a model
+      that cannot do wide star view gives 210. A slave may inspect the original request further (unresolved).
+    x-default: 'false'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdd9d0, StartDark @0x3b9c00 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdd9d0, StartDark @0x3b9c00 (64-bit build)

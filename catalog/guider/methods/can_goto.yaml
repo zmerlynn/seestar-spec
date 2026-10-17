@@ -1,0 +1,84 @@
+kind: method
+name: can_goto
+summary: Report a boolean derived from the mount's cached connection and worker state, apparently whether
+  a goto can be started.
+description: 'No parameters are read. The handler returns a boolean computed from cached state only: the
+  mount''s connected flag (a plain byte read) and the state of a worker. It makes no hardware call and
+  starts nothing. The name suggests whether scope_goto would be accepted; that reading is INFERRED and
+  the exact combination of cached flags and the snapshot''s freshness are unresolved. Over the main imager''s
+  command port the request is relayed, and a reconnect callback on that route can have effects of its
+  own; the native endpoint itself is observation-only.'
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x780a0 (64-bit guider build); connected-check
+  helper @0x45760
+side_effects: None in the native handler. When relayed through the main imager an eligible reconnect callback
+  may re-send a scaling update to the guider; that is a property of the relay, not of this method.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: can_goto request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: can_goto
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x780a0 (64-bit guider build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: boolean
+        description: Cached-state answer. Type READ; the meaning (whether a goto can be started) is INFERRED
+          from the name and from the connected-flag read.
+        x-confidence: READ (type); INFERRED (meaning)
+        x-basis: static analysis of firmware 9.31, guider handler @0x780a0 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: No handler-specific error branch was recovered.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 81
+    method: can_goto
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: can_goto
+    result: true
+    code: 0
+    id: 81
+see_also:
+- scope_goto
+- scope_get_ra_dec
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#raw-slew-scope_goto
+- spec/guider/index.md#method-groups

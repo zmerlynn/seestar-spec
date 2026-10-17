@@ -1,0 +1,35 @@
+title: success
+type: object
+description: >-
+  Reply envelope on success. Members are emitted in the order jsonrpc, Timestamp, method,
+  result, code, id. This is not JSON-RPC 2.0: errors are a flat string plus integer code.
+required: [method, result, code, id]
+properties:
+  jsonrpc:
+    type: string
+    const: "2.0"
+    description: Added by the socket layer (reply object constructor), not the handler fragment. Normally
+      present; absent on a stop_func relay-failure reply. Receivers MUST NOT require it.
+    x-confidence: READ; also OBSERVED on the wire (2026-10-12)
+    x-basis: static analysis of firmware 9.31, JRpcResponse constructor @0x6f7c50 called from handle_cli_input_event
+      @0x6b3280 (64-bit build), 32-bit constructor @0x6b542c; wire observation 2026-10-12
+  Timestamp:
+    $ref: './Timestamp.yaml'
+  method:
+    type: string
+    description: The request method, echoed.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+  result:
+    type: integer
+    const: 0
+    description: For these methods the result is the integer 0.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handlers @0xc7fe0 and @0xc7ed0
+  code:
+    type: integer
+    const: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+  id:
+    $ref: './Id.yaml'

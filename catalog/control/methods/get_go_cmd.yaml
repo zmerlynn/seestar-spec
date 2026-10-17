@@ -1,0 +1,97 @@
+kind: method
+name: get_go_cmd
+summary: Capture a wide-camera image, locate the Sun or Moon and return movement commands as a string.
+description: Takes no parameters. Starts the video stream on the wide camera, waits for an image, detects
+  the Sun or Moon, computes pixel deltas and builds movement command strings, then stops the stream. The
+  commands are not executed. The result is a string, not an object; each command is followed by `;`
+  (so a non-empty result ends with `;`), and it can be empty when there are no command elements. Each
+  command has the form `:Mp±NNNNNN:±NNNNNN#`, two signed offsets in arcseconds zero-padded to six digits
+  (READ). The offsets are consecutive steps, each relative to the previous point (INFERRED); which mount
+  axis each field drives is unresolved. The 64-bit build fails unless the model is one of the three
+  supported ones (S30 Plus, S30, S50) and the expected wide camera is selected. On S30 Plus-class units
+  the ScanSun worker fetches this list from the peer unit after its first goto and sends each command
+  to the mount. Capture is started and stopped on both builds, so the method is not observation-only
+  despite the getter name; a client MUST NOT call it as a passive query. No event is emitted.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd2940, CalcGoPlanetCmd @0x226aa0 (64-bit build)
+side_effects: Starts and stops camera streaming for the duration of the call; the wait for an image is
+  bounded by roughly the exposure time plus five seconds.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_go_cmd request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_go_cmd
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd2940, CalcGoPlanetCmd @0x226aa0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: string
+        description: 'Movement commands, each `:Mp±NNNNNN:±NNNNNN#` followed by `;`; the numbers are signed
+          arcsecond offsets zero-padded to six digits (READ), consecutive steps relative to the previous
+          point (INFERRED). Axis mapping unresolved. Possibly empty.'
+        pattern: '^(:Mp[+-][0-9]{6}:[+-][0-9]{6}#;)*$'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd2940, CalcGoPlanetCmd @0x226aa0, GetMoveAngleCmd
+          @0x17dbb0, GetGoPixDelta @0x184980 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Unsupported model, wrong camera, no subframe, stream start or image wait failure, detection
+    or delta failure; most early failures only log, so the default applies
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Lower detection, delta and camera code sets are unresolved; no per-condition code is assigned.
+  The success example uses invented offsets.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 81
+    method: get_go_cmd
+- name: success
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_go_cmd
+    result: ':Mp+000120:-000045#;:Mp+000060:+000010#;'
+    code: 0
+    id: 81
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_go_cmd
+    error: fail to operate
+    code: 207
+    id: 82
+see_also:
+- ScanSun
+spec:
+- spec/control/special-modes.md#sync-and-pointing

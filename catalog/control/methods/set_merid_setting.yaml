@@ -1,0 +1,87 @@
+kind: method
+name: set_merid_setting
+summary: Set meridian-flip options (minutes over/before meridian, recalibrate after flip).
+description: 'Loads the current settings, overlays the supplied members, then stores the result in the
+  global settings and persistent configuration. The write return values are ignored. Not every stored
+  member is readable back: get_merid_setting reports only merid_recalibrate.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xca6a0, SetMeridSetting @0x11fda0 (64-bit build)
+side_effects: Updates global meridian settings and persists them to the device configuration.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_merid_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_merid_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/MeridSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca6a0, SetMeridSetting @0x11fda0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null or not an object (or array without an object first element)
+  label: expected object param
+- code: 104
+  trigger: merid_over_min or merid_before_min has a non-integer type
+  label: expected int param
+- code: 204
+  trigger: merid_over_min is negative
+  label: out of limit
+- code: 106
+  trigger: merid_recalibrate is neither boolean nor integer
+  label: expected bool param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: set
+  summary: Values invented
+  of: request
+  payload:
+    id: 100
+    method: set_merid_setting
+    params:
+      merid_over_min: 10
+      merid_before_min: 5
+      merid_recalibrate: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_merid_setting
+    result: 0
+    code: 0
+    id: 100
+- name: negative
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_merid_setting
+    error: out of limit
+    code: 204
+    id: 101
+see_also:
+- get_merid_setting
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#meridian-flip

@@ -1,0 +1,94 @@
+kind: method
+name: pi_set_5g
+summary: Select the 5 GHz or 2.4 GHz band of the device access point.
+description: Reads the current AP channel, then runs the network script to apply the requested band. If
+  the requested band equals the current band the handler appends a success reply but still falls through
+  and runs the script, so a later error or success can append duplicate code/result members to the same
+  reply; how clients canonicalise such a reply is unresolved, and a no-op shortcut MUST NOT be relied
+  on. Because the AP is reconfigured the client's own link may drop.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcdee0, ns_net::pi_run_5g @0x6fbbd0 (64-bit build)
+side_effects: Queries the AP channel, runs the network script with the band flag (synchronous, no timeout)
+  and thereby reconfigures the access point radio band.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_set_5g request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_set_5g
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiSet5gParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcdee0, ns_net::pi_run_5g @0x6fbbd0 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: params missing, null, an empty array, missing is5g, or not a boolean (integers rejected)
+  label: expected bool param
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 207
+  trigger: Script output contains the text error
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: object-form
+  summary: Select 5 GHz
+  of: request
+  payload:
+    id: 51
+    method: pi_set_5g
+    params:
+      is5g: true
+- name: scalar-form
+  summary: Bare boolean
+  of: request
+  payload:
+    id: 52
+    method: pi_set_5g
+    params: false
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_set_5g
+    result: 0
+    code: 0
+    id: 51
+- name: bad-type
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_set_5g
+    error: expected bool param
+    code: 106
+    id: 53
+see_also:
+- pi_get_ap_channel
+- pi_set_ap
+spec:
+- spec/control/network.md#access-point

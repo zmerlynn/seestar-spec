@@ -1,0 +1,95 @@
+kind: method
+name: scope_set_connection_para
+summary: Change the mount connection settings (index or baud rate, address and port).
+description: Parses the optional members index, baud_rate, address and port and, when at least one yielded
+  a value, calls the mount connection-parameter setter, which changes the operational device connection
+  settings and the serial/network chooser. Success returns integer 0. Persistence, reconnect effects and
+  subtype-specific meanings are unresolved. Served by the guider process (TCP 4400); a client on the main
+  command port reaches it through the imager unknown-method relay, which is unavailable to guest-table
+  clients. The native-handler grade below does not describe the relay.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+side_effects: Changes operational mount connection settings (serial or network selection, address, port).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_connection_para request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_connection_para
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetConnectionParaParams.yaml
+      description: Connection parameters.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x71700 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 107
+  trigger: params (after unwrapping) is not an object
+  label: expected object param
+- code: 209
+  trigger: 'No usable member: integer slot is -1 and both strings are empty'
+  label: invalid value
+- code: 207
+  trigger: Mount setter failed (including a failed address set while connected)
+  label: fail to operate
+- code: 300
+  trigger: Internal object unavailable
+  label: internal error
+examples:
+- name: network
+  of: request
+  payload:
+    id: 41
+    method: scope_set_connection_para
+    params:
+      address: mount.example
+      port: '4030'
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_connection_para
+    result: 0
+    code: 0
+    id: 41
+- name: err-209
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_connection_para
+    error: invalid value
+    code: 209
+    id: 42
+see_also:
+- scope_set_connection_mode
+- scope_set_beep_volume
+spec:
+- spec/guider/index.md#method-groups

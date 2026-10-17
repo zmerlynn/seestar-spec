@@ -1,0 +1,20 @@
+title: scope_get_track_state result
+description: >-
+  Tracking on (true) or off (false); with ret_obj true, an object {"value": <bool>}. When not
+  tracking, the reply envelope also carries top-level track_error (string) and track_code (integer),
+  outside result. The imager's own tracking query takes the first word after "result": as tracking
+  when it contains "true" and also looks for track_code; the app casts the result to a boolean.
+oneOf:
+- type: boolean
+- type: object
+  required:
+  - value
+  properties:
+    value:
+      type: boolean
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x80500, MethodRetSwitch<bool> @0x89060 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x80500, MethodRetSwitch<bool> @0x89060 (64-bit
+  guider build); imager GetTrackState @0x186210 (64-bit build); static analysis of app 3.3.2, DeviceService
+  track-state job

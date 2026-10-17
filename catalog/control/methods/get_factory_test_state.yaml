@@ -1,0 +1,84 @@
+kind: method
+name: get_factory_test_state
+summary: Report the state of the four factory-test operations.
+description: No request parameters are read. Refreshes four shared status strings from altitude, image/licence
+  presence, language and record files; it does not start deletion, park the mount, change language or
+  write records. The altitude query can separately trigger a guider reconnect and LED path, which is why
+  the tier is C. Each state is idle or complete only; fail and pending are reported only by the
+  FactoryTestControl event.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+side_effects: Refreshes shared status strings; the altitude query can trigger operational guider reconnect
+  and LED work. No deletion, parking or language change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_factory_test_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_factory_test_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_factory_test_state success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetFactoryTestStateResult.yaml
+        description: Four-item status list.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb8840, FillState @0x141020 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error branch.
+examples:
+- name: request
+  summary: No parameters
+  of: request
+  payload:
+    id: 111
+    method: get_factory_test_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_factory_test_state
+    result:
+      items:
+      - operation: scopePark
+        state: idle
+      - operation: delUserImages
+        state: idle
+      - operation: delLicense
+        state: idle
+      - operation: setLangEn
+        state: idle
+    code: 0
+    id: 111
+see_also: []
+spec:
+- spec/control/maintenance.md#factory-test-and-shipping

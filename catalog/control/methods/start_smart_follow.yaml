@@ -1,0 +1,79 @@
+kind: method
+name: start_smart_follow
+summary: 'Start smart follow: detect a mover and track it (firmware 9.75).'
+description: New in firmware 9.75, app 3.4.0. Takes no parameters and may relay to the other camera. In
+  the 64-bit build the worker loops motion detection then object tracking and resumes detection when a
+  track fails. In the 32-bit build the worker only waits for a target and starts the object tracker, with
+  no detection step; its handler error codes were not verified. Progress is reported by the SmartFollow
+  event. While smart follow runs, start_track_object submits the rectangle to it.
+grade: MUTATOR / READ
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0xd63d0 (64-bit build), @0x60dc0 (32-bit build)
+side_effects: Starts a smart-follow worker thread and may move the mount through object tracking.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_smart_follow request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_smart_follow
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: view mode cannot track
+  label: wrong mode
+- code: 268
+  trigger: already running
+  label: already running
+- code: 300
+  trigger: RTSP not running
+  label: not ready
+- code: 524
+  trigger: mount occupied or motion detection running
+  label: busy
+- code: 254
+  trigger: stopping the track failed
+  label: track stop failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The errors are those of the 64-bit build.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 87
+    method: start_smart_follow
+  summary: READ shape, not captured
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_smart_follow
+    result: 0
+    code: 0
+    id: 87
+see_also:
+- stop_smart_follow
+- start_track_object
+- stop_track_object
+- SmartFollow
+- start_motion_monitor
+spec:
+- spec/control/function-states.md#smart-follow

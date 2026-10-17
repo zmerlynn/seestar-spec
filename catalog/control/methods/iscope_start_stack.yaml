@@ -1,0 +1,129 @@
+kind: method
+name: iscope_start_stack
+summary: Start the stacking stage of the star view, optionally clearing the previous stack.
+description: Starts (or, if already running, leaves running) the Stack stage on the star view. A success
+  reply does not mean a new stack was started or that stacking finished; when Stack is already running
+  and restart is not true the call can return success without restarting. On wide-camera setups the request
+  may be relayed to the other camera process and the relayed reply returned. The grade reflects the whole
+  request/reply path, which reaches the shared diagnostic logger; it does not by itself mean the method
+  changes device settings.
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xddcd0 (64-bit build)
+side_effects: Clears the stack when restart is true and Stack is idle; sets or clears the continue-stack
+  flag and exposure override (64-bit build); stops the previous view, switches to star mode, clears subframe
+  state and starts the Stack worker asynchronously; may relay to the second camera process. Every call
+  also performs shared request/reply diagnostic logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: iscope_start_stack request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: iscope_start_stack
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      properties:
+        restart:
+          type:
+          - boolean
+          - integer
+          description: 'Optional boolean or integer (nonzero true). True: if Stack is already running
+            the call fails with 259, otherwise the stack is cleared first. In the 64-bit build an explicit
+            false (continue) and an omitted or malformed value set different internal continue flags,
+            so a client wanting to continue SHOULD send false explicitly.'
+          x-default: no restart; continue flag differs from explicit false (64-bit build)
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xddcd0, bool_param @0x6f58f0, SetContinueStackStart
+            @0x190dd0
+        main_stack_exp_us:
+          type: integer
+          description: '64-bit build only: optional integer, read only for the wide-camera process; missing
+            or wrong type gives -1, values <= 0 normalise to -1. Microseconds (INFERRED from the name).
+            Not read by the 32-bit handler; not sent by the app.'
+          x-default: -1
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xddcd0 (64-bit build)
+      description: Optional object. Absent, null, scalar or array params are treated as no keys and the
+        stack stage is still started. A positional array wrapping the object is ignored. Unknown keys
+        ignored.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xddcd0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 259
+  trigger: restart evaluates true and Stack is already running (checked before clearing)
+  label: stack is already running
+- code: 318
+  trigger: Camera is not open
+  label: device not connected
+- code: 212
+  trigger: Worker function missing or thread creation failed
+  label: fail to create thread
+- code: 300
+  trigger: Relay to the other process has no user-data context
+  label: internal error
+- code: 207
+  trigger: A failure left the error code zero
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No ViewPlan-running guard appears in this handler. Other worker and driver error codes are
+  not established.
+examples:
+- name: continue
+  summary: Continue stacking, explicit false
+  of: request
+  payload:
+    id: 41
+    method: iscope_start_stack
+    params:
+      restart: false
+- name: restart
+  summary: Clear and restart
+  of: request
+  payload:
+    id: 42
+    method: iscope_start_stack
+    params:
+      restart: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: iscope_start_stack
+    result: 0
+    code: 0
+    id: 41
+- name: already-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: iscope_start_stack
+    error: stack is already running
+    code: 259
+    id: 43
+see_also:
+- iscope_start_view
+- iscope_stop_view
+- iscope_get_app_state
+spec:
+- spec/control/stacking.md#sequence

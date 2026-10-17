@@ -1,0 +1,133 @@
+kind: method
+name: get_img_file_page_name
+summary: Return one page of the cached image-file listing.
+description: Selects entries from the cached global list prepared by other methods; requires a prior populated
+  list. Per-entry metadata calls may open FITS and video files synchronously with no timeout. Pages are
+  zero-based; a page is accepted if below the ceiling of cached list size over page size.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit build)
+side_effects: 'Resets shared traversal counters, queries directory and file metadata, and logs. No settings
+  or hardware change. Observation-safe. Asynchronous events: unresolved.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_img_file_page_name request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_img_file_page_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Required. Integer page, a one-element array whose first element is the page, or an
+        object with member page. Missing, null, empty array or non-integer gives 104. Page size, date
+        and size flags come from shared list parameters set by other methods; unknown object keys are
+        ignored.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+        build)
+      anyOf:
+      - type: integer
+        minimum: 0
+      - type: array
+        minItems: 1
+        prefixItems:
+        - type: integer
+          minimum: 0
+      - type: object
+        description: Object form.
+        required:
+        - page
+        properties:
+          page:
+            type: integer
+            description: Zero-based page index (converted to uint32; negatives fail the page limit). Required.
+            minimum: 0
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80
+              (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+          build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_img_file_page_name success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: array
+        description: Entries of the requested page.
+        items:
+          $ref: ../schemas/GetImgFilePageNameEntry.yaml
+          description: One entry.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+            build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd51d0, GetImgFilePageName @0x11fa80 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: Page absent, null or not an integer
+  label: expected int param
+- code: 204
+  trigger: Page out of range, including an empty cached list
+  label: out of limit
+- code: 207
+  trigger: In-range page yielded no copied items
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: object-form
+  summary: Page 0
+  of: request
+  payload:
+    id: 131
+    method: get_img_file_page_name
+    params:
+      page: 0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_file_page_name
+    result:
+    - name: example_folder
+      is_dir: true
+      file_cnt: 12
+    - name: example_001.fit
+      is_dir: false
+      size_k: 4096
+      header_date: '2026-10-12T03:00:00'
+    code: 0
+    id: 131
+- name: page-out-of-range
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_img_file_page_name
+    error: out of limit
+    code: 204
+    id: 132
+see_also:
+- get_disk_volume
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

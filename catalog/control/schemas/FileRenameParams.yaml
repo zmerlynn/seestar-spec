@@ -1,0 +1,42 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: file_rename params
+description: Source and destination names. Object form or positional [src, dst]; extra keys and elements
+  are ignored.
+oneOf:
+- type: object
+  required:
+  - src
+  - dst
+  properties:
+    src:
+      type: string
+      description: Existing file name; the device prefixes its image directory. No path-traversal, emptiness
+        or length check.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build), key @0x72f418
+    dst:
+      type: string
+      description: New name, placed in the source file's parent directory (not directly in the image directory).
+        If the source has a suffix and dst has none, the source suffix is appended; otherwise both suffixes
+        must match exactly. Suffix split uses an unescaped-dot regular expression, so unusual names may
+        not follow ordinary extension rules.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build), key @0x72f420, separateSuffix
+        @0xf6270
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build)
+- type: array
+  minItems: 2
+  prefixItems:
+  - type: string
+    description: src (see object form).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build)
+  - type: string
+    description: dst (see object form).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build), two-key Params @0x1003c0
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf6760 (64-bit build)

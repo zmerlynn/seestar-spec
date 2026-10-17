@@ -1,0 +1,136 @@
+title: plan.list entry
+type: object
+description: >-
+  Formatted target: cached runtime state first, then schedule and setting fields. The cached
+  state's complete closure is unresolved; treat unknown members as allowed.
+properties:
+  state:
+    type: string
+    enum: [idle, working, complete, fail, cancel]
+    description: Per-target state from the cached Target state.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+  stage:
+    type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+  lapse_ms:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+  code:
+    type: integer
+    description: 204 for a skipped target, 513 for a target whose end already passed, 253 cancelled, 537 shutdown.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ViewPlanFunc @0x401c20
+  error:
+    type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+  target_id:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+  wide_state:
+    type: string
+    description: Wide and dual targets only.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build)
+  wide_code:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build)
+  wide_error:
+    type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build)
+  output_file:
+    $ref: './OutputFile.yaml'
+    description: Main output, `{path, files}` with exactly one file entry.
+  stack_total_sec:
+    type: number
+    description: Tele and dual, when output exists.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+  wide_output_file:
+    $ref: './OutputFile.yaml'
+    description: Wide output, `{path, files}` with exactly one file entry.
+  wide_stack_total_sec:
+    type: number
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build)
+  start_min:
+    type: integer
+    description: Original value as submitted, not the normalized one.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+  duration_min:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+  skip:
+    type: boolean
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+  alias_name:
+    type: string
+    description: Only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+  camera_mode:
+    type: string
+    description: Only when the internal code is valid.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+  lp_filter:
+    type: boolean
+    description: Always present.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintTargetInfo @0x3c4340
+  target_name:
+    type: string
+    description: Only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintTargetInfo @0x3c4340
+  star_type:
+    type: integer
+    description: Only when non-negative.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintTargetInfo @0x3c4340
+  target_ra_dec:
+    type: array
+    items: {type: number}
+    description: Only when both coordinates are away from the sentinel. Echo matched the sent values within 32-bit float rounding.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintTargetInfo @0x3c4340; echo OBSERVED (2026-10-12)
+  mosaic:
+    type: object
+    description: Only when scale is set (differs from the sentinel).
+    properties:
+      scale: {type: number, x-confidence: READ, x-basis: "static analysis of firmware 9.31, FormatTarget @0x403480"}
+      angle: {type: number, x-confidence: READ, x-basis: "static analysis of firmware 9.31, FormatTarget @0x403480"}
+      star_map_angle: {type: number, x-confidence: READ, x-basis: "static analysis of firmware 9.31, FormatTarget @0x403480"}
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+  second_camera:
+    type: object
+    description: Wide and dual only; the effective (post-override) values.
+    properties:
+      stack:
+        type: object
+        properties:
+          capt_type: {type: string, x-confidence: READ, x-basis: "static analysis of firmware 9.31, FormatTarget @0x403480"}
+          wide_size_index: {type: integer, x-confidence: READ, x-basis: "static analysis of firmware 9.31, FormatTarget @0x403480"}
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480 (64-bit build)
+  mount:
+    type: object
+    description: Wide and dual only.
+    properties:
+      tracking: {type: boolean, x-confidence: READ, x-basis: "static analysis of firmware 9.31, FormatTarget @0x403480"}
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatTarget @0x403480 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, FormatTarget @0x403480

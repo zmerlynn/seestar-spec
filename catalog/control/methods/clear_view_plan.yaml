@@ -1,0 +1,70 @@
+kind: method
+name: clear_view_plan
+summary: Stop the ViewPlan worker, clear the plan-working indication and (firmware 9.75) delete the stored plan.
+description: Firmware 9.31 stops the worker only; the held plan list is not erased and can be restarted later
+  with a parameterless set_view_plan. Firmware 9.75 also deletes view_plan.json in the per-user ZWO configuration directory, frees the plan
+  list and resets the plan name and state, so nothing is left to restart or to restore at boot (the boot
+  restart-code handling is INFERRED); it replies 218 if removing the file fails with an error other than
+  no-such-file, and 0 otherwise. No request parameters are read. The handler sends no event itself; when a worker is
+  running, its end path sends the terminal state before the stop returns, so a ViewPlan cancel event
+  (and a Target cancel for the active target) is expected before the reply (INFERRED; not captured).
+  With no worker running nothing is sent.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc7ed0, ClearViewPlan @0x402b90 (64-bit build)
+side_effects: Firmware 9.75 additionally deletes the stored plan file and frees the held plan. Stops the ViewPlan worker thread (the stop can wait for the worker with no finite deadline
+  established), turns the plan-working LED off and marks the ViewPlan function entry ignored.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: clear_view_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: clear_view_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc7ed0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 218
+  trigger: 'Firmware 9.75: removing view_plan.json failed with an errno other than ENOENT'
+  label: fail to write file
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Firmware 9.31 has no reachable handler-specific error (always success). Firmware 9.75 can reply 218 (D64 and D32).
+examples:
+- name: stop
+  of: request
+  payload:
+    id: 12
+    method: clear_view_plan
+- name: ok
+  of: reply_success
+  payload:
+    method: clear_view_plan
+    result: 0
+    code: 0
+    id: 12
+see_also:
+- set_view_plan
+- ViewPlan
+spec:
+- spec/control/plan-scheduling.md#stopping-clearing-persistence

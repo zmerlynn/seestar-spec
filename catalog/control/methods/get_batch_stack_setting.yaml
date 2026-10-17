@@ -1,0 +1,105 @@
+kind: method
+name: get_batch_stack_setting
+summary: Return the configured batch stacking input files, pruning entries that no longer exist.
+description: Walks the selected input list under a mutex, checks the cached file metadata, refreshes it
+  with filesystem queries and returns the surviving entries. Inaccessible entries or entries whose path
+  no longer matches are erased from the stored list, so this getter changes the user-visible list (graded
+  MUTATOR, tier C). In the 64-bit build the type key chooses between the star-trail list and the shared
+  deepsky/comet list (firmware 9.75 has three separate lists, and the reply adds key_frame for deepsky and comet, or batch_startrails_mode for startrail); the 32-bit build ignores params and uses its single input list. Filesystem queries
+  and the lock can block with no timeout.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList @0x3a7010
+  (64-bit build)
+side_effects: Refreshes the cached metadata of the batch input list and removes inaccessible or mismatched
+  entries from it.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_batch_stack_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_batch_stack_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetBatchStackSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+        @0x3a7010 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_batch_stack_setting success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    required:
+    - result
+    properties:
+      result:
+        $ref: ../schemas/GetBatchStackSettingResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+          @0x3a7010 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 161
+    method: get_batch_stack_setting
+- name: query-startrail
+  of: request
+  payload:
+    id: 162
+    method: get_batch_stack_setting
+    params:
+      type: startrail
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_batch_stack_setting
+    result:
+      files:
+      - name: Example_target/frame_0001.fit
+        date: '2026-01-31 21:04:05'
+        thn: Example_target/frame_0001_thn.jpg
+        type: 0
+    code: 0
+    id: 161
+- name: ok-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_batch_stack_setting
+    result:
+      files: []
+    code: 0
+    id: 163
+see_also:
+- start_batch_stack
+- stop_batch_stack
+- clear_batch_stack
+- set_batch_stack_setting
+- del_batch_stack_file
+spec:
+- spec/control/stacking.md#batch-stack

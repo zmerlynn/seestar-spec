@@ -1,0 +1,29 @@
+title: get_photometry_plot result
+type: object
+required:
+- name
+- save
+- stars
+description: One cached photometry plot. If the absolute reference magnitude of the last star is under
+  1e-6, stars holds every plot entry; otherwise only the last entry. Each star is loaded raw, with no
+  per-entry save or name augmentation.
+properties:
+  name:
+    type: string
+    description: Plot name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+  save:
+    type: boolean
+    description: Whether the plot is marked saved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+  stars:
+    type: array
+    items:
+      $ref: PhotometryStar.yaml
+    description: Star records of the plot.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)

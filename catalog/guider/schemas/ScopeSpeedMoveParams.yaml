@@ -1,0 +1,50 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: scope_speed_move params
+type: object
+description: 'Named object only: the parameter map does not bind positional names. Request a stop with
+  a percent below 0.01 (for example 0). Native clamp after parsing: an axis speed with magnitude above
+  1440 is replaced by 1440, and with the anti-resonance option (used by the repeat worker) magnitudes
+  in 900..1000 inclusive are snapped to 899 (up to 950) or 1001 (above 950).'
+properties:
+  speed:
+    type: number
+    description: Optional direct speed in the mount's native motor-speed units (a protocol multiplier,
+      not proven to be degrees per second). If present and numeric it takes precedence over percent and
+      is used as the base speed; otherwise percent is required. Its absolute value is used; an absolute
+      value below 0.01 selects the immediate-stop branch. Not emitted by the Android app.
+    x-required-when: percent is absent
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)
+  percent:
+    type: number
+    description: Speed as a percentage. Below 0.01 selects the immediate-stop branch (angle, level and
+      dur_sec are then not read). Otherwise the base speed is 1440*percent/100 when level > 0, or 64*percent/100
+      when level <= 0 (multiplied by the guider's speed-move ratio when that ratio exceeds 0.01). No range
+      check or clamp in the handler; the native per-axis clamp below applies later. Integer or real accepted.
+    x-required-when: speed is absent
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)
+  level:
+    type: integer
+    description: 'Speed scale selector: > 0 uses the 1440 scale, <= 0 the 64 scale (see percent). Must
+      be an integer.'
+    x-required-when: percent >= 0.01 and speed is absent
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)
+  angle:
+    type: integer
+    description: Direction in degrees. The axis speeds are cos(angle)*speed and sin(angle)*speed. Zero
+      point and rotation sense of the angle relative to the sky or the mount axes are unresolved. No range
+      check.
+    x-required-when: not an immediate stop
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)
+  dur_sec:
+    type: integer
+    description: Duration passed to the timed-move command field. Seconds are INFERRED from the field
+      name; no local deadline conversion was found. No range check. The Android app sends 3.
+    x-required-when: not an immediate stop
+    x-confidence: READ (field); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)

@@ -1,0 +1,194 @@
+kind: method
+name: get_sensor_calibration
+summary: Read the balance-sensor and compass-sensor calibration values.
+description: Returns the device's sensor calibration globals directly, including values for a sensor whose
+  exist flag is false. Physical units and scales are not established by the handler.
+grade: MUTATOR / established (the handler itself only reads state; the grade reflects the shared diagnostic
+  log writes made by every full call)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+side_effects: None beyond the shared diagnostic log writes. Reads calibration globals only.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sensor_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_sensor_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_sensor_calibration reply (success)
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: get_sensor_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      type: object
+      properties:
+        balanceSensor:
+          type: object
+          properties:
+            x:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            y:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            z:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            exist:
+              type: boolean
+              description: Calibration-present flag.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+          required:
+          - x
+          - y
+          - z
+          - exist
+          description: Balance (gravity) sensor calibration.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+        compassSensor:
+          type: object
+          properties:
+            x:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            y:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            z:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            x11:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            x12:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            y11:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            y12:
+              type: number
+              description: Calibration value, double; units and scale not established.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+            exist:
+              type: boolean
+              description: Calibration-present flag.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+          required:
+          - x
+          - y
+          - z
+          - x11
+          - x12
+          - y11
+          - y12
+          - exist
+          description: Compass sensor calibration.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+      required:
+      - balanceSensor
+      - compassSensor
+      description: Sensor calibration globals, reported even when exist is false.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_sensor_calibration @0xb64a0
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/id
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable. The compass worker's CompassCalibration events belong
+  to other methods.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 61
+    method: get_sensor_calibration
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_sensor_calibration
+    result:
+      balanceSensor:
+        x: 0.5
+        y: 0.25
+        z: 9.5
+        exist: true
+      compassSensor:
+        x: 1.5
+        y: -2.5
+        z: 3.5
+        x11: 1.0
+        x12: 0.0
+        y11: 0.0
+        y12: 1.0
+        exist: false
+    code: 0
+    id: 61
+see_also:
+- set_sensor_calibration
+- start_gsensor_calibration
+spec:
+- spec/control/polar-alignment.md#g-sensor-and-stored-calibration

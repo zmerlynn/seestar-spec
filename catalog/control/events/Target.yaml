@@ -1,0 +1,225 @@
+kind: event
+name: Target
+summary: Per-target state of a running ViewPlan (and of the legacy autosave plan).
+description: 'Two producers share this name. (1) The ViewPlan target worker sends F-family function events
+  (idle, working, complete, fail, cancel) through the Target function detail; the target callback adds
+  target_id and camera_mode only when a current target exists, wide_state (and wide_code/wide_error on
+  fail) for wide and dual targets, and output objects with stacked-second counters when the main or wide
+  output is non-empty. The callback does not add the plan-list scheduling fields (start_min, duration_min
+  and so on); those appear only inside the ViewPlan event''s plan.list. (2) The legacy autosave plan sends
+  start and complete through the plan-progress helper, with state and progress only (no target members). Select the contract by producer, not
+  by name. Broadcast on TCP 4700 to every retained socket; delivery is not guaranteed and order relative
+  to ViewPlan events and RPC replies is not established. The 32-bit build''s callback writes target_id,
+  camera_mode, output_file and stack_total_sec but not the wide_* members. APK consumer: the app''s target
+  handler; the app deliberately does not require a route on this event.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, print_target_state @0x402c80, ViewPlanTargetFunc @0x408880, AutoSavePlan
+  @0x30ea00, plan-progress helper NotifyPlan @0xb2040 (callers @0x30f15c, near @0x30fb10) (64-bit build); 32-bit
+  counterpart differs as described
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Target event
+  type: object
+  discriminator: Event
+  description: Target transition. F fields plus target-specific members on the ViewPlan path; state and
+    progress on the legacy path.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Target
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      description: F state table for ViewPlan targets (idle, working, complete, fail, cancel); the legacy
+        autosave path sends the literals start and complete through the plan-progress helper.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, AutoSavePlan @0x30ea00, NotifyPlan
+        @0xb2040
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: a non-empty stage string is held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or started with no end) uses
+        current monotonic minus start; other terminal states use end minus start.
+      x-required-when: state is working, or the timer was started (terminal states)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Ordered function-tree ancestry when included; a missing route is a legitimate branch.
+        Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    error:
+      type: string
+      description: 'F: written for state fail even with a stored zero code. Not written by the legacy
+        producer.'
+      x-required-when: F producer and state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'F: written for state fail, including stored zero. Not written by the legacy producer.'
+      x-required-when: F producer and state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    target_id:
+      type: integer
+      description: F producer, only when a current target iterator exists.
+      x-required-when: F producer with a current target
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+    camera_mode:
+      type: string
+      description: tele, wide or dual.
+      x-required-when: F producer with a current target
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+    wide_state:
+      type: string
+      description: Wide and dual targets.
+      x-required-when: wide or dual target (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build only)
+    wide_code:
+      type: integer
+      description: Wide-camera code.
+      x-required-when: wide_state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build only)
+    wide_error:
+      type: string
+      description: Wide-camera error message.
+      x-required-when: wide_state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build only)
+    output_file:
+      $ref: ../schemas/OutputFile.yaml
+      description: Tele and dual targets, when the main output buffer is non-empty. `{path, files}` with exactly
+        one file entry.
+      x-required-when: tele or dual target with non-empty main output
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+    stack_total_sec:
+      type: number
+      description: Stacked seconds from a stored float counter; same branch as output_file.
+      x-required-when: output_file is present
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+    wide_output_file:
+      $ref: ../schemas/OutputFile.yaml
+      description: Wide and dual targets, when the wide output buffer is non-empty. `{path, files}` with exactly
+        one file entry.
+      x-required-when: wide or dual target with non-empty wide output (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build only)
+    progress:
+      $ref: ../schemas/PlanEventProgress.yaml
+      description: Legacy plan progress; same formatter output as get_app_state progress.
+      x-required-when: legacy autosave plan producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyPlan @0xb2040, FormatPlanProgress @0x308e90
+    wide_stack_total_sec:
+      type: number
+      description: Wide stacked seconds; same branch as wide_output_file.
+      x-required-when: wide_output_file is present
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_target_state @0x402c80 (64-bit build only)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, print_target_state @0x402c80
+examples:
+- name: working
+  summary: ViewPlan target running (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Target
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 61000
+    route:
+    - ViewPlan
+    target_id: 1790000000
+    camera_mode: tele
+- name: complete-with-output
+  summary: ViewPlan target finished with saved output (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Target
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 5400000
+    route:
+    - ViewPlan
+    target_id: 1790000000
+    camera_mode: tele
+    output_file:
+      path: Example_target
+      files:
+      - name: Stacked_example.fit
+        date: '2026-01-01 00:00:00'
+        thn: Stacked_example_thn.jpg
+        type: 0
+    stack_total_sec: 3600.0
+- name: legacy-start
+  summary: Legacy autosave target start (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Target
+    Timestamp: '1234.123456789'
+    state: start
+    progress:
+      targets:
+        total: 2
+        lapse: 0
+      cur_plan:
+        total: 2
+        lapse: 0
+      cur_target:
+        total: 30
+        lapse: 12
+        target_name: Example target
+        id: 1
+      cur_seq:
+        total: 30
+        lapse: 12
+        frame_type: light
+        id: 1
+      plan_end: false
+see_also:
+- ViewPlan
+- set_view_plan
+- get_view_plan_stack_result
+- clear_view_plan
+- Sequence
+- get_app_state
+spec:
+- spec/control/events/nested-schemas.md#viewplanplan-and-cached-target-objects
+- spec/control/events/nested-schemas.md#legacy-plan-progress
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#legacy-plan-events

@@ -1,0 +1,109 @@
+kind: method
+name: start_annotate
+summary: Start or restart annotation of the current in-memory image or of a named image file.
+description: 'Without params the device (re)starts annotation of the image held in memory; with a file
+  name it restarts annotation for that file. A success reply means the helper accepted the request, not
+  that annotation completed: the outcome is cached and read later with get_annotate_result, and activity
+  is reported under the annotate member of the app state. Existing annotation processing is stopped before
+  the restart, which can block while the old worker is joined. Whether annotation produces events is not
+  established.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd18c0, StartAnnotateMemory @0x1fc900, RestartAnnotateFile
+  @0x1fc6b0 (64-bit build)
+side_effects: Stops any running annotation worker, sets shared annotation state and starts annotation
+  of the image in memory or of the named file; may block while the previous worker stops and on file operations.
+  No timeout in the handler.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_annotate request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_annotate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - type: string
+        description: Image file name; the device prefixes its image directory. No path or emptiness check;
+          an empty string still takes the file branch.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd18c0 (64-bit build)
+      - type: array
+        items:
+          type: string
+          description: File name (first element only).
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd18c0 (64-bit build)
+        description: 'Positional form: only the first element is used (a string). An empty array is the
+          same as omitting params.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd18c0 (64-bit build)
+      description: 'Optional. Omitted (or an empty array): annotate the current in-memory image. A string,
+        or the first element of an array, names an image file to annotate. Any other present value (including
+        null and objects) is rejected with 105.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd18c0 (64-bit build), json_array2obj @0x6fa450
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params present but not a string (or first array element not a string), including null and object
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A failure inside the start helpers propagates the helper error code; which codes are reachable
+  there is unresolved (camera, file-open, work-state and thread errors). No result member on handler errors.
+examples:
+- name: memory
+  summary: Annotate the image in memory
+  of: request
+  payload:
+    id: 41
+    method: start_annotate
+- name: file
+  summary: Annotate a named file (invented name)
+  of: request
+  payload:
+    id: 42
+    method: start_annotate
+    params: Example_frame.fit
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_annotate
+    result: 0
+    code: 0
+    id: 41
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_annotate
+    error: expected string param
+    code: 105
+    id: 43
+see_also:
+- stop_annotate
+- get_annotate_result
+- is_img_file_annotated
+- iscope_get_app_state
+spec:
+- spec/control/solving-and-annotation.md#annotation

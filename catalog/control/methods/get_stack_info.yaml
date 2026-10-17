@@ -1,0 +1,144 @@
+kind: method
+name: get_stack_info
+summary: Return the stack image dimensions, or with info_type fit_header the stack header summary and
+  save name.
+description: 'Default branch: returns the current stack width and height. With info_type fit_header: copies
+  the last stack header, replaces the stack count and target name, sets the total exposure to frame count
+  times exposure, and returns fit_header, save_fit_header and base_name; this requires at least one stacked
+  frame (else 267). Despite being a getter it is graded MUTATOR because the header path writes diagnostic
+  logs and model memos; the naming step does not create directories or save files. In the 64-bit build,
+  on a master device with the wide-camera view predicate satisfied and the master bit unset, the request
+  can first be relayed to a slave before it is parsed (process type 1); the relay can forward the original
+  request and reconnecting the slave can synchronise storage state, so the call is tier C there. The 32-bit
+  build has no relay and is tier B (probable). Relayed slave replies and errors are unresolved. No handler
+  timeout; underlying calls can block.'
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader @0x191ef0
+  (64-bit build)
+side_effects: Serialises cached dimensions or header data and writes diagnostic logging and memos; in
+  the 64-bit build the optional relay path can reconnect a slave and synchronise its storage state. No
+  image is saved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_stack_info request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_stack_info
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetStackInfoParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+        @0x191ef0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_stack_info success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    required:
+    - result
+    properties:
+      result:
+        $ref: ../schemas/GetStackInfoResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe0670, GetStackInfo @0x191e50, GetStackFitHeader
+          @0x191ef0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 267
+  trigger: info_type fit_header and the last stack frame count is below 1
+  label: no image
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A generic stack-info failure would forward the thread-local code, but the 64-bit helper reports
+  success on every ordinary path. Errors forwarded from a relayed slave are unresolved.
+examples:
+- name: dimensions
+  of: request
+  payload:
+    id: 81
+    method: get_stack_info
+- name: header
+  of: request
+  payload:
+    id: 82
+    method: get_stack_info
+    params:
+      info_type: fit_header
+- name: ok-dimensions
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_stack_info
+    result:
+      width: 1080
+      height: 1920
+    code: 0
+    id: 81
+- name: ok-header
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_stack_info
+    code: 0
+    id: 82
+    result:
+      fit_header:
+        header_date: '2026-01-31 21:04:05'
+        bayer_pat: RGGB
+        creator: ExampleCreator
+        size:
+        - 1080
+        - 1920
+        img_type: 1
+        obj_name: Example target
+        stack_num: 12
+        exp_sec: 10
+        tot_exp_sec: 120
+        eqmode: 1
+        is_wide: 0
+      save_fit_header:
+        CREATOR: ExampleCreator
+        PRODUCER: ZWO
+        PROGRAM: example-fw
+        GAIN: 80
+        XBINNING: 1
+        YBINNING: 1
+        STACKCNT: 12
+        EXPOSURE: 10
+        TOTALEXP: 120
+        OBJECT: Example target
+      base_name: Example_target_stack
+- name: no-frames
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_stack_info
+    error: no image
+    code: 267
+    id: 83
+see_also:
+- save_stack
+- start_stack
+- clear_stack
+spec:
+- spec/control/stacking.md#queries

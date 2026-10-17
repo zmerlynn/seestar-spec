@@ -1,0 +1,123 @@
+kind: method
+name: import_plan
+summary: Create or update legacy autosave plans without the disk-size precheck.
+description: Parses an array of legacy plan objects, merges each into the plan with the same id (copying
+  the existing plan first, so omitted members keep their prior values; new plans take documented defaults),
+  commits them to the global plan map, updates the capture settings and persists the result. While the
+  device is exposing, an enabled plan is only updated through its special options. The disk-size precheck
+  is skipped (it is the only difference from set_plan). Malformed roots and non-string sequence type/suffix
+  values have no reliable error contract.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd1e00, ParsePlans @0x311710, SetPlan @0x30e350 (64-bit
+  build)
+side_effects: Replaces entries of the global legacy plan map, updates the enabled-plan and capture settings
+  and writes them to storage (the save result is ignored). No exposure is started by the call.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: import_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: import_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/LegacyPlanInput.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd1e00, ParsePlans @0x311710, SetPlan @0x30e350
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: A plan, target or sequence id is missing, not an integer or INT_MIN
+  label: invalid id
+- code: 108
+  trigger: A recognized target_coord member is malformed
+  label: expected float param
+- code: 224
+  trigger: Restricted fields of an exposed enabled plan are edited while on the exposing page
+  label: cannot edit sequence unless reset the progress
+- code: 268
+  trigger: The plan loader thread is running
+  label: operation is in progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: minimal
+  summary: One plan, id only (shape READ, values invented)
+  of: request
+  payload:
+    id: 31
+    method: import_plan
+    params:
+    - id: 1
+- name: with-target
+  summary: A plan with one target and one sequence (values invented)
+  of: request
+  payload:
+    id: 32
+    method: import_plan
+    params:
+    - id: 1
+      plan_name: Example plan
+      enable: true
+      start_time:
+        type: date
+        hour: 21
+      end_time:
+        type: dawn
+      targets:
+      - id: 1
+        target_name: Example target
+        target_coord:
+        - 12
+        - 30
+        seqs:
+        - id: 1
+          type: light
+          exp: 10
+          gain: 80
+          bin: 1
+          repeat: 30
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: import_plan
+    result: 0
+    code: 0
+    id: 31
+- name: missing-id
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: import_plan
+    error: invalid id
+    code: 200
+    id: 33
+see_also:
+- set_plan
+- get_plan
+- delete_plan
+- clear_plan
+- reset_plan
+- list_plan
+spec:
+- spec/control/legacy-plans-and-sequences/plans.md#set_plan-and-import_plan

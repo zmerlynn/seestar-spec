@@ -1,0 +1,105 @@
+kind: method
+name: set_img_file_info
+summary: Write planet-stack sharpen values into a FITS file header.
+description: 'Opens the FITS file for update, writes the SHARPEN string key and closes it. If the matching
+  thumbnail name resolves and the thumbnail is removed, the thumbnail is regenerated; a failure of that
+  thumbnail step after the FITS write succeeded is logged and ignored. The reply carries the error code
+  set by the FITS step: 258 when the file cannot be opened, 256 when the key cannot be written or the
+  file cannot be closed (READ).'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: 'static analysis of firmware 9.31, handler @0xe00b0, WriteFitsSharpen @0x69f440 (64-bit build);
+  FITS open helper PHD_fits_open_diskfile (258, one branch 268), writeHeaderString (256), PHD_fits_close_file
+  (256), jrpc_error with the thread-local err_code (finding #322)'
+side_effects: Modifies FITS header metadata on disk and regenerates the thumbnail image.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_img_file_info request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_img_file_info
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetImgFileInfoParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe00b0, WriteFitsSharpen @0x69f440 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null or not an object
+  label: expected object param
+- code: 105
+  trigger: file_name missing or not a string
+  label: expected string param
+- code: 102
+  trigger: planet_stack_sharpen missing or not an array
+  label: invalid params
+- code: 104
+  trigger: A sharpen element is not an integer
+  label: expected int param
+- code: 258
+  trigger: FITS file cannot be opened for update
+  label: open file failed
+- code: 256
+  trigger: SHARPEN key write fails, or the FITS file cannot be closed
+  label: fit operation failed
+- code: 268
+  trigger: One internal open-failure path (condition INFERRED); 268 has no text, so the reply text is
+    the fallback
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: write
+  summary: Values invented
+  of: request
+  payload:
+    id: 95
+    method: set_img_file_info
+    params:
+      file_name: Example/Stacked_example.fit
+      planet_stack_sharpen:
+      - 3
+      - 5
+      - 2
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_img_file_info
+    result: 0
+    code: 0
+    id: 95
+- name: bad-element
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_img_file_info
+    error: expected int param
+    code: 104
+    id: 96
+see_also:
+- get_img_file_info
+spec:
+- spec/media/files-and-album.md#file-edits-on-4700
+- spec/media/files-and-album.md#album-methods-on-4700

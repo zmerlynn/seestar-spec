@@ -1,0 +1,141 @@
+kind: event
+name: Annotate
+summary: Annotation workflow notification (start, result, failure) from the direct sender or the function detail.
+description: 'Direct SendAnnotateEvent sends start, complete (with result) or fail (error, code) with page and tag;
+  the F detail follows the function-state family: Function-state family (F): SendFuncEvent formats the named function
+  detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state;
+  error and code at fail (even when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits
+  code and error; route is optional function ancestry. The sender does no deduplication and needs no preceding working
+  event. Detail flags can suppress the working or non-working sends while the cached function tree still changes,
+  so a receiver can miss transitions. The annotation result object is open: APK 3.3.2 has consumer DTOs for it,
+  but those are expectations, not firmware members, and are not listed here. Channel I (TCP 4700). Delivery: ordinary
+  broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no
+  cadence, delivery or ordering guarantee relative to RPC replies or other events. Producer scope: only
+  annotation runs (start_annotate, or the automatic annotation after a capture) send it; start_solve resets
+  the solve parameters, which clears the annotate flag, so a solve it starts reports only through PlateSolve.
+  The event carries no request id, and tag is the latest tag set by any solve or annotation, so a client
+  correlates by timing.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SendAnnotateEvent @0x200a90, StartSolveImg @0x1fbb90, StartAnnotate
+  @0x1fb0b0, RefreshSolveStatusFunc @0x207000 (64-bit build); F family helpers
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Annotate event
+  type: object
+  discriminator: Event
+  description: Annotation event, direct or F producer.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Annotate
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; SendAnnotateEvent @0x200a90 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      description: 'Union. F: idle, working, complete, fail, cancel. Direct SendAnnotateEvent: start, complete,
+        fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, SendAnnotateEvent @0x200a90
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Stored error code; present at fail even when zero.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    page:
+      type: string
+      description: 'Legacy/direct producer: source page.'
+      x-required-when: direct producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAnnotateEvent @0x200a90 (64-bit build)
+    tag:
+      type: string
+      description: Source tag, only when non-empty. It is a single global, also overwritten by internal
+        block solves, so it identifies the latest solve or annotation rather than a request.
+      x-required-when: direct producer and tag non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAnnotateEvent @0x200a90 (64-bit build)
+    result:
+      type: object
+      description: Annotation helper JSON, embedded as an object. Its complete firmware member set is unresolved;
+        tolerate any members.
+      x-required-when: direct complete
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendAnnotateEvent @0x200a90 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendAnnotateEvent @0x200a90 (64-bit build)
+examples:
+- name: start
+  summary: Direct start (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Annotate
+    Timestamp: '1234.123456789'
+    state: start
+    page: preview
+    tag: example
+- name: complete
+  summary: Direct result (READ shape; result members invented placeholders)
+  of: payload
+  payload:
+    Event: Annotate
+    Timestamp: '1234.123456789'
+    state: complete
+    page: preview
+    tag: example
+    result:
+      image_id: 41
+see_also:
+- start_annotate
+- stop_annotate
+- get_annotate_result
+- is_img_file_annotated
+spec:
+- spec/control/solving-and-annotation.md#annotation
+- spec/control/events-overview.md

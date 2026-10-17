@@ -1,0 +1,62 @@
+title: get_img_file_page_number params
+description: 'Optional. Absent params use all defaults. An object may carry dir, page_num, size, date
+  and skip_avi (wrong-typed members are ignored, leaving defaults, except page_num which must be positive).
+  An array supplies only the directory: its first element, a string, is used as the directory path; an
+  empty array uses defaults; a non-string first element gives 105; further elements are ignored. Explicit
+  params of any other JSON type, including null, give 102. A path the device recognises is kept, otherwise
+  it is prefixed with the image storage root.'
+oneOf:
+- type: object
+  properties:
+    dir:
+      type: string
+      description: Directory to count, relative to the image storage root or recognised absolute form.
+        A non-string value is ignored.
+      x-default: empty string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+        @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+    page_num:
+      type: integer
+      description: Items per page (the divisor), despite the name. Must be positive when an integer is
+        given; a non-positive integer gives 209; other types leave the default.
+      x-default: '20'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+        @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+    size:
+      type:
+      - boolean
+      - integer
+      description: Include file sizes in the enumeration; zero is false, nonzero is true. Other types
+        leave the default.
+      x-default: 'true'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+        @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+    date:
+      type:
+      - boolean
+      - integer
+      description: Include file dates in the enumeration; same flag rules.
+      x-default: 'true'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+        @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+    skip_avi:
+      type:
+      - boolean
+      - integer
+      description: Skip AVI files in the enumeration; same flag rules. Exact filtering semantics are not
+        established.
+      x-default: 'false'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath
+        @0x6e0860, bool_param @0x6f58f0 (64-bit build)
+- type: array
+  items:
+    type: string
+  description: '[dir]; only the first element is read.'
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe5f20, GetImgFilePageNum @0x130b20, FillPath @0x6e0860,
+  bool_param @0x6f58f0 (64-bit build)

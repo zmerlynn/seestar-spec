@@ -1,0 +1,131 @@
+kind: method
+name: set_camera_exp_and_bin
+summary: Set exposure and/or bin in one call.
+description: Required object (or first array element) with optional integer members exposure and bin.
+  Members are applied in the order they appear on the wire, each immediately; the first failing member
+  stops processing with no rollback, so the call can partially change settings and still return an error.
+  Unrecognised keys, non-integer members and null members are skipped silently; an empty object succeeds.
+  exposure is an integer number of microseconds (10 s is 10000000); its range comes from the camera.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcf420, SetBin @0x11f2b0 (64-bit build)
+side_effects: Sets camera control 1 (exposure) and the bin immediately, in wire order; partial application
+  on failure.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_camera_exp_and_bin request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_camera_exp_and_bin
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Required object, or an array whose first element is that object. Absent, empty array
+        or non-object fails with 107.
+      anyOf:
+      - type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcf420 (64-bit build)
+        properties:
+          exposure:
+            type: integer
+            description: Exposure in microseconds, set unscaled through camera control 1 (the SDK exposure
+              control); 10 s is 10000000. The range comes from the camera's control limits (see get_controls).
+              Absent keeps the current value; a present non-integer or null is silently skipped.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xcf420, ExpRetryTag @0x2165d0 (control 1 divided
+              by 1000 twice to seconds) (64-bit build)
+          bin:
+            type: integer
+            description: Bin factor; accepted as in set_camera_bin. Absent keeps the current value; a
+              present non-integer or null is silently skipped.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xcf420 (64-bit build)
+      - type: array
+        description: 'Array form: first element is the object.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xcf420 (64-bit build)
+        items:
+          type: object
+          description: The params object.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xcf420 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf420 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Params missing, empty array or not an object
+  label: expected object param
+- code: 318
+  trigger: Camera is closed
+  label: device not connected
+- code: 210
+  trigger: Bin not in the camera's supported list
+  label: not supported
+- code: 204
+  trigger: Video-page bin outside 1..maximum
+  label: out of limit
+- code: 207
+  trigger: Operation failure whose thread-local error code is zero (the default substituted when the callee
+    set none); other callee-set codes are forwarded unchanged
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Errors from setting control 1 (exposure range) are forwarded and not enumerated.
+examples:
+- name: both
+  of: request
+  payload:
+    id: 44
+    method: set_camera_exp_and_bin
+    params:
+      exposure: 10000
+      bin: 1
+- name: exposure-only
+  of: request
+  payload:
+    id: 45
+    method: set_camera_exp_and_bin
+    params:
+      exposure: 20000
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_camera_exp_and_bin
+    result: 0
+    code: 0
+    id: 44
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_camera_exp_and_bin
+    error: expected object param
+    code: 107
+    id: 46
+see_also:
+- get_camera_exp_and_bin
+- set_camera_bin
+- start_exposure
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

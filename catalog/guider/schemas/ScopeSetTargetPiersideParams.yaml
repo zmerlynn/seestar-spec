@@ -1,0 +1,13 @@
+title: scope_set_target_pierside params
+type:
+- string
+- array
+description: 'Pier-side label: a bare string or an array whose first element is the string. The native
+  setter owns the allowed labels, none of which are established.'
+items:
+  type: string
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x71250 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x71250 (64-bit build)

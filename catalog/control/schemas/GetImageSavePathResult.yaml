@@ -1,0 +1,37 @@
+title: get_image_save_path result
+type: object
+description: 'Storage overview. All four members are always present. The storage enum is model-dependent:
+  type 0 is emmc on eMMC models and sd otherwise, and always comes first in both arrays regardless of
+  physical mounting; a connected USB disk (udisk) follows it.'
+required:
+- is_typec_connected
+- connected_storage
+- storage_volume
+- cur_storage
+properties:
+  is_typec_connected:
+    type: boolean
+    description: Whether the Type-C port reports a connection.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  connected_storage:
+    type: array
+    description: Names of the connected storage types, type 0 first.
+    items:
+      type: string
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  storage_volume:
+    type: array
+    description: One record per connected type, in the same order as connected_storage.
+    items:
+      $ref: GetImageSavePathVolume.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  cur_storage:
+    type: string
+    description: Name of the storage currently selected for saving.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)

@@ -1,0 +1,30 @@
+title: set_merid_setting params
+description: 'Meridian-flip settings. Object, or an array whose first element is that object. All members
+  are optional: a missing key retains the current value, and an empty object succeeds. Unknown keys are
+  ignored. Minute units are INFERRED from the key names; the handler does no conversion.'
+type:
+- object
+- array
+properties:
+  merid_over_min:
+    type: integer
+    description: Minutes past the meridian to continue before flipping (INFERRED from name). Non-negative;
+      a negative value fails with 204; wrong type fails with 104. No upper bound.
+    minimum: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xca6a0, SetMeridSetting @0x11fda0 (64-bit build)
+  merid_before_min:
+    type: integer
+    description: Minutes before the meridian (INFERRED from name). Signed; negative values are accepted
+      by the handler; wrong type fails with 104.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xca6a0, SetMeridSetting @0x11fda0 (64-bit build)
+  merid_recalibrate:
+    type:
+    - boolean
+    - integer
+    description: Recalibrate after a flip. A nonzero integer is true; any other type fails with 106.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xca6a0, SetMeridSetting @0x11fda0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xca6a0, SetMeridSetting @0x11fda0 (64-bit build)

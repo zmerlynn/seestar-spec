@@ -1,0 +1,98 @@
+kind: method
+name: get_fov
+summary: Return the camera field of view as a [width, height] pair.
+description: Takes no parameters. Computes the pixel scale as pixel size times 206.265 times binning divided
+  by focal length, then multiplies the sensor dimensions by that scale divided by 3600. The result is
+  a bare two-number array, first element the camera width direction and second the height direction; the
+  pixel scale is arcseconds per pixel (pixel size in micrometres, focal length in mm, READ), so the result is in
+  degrees. On failure
+  there is no result and no sentinel value. Failure when focal length is not above 1, pixel size or binning
+  cannot be obtained, the scale is not positive or is at least 324000, or camera information cannot be
+  read. No event is emitted.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd3aa0, GetFov @0x125470 (64-bit build)
+side_effects: Refreshes cached camera information and pixel size, and logging state; no hardware change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_fov request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_fov
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd3aa0, GetFov @0x125470 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: array
+        description: Field of view [horizontal, vertical] in degrees (arcsec-per-pixel scale divided by 3600). Two numbers, no named members.
+        minItems: 2
+        maxItems: 2
+        prefixItems:
+        - type: number
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd3aa0, GetFov @0x125470 (64-bit build)
+        - type: number
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xd3aa0, GetFov @0x125470 (64-bit build)
+        items: false
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd3aa0, GetFov @0x125470 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: FOV computation failed (focal length, pixel size, scale or camera info) and no code was set
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Lower camera helpers may supply other codes; the set is unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 91
+    method: get_fov
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_fov
+    result:
+    - 1.27
+    - 0.71
+    code: 0
+    id: 91
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_fov
+    error: fail to operate
+    code: 207
+    id: 92
+see_also: []
+spec:
+- spec/control/misc.md#field-of-view

@@ -1,0 +1,162 @@
+kind: event
+name: PiStatus
+summary: Sparse delta of device power and thermal status (SoC temperature, battery, charger, Type-C).
+description: 'Broadcast to all retained sockets on TCP 4700 (channel I) by the status checker when its
+  internal changed-field list is non-empty. Each event carries only the members whose fields changed since
+  the last delta, each at most once even when changed several times; the list is then cleared. The changed
+  list itself is never sent, and there is no state, code, error or result wrapper. Merge each event into
+  retained state; pi_get_info and the pi_status member of get_device_state give the full snapshot and
+  do not consume a pending delta. Triggers: a poll loop that sleeps one second per pass marks temp changed
+  only when it differs from the retained baseline by more than 1.0 degree C (the baseline is not advanced
+  for smaller changes, so several sub-degree drifts can eventually trigger) or when is_overtemp changes,
+  and also reads battery and charger status; the Type-C callback notifies immediately on a changed boolean.
+  The formatter has no timer or throttle, so neither exactly one event per second nor a 1 Hz maximum
+  is a protocol guarantee. A changed-list entry for an unrecognized field produces no member, so an envelope-only
+  PiStatus is possible in principle. The 32-bit build serializes the same nine members. The member set does
+  not depend on the model; the model only changes the low-battery shutdown voltage on the 32-bit build (3.1 V
+  on S50, 3.25 V otherwise). The builds read different charger chips, so the charger_status mapping may differ
+  by build, not by model. APK consumer expectation
+  (not emitted): the app status DTOs also declare is_undervolt and is_over_current, and the checker has
+  voltage/current tracking helpers, but neither build serializes these keys. Observation (2026-10-12):
+  29 PiStatus events in 300 s on a device imaging a plan, carrying temp only, at intervals of 1.0 to 44.6
+  s; another capture carried battery_temp only.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, CPiStatusChecker::DoNotify @0x1275c0, FormatStatus @0x126d90,
+  RefreshPiTemp @0x137790, TypecChange @0x127770, BatteryChange @0x12b3e0 (no model branch) (64-bit build);
+  BatteryChange @0xb47f4 (model check @0xb4c04, 3.1 V literal @0xb4e10) (32-bit build); temp-only and battery_temp-only shapes
+  OBSERVED (2026-10-12)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: PiStatus event
+  type: object
+  discriminator: Event
+  description: Any coalesced subset of the nine status members.
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: PiStatus
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CPiStatusChecker::DoNotify @0x1275c0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60; shape OBSERVED (2026-10-12)
+    is_overtemp:
+      type: boolean
+      description: SoC over-temperature flag (threshold crossing).
+      x-required-when: field changed
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90
+    temp:
+      type: number
+      description: SoC thermal-zone temperature in degrees C (sensor value divided by 1000).
+      x-required-when: field changed
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90, RefreshPiTemp @0x137790; temp-only
+        event OBSERVED (2026-10-12)
+    charger_status:
+      type: string
+      enum:
+      - Charging
+      - Discharging
+      - Full
+      - Cool
+      - Warm
+      - Cold
+      - Hot
+      - Unknown
+      description: Charger state with initial capital. Derived from the charger's own status, battery_temp
+        and battery_capacity. Discharging and Unknown pass through; Full is kept only at 100 percent capacity,
+        otherwise Charging; any other status is decided by battery_temp T (T <= 0 Cold, T <= 10 Cool, 45 <=
+        T <= 49 Warm, T > 49 Hot, otherwise Charging, or Full at 100 percent). The charger's not-charging
+        status is never reported. The builds read different charger chips, so the mapping may differ by build,
+        not by model. Clients SHOULD compare case-insensitively.
+      x-required-when: field changed
+      x-confidence: READ (vendor charger-library part from an archived copy not proven identical to 9.31)
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90, CPiStatusChecker::BatteryChange (64-bit
+        build); vendor ASI_CHARGE_GetChargeStatus (archived library)
+    battery_capacity:
+      type: integer
+      description: Battery capacity; percent INFERRED.
+      x-required-when: field changed
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90
+    charge_online:
+      type: boolean
+      description: Charger online flag.
+      x-required-when: field changed
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90
+    is_typec_connected:
+      type: boolean
+      description: Type-C connection flag; the Type-C callback notifies immediately.
+      x-required-when: field changed
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90, TypecChange @0x127770
+    battery_overtemp:
+      type: boolean
+      description: Battery over-temperature flag.
+      x-required-when: field changed
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90
+    battery_temp:
+      type: integer
+      description: Battery (charger) temperature as reported by the charger driver's power-supply sysfs temp
+        attribute, an unscaled integer in whole degrees C. The 64-bit build reads it through the vendor charge
+        library, the 32-bit build reads a different charger chip's sysfs file directly.
+      x-required-when: field changed
+      x-confidence: READ (source, no scaling); unit INFERRED (from the device's own thresholds)
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90, CPiStatusChecker::BatteryChange
+        @0x12b3e0, vendor ASI_CHARGE_GetTemperature (lib @0x32740) (64-bit build); BatteryChange @0xb47f4
+        (32-bit build); battery_temp-only event OBSERVED (2026-10-12)
+    battery_temp_type:
+      type: string
+      enum:
+      - normal
+      - high
+      - low
+      description: Battery temperature class; an unknown internal value emits no member.
+      x-required-when: field changed and the internal value is known
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatStatus @0x126d90
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, CPiStatusChecker::DoNotify @0x1275c0, FormatStatus @0x126d90
+examples:
+- name: temp-delta
+  summary: Shape OBSERVED (2026-10-12); value invented
+  of: payload
+  payload:
+    Event: PiStatus
+    Timestamp: '1234.123456789'
+    temp: 47.2
+- name: battery-temp-delta
+  summary: Shape OBSERVED (2026-10-12); value invented
+  of: payload
+  payload:
+    Event: PiStatus
+    Timestamp: '1234.123456789'
+    battery_temp: 31
+- name: typec-plugged
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: PiStatus
+    Timestamp: '1234.123456789'
+    is_typec_connected: true
+    charge_online: true
+    charger_status: Charging
+see_also:
+- pi_get_info
+- get_device_state
+- BattHiTempShutdown
+spec:
+- spec/control/events/families.md#worked-example-pistatus-deltas
+- spec/control/power-and-storage.md#pistatus-event

@@ -1,0 +1,92 @@
+kind: method
+name: scope_get_test_date
+summary: 'Guider: send a raw vendor date query to the mount controller and return its unparsed reply (diagnostic).'
+description: 'Guider diagnostic getter. Registered in the guider dispatcher table; on 4700 it is reached
+  through the imager method-not-found relay (mount-and-motion R1, R2). READ: the handler sends a fixed
+  vendor date query to the mount and returns the reply split into several strings in result.list (one
+  per #-terminated segment, INFERRED). Observed reply ["0#", "0#", "#", "#"] on an S50 Pro, firmware 9.31
+  (OBSERVED 2026-10-16). What the reply means is unresolved; it is not the mount clock in any established
+  format. On a send failure it logs the failure and replies with the thread error code. The mount query
+  goes through the shared driver, so the method is graded MUTATOR / tier C like the other scope_get_*
+  readers. The app emits it from getAzimuthTrackingSpeed. Mount serial (firmware 9.31, READ): :GBZR.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider dispatcher table, handler @0x76df0 (64-bit guider build;
+  sends ":GBZR#", splits the reply in a loop @0x76ec8..0x76fc8 and appends each piece to the list), @0x6f590
+  (32-bit build); static analysis of app 3.3.2, BaseDeviceViewModel.getAzimuthTrackingSpeed
+side_effects: Sends one raw query to the live mount controller through the Scope driver; no persisted
+  configuration write. READ handler structure; INFERRED driver-query effect.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_test_date request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_test_date
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (64-bit entry @0x1f1b20, 32-bit
+        entry @0x1eec14)
+    params:
+      description: The app passes null params to its sender; whether that becomes an omitted member on
+        the wire, and whether the handler reads params, is unresolved.
+      x-confidence: READ (app 3.3.2 emitter); firmware parsing unresolved
+      x-basis: static analysis of app 3.3.2, BaseDeviceViewModel.getAzimuthTrackingSpeed
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        required:
+        - list
+        properties:
+          list:
+            type: array
+            minItems: 1
+            items:
+              type: string
+            description: 'The mount''s reply to the vendor date query, split into segments (one per #-terminated
+              segment, INFERRED); for example ["0#", "0#", "#", "#"] (OBSERVED 2026-10-16). Its meaning
+              is unresolved.'
+            x-confidence: READ (array of strings, split loop); OBSERVED (four segments); unresolved (meaning)
+            x-basis: static analysis of firmware 9.31, guider handler @0x76df0 (64-bit guider build)
+        description: '{list: [segment, ...]}.'
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x76df0 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: On a failed mount send the handler replies with the thread-local error code; which codes
+  occur there is unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 102
+    method: scope_get_test_date
+see_also:
+- scope_get_time
+- scope_get_state
+spec:
+- spec/control/time-and-location.md#mount-time
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

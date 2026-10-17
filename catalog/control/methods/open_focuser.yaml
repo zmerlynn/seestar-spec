@@ -1,0 +1,87 @@
+kind: method
+name: open_focuser
+summary: Open the electronic focuser (main or wide GPIO focuser) and initialise its position scaling.
+description: No parameters are read. Opens the selected GPIO focuser (handle 0 for the main camera, handle
+  1 for a supported wide camera), reads its hardware maximum step, builds the control list (max_step,
+  backlash, reset_step plus a null-name sentinel entry) and initialises the position scaling. If the initialisation
+  file is inaccessible an initial-move thread is started, so opening may cause motion; otherwise the initial
+  move is skipped. An already-open focuser returns success. The inspected poll loop waits at most 30000
+  ms in 100 ms steps (not the total latency bound). No mount-parked check was found. Because the control
+  list contains the null-name sentinel, a later get_focuser_caps cannot serialise its reply.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xccd10, Open @0x15b450 (64-bit build); tier INFERRED
+side_effects: Opens the focuser hardware handle, caches the hardware maximum and builds scaling state;
+  may start an initial-move thread that moves the focuser. Events from that thread are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: open_focuser request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: open_focuser
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xccd10 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: The selected wide-camera model cannot autofocus
+  label: not supported
+- code: 201
+  trigger: The focuser open call or the maximum-step query fails (the latter closes the handle again)
+  label: fail to connect
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Internal IsMoving poll failures can set 300 or 318 but are suppressed once Open itself reports
+  success. The exact model predicate behind 210 is unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 9
+    method: open_focuser
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: open_focuser
+    result: 0
+    code: 0
+    id: 9
+- name: open-failed
+  summary: Hardware open failed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: open_focuser
+    error: fail to connect
+    code: 201
+    id: 10
+see_also:
+- close_focuser
+- get_focuser_state
+- get_focuser_caps
+- move_focuser
+spec:
+- spec/control/focus-and-filter.md#lifecycle

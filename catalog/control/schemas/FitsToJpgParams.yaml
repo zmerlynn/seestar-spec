@@ -1,0 +1,16 @@
+title: fits_to_jpg params
+type: object
+required:
+- name
+description: Object form. The handler also accepts a bare string or a one-item positional array [name];
+  further items and keys are ignored. Clients SHOULD send the object form.
+properties:
+  name:
+    type: string
+    description: FITS file to convert. MUST end in .fit, .fits or .fts (case-insensitive). A path under
+      the image root is used as is; otherwise the image root is prefixed. Missing, null or non-string
+      is rejected with 105.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbd430, Fit2Jpg @0x121de0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbd430, Fit2Jpg @0x121de0 (64-bit build)

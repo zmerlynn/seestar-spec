@@ -1,0 +1,33 @@
+title: scope_move_left_by_angle params
+description: 'Object {degree} or positional array [degree]. With a connected mount degree is required: missing
+  or not an integer gives 104 (after the 203 and 210 checks). Without a connected mount degree is not read;
+  the only parameter read there is manual (key or first position), and the string manual makes the call emit
+  MoveByAngle complete and reply 0. The native degree limits are unresolved.'
+anyOf:
+- type: object
+  properties:
+    degree:
+      type: integer
+      description: Angle in degrees (unit from the key name). Exact integer type checked (104 otherwise).
+        No downstream range is established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build)
+    manual:
+      type: string
+      description: Read only when no mount is connected. The value manual selects the immediate-complete
+        path.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build)
+- type: array
+  prefixItems:
+  - type:
+    - integer
+    - string
+    description: Angle in degrees, or the string manual on the no-mount path.
+  description: Positional form [degree].
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x7d260 (64-bit build)

@@ -1,0 +1,30 @@
+title: scope_get_state result
+type: object
+description: Mount coordinates. alt and az are always present; ra and dec are missing when the RA/Dec
+  read fails, in which case the reply also carries an error. Epoch unresolved.
+required:
+- alt
+- az
+properties:
+  alt:
+    type: number
+    description: Altitude in degrees (INFERRED unit), from the controller's horizontal position.
+    x-confidence: READ (member); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)
+  az:
+    type: number
+    description: Azimuth in degrees (INFERRED unit), from the controller's horizontal position.
+    x-confidence: READ (member); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)
+  ra:
+    type: number
+    description: Right ascension in hours (INFERRED unit), from the scope_get_ra_dec reader.
+    x-confidence: READ (member); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)
+  dec:
+    type: number
+    description: Declination in degrees (INFERRED unit), from the scope_get_ra_dec reader.
+    x-confidence: READ (member); INFERRED (unit)
+    x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)

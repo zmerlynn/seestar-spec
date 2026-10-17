@@ -1,0 +1,94 @@
+kind: method
+name: set_exposure
+summary: Set the guide camera exposure duration in milliseconds.
+description: Params is a scalar integer or a one-element array holding it. The handler applies no range
+  or clamp; the value is handed to the camera device object, which persists it as the exposure duration
+  (milliseconds, from the configuration key and usage) and selects dark correction. Native special or
+  automatic values are unresolved. A success reply is a synchronous handler return.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x74850 (64-bit build); MyDev::SetExposureDuration
+  @0x92660
+side_effects: Writes the requested exposure duration, persists it in the device configuration and selects
+  dark-frame correction. When reached through an imager relay on the main table the same request can additionally
+  trigger the reconnect callback described in the guider service notes (relay eligibility is a separate
+  outer gate).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_exposure request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_exposure
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SetExposureParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x74850 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: params is not an integer (or one-element array of integer)
+  label: expected int param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Native and driver codes are not exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 3
+    method: set_exposure
+    params:
+    - 500
+  summary: Array form, 500 ms (shape READ; value invented)
+- name: scalar
+  of: request
+  payload:
+    id: 4
+    method: set_exposure
+    params: 1000
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_exposure
+    result: 0
+    code: 0
+    id: 4
+- name: not-integer
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_exposure
+    error: expected int param
+    code: 104
+    id: 5
+see_also:
+- set_gain
+- set_search_region
+spec:
+- spec/guider/index.md#method-groups

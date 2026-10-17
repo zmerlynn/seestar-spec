@@ -1,0 +1,10 @@
+title: clear_plan params
+type: array
+minItems: 1
+description: Array of selector objects. A plain selector object is not accepted (the parser walks child
+  nodes directly, so an object whose member values are selector objects is also traversed and member names
+  are ignored). A selector with target_id but no plan_id, or seq_id without target_id, is skipped; the
+  parser succeeds if any valid selector remains. Absent, null, empty, or non-object element fails the
+  parse (reported as 207).
+items:
+  $ref: ./LegacyPlanSelector.yaml

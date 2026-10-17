@@ -1,0 +1,59 @@
+kind: event
+name: AutoOpenDevice
+summary: Notification that the automatic reconnect logic reopened a device.
+description: 'Broadcast on TCP 4700 (channel I) to all retained sockets after a successful automatic reopen
+  by the reconnect logic. Family: custom; no state or error. APK consumer: none established.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifyDeviceReopen @0x122790 (64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AutoOpenDevice event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - device
+  - type
+  properties:
+    Event:
+      type: string
+      const: AutoOpenDevice
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceReopen @0x122790
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    device:
+      type: string
+      description: Reopened device identifier.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceReopen @0x122790
+    type:
+      type: string
+      description: Device type supplied by the reconnect code; vocabulary not established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceReopen @0x122790
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyDeviceReopen @0x122790
+examples:
+- name: reopened
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: AutoOpenDevice
+    Timestamp: '1234.123456789'
+    device: Example focuser
+    type: focuser
+see_also:
+- get_connected_cameras
+- get_connected_focuser
+- get_connected_wheels
+spec:
+- spec/control/device-state-and-settings.md#automatic-device-reopen

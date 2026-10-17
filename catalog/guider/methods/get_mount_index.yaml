@@ -1,0 +1,95 @@
+kind: method
+name: get_mount_index
+summary: Report the selected mount index of the primary or auxiliary list.
+description: Optional selector param. Returns the cached primary or auxiliary mount index held by the
+  gear dialog. Selecting a named object is not implied. How an auxiliary index corresponds to the runtime
+  list, and freshness of the equipment state, are unresolved.
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x7a020 (64-bit guider build)
+side_effects: Reads the cached index only.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_mount_index request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_mount_index
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Optional selector. A string, or an array whose first element is a string: "aux" selects
+        the auxiliary list; any other string is rejected with 109. Omitted, null or any non-string value
+        selects the primary list. No object form and no boolean-to-aux mapping.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x7a020 (64-bit guider build)
+reply_success:
+  title: get_mount_index success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: integer
+        description: Selected mount index for the chosen list.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x7a020 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 109
+  trigger: Params is a string (or first array element is a string) other than "aux"
+  label: unexpected param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 31
+    method: get_mount_index
+- name: auxiliary
+  of: request
+  payload:
+    id: 32
+    method: get_mount_index
+    params: aux
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_mount_index
+    result: 0
+    code: 0
+    id: 22
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_mount_index
+    error: unexpected param
+    code: 109
+    id: 23
+see_also:
+- get_mount_list
+spec:
+- spec/guider/index.md#method-groups

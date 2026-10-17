@@ -1,0 +1,222 @@
+kind: event
+name: PlateSolve
+summary: Plate-solve begin/progress/result, from the direct solve sender and the function-state detail.
+description: 'Two producers share the name. Direct SendSolveEvent sends start, solving, complete or fail with page,
+  tag and, depending on the branch, star_number, duration_ms, filename, result, target_ra_dec, and error/code on
+  failure, plus caller extension-map members (keys unresolved; tolerate unknown members). The F detail follows the
+  function-state family: Function-state family (F): SendFuncEvent formats the named function detail. state is always
+  present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail
+  (even when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and error; route
+  is optional function ancestry. The sender does no deduplication and needs no preceding working event. Detail flags
+  can suppress the working or non-working sends while the cached function tree still changes, so a receiver can
+  miss transitions. Duration and cadence are work-dependent. Channel I (TCP 4700). Delivery: ordinary broadcast
+  to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence,
+  delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it (a route containing
+  3PPA is special-cased).'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build), StartSolve @0x1fb9f0 (64-bit build);
+  F family helpers
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: PlateSolve event
+  type: object
+  discriminator: Event
+  description: Plate-solve event, direct or F producer.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: PlateSolve
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; SendSolveEvent @0x200fe0 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      - solving
+      description: 'Union of two producers. F: idle, working, complete, fail, cancel. Direct SendSolveEvent: start,
+        solving, complete, fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, SendSolveEvent @0x200fe0
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: state is fail (F or direct failure lookup)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0, SendSolveEvent
+        @0x200fe0
+    code:
+      type: integer
+      description: Stored error code; present at fail even when zero.
+      x-required-when: state is fail (F or direct failure lookup)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0, SendSolveEvent
+        @0x200fe0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    page:
+      type: string
+      description: 'Direct producer: current page.'
+      x-required-when: direct producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+    tag:
+      type: string
+      description: 'Direct producer: source tag.'
+      x-required-when: direct producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+    star_number:
+      type: integer
+      description: Star count, only when available.
+      x-required-when: progress/result with count
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+    duration_ms:
+      type: integer
+      description: Solve duration in milliseconds.
+      x-required-when: direct result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+    filename:
+      type: string
+      description: Input image path when solving a stored image.
+      x-required-when: input file present
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+    result:
+      type: object
+      description: Solver result branch.
+      x-required-when: result branch
+      properties:
+        ra_dec:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: Solved centre [RA, Dec], RA in hours (solver degrees divided by 15) and Dec in degrees
+            (as in get_solve_result). For start_solve referred to the equinox of date (JNow); the block-solve
+            path takes this choice from its caller and otherwise keeps J2000.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0, FormatSolveRes @0x200450, SolveFunc
+            RA /15 @0x208c74, FileCoordPrecConv @0x1fe3f0, S_SOLVE_PARA constructor @0x20a320 (64-bit build)
+        fov:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: Field of view [width, height] in degrees (solver arcminute or arcsecond output divided
+            by 60 or 3600).
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0, SolveFunc field-size conversion
+            @0x2096c0, @0x20988c (64-bit build)
+        focal_len:
+          type: number
+          description: Focal length implied by the solved field, the sensor pixel size and the binning
+            (max image dimension x bin x pixel size / 1000 / max field in radians); stored only when it is
+            between 0 and 1000. Millimetres INFERRED (assumes pixel size in micrometres).
+          x-confidence: READ (formula and bound); unit INFERRED
+          x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0, SolveFunc focal-length computation
+            @0x2091b0-0x20947c (64-bit build)
+        angle:
+          type: number
+          description: Field rotation in degrees, within -180..180; east of north INFERRED.
+          x-confidence: READ (unit and normalisation)
+          x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+        image_id:
+          type: integer
+          description: Solved image id.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+    target_ra_dec:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+      description: Target coordinate pair (target-coordinate branch).
+      x-required-when: target-coordinate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SendSolveEvent @0x200fe0 (64-bit build)
+examples:
+- name: complete
+  summary: Solve result (READ shape; values invented)
+  of: payload
+  payload:
+    Event: PlateSolve
+    Timestamp: '1234.123456789'
+    state: complete
+    page: preview
+    tag: example
+    star_number: 214
+    duration_ms: 1830
+    result:
+      ra_dec:
+      - 5.5
+      - 22.0
+      fov:
+      - 0.7
+      - 1.3
+      focal_len: 250.0
+      angle: 12.5
+      image_id: 41
+- name: fail
+  summary: Solve failure (READ shape; values invented)
+  of: payload
+  payload:
+    Event: PlateSolve
+    Timestamp: '1234.123456789'
+    state: fail
+    page: preview
+    tag: example
+    error: example error
+    code: 207
+see_also:
+- start_solve
+- stop_solve
+- get_solve_result
+- get_last_solve_result
+spec:
+- spec/control/solving-and-annotation.md#plate-solving
+- spec/control/events-overview.md

@@ -1,0 +1,50 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: GetConnectedResult
+type: object
+description: Currently selected equipment. Every member is optional and omitted when the corresponding
+  connection is absent. The index members and their name members are emitted together.
+properties:
+  mount:
+    type: integer
+    description: Selection index of the connected mount in the gear dialog list; emitted only when a mount
+      is connected and the index is not -1.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build) (index load and
+      integer emit)
+  mount_name:
+    type: string
+    description: Name of the connected mount; emitted with mount.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build)
+  aux:
+    type: integer
+    description: Selection index of the connected auxiliary mount; emitted only when connected and the
+      index is not -1.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build) (index load and
+      integer emit)
+  aux_name:
+    type: string
+    description: Name of the connected auxiliary mount; emitted with aux.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build)
+  camera:
+    type: object
+    required:
+    - name
+    - path
+    description: Connected guide camera; emitted only when camera metadata is present. No camera id member
+      is emitted.
+    properties:
+      name:
+        type: string
+        description: Camera name.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build)
+      path:
+        type: string
+        description: Camera device path or identifier string.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x768a0 (64-bit build)

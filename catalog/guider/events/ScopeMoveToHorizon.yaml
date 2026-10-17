@@ -1,0 +1,126 @@
+kind: event
+name: ScopeMoveToHorizon
+summary: Mount move-to-horizon worker state.
+description: 'F family plus close (arm folded), added whenever the axle position can be read; the requested
+  coordinates are not echoed. The guider''s
+  move-over-horizon worker is named ScopeMoveToHorizon (started by the guider''s scope_move_to_horizon
+  handler). Emitted by the guider on TCP 4400 to every retained socket; the main imager process forwards
+  the line unchanged onto TCP 4700 (the auxiliary imager process suppresses guider forwarding). APK consumers:
+  the legacy handler and the device-state handler.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, guider scope_move_to_horizon handler @0x723f0 installs PrintCloseState
+  @0xed920, MoveOverHoriz @0x68e40 (64-bit guider build); 32-bit counterparts present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ScopeMoveToHorizon event
+  type: object
+  discriminator: Event
+  description: Move-to-horizon transition. F fields plus close.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: ScopeMoveToHorizon
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail (64-bit guider build)
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: 'F state table: idle 0, working 1, complete 2, fail 3, cancel 4; an unknown internal
+        code falls back to idle. A formatter''s supported state is not a promise that every run visits
+        it.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: a non-empty stage string is held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or started with no end) uses
+        current monotonic minus start; other terminal states use end minus start.
+      x-required-when: state is working, or the timer was started (terminal states)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Ordered function-tree ancestry when included; a missing route is a legitimate branch.
+        Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    error:
+      type: string
+      description: Message for code; written for state fail even when the stored code is zero. Lookup
+        failure gives 'fail to operate'. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Written for state fail, including a stored zero. Cancel omits it.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    close:
+      type: boolean
+      description: True when the arm is folded, that is the first axle coordinate is at or below about -85;
+        false otherwise. Written on every event of this function whenever the guider can read the axle
+        coordinates, omitted when that read fails. INFERRED that the unit is degrees and the first axle is
+        elevation.
+      x-required-when: the axle coordinates can be read
+      x-confidence: READ (condition and threshold); INFERRED (degrees, physical meaning)
+      x-basis: static analysis of firmware 9.31, detail printer PrintCloseState @0xed920 calls PrintMountClose @0x15baf0 (threshold -85.0) (64-bit
+        guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, FormatFuncDetail (64-bit guider build)
+examples:
+- name: working
+  summary: Moving (READ shape; value invented)
+  of: payload
+  payload:
+    Event: ScopeMoveToHorizon
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 1500
+    close: true
+- name: cancel
+  summary: Cancelled (READ shape; value invented)
+  of: payload
+  payload:
+    Event: ScopeMoveToHorizon
+    Timestamp: '1234.123456789'
+    state: cancel
+    lapse_ms: 3000
+    close: false
+see_also:
+- scope_move_to_horizon
+- scope_move
+- ScopeHome
+- scope_abort_slew
+- scope_get_state
+- scope_is_moving
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#park-home-and-the-arm

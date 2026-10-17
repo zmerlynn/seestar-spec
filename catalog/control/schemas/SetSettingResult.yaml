@@ -1,0 +1,46 @@
+title: set_setting result
+description: Integer 0 normally. A true manual_exp returns the ISP object; a calculated mosaic returns
+  estimated hours. Both stop processing of later members. A relayed request can return the peer's complete
+  reply instead.
+oneOf:
+- type: integer
+  const: 0
+- type: object
+  description: manual_exp true.
+  required:
+  - isp_exp_ms
+  - isp_gain
+  properties:
+    isp_exp_ms:
+      type:
+      - integer
+      - number
+      description: Exposure, milliseconds.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+    isp_gain:
+      type:
+      - integer
+      - number
+      description: Gain on the wire scale (internal times 10 is hardware).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+- type: object
+  description: Calculated mosaic.
+  required:
+  - estimated_hours
+  properties:
+    estimated_hours:
+      type:
+      - integer
+      - number
+      description: Estimated duration of one round of mosaic centers, in hours (INFERRED), including a fixed
+        factor of 1.5. An estimate, not a timeout or completion promise.
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

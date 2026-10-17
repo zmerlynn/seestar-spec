@@ -1,0 +1,57 @@
+title: set_batch_stack_setting params
+type: object
+required:
+- files
+description: Required top-level object (absent, null, scalar or array gives 107); no positional form.
+  Unknown members are ignored.
+properties:
+  type:
+    type: string
+    enum:
+    - deepsky
+    - startrail
+    - comet
+    description: 'Which batch list to replace. Case-sensitive exact match: deepsky (default), startrail
+      or comet. Firmware 9.31: deepsky and comet share one list and persisted file; startrail has its own. Firmware 9.75: each of the three types has its own list and persisted file (the comet list is new). Any other
+      string, or a non-string, gives 102. The 32-bit build ignores this member and always uses the single
+      shared list (firmware 9.31; 9.75 on the 32-bit build shows no list-type strings, string-level only).'
+    x-default: deepsky
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)
+  key_frame:
+    type: string
+    description: 'Firmware 9.75, app 3.4.0: optional, for the deepsky and comet types only; a non-string gives 102. The reference frame of the batch (the comet batch uses it as the reference and moves it to the front). If the value is not in the list it is reset to the first entry when the list is stored. Ignored for startrail. Absent in firmware 9.31.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_batch_stack_setting @0xd7f00, SetFileList @0x3ef620, ParseFileList @0x3eee00 (64-bit build)
+  batch_startrails_mode:
+    type: integer
+    minimum: 0
+    maximum: 2
+    description: 'Firmware 9.75, app 3.4.0: optional, for the startrail type only; star-trail output mode as startrail_mode (0 maximum video, 1 decay video, 2 both). A non-integer or a value outside 0 to 2 gives 102. Absent in firmware 9.31.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_batch_stack_setting @0xd7f00, SetFileList @0x3ef620, ParseFileList @0x3eee00 (64-bit build)
+  files:
+    type: array
+    items:
+      type: object
+      required:
+      - name
+      description: One input file. Other members of the element (date, thn, type and similar) are not
+        read.
+      properties:
+        name:
+          type: string
+          description: File path stored as given. No length, existence, extension or range validation;
+            an empty string is accepted; no storage-root join or traversal normalisation.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)
+    description: Replacement list for the selected batch list. An empty array clears the list successfully.
+      Missing or non-array gives 102. Every element must be an object with a string name; a non-object
+      element, or a missing or non-string name, gives 102. Elements are added in order and the list is
+      cleared before validation, so a late failure leaves a partially replaced list with no rollback.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc9dd0, SetFileList @0x3a99c0 (64-bit build)

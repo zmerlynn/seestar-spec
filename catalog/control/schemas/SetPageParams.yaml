@@ -1,0 +1,30 @@
+title: set_page params
+description: 'The page name, as a bare string, or an array whose first element is the page name (further
+  elements ignored; an empty array is treated as absent). There is no object form and no `page` key. Name
+  matching is case-insensitive. Accepted names: preview, focus, autosave, pa, stack, rtmp, plan (device
+  page ids 0 to 6 in that order). An absent, null, object, numeric, boolean or non-string first-element
+  params value gives 105; any other string gives 109. No default.'
+oneOf:
+- type: string
+  examples:
+  - preview
+  - focus
+  - autosave
+  - pa
+  - stack
+  - rtmp
+  - plan
+- type: array
+  items:
+    type: string
+    examples:
+    - preview
+    - focus
+    - autosave
+    - pa
+    - stack
+    - rtmp
+    - plan
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd0e20, SetPage @0x129f20, get_page_id @0x146820
+  (64-bit build)

@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: check_internet result
+type: object
+required:
+- connected
+description: Connectivity result.
+properties:
+  connected:
+    type: boolean
+    description: True when the connectivity check passed. A failed check or failed NTP step yields false
+      in a normal success reply.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe3360 (64-bit build), key @0x8ea8b0
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe3360 (64-bit build)

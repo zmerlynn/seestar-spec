@@ -1,0 +1,99 @@
+kind: method
+name: set_wheel_slot_name
+summary: Replace the filter-wheel slot names with an array of strings.
+description: Params are an array of strings in zero-based slot order. The handler reads the first child
+  without checking that params exists or is a container, so absent, null or scalar params are unsafe and
+  unresolved; object children are also traversed with keys ignored. Each non-string child appends error
+  105 but processing continues. The valid children form a map that SetSlotName accepts only when a wheel
+  is open and the map has exactly as many entries as the current slot-name map; it then replaces the global
+  map and persists the names. An empty array is therefore a size-dependent update or error, not a no-op.
+  A malformed array can append several error fragments, and even later success fields, into one outer
+  reply, so duplicate error and code members are possible; no canonical malformed-reply JSON is established.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd1e20, SetSlotName @0x300e20 (64-bit build)
+side_effects: Replaces the in-memory slot-name map and writes it to persistent storage (SaveEFWName).
+  No rollback and no timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_wheel_slot_name request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_wheel_slot_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: array
+      description: Slot names in zero-based slot order. Length must equal the current number of slots.
+        No name-length bound and no default.
+      items:
+        type: string
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd1e20 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd1e20 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: A child of params is not a string (once per bad child; processing continues)
+  label: expected string param
+- code: 318
+  trigger: No wheel is open
+  label: device not connected
+- code: 209
+  trigger: Number of valid names differs from the current slot count
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Several of these can be concatenated into one reply for a malformed array; see the description.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 111
+    method: set_wheel_slot_name
+    params:
+    - Dark
+    - IR cut
+    - Light pollution
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_slot_name
+    result: 0
+    code: 0
+    id: 111
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_slot_name
+    error: device not connected
+    code: 318
+    id: 112
+see_also:
+- get_wheel_slot_name
+- get_wheel_setting
+- set_wheel_setting
+- open_wheel
+spec:
+- spec/control/focus-and-filter.md#names-and-settings

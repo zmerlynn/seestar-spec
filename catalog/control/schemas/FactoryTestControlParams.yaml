@@ -1,0 +1,56 @@
+title: factory_test_control params
+type: object
+description: Required object (107 if absent, null, scalar or array). No other keys are passed on.
+required:
+- operation
+properties:
+  operation:
+    type: string
+    description: Operation to run, matched case-sensitively. scopePark homes the mount (completion may
+      be deferred), delUserImages deletes user images asynchronously, delLicense deletes licence files,
+      setLangEn sets the language to English, enterShippingMode clears shipping records and, on success,
+      schedules a shutdown. Any other string, including the empty string, is accepted by the RPC (result
+      0) and reported as a failure through the FactoryTestControl event.
+    enum:
+    - scopePark
+    - delUserImages
+    - delLicense
+    - setLangEn
+    - enterShippingMode
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+  userId:
+    type: string
+    description: Optional metadata string stored in the record. Default empty (omitted from the record
+      when empty). Wrong type is rejected with 105.
+    x-default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+  timestamp:
+    type: integer
+    description: Optional metadata integer. The low 32 bits are stored with no range check and the record
+      omits it when the signed value is 0 or negative. The app sends epoch milliseconds, which can lose
+      high bits (INFERRED); the firmware intended unit is unresolved. Wrong type, including explicit null,
+      is rejected with 104.
+    x-default: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+  platform:
+    type: string
+    description: Optional metadata string (the app sends Android). Default empty. Wrong type is rejected
+      with 105.
+    x-default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+  appVersion:
+    type: string
+    description: Optional metadata string. Default empty. Wrong type is rejected with 105.
+    x-default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)
+  osVersion:
+    type: string
+    description: Optional metadata string. Default empty. Wrong type is rejected with 105.
+    x-default: ''
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe1490, Execute @0x142b80 (64-bit build)

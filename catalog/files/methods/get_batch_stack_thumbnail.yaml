@@ -1,0 +1,63 @@
+kind: method
+name: get_batch_stack_thumbnail
+summary: Fetch a thumbnail for a batch-stack frame type as a binary transfer.
+description: 'Registered in the imager file table of both builds. Optional params select the frame type:
+  `frame_type` `light`, `dark`, `bias` or `flat`; absent or null params mean light (READ). Behaviour for
+  other names is unresolved. The response is a binary thumbnail or a textual no-image error, not ordinary
+  command JSON. An empty cached list and an invalid frame type each log a diagnostic.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, imager handler @0x1f05a0 (64-bit build), GetFilesThbnl @0x3a8390
+side_effects: Builds or reads file thumbnails; conditional diagnostic logging. Metadata, image, cache
+  and database effects are not bounded.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_batch_stack_thumbnail request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_batch_stack_thumbnail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager file table (64-bit and 32-bit builds)
+    params:
+      $ref: ../schemas/GetBatchStackThumbnailParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager handler @0x1f05a0 (64-bit build), parse_batch_frame_type
+        @0xda4d0
+reply_success:
+  title: get_batch_stack_thumbnail success reply
+  description: Not an ordinary command reply. Binary thumbnail. 80-byte big-endian header (spec/media/image-sockets.md#reply-framing),
+    then the payload; errors are text replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager handler @0x1f05a0 (64-bit build), GetFilesThbnl @0x3a8390
+reply_error:
+  title: get_batch_stack_thumbnail failure reply
+  description: 'Text reply (imgType 0, dataType 1): the payload is the fixed text for the error code (spec/media/files-and-album.md#parameter-rules-read-handlers,
+    R9). No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager handler @0x1f05a0 (64-bit build), GetFilesThbnl @0x3a8390
+errors:
+- code: 107
+  trigger: params present and not an object (and not null)
+  label: expected object param
+- code: 105
+  trigger: params object without a string frame_type
+  label: expected string param
+errors_note: Other failures are text replies (for example, no image available).
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: get_batch_stack_thumbnail
+see_also:
+- get_camera_img
+spec:
+- spec/media/files-and-album.md#methods

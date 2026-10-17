@@ -1,0 +1,105 @@
+kind: method
+name: add_obj
+summary: Create or replace a named object (with coordinates and type) inside a named object list.
+description: Writes an object entry under the list given by params.list. If an object with the same display
+  name exists it is removed first and recreated. RA, Dec and type are written to the persistent store;
+  the write results are not checked, so a success reply does not prove all three were stored. The device
+  never interprets the stored type or coordinates (no conversion or range check), and only get_obj and
+  get_list read the store back (READ).
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe84f0, ObjListConfig::AddObj @0x6c4290 (no floating-point
+  arithmetic; sole caller add_obj), ObjListConfig::Get @0x6c4a90 (sole callers get_list @0xb4db0 and get_obj @0xb57f0,
+  both builds) (64-bit build)
+side_effects: Creates or replaces an object entry in the persistent XML configuration, writing RA, Dec
+  and type. Synchronous; no sky or mount precondition.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: add_obj request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: add_obj
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      oneOf:
+      - $ref: ../schemas/AddObjParams.yaml
+      - type: array
+        minItems: 1
+        items:
+          $ref: ../schemas/AddObjParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe84f0, json_array2obj @0x6fa450 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params is absent, null, an empty array, or not an object (or one-element array holding an object)
+  label: expected object param
+- code: 108
+  trigger: coord is an array with fewer than two elements or a non-numeric first or second element
+  label: expected float param
+- code: 236
+  trigger: The configuration root or the named list is not found
+  label: xml item is not found
+- code: 234
+  trigger: The configuration file name storage is empty (not an empty object name)
+  label: xml file name is empty
+- code: 226
+  trigger: Creating the XML key failed
+  label: fail to create xml key
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Failures when removing an existing object of the same name, and the results of the RA, Dec
+  and type writes, are not converted to RPC errors (unresolved).
+examples:
+- name: add
+  of: request
+  payload:
+    id: 31
+    method: add_obj
+    params:
+      list: Winter targets
+      object: Example nebula
+      coord:
+      - 5
+      - 20
+      type: 0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: add_obj
+    result: 0
+    code: 0
+    id: 31
+- name: no-such-list
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: add_obj
+    error: xml item is not found
+    code: 236
+    id: 32
+see_also:
+- add_list
+- del_obj
+- get_obj
+spec:
+- spec/control/object-lists.md#user-object-lists

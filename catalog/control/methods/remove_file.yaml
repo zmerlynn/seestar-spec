@@ -1,0 +1,76 @@
+kind: method
+name: remove_file
+summary: Delete a file (or empty directory) on the device by path.
+description: Takes a required string name and calls the C library remove() on it synchronously, with no
+  path restriction. A missing target (ENOENT) and a non-empty directory (ENOTEMPTY) are both reported
+  as success, so a success reply does not prove anything was removed. Every other failure returns 105
+  with the message "expected string param" (the message does not describe the OS failure; the OS error
+  text is only logged). No mount or mode gate.
+grade: MUTATOR / established (64-bit build, command-socket invocation; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe35e0 (64-bit build)
+side_effects: Deletes the named file or empty directory on the device filesystem. Full command-socket
+  calls also incur the shared diagnostic (logging) writes; this is why the strict grade is MUTATOR even
+  for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: remove_file request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: remove_file
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/RemoveFileParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: name missing, not a string, or params malformed; also any remove() failure other than ENOENT
+    and ENOTEMPTY
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 35
+    method: remove_file
+    params:
+      name: /tmp/example/upload.txt
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remove_file
+    result: 0
+    code: 0
+    id: 35
+- name: bad-name
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remove_file
+    error: expected string param
+    code: 105
+    id: 36
+see_also: []
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

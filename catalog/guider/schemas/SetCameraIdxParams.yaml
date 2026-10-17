@@ -1,0 +1,13 @@
+title: set_camera_idx params
+type:
+- integer
+- array
+description: 'Camera list index: a bare integer or an array whose first element is the integer. No handler
+  bound.'
+items:
+  type: integer
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x73130 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x73130 (64-bit build)

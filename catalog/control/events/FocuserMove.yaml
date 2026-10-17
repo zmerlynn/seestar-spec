@@ -1,0 +1,123 @@
+kind: event
+name: FocuserMove
+summary: Focuser movement state with the resulting position.
+description: 'Sent by the focuser MoveWait worker (F family) and directly by StartView (on the model/camera branch
+  that opens or restores the focuser) and the auxiliary RTSP/view refresh, which build a complete event with position
+  and route. Function-state family (F): SendFuncEvent formats the named function detail. state is always present;
+  stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even
+  when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and error; route is
+  optional function ancestry. The sender does no deduplication and needs no preceding working event. Detail flags
+  can suppress the working or non-working sends while the cached function tree still changes, so a receiver can
+  miss transitions. Channels I (TCP 4700) and W (TCP 4702, forwarded onto 4700). Delivery: ordinary broadcast to
+  every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery
+  or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, img_focuser_gpio::MoveWait @0x15c3a0, CamRtxpFunc @0x156fe0, StartView
+  @0x3c1f50 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: FocuserMove event
+  type: object
+  discriminator: Event
+  description: Focuser movement event.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: FocuserMove
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; img_focuser_gpio::MoveWait @0x15c3a0,
+        CamRtxpFunc @0x156fe0, StartView @0x3c1f50 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: F state table; the direct StartView/RTSP producer sends complete.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, state-name table @0xae9468
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: state is fail (F formatter)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Stored error code; present at fail even when zero.
+      x-required-when: state is fail (F formatter)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function ancestry (F) or an explicit view route; the StartView producer sends a one-element route
+        naming the view.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0, StartView @0x3c1f50
+    position:
+      type: integer
+      description: Focuser position; motor steps INFERRED.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, img_focuser_gpio::MoveWait @0x15c3a0, CamRtxpFunc @0x156fe0, StartView
+        @0x3c1f50 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, img_focuser_gpio::MoveWait @0x15c3a0, CamRtxpFunc @0x156fe0, StartView
+    @0x3c1f50 (64-bit build)
+examples:
+- name: view-restore
+  summary: Direct complete from StartView (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FocuserMove
+    Timestamp: '1234.123456789'
+    state: complete
+    position: 1580
+    route:
+    - View
+- name: working
+  summary: F move running (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FocuserMove
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 120
+    position: 1500
+see_also:
+- move_focuser
+- stop_focuser
+- get_focuser_position
+- AutoFocus
+spec:
+- spec/control/focus-and-filter.md#lifecycle
+- spec/control/events-overview.md

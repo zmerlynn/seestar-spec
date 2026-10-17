@@ -1,0 +1,92 @@
+kind: method
+name: set_image_save_path
+summary: Select which storage backend (internal flash, SD card or USB disk) new images are saved to.
+description: The parameter is a storage name, not a filesystem path. The name is matched case-insensitively
+  and exactly. On models with internal eMMC the names map emmc, sd, udisk; on other models sd and udisk
+  are accepted (sd takes the internal slot). An empty or unrecognised name is rejected with 109. Selecting
+  the storage already in force succeeds before any connectivity check. Otherwise the new storage must
+  be present and mounted; the current type is updated, the selected image path is copied to the global
+  image directory and the configuration is written. No directory is created from the supplied string.
+  No wait or timeout is shown.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcab90, SetCurStorageType @0x3159e0 (64-bit build)
+side_effects: Changes the current storage type, the global image directory and the stored configuration
+  when the selection changes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_image_save_path request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_image_save_path
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: string
+      description: 'Storage name: emmc (models with internal eMMC only), sd or udisk, matched case-insensitively.
+        The params member is a bare string, not an object; array, object, null or absence is rejected
+        with 105.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcab90, SetCurStorageType @0x3159e0 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params absent, null, or not a string
+  label: expected string param
+- code: 109
+  trigger: Empty or unrecognised storage name
+  label: unexpected param
+- code: 318
+  trigger: Newly selected storage has no descriptor or is not in the mounted state
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No other ordinary failure is reachable inside the storage setter.
+examples:
+- name: select-usb-disk
+  of: request
+  payload:
+    id: 91
+    method: set_image_save_path
+    params: udisk
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_image_save_path
+    result: 0
+    code: 0
+    id: 91
+- name: not-mounted
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_image_save_path
+    error: device not connected
+    code: 318
+    id: 92
+see_also:
+- get_image_save_path
+- start_export_image
+spec:
+- spec/control/stacking.md#saving
+- spec/control/power-and-storage.md#selecting-the-save-location

@@ -1,0 +1,97 @@
+kind: method
+name: speed_move_ratio
+summary: Set the per-camera pixel scale and derive the speed-move ratio used for scope_speed_move.
+description: Params is an object with cam_id (0 or 1), pix_scale and sel_wide_cam, all required. pix_scale
+  is stored for the camera slot immediately, so a later failure (for example 300 from an invalid scale
+  pair) leaves the new scale in place. With sel_wide_cam false the ratio becomes -1; with it true the
+  ratio is computed from the stored tele and wide scales. The stored values feed scope_speed_move at level
+  0 or below. No camera-selection SDK call is made. This is also the method an imager sends to the guider
+  on reconnect.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7e1d0 (64-bit build); ratio computation @0x7e580
+side_effects: Writes the global per-camera pixel scale table and the global speed-move ratio.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: speed_move_ratio request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: speed_move_ratio
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SpeedMoveRatioParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7e1d0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: cam_id missing or not an integer
+  label: expected int param
+- code: 300
+  trigger: cam_id outside 0..1, or sel_wide_cam true with invalid or sentinel stored scales
+  label: internal error
+- code: 108
+  trigger: pix_scale missing or not a number
+  label: expected float param
+- code: 106
+  trigger: sel_wide_cam missing or of a type other than boolean or integer
+  label: expected bool param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Valid pixel-scale ranges and the full prerequisites of the true branch for all models are
+  unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 19
+    method: speed_move_ratio
+    params:
+      cam_id: 0
+      pix_scale: 2.4
+      sel_wide_cam: false
+  summary: Shape READ; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: speed_move_ratio
+    result: 0
+    code: 0
+    id: 19
+- name: bad-cam
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: speed_move_ratio
+    error: internal error
+    code: 300
+    id: 20
+see_also: []
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#joystick-moves-scope_speed_move
+- spec/guider/index.md#method-groups

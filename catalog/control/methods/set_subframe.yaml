@@ -1,0 +1,106 @@
+kind: method
+name: set_subframe
+summary: Set the camera crop (sub-frame) rectangle, in pixels.
+description: On the focus page this changes the in-memory video-capture rectangle; on other pages it calls
+  the camera crop setter under the camera lock. Dimensions are multiplied by the bin factor, forced even,
+  and clamped; sensor-axis swapping depends on a camera flag. If the SDK crop call fails the crop is cleared
+  as a fallback, so read back with get_subframe rather than assuming the requested rectangle was applied.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+  @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)
+side_effects: Changes the capture rectangle or camera crop; a crop failure can clear the crop.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_subframe request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_subframe
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetSubframeParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcf150, SetSubframe @0x11f4e0, VideoCapSetSubframe
+        @0x20e2a0, SetCamSubframe @0x1553f0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent or not an object (or array whose first element is not an object)
+  label: expected object param
+- code: 209
+  trigger: width or height missing, not an integer, or not positive; also invalid dimensions in the helper
+  label: invalid value
+- code: 204
+  trigger: Dimensions exceed the camera limits
+  label: out of limit
+- code: 210
+  trigger: Unsupported model path in the helper
+  label: not supported
+- code: 318
+  trigger: Camera absent, closed or SDK camera id unavailable
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Errors from the SDK crop call are not propagated directly (the clear fallback runs instead);
+  fallback failures are unresolved. Model-specific sensor dimensions are not established.
+examples:
+- name: centred
+  summary: Centred crop (values invented)
+  of: request
+  payload:
+    id: 70
+    method: set_subframe
+    params:
+      width: 1080
+      height: 1920
+- name: offset
+  summary: Explicit offset
+  of: request
+  payload:
+    id: 71
+    method: set_subframe
+    params:
+      width: 800
+      height: 600
+      x: 100
+      y: 50
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_subframe
+    result: 0
+    code: 0
+    id: 70
+- name: bad-size
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_subframe
+    error: invalid value
+    code: 209
+    id: 72
+see_also:
+- get_subframe
+- set_page
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

@@ -1,0 +1,35 @@
+title: output file
+type: object
+description: 'Saved-result summary built after a stacked or plan result is saved: `{path, files}` with exactly
+  one file entry (READ). The same builder serves every output_file and wide_output_file member: live Stack,
+  PlanetStack, BatchStack (including the comet dual-stack task), wide mosaic, Target and ViewPlan results
+  (READ). Every member is always written; the image-info lookup result is not checked (READ). That every
+  formatter''s stored object comes only from this builder is INFERRED.'
+required:
+- path
+- files
+properties:
+  path:
+    type: string
+    description: Output directory, relative to the storage root, without a trailing slash.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0 (64-bit build)
+  files:
+    type: array
+    description: One object for the saved file; the builder pushes a single entry (no loop).
+    minItems: 1
+    maxItems: 1
+    items:
+      type: object
+      required: [name, date, thn, type]
+      properties:
+        name: {type: string, description: File path relative to the storage root., x-confidence: READ, x-basis: "static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0"}
+        date: {type: string, description: Image date from the image metadata., x-confidence: READ, x-basis: "static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0"}
+        thn: {type: string, description: Thumbnail name., x-confidence: READ, x-basis: "static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0"}
+        type: {type: integer, description: Album file-type code, the same codes as the album listing., x-confidence: READ, x-basis: "static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0, GetFileType"}
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0
+x-confidence: READ; single-builder origin of every stored object INFERRED
+x-basis: static analysis of firmware 9.31, GetOutputFileInfo @0x127ed0; callers PlanetStackFunc @0x3326a4, BatchStackFunc
+  @0x3ac190, RunBatchCometDualStackTask @0x3a5390, StackFunc, WideMosaicSaveStitchImage, SetViewPlanResult,
+  readWidePlanResult; embedded by ExtStackState, PrintPlanetStackState, PrintBatchStackState, print_target_state

@@ -1,0 +1,24 @@
+title: get_focuser_position params
+description: Object form {ret_obj} or positional array [ret_obj]. Params are examined only after the position
+  read succeeds. A present value of the wrong type is ignored (default false). The member is ret_obj,
+  not ret_step.
+anyOf:
+- type: object
+  properties:
+    ret_obj:
+      type:
+      - boolean
+      - integer
+      default: false
+      x-default: 'false'
+      description: When true or nonzero the result is an object {step} instead of a bare integer.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe3bc0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe3bc0 (64-bit build)
+- type: array
+  description: Positional form [ret_obj]; extra elements ignored.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe3bc0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe3bc0 (64-bit build)

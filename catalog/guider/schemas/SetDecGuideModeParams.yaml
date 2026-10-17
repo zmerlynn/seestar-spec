@@ -1,0 +1,22 @@
+title: set_dec_guide_mode params
+description: A single string, or an array whose first element is the string. Matching is case-insensitive.
+  No default. Any other string gives 209; a non-string gives 105.
+anyOf:
+- type: string
+  enum:
+  - 'Off'
+  - Auto
+  - North
+  - South
+- type: array
+  minItems: 1
+  items:
+    type: string
+    enum:
+    - 'Off'
+    - Auto
+    - North
+    - South
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x72c60 (64-bit build)
+x-default: none (required)

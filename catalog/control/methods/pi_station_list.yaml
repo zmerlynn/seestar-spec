@@ -1,0 +1,218 @@
+kind: method
+name: pi_station_list
+summary: List the saved Wi-Fi networks of the device.
+description: Runs the packaged network script to list the networks saved in the device's Wi-Fi configuration
+  (not scan results) and returns their names. Despite being a list, on models other than the Plus and Mini
+  the call first makes the supplicant reload its configuration (see side effects), so it is not
+  observation-safe on all models. The 32-bit network script lacks the detailed listing action, so only plain
+  names are expected there (INFERRED).
+grade: MUTATOR / established (64-bit and 32-bit builds); it is a mutator because the packaged script can run a reconfigure step.
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760 (64-bit build)
+side_effects: Synchronously runs a shell script (list_config, falling back to list). The device passes 1 on
+  Plus and Mini models and 0 otherwise; the packaged scripts call a Wi-Fi supplicant reconfigure before
+  listing unless the argument is 1, so other models have their network configuration reloaded, which can
+  briefly disturb an active station link; this is not a guaranteed disconnection. ret_obj changes only the reply wrapping. The process read can block with no established
+  deadline.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_list request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_list
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type:
+      - object
+      - array
+      - boolean
+      - integer
+      properties:
+        ret_obj:
+          type:
+          - boolean
+          - integer
+          x-default: false
+          description: 'Wrap the reply array as {value: array}. Integer 0 is false, nonzero true. A malformed
+            value is ignored.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760
+            (64-bit build)
+      description: Optional. An object with ret_obj, or a positional [boolean-or-integer]; a bare scalar
+        behaves as defaults. Read only after the listing succeeded.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760 (64-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_list success reply
+  required:
+  - method
+  - result
+  - code
+  - id
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/Timestamp
+    method:
+      type: string
+      const: pi_station_list
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handle_request @0x6f9440
+    result:
+      oneOf:
+      - type: array
+        items:
+          oneOf:
+          - type: string
+          - type: object
+            required:
+            - ssid
+            - hidden
+            properties:
+              ssid:
+                type: string
+                description: Network name with hex escapes decoded.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760
+                  (64-bit build)
+              hidden:
+                type: boolean
+                description: True when the saved entry carries the hidden marker (trailing tab 1), which the
+                  script sets from the saved network's hidden-SSID probing (scan_ssid) setting.
+                x-confidence: READ
+                x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760
+                  (64-bit build)
+          description: A plain string when the script line needed no adjustment, otherwise an object.
+        description: Saved Wi-Fi networks, possibly empty. Each entry is a string SSID (the unaltered
+          source line) or {ssid, hidden} when whitespace or hidden-suffix processing changed the line;
+          a trailing tab 0 or 1 sets hidden false or true and trailing spaces and tabs are removed.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760
+          (64-bit build)
+      - type: object
+        required:
+        - value
+        properties:
+          value:
+            type: array
+            items:
+              oneOf:
+              - type: string
+              - type: object
+                required:
+                - ssid
+                - hidden
+                properties:
+                  ssid:
+                    type: string
+                    description: Network name with hex escapes decoded.
+                    x-confidence: READ
+                    x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list
+                      @0x700760 (64-bit build)
+                  hidden:
+                    type: boolean
+                    description: True when the saved entry carries the hidden marker (trailing tab 1), which
+                      the script sets from the saved network's hidden-SSID probing (scan_ssid) setting.
+                    x-confidence: READ
+                    x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list
+                      @0x700760 (64-bit build)
+              description: A plain string when the script line needed no adjustment, otherwise an object.
+            description: Saved Wi-Fi networks, possibly empty. Each entry is a string SSID (the unaltered
+              source line) or {ssid, hidden} when whitespace or hidden-suffix processing changed the line;
+              a trailing tab 0 or 1 sets hidden false or true and trailing spaces and tabs are removed.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760
+              (64-bit build)
+        description: Wrapped form when ret_obj is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760
+          (64-bit build)
+      description: 'An array by default, or {value: array} when ret_obj is true.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe3d10, ns_net::pi_station_list @0x700760 (64-bit
+        build)
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The script process could not be started
+  label: fail to run command
+- code: 223
+  trigger: The fallback command succeeded with empty output
+  label: no result from command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A helper failure propagates its own error code; a nonzero shell exit status is not itself
+  an RPC error.
+examples:
+- name: default
+  summary: Typical request (the app sends no params)
+  of: request
+  payload:
+    id: 81
+    method: pi_station_list
+- name: wrapped
+  summary: Object-wrapped reply
+  of: request
+  payload:
+    id: 82
+    method: pi_station_list
+    params:
+      ret_obj: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_list
+    result:
+    - Example network
+    - ssid: Hidden example
+      hidden: true
+    code: 0
+    id: 81
+- name: ok-wrapped-empty
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_list
+    result:
+      value: []
+    code: 0
+    id: 82
+- name: no-output
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_list
+    error: no result from command
+    code: 223
+    id: 83
+see_also:
+- get_phone_list
+spec:
+- spec/control/network.md#station-wi-fi-client
+- spec/control/network.md#saved-network-listing-details

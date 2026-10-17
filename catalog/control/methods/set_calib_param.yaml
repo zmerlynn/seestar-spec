@@ -1,0 +1,106 @@
+kind: method
+name: set_calib_param
+summary: Set the stored calibration frame count for a frame type.
+description: Stores an integer per frame type (dark, bias or flat) and persists it to configuration. The
+  meaning as a frame count is inferred. No range check on the value and no active-capture or mount gate.
+  The configuration write result is ignored.
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, set_calib_param @0xe6fe0, SetCalibrateParam @0x1936e0
+side_effects: Overwrites the stored per-type calibration integer and persists it in the imager stack settings.
+  Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_calib_param request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_calib_param
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - type: object
+        required:
+        - type
+        - number
+        properties:
+          type:
+            type: string
+            description: 'Frame type: dark, bias or flat. light and unknown strings give 209.'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, set_calib_param @0xe6fe0, SetCalibrateParam @0x1936e0
+          number:
+            type: integer
+            description: Calibration frame count (INFERRED meaning; units and consumer bounds not established).
+              Any signed integer is stored; no range validation.
+            x-confidence: INFERRED
+            x-basis: static analysis of firmware 9.31, set_calib_param @0xe6fe0, SetCalibrateParam @0x1936e0
+      - type: array
+        minItems: 2
+        prefixItems:
+        - type: string
+        - type: integer
+      description: Object, or positional array [type, number]; extra elements ignored.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, set_calib_param @0xe6fe0, SetCalibrateParam @0x1936e0
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: type is not a string
+  label: expected string param
+- code: 104
+  trigger: number missing or not an integer
+  label: expected int param
+- code: 209
+  trigger: Unknown or light type (or type outside the dark/bias/flat range)
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: set-dark
+  summary: Set the dark count (shape per static analysis; value invented)
+  of: request
+  payload:
+    id: 45
+    method: set_calib_param
+    params:
+      type: dark
+      number: 20
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_calib_param
+    result: 0
+    code: 0
+    id: 45
+- name: bad-number
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_calib_param
+    error: expected int param
+    code: 104
+    id: 46
+see_also:
+- get_calib_param
+- get_calib_frame
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#selecting-frames

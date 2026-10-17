@@ -1,0 +1,189 @@
+kind: method
+name: pi_get_info
+summary: Report Pi model, CPU identifier and cached power/charger/temperature status.
+description: No request parameters are read. Result carries is_pi4 and model only if the model query succeeds,
+  guid only if the serial query succeeds, and the full status block. The status block comes from the same
+  formatter as get_device_state pi_status and the PiStatus event; temp is in degrees C, charger_status is
+  one of eight capitalised words, battery_temp is degrees C unscaled (unit INFERRED); the battery_capacity
+  unit is unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit build)
+side_effects: Queries model, CPU serial and cached power status. First use populates shared model and
+  serial caches; nothing persistent changes. Observation-safe.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_get_info request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_get_info
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_get_info success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: object
+        description: Model and status block.
+        required:
+        - is_overtemp
+        - temp
+        - charger_status
+        - battery_capacity
+        - charge_online
+        - is_typec_connected
+        - battery_overtemp
+        - battery_temp
+        properties:
+          is_pi4:
+            type: boolean
+            description: Whether the board is a Pi 4 class model. Present only if the model query succeeds.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          model:
+            type: string
+            description: Model string. Present only if the model query succeeds.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          guid:
+            type: string
+            description: CPU-derived identifier. Present only if the serial query succeeds. Treat as a
+              device identifier.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          is_overtemp:
+            type: boolean
+            description: Over-temperature flag.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          temp:
+            type: number
+            description: SoC temperature in degrees C (thermal-zone millidegrees divided by 1000); same
+              formatter as the PiStatus event.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90, RefreshPiTemp
+              @0x137790 (64-bit build)
+          charger_status:
+            type: string
+            enum:
+            - Charging
+            - Discharging
+            - Full
+            - Cool
+            - Warm
+            - Cold
+            - Hot
+            - Unknown
+            description: Charger state with initial capital, derived from the charger status, battery_temp
+              and battery_capacity (see the PiStatus event card for the rules). Clients SHOULD compare
+              case-insensitively.
+            x-confidence: READ (vendor charger-library part from an archived copy not proven identical
+              to 9.31)
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90,
+              CPiStatusChecker::BatteryChange (64-bit build)
+          battery_capacity:
+            type: integer
+            description: Battery capacity; unit unresolved (percent is not established).
+            x-confidence: READ; unit unresolved
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          charge_online:
+            type: boolean
+            description: Charger online flag.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          is_typec_connected:
+            type: boolean
+            description: Type-C connection flag.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          battery_overtemp:
+            type: boolean
+            description: Battery over-temperature flag.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          battery_temp:
+            type: integer
+            description: Battery temperature in whole degrees C, passed through from the charger without
+              scaling.
+            x-confidence: READ (no scaling); unit INFERRED
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+          battery_temp_type:
+            type: string
+            description: Emitted only when the internal enum is 0, 1 or 2.
+            enum:
+            - normal
+            - high
+            - low
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit
+              build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbffb0, FormatStatus @0x126d90 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error branch; a helper's internal error state does not create an error reply.
+examples:
+- name: request
+  summary: No parameters
+  of: request
+  payload:
+    id: 101
+    method: pi_get_info
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_get_info
+    result:
+      is_pi4: true
+      model: example-model
+      guid: example-guid
+      is_overtemp: false
+      temp: 41.5
+      charger_status: Charging
+      battery_capacity: 80
+      charge_online: true
+      is_typec_connected: true
+      battery_overtemp: false
+      battery_temp: 25
+      battery_temp_type: normal
+    code: 0
+    id: 101
+see_also:
+- get_device_state
+spec:
+- spec/control/power-and-storage.md#the-status-object

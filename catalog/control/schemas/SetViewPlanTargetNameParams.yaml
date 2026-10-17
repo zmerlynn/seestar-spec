@@ -1,0 +1,17 @@
+title: set_view_plan_target_name params
+type: object
+required:
+- target_name
+description: Object required (no positional form). Unknown members are ignored.
+properties:
+  target_name:
+    type: string
+    description: New target name. The empty string is accepted and clears the stored name. A non-empty
+      name is passed through the device's filename regulariser before it is stored; the stored form can
+      therefore differ from the one sent. Missing, null or non-string is rejected with 105.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdee90, SetViewTargetName @0x3c0fd0 (64-bit build
+      only)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdee90, SetViewTargetName @0x3c0fd0 (64-bit build
+  only)

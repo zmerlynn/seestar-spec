@@ -1,0 +1,31 @@
+title: cali_user_location params
+description: Optional pair of numbers. Accepted as an object with ra and dec, or positionally as [ra,
+  dec]. If either value is missing, null or not a number, the handler proceeds with no coordinate pair
+  and reports no error.
+oneOf:
+- type: object
+  properties:
+    ra:
+      type: number
+      description: Right ascension in hours (the first coordinate is multiplied by 15 before the horizon
+        conversion). Reference epoch unresolved. No range check.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe6da0 (64-bit build)
+    dec:
+      type: number
+      description: Declination in degrees. No range check.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe6da0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe6da0
+- type: array
+  minItems: 2
+  items:
+    type: number
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe6da0
+  description: Positional form [ra, dec].
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xe6da0
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe6da0

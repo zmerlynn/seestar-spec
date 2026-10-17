@@ -1,0 +1,19 @@
+title: get_batch_stack_setting params
+type: object
+description: Optional parameters. In the 64-bit build only the type key is read; absent, null, array,
+  scalar or any other non-object params default to 0, as does a bad type. Other keys are ignored. The
+  32-bit build reads no params. The app also serialises a files member here, which the device does not
+  read.
+properties:
+  type:
+    type: string
+    description: 'Which input list to return: deepsky, startrail or comet (case-sensitive, exact). startrail
+      selects the star-trail list; in firmware 9.31 deepsky and comet share the same list; in firmware 9.75 each of the three types has its own list and persisted file. A non-string or unknown value
+      silently selects deepsky.'
+    x-default: deepsky
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+      @0x3a7010 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList @0x3a7010
+  (64-bit build)

@@ -1,0 +1,78 @@
+kind: event
+name: MountSettle
+summary: 'Legacy meridian flip: waiting for the mount to settle.'
+description: 'S family. Sent by the legacy meridian-flip operation around its wait for the mount to settle
+  before focusing and guiding resume: start, then complete. error and code only for a supplied code greater
+  than zero. Broadcast on TCP 4700 to every retained socket. No APK consumer is established. A 32-bit
+  counterpart exists.'
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, MeridianFlip @0x188530 (64-bit build); 32-bit counterpart present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: MountSettle event
+  type: object
+  discriminator: Event
+  description: Settle-wait transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: MountSettle
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, MeridianFlip @0x188530
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - complete
+      description: Legacy literal.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, MeridianFlip @0x188530
+    error:
+      type: string
+      description: Message for code. The S helper writes it only when the caller supplies a code greater
+        than zero.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Written only when the caller supplies a code greater than zero; never written as 0
+        by this helper.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, MeridianFlip @0x188530
+examples:
+- name: start
+  summary: Wait begins (READ shape)
+  of: payload
+  payload:
+    Event: MountSettle
+    Timestamp: '1234.123456789'
+    state: start
+- name: complete
+  summary: Wait ends (READ shape)
+  of: payload
+  payload:
+    Event: MountSettle
+    Timestamp: '1234.123456789'
+    state: complete
+see_also:
+- MeridianFlip
+- get_app_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#meridian-flip

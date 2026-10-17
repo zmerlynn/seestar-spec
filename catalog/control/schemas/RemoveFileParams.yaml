@@ -1,0 +1,15 @@
+title: remove_file params
+type: object
+required:
+- name
+description: Required. Object with name, or positional [name]. Other keys or extra positions are ignored.
+  Absent, null, scalar-string, or missing/wrong-type first value is rejected with 105.
+properties:
+  name:
+    type: string
+    description: 'Path passed unmodified to the C library remove(): no length, emptiness, normalization
+      or directory restriction check. Clients SHOULD only name files the device created for them.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe35e0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe35e0

@@ -1,0 +1,6 @@
+title: mount_scan_port result
+description: Serial-port list built from the enabled entries of the cached discovery tree, each with port
+  (string) and id (integer), together with selected_dev and selected_id fields. The exact outer nesting
+  is retained only in the native formatter and is unresolved here, so no structural constraint is declared.
+x-confidence: unresolved
+x-basis: static analysis of firmware 9.31, handler 0x83130; nesting unresolved

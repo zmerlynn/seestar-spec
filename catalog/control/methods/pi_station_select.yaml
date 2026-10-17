@@ -1,0 +1,95 @@
+kind: method
+name: pi_station_select
+summary: Select a saved station-mode Wi-Fi network as the active one.
+description: Runs the network script's select command for the SSID and saves the configuration. Success
+  means the script output contained no error text; it does not show the device connected.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcdc00, ns_net::pi_station_select @0x6fc710 (64-bit
+  build)
+side_effects: Selects a station network and saves the network configuration via a synchronous shell command
+  (no timeout); may switch the device's Wi-Fi connection.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_select request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_select
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiStationSelectParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcdc00, ns_net::pi_station_select @0x6fc710
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params missing, null, an empty array, missing ssid, or not a string
+  label: expected string param
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 207
+  trigger: Script output contains the text error
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other delegated codes are unresolved.
+examples:
+- name: object-form
+  summary: Select by SSID
+  of: request
+  payload:
+    id: 111
+    method: pi_station_select
+    params:
+      ssid: ExampleNet
+- name: scalar-form
+  summary: Bare string
+  of: request
+  payload:
+    id: 112
+    method: pi_station_select
+    params: ExampleNet
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_select
+    result: 0
+    code: 0
+    id: 111
+- name: missing
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_select
+    error: expected string param
+    code: 105
+    id: 113
+see_also:
+- pi_station_list
+- pi_station_set
+- pi_station_state
+- pi_station_remove
+spec:
+- spec/control/network.md#station-wi-fi-client

@@ -1,0 +1,28 @@
+title: set_wheel_setting params
+type: object
+description: Object form. The positional form [object] is also accepted. Both members are optional; an
+  empty object succeeds.
+properties:
+  names:
+    type: array
+    description: 'New slot names, zero-based slot order. Length must equal the current slot count (209
+      otherwise). Wrong container type: ignored. Non-string element: 105.'
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd2130 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd2130, SetSlotName @0x300e20 (64-bit build)
+  exp_sec:
+    type: array
+    description: 'New per-slot exposure values, zero-based slot order; unit seconds (INFERRED from the
+      member name). Length must equal the current slot count (209 otherwise). Wrong container type: ignored.
+      Non-numeric element: 108. No per-value bounds are imposed.'
+    items:
+      type: number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd2130 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd2130, SetSlotExp (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd2130 (64-bit build)

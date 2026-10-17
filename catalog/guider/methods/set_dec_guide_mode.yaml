@@ -1,0 +1,89 @@
+kind: method
+name: set_dec_guide_mode
+summary: 'Select the declination guiding policy: Off, Auto, North or South.'
+description: Params is a scalar string (or a one-element array holding it), matched case-insensitively
+  against Off, Auto, North and South, which select internal modes 0 to 3 in that order. A success reply
+  is also produced when the telescope object is absent (the handler logs and returns success), so result
+  0 does not establish that a mode was changed.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x72c60 (64-bit build); Scope::SetDecGuideMode
+  @0x3dce0
+side_effects: Changes the declination guide-direction policy and its configuration through the scope object.
+  If the scope object is absent nothing changes and success is still reported.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_dec_guide_mode request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_dec_guide_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (command/event)
+    params:
+      $ref: ../schemas/SetDecGuideModeParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x72c60 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params is not a string (nor an array whose first element is a string)
+  label: expected string param
+- code: 209
+  trigger: String matches none of Off, Auto, North, South
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Downstream guide-mode effects, events and runtime availability are unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: set_dec_guide_mode
+    params: Auto
+  summary: Scalar string form (shape READ; example invented)
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_dec_guide_mode
+    result: 0
+    code: 0
+    id: 1
+- name: invalid-mode
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_dec_guide_mode
+    error: invalid value
+    code: 209
+    id: 2
+see_also:
+- set_exposure
+- set_gain
+- set_lock_position
+spec:
+- spec/guider/index.md#method-groups

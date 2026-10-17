@@ -1,0 +1,97 @@
+kind: method
+name: pi_station_state
+summary: Read the current station-mode Wi-Fi connection state.
+description: Runs the network script's state query and formats the parsed connection details. No request
+  parameters are read. No password member is emitted.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+  @0xb0c80 (64-bit build)
+side_effects: Runs a shell command synchronously (no timeout); the shared debug logger can write buffers
+  and create or rotate log files. Connection details are request-local. Observer tier B.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbc6e0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_station_state success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/PiStationStateResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140,
+          PrintStationState @0xb0c80 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The state script process could not be started
+  label: fail to run command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Empty script output is not an error. Other helper error branches are not established. The grade is
+  MUTATOR because the shared logger writes, although the reply is observational.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 101
+    method: pi_station_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_state
+    result:
+      server: true
+      freq: 5180
+      ip: example-address
+      ssid: ExampleNet
+      gateway: example-gateway
+      netmask: example-netmask
+      sig_lev: -48
+      key_mgmt: WPA2-PSK
+    code: 0
+    id: 101
+- name: not-connected
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_state
+    result:
+      server: false
+    code: 0
+    id: 102
+see_also:
+- pi_station_set
+- pi_station_scan
+- pi_station_list
+spec:
+- spec/control/network.md#station-wi-fi-client

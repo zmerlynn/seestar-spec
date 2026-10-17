@@ -1,0 +1,60 @@
+title: get_image_save_path volume record
+type: object
+description: State of one connected storage volume. When the disk-space query fails the numeric members
+  are omitted but the record is still emitted.
+required:
+- name
+- state
+properties:
+  name:
+    type: string
+    description: Storage name (emmc, sd or udisk).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  state:
+    type: string
+    description: Storage state name. The state table includes disconnected, connected, mounted, ejecting
+      and ejected; the complete set is not established.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  total_mb:
+    type: integer
+    description: Total capacity; always equal to totalMB. Present only when the space query succeeded.
+      Unit INFERRED megabytes from the name; decimal versus binary is unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  totalMB:
+    type: integer
+    description: Duplicate of total_mb.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  free_mb:
+    type: integer
+    description: Free space; always equal to freeMB. Present only when the space query succeeded. Unit
+      INFERRED megabytes.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  freeMB:
+    type: integer
+    description: Duplicate of free_mb.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  disk_mb:
+    type: integer
+    description: Disk size; equal to diskSizeMB. Present only when the queried disk size is above zero.
+      Unit INFERRED megabytes.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  diskSizeMB:
+    type: integer
+    description: Duplicate of disk_mb.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+  used_percent:
+    type: number
+    description: Used fraction of the disk. Present together with disk_mb. Unit INFERRED percent from
+      the name; numeric type is not established (integer or fractional).
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xc2a80, FormatStorage @0xb2330 (64-bit build)

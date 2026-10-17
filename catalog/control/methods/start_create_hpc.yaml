@@ -1,0 +1,114 @@
+kind: method
+name: start_create_hpc
+summary: Start creation of the hot-pixel correction (HPC) calibration.
+description: Starts the CreateHPC worker thread, which moves a present filter wheel to position 0, creates
+  the correction and tries to restore the previous filter position. A success reply only acknowledges
+  thread start. Progress is reported by CreateHPC events carrying the shared function-state members plus
+  an integer hpc_num when camera information is available. In the peer-routed case (wide_cam true) a relay
+  failure may produce an error reply that carries duplicated error and code members; this cannot be expressed
+  in the reply schema.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdd780 (64-bit build), StartHPC @0x3bc980
+side_effects: Moves the filter wheel, runs the calibration worker and replaces the stored correction data.
+  Blocks capture while running. Completion time is not established.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_create_hpc request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_create_hpc
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      description: Optional. Missing, null, non-object, array params, or a missing or mistyped wide_cam
+        all take the local path. There is no positional form.
+      properties:
+        wide_cam:
+          oneOf:
+          - type: boolean
+          - type: integer
+          description: Route the request to the peer unit instead of creating the correction locally.
+            Boolean, or integer (zero false, nonzero true, no range check). Consulted only when the device
+            has the wide camera view capability and runs as the primary process; otherwise ignored. When
+            true on such a device the original request is forwarded and the reply is built from the peer
+            reply.
+          x-default: 'false'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xdd780 (64-bit build), StartHPC @0x3bc980
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdd780 (64-bit build), StartHPC @0x3bc980
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: The camera is not open, or a present filter wheel has a negative ID
+  label: device not connected
+- code: 268
+  trigger: A CreateHPC thread is already running
+  label: operation is in progress
+- code: 206
+  trigger: A capture or view function is currently working
+  label: capture is active
+- code: 536
+  trigger: A view plan is running
+  label: view plan is already running
+- code: 212
+  trigger: Worker thread could not be created
+  label: fail to create thread
+- code: 300
+  trigger: 'Peer-routed case: no user-data context for the relay'
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other codes from thread start and relay transport are propagated; that set is unresolved.
+examples:
+- name: start-local
+  of: request
+  payload:
+    id: 71
+    method: start_create_hpc
+    params:
+      wide_cam: false
+- name: start-no-params
+  of: request
+  payload:
+    id: 72
+    method: start_create_hpc
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_create_hpc
+    result: 0
+    code: 0
+    id: 71
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_create_hpc
+    error: operation is in progress
+    code: 268
+    id: 73
+see_also: []
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#hot-pixel-correction-hpc
+- spec/control/errors.md#replies-with-extra-or-missing-members

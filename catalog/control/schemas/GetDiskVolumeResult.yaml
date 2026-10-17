@@ -1,0 +1,19 @@
+title: get_disk_volume result
+type: object
+description: Capacity in MiB despite the member names.
+required:
+- totalMB
+- freeMB
+properties:
+  totalMB:
+    type: integer
+    description: Total capacity in MiB (blocks times block size shifted right 20, truncated to 32 bits).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe5670, GetDiskInfo @0x6da200 (64-bit build)
+  freeMB:
+    type: integer
+    description: Free capacity in MiB, from the filesystem free-block count.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe5670, GetDiskInfo @0x6da200 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe5670, GetDiskInfo @0x6da200 (64-bit build)

@@ -1,0 +1,72 @@
+title: get_dither result
+type: object
+description: Current shared dither settings. All nine members are always present.
+required:
+- enable
+- ra_only
+- amount
+- settle_timeout_sec
+- settle_arcsec
+- settle_time_sec
+- interval
+- timeout_stop
+- wait_guide_settle
+properties:
+  enable:
+    type: boolean
+    description: Dither enabled.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  ra_only:
+    type: boolean
+    description: Dither restricted to right ascension. Refreshed from the guider before replying; if the
+      guider reply cannot be matched the previously cached value is returned.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  amount:
+    type: integer
+    description: Dither amplitude as held in the shared settings. INFERRED to be a guider dither amplitude;
+      its physical unit is not established.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  settle_timeout_sec:
+    type: integer
+    description: Settle timeout in seconds (unit from the key name).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  settle_arcsec:
+    type: number
+    description: Settle threshold in arcseconds (unit from the key name).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  settle_time_sec:
+    type: integer
+    description: Required settled time in seconds (unit from the key name).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  interval:
+    type: integer
+    description: Dither interval. INFERRED to count frames; not established.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  timeout_stop:
+    type: boolean
+    description: Stop when the settle timeout expires.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+  wait_guide_settle:
+    type: boolean
+    description: Wait for guiding to settle after a dither.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbaf50, GetDitherSettlePara @0x17b720 (64-bit build)

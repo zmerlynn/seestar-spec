@@ -1,0 +1,12 @@
+title: set_search_region params
+description: A single integer, or an array whose first element is the integer. No range check in the handler;
+  the unit is pixels (inferred from the star-search role).
+anyOf:
+- type: integer
+- type: array
+  minItems: 1
+  items:
+    type: integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x73010 (64-bit build)
+x-default: none (required)

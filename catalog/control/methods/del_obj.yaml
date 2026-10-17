@@ -1,0 +1,90 @@
+kind: method
+name: del_obj
+summary: Delete a named object from a named object list.
+description: Resolves the list and the object by display name and removes the object's subtree from the
+  persistent object-list configuration.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe82a0, ObjListConfig::DelObj @0x6c3c30 (64-bit build)
+side_effects: Removes an object entry from the persistent XML configuration, synchronously. No event is
+  emitted by the handler.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: del_obj request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: del_obj
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/DelObjParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe82a0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: list or obj missing, null or not a string (or wrong params container)
+  label: expected string param
+- code: 236
+  trigger: The configuration root, the list or the object is not found
+  label: xml item is not found
+- code: 234
+  trigger: 'Lower RemoveChild step: configuration file name storage is empty'
+  label: xml file name is empty
+- code: 229
+  trigger: 'Lower RemoveChild step: the XML key could not be opened'
+  label: fail to open xml key
+- code: 230
+  trigger: 'Lower RemoveChild step: the XML item could not be deleted'
+  label: fail to delete xml item
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Lower-level codes are established for the 64-bit RemoveChild only; 32-bit equivalence is
+  not asserted. Other lower failures are unresolved.
+examples:
+- name: delete
+  of: request
+  payload:
+    id: 51
+    method: del_obj
+    params:
+      list: Winter targets
+      obj: Example nebula
+- name: delete-array-form
+  of: request
+  payload:
+    id: 52
+    method: del_obj
+    params:
+    - Winter targets
+    - Example nebula
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: del_obj
+    result: 0
+    code: 0
+    id: 51
+see_also:
+- add_obj
+- del_list
+- get_obj
+spec:
+- spec/control/object-lists.md#user-object-lists

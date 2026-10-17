@@ -1,0 +1,83 @@
+kind: method
+name: get_wheel_slot_name
+summary: Return the filter-wheel slot names.
+description: Reads no parameters. The result is a string array of the in-memory slot-name map values in
+  ascending key order; the keys are not returned. An empty map gives an empty array. No wheel needs to
+  be open.
+grade: PURE GETTER / probable (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb3e90, GetSlotName @0x301110 (64-bit build)
+side_effects: Serialises a reference to the in-memory slot-name map; no writes, no wait, no opened-wheel
+  requirement.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_wheel_slot_name request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_wheel_slot_name
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb3e90 (64-bit build)
+reply_success:
+  title: get_wheel_slot_name reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: array
+        description: Slot names in ascending slot-key order; may be empty. When no names are saved, the
+          factory names are dark (slot 0), IRCUT (slot 1) and LP (slot 2).
+        items:
+          type: string
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xb3e90 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb3e90, GetSlotName @0x301110, default names
+          in GetSlotsNum @0x302310 (0x302808 dark, 0x302b1c IRCUT, 0x3028ac LP) (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 101
+    method: get_wheel_slot_name
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_slot_name
+    result:
+    - Dark
+    - IR cut
+    - Light pollution
+    code: 0
+    id: 101
+see_also:
+- set_wheel_slot_name
+- get_wheel_setting
+- set_wheel_setting
+spec:
+- spec/control/focus-and-filter.md#names-and-settings

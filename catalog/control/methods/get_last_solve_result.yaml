@@ -1,0 +1,101 @@
+kind: method
+name: get_last_solve_result
+summary: Read the cached result of the last plate solve.
+description: Returns the last cached solve-result object verbatim when the cached text is at least three
+  characters long; otherwise fails with 215. Unlike get_solve_result it does not revalidate coordinates
+  or current state, so the reply can differ from, and be staler than, a current get_solve_result. The
+  cache is written by the solver worker through the same formatter, so the member set matches the solve
+  result schema (INFERRED for cached status-only objects).
+grade: PURE GETTER / probable (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb8aa0, GetLastSolveResult @0x1fb7b0, producer SolveFunc
+  @0x2076e0 (64-bit build)
+side_effects: None; copies cached text into the request-local reply without refreshing it.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_last_solve_result request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_last_solve_result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb8aa0, GetLastSolveResult @0x1fb7b0, producer
+        SolveFunc @0x2076e0 (64-bit build)
+reply_success:
+  title: get_last_solve_result success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetSolveResultResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb8aa0, GetLastSolveResult @0x1fb7b0, producer
+          SolveFunc @0x2076e0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 215
+  trigger: Cached result text shorter than three characters (nothing cached)
+  label: no solve data
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Cache update and clear timing, staleness after a failed solve, and synchronisation with the
+  producer are unresolved.
+examples:
+- name: last
+  of: request
+  payload:
+    id: 105
+    method: get_last_solve_result
+- name: ok
+  summary: Values invented
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_last_solve_result
+    result:
+      ra_dec:
+      - 83.8
+      - -5.4
+      fov:
+      - 1.2
+      - 0.7
+      focal_len: 250.0
+      angle: 3.0
+      image_id: 7
+      state: complete
+      duration_ms: 2900
+    code: 0
+    id: 105
+- name: empty
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_last_solve_result
+    error: no solve data
+    code: 215
+    id: 106
+see_also:
+- get_solve_result
+- start_solve
+spec:
+- spec/control/solving-and-annotation.md#plate-solving

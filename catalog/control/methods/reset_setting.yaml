@@ -1,0 +1,138 @@
+kind: method
+name: reset_setting
+summary: Reset a list of settings to their defaults in one call (firmware 9.75).
+description: New in firmware 9.75, app 3.4.0. Resets the named settings (exact names or group prefixes
+  such as stack) to defaults by applying each through the set_setting path, and rolls back on any failure.
+  Keys addressed to the second camera carry the prefix second_camera. and are relayed to it. Keys that
+  cannot be reset are returned in unsupported_keys and are not an error. The resettable key list differs
+  between builds (18 descriptors in the 64-bit build, not 20; 10 keys in the 32-bit build, which also has no busy gating, so 259 and 536 occur only in the 64-bit build). The default value of each key
+  is unresolved. A Setting event follows success.
+grade: MUTATOR / READ
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.75, handler @0x108ea0 (64-bit build), @0x90420 (32-bit build)
+side_effects: Rewrites the persisted settings for the listed keys, then emits a Setting event. Any failure
+  rolls the whole call back.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: reset_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: reset_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, dispatcher table
+    params:
+      type: object
+      required:
+      - items
+      description: Only items is allowed; any other member gives 109.
+      properties:
+        items:
+          type: array
+          description: 'Setting names to reset: exact names or group prefixes (stack selects every stack.*
+            key). Characters limited to letters, digits, underscore and dot; empty keys, a leading dot,
+            two dots and duplicates are rejected. A second_camera. prefix routes the key to the second
+            camera.'
+          items:
+            type: string
+          minItems: 1
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, handler @0x108ea0 (64-bit build), @0x90420 (32-bit
+            build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, handler @0x108ea0 (64-bit build), @0x90420 (32-bit build)
+reply_success:
+  title: reset_setting reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      unsupported_keys:
+        type: array
+        description: Keys that cannot be reset on this build. Secondary-camera misses come back with the
+          second_camera. prefix restored.
+        items:
+          type: string
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, handler @0x108ea0 (64-bit build), @0x90420 (32-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params is not an object
+  label: expected object
+- code: 109
+  trigger: params has a member other than items
+  label: unknown member
+- code: 102
+  trigger: items missing, empty, not an array, malformed or duplicated
+  label: bad items
+- code: 105
+  trigger: an element of items is not a string
+  label: expected string
+- code: 201
+  trigger: relay to the second camera failed
+  label: relay failed
+- code: 207
+  trigger: applying a key failed
+  label: apply failed
+- code: 210
+  trigger: second-camera process cannot take the request
+  label: wrong process
+- code: 259
+  trigger: Stack is active and an exp_ms.* key is listed (association INFERRED)
+  label: stack active
+- code: 536
+  trigger: a view plan is running and an exp_ms.* key is listed (association INFERRED)
+  label: plan running
+- code: 300
+  trigger: rollback after a failure itself failed
+  label: rollback failed
+- code: 524
+  trigger: a reset transaction is already pending
+  label: busy
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Whether keys other than exp_ms.* check busy state, and the 107 versus 102 split, are unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 81
+    method: reset_setting
+    params:
+      items:
+      - stack
+      - auto_af
+  summary: READ shape, not captured; values invented
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_setting
+    result: 0
+    code: 0
+    id: 81
+    unsupported_keys: []
+see_also:
+- reset_setting_prepare
+- reset_setting_commit
+- reset_setting_rollback
+- set_setting
+- get_setting
+spec:
+- spec/control/function-states.md#settings-reset

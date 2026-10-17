@@ -1,0 +1,93 @@
+kind: method
+name: scope_get_axle_coord
+summary: Query the connected mount for its two axle coordinates.
+description: 'Performs a live mount query (ScopeAM5::GetAxleCoords) and returns a two-number array. Axis
+  units and frame are unresolved. Params are not consumed. Mount serial (firmware 9.31, READ): :GDd, :GDr.'
+grade: MUTATOR / established (strict; native handler, 64-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x78e20 (64-bit build); ScopeAM5::GetAxleCoords @0xef700
+side_effects: Live query to the mount controller for the axis coordinates; no motion.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_axle_coord request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_axle_coord
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x78e20 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: scope_get_axle_coord reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/ScopeGetAxleCoordResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x78e20 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Thread-local errors from the getter may be forwarded and are not exhausted by this table.
+examples:
+- name: query
+  summary: Params omitted
+  of: request
+  payload:
+    id: 100
+    method: scope_get_axle_coord
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_axle_coord
+    result:
+    - 123.4
+    - 56.7
+    code: 0
+    id: 100
+  summary: Invented values
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_axle_coord
+    error: mount is not connected
+    code: 315
+    id: 101
+see_also:
+- scope_get_cap
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

@@ -1,0 +1,89 @@
+kind: event
+name: WheelMove
+summary: Filter-wheel movement start, completion with position, or failure.
+description: 'Sent by the wheel movement worker and by slot-count initialisation (open_wheel), after the
+  actual movement and position read. State family (NotifyState): caller-supplied state literal; error
+  and code only when the supplied code is greater than 0. The complete event uses the value overload and
+  carries position. No lapse_ms or route. Recipients: all retained 4700 sockets. No reply-before-event
+  order is established: the RPC reply that starts the worker and the worker''s events can arrive in either
+  order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, WheelMove worker @0x3008c0, GetSlotsNum @0x302310 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: WheelMove event
+  type: object
+  discriminator: Event
+  description: State and position.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: WheelMove
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, WheelMove worker @0x3008c0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - complete
+      - fail
+      description: Caller-supplied literal.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, WheelMove worker @0x3008c0, GetSlotsNum @0x302310
+    position:
+      type: integer
+      description: Filter-wheel position read after the move; physical mapping unresolved.
+      x-required-when: state complete (value overload)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, WheelMove worker @0x3008c0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState
+    code:
+      type: integer
+      description: Supplied error code.
+      x-required-when: supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, WheelMove worker @0x3008c0
+examples:
+- name: complete
+  summary: Move finished (READ shape; values invented)
+  of: payload
+  payload:
+    Event: WheelMove
+    Timestamp: '1234.123456789'
+    state: complete
+    position: 1
+- name: start
+  summary: Move started (READ shape)
+  of: payload
+  payload:
+    Event: WheelMove
+    Timestamp: '1234.123456789'
+    state: start
+see_also:
+- set_wheel_position
+- open_wheel
+- get_wheel_position
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position
+- spec/control/events-overview.md

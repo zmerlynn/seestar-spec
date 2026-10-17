@@ -1,0 +1,58 @@
+kind: event
+name: LockPositionLost
+summary: The guider's lock position (target) was lost.
+description: 'Sent when the guider''s lock target is lost (transition notification, no periodic timer).
+  Sent by the guider process (zwoair_guider) on its TCP 4400 event server to every retained connection
+  (G/all). The main imager process, which is a client of 4400, recognises event lines and forwards them
+  unchanged onto TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager process deliberately
+  does not forward 4400 events. The imager''s forwarding test is lexical (the exact text "Event":" in
+  the line). Family N (NotifyEvent): Event and Timestamp only, no state, code or error. No Android app
+  consumer is established for this name. Ordering against RPC replies and other guider events is not guaranteed;
+  no sequence number, replay or fixed cadence exists. Runtime reachability of the retained guiding functionality
+  on every model is unresolved.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyLockPositionLost @0x6d170
+  (64-bit guider build); 32-bit counterpart present
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: LockPositionLost event
+  type: object
+  discriminator: Event
+  description: Event and Timestamp only (family N).
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: LockPositionLost
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyLockPositionLost
+        @0x6d170 (64-bit guider build); 32-bit counterpart present
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyLockPositionLost @0x6d170
+    (64-bit guider build); 32-bit counterpart present
+examples:
+- name: notify
+  summary: Static example (READ shape, not captured)
+  of: payload
+  payload:
+    Event: LockPositionLost
+    Timestamp: '1234.123456789'
+see_also:
+- get_lock_position
+- set_lock_position
+- find_star
+spec:
+- spec/guider/index.md#events

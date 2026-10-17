@@ -1,0 +1,87 @@
+kind: method
+name: get_search_region
+summary: Report the guider star-search region setting.
+description: Params are not read. Returns the search-region field of the guider object. A missing camera
+  device or guider object is reported as error 300; there is no separate camera-connected check. The value
+  is INFERRED to be in pixels from the star-search role.
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x73cb0 (64-bit guider build)
+side_effects: Reads one cached guider field.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_search_region request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_search_region
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x73cb0 (64-bit guider build)
+reply_success:
+  title: get_search_region success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: integer
+        description: Search-region setting, INFERRED to be pixels.
+        x-confidence: READ integer; unit INFERRED
+        x-basis: static analysis of firmware 9.31, handler @0x73cb0 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 300
+  trigger: Camera device or its guider object is missing
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: get_search_region
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_search_region
+    result: 30
+    code: 0
+    id: 22
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_search_region
+    error: internal error
+    code: 300
+    id: 23
+see_also: []
+spec:
+- spec/guider/index.md#method-groups

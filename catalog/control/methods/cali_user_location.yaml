@@ -1,0 +1,101 @@
+kind: method
+name: cali_user_location
+summary: Recompute the star-horizon calibration location offsets, optionally from a supplied RA/Dec pair,
+  and report them.
+description: Optionally takes ra and dec (object or positional). If a coordinate pair parsed and the device
+  calibration mode (calib_location) is 1 and the user location loads, the device replaces its in-memory location-offset
+  pair; if the pair is missing or invalid it queries the previous pair instead, with no error. RA is in
+  hours and Dec in degrees. The result always has calib_location and conditionally the offset arrays;
+  effect_offset_deg can appear twice. calib_location is a mode (1 enables goto location calibration, 2
+  enables the three-point polar-alignment offset, any other value disables both). The effects are cached calculations; no settings persistence or
+  motion is shown.
+grade: MUTATOR / established (strict, 64-bit and 32-bit builds; offset cache replacement and logging)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe6da0 (64-bit build); offset helpers and PrintClibLoc
+  (64-bit build)
+side_effects: May replace the in-memory calibration location offset pair and refresh the cached user location
+  and time; logs the calculation. Full command-socket calls also incur the shared diagnostic (logging)
+  writes; this is why the strict grade is MUTATOR even for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: cali_user_location request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: cali_user_location
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/CaliUserLocationParams.yaml
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: cali_user_location reply_success
+  required:
+  - method
+  - result
+  - code
+  - id
+  description: Same envelope as the common success reply, except that result is an object.
+  properties:
+    jsonrpc:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/jsonrpc
+    Timestamp:
+      $ref: ../../common/schemas/Timestamp.yaml
+    method:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/method
+    result:
+      $ref: ../schemas/CaliUserLocationResult.yaml
+    code:
+      $ref: ../../common/schemas/ReplySuccess.yaml#/properties/code
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable; helper failures only suppress the conditional arrays.
+examples:
+- name: query-previous
+  of: request
+  payload:
+    id: 30
+    method: cali_user_location
+- name: with-pair
+  of: request
+  payload:
+    id: 31
+    method: cali_user_location
+    params:
+      ra: 5.5
+      dec: 22.0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: cali_user_location
+    result:
+      calib_location: 1
+      offset_deg:
+      - 0.5
+      - -0.25
+    code: 0
+    id: 31
+see_also:
+- check_pa_alt
+spec:
+- spec/control/polar-alignment.md#location-checks
+- spec/control/time-and-location.md#user-location

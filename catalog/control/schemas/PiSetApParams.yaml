@@ -1,0 +1,53 @@
+title: pi_set_ap params
+description: 'Access-point SSID and key to apply. Two spellings: an object with ssid and key, or the positional
+  array [ssid, key]. Both members are optional; a member that is absent is skipped. Params that are missing,
+  null, a scalar or any other non-object, non-array value behave as an empty set (nothing applied). Unknown
+  object keys are ignored.'
+anyOf:
+- type: object
+  properties:
+    ssid:
+      type: string
+      description: New access-point SSID. Optional. A present value of a non-string type (including null)
+        is rejected with 105. An empty string is passed on as given. The command line is bounded to 255
+        bytes, so very long values truncate; no other length or character validation in the handler. If
+        ssid is omitted, the handler still builds a string from the missing value afterwards, so a clean
+        success is not established for omitted ssid.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf2800, ns_net::pi_set_AP_ID @0x6fb410 (64-bit
+        build)
+    key:
+      type: string
+      description: New access-point key. Optional. A present non-string value (including null) is rejected
+        with 105. A nonempty key shorter than 8 characters is rejected by the network script and reported
+        as 204. An explicitly empty string skips the key command entirely and still succeeds. No maximum
+        is established beyond the 255-byte command buffer (truncation, not validation).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf2800, ns_net::pi_set_AP_ID @0x6fb410 (64-bit
+        build)
+- type: object
+  description: >-
+    Firmware 9.75 (64-bit build): ssid plus key, where key is an enc1 token (flat; no wifi object).
+  properties:
+    ssid:
+      type: string
+      description: New access-point SSID.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, pi_set_ap handler @0x10ff90 (64-bit imager)
+    key:
+      type: string
+      description: Access-point key as an enc1 token (client-to-device direction of the session).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, pi_set_ap handler @0x10ff90, decode call @0x110120 (64-bit imager)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.75, pi_set_ap handler @0x10ff90 (64-bit imager)
+- type: array
+  maxItems: 2
+  description: Positional [ssid, key]; each element is a string.
+  items:
+    type: string
+    description: Element 0 is the SSID, element 1 is the key.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf2800 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf2800, ns_net::pi_set_AP_ID @0x6fb410 (64-bit build)

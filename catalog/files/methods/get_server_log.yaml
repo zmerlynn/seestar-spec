@@ -1,0 +1,70 @@
+kind: method
+name: get_server_log
+summary: 'File channel: read the device server log and return it.'
+description: File-channel (4801) method. Collects kernel, DHCP-client (last 5000 journal lines) and DNS/DHCP-server
+  logs, zips the log folders in 40 MB split parts, reads the archive into a request-local buffer and sends
+  it as a binary reply (imgType 6, dataType 3). READ. A log-move helper is called first; its visible body
+  only formats a path string, so no log rotation or move is established; whether it rotates logs on another
+  path is unresolved. The zip archive and log captures are scratch writes on device storage (READ), so
+  the method is a MUTATOR with observation-safe (tier B) effects; it writes logs and a scratch archive
+  but changes no hardware, setting or visible state. The 32-bit build matches (READ).
+grade: 'MUTATOR / established (64-bit build; 32-bit build matches (READ))'
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f1880 (64-bit build),
+  @0x186be4 (32-bit build); static analysis of app 3.3.2, LogUploadEntity command builder (stored JSON
+  command, id 4) queued on AlbumFileSocketManager (port 4801), reply renamed to a local .zip; log-move helper SvrLogMove @0x1ed100 (path formatting only, memcpy/strlen; no rename/open/unlink
+  observed), GetFileSize/ReadFile, IMG_DATA::ReallocBinBuf, reponse_result; log collection (dmesg, dhcpcd
+  journal last 5000 lines, dnsmasq) and "sudo zip -s 40m -r svr_log.zip"; old svr_log.* archive removed
+  before zipping; captures redirected into log files
+side_effects: Collects system and network logs, writes a split zip archive of the log folders (scratch
+  file), reads it into a reallocated request-local buffer and responds. No log rotation or move is established.
+  Removes the previous archive before zipping. READ.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_server_log request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_server_log
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f1880 (64-bit
+        build), @0x186be4 (32-bit build)
+    params:
+      description: The app sends no params member. Whether the device reads params is unresolved. Clients SHOULD
+        omit it.
+      x-confidence: READ
+      x-basis: static analysis of app 3.3.2, LogUploadEntity command builder (stored JSON command)
+reply_success:
+  title: get_server_log success reply
+  description: ZIP of kernel and network logs (40 MB split parts), imgType 6, dataType 3. Not an ordinary
+    command reply. 80-byte big-endian header (spec/media/image-sockets.md#reply-framing), then the payload;
+    errors are text replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f1880 (64-bit
+    build), @0x186be4 (32-bit build)
+reply_error:
+  title: get_server_log error reply
+  description: 'Text reply (imgType 0, dataType 1): the payload is the fixed text for the error code (spec/media/files-and-album.md#parameter-rules-read-handlers,
+    R9). No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager file table (serves 4801), handler @0x1f1880 (64-bit
+    build), @0x186be4 (32-bit build)
+errors: []
+errors_note: No numeric code was listed for this handler; failures are text replies.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: get_server_log
+see_also:
+- get_user_log
+spec:
+- spec/media/files-and-album.md#methods

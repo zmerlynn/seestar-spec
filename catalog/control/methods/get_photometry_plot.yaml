@@ -1,0 +1,114 @@
+kind: method
+name: get_photometry_plot
+summary: Read one cached photometry plot (a star measured over time).
+description: Looks up a plot by id in the cached radec plot map under the photometry mutex. A missing
+  or empty plot returns false without setting a code, so the reply is 207.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+side_effects: Reads the plot cache under the photometry mutex (may block, no timeout). The only write
+  is the shared diagnostic log (missing or empty plot).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_photometry_plot request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_photometry_plot
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - $ref: ../schemas/GetPhotometryPlotParams.yaml
+      - type: array
+        minItems: 1
+        description: Positional form [id]; extra elements ignored.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_photometry_plot success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetPhotometryPlotResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: id absent, or not a string
+  label: expected int param
+- code: 207
+  trigger: Plot missing or empty (no code assigned by the helper)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A missing plot has no distinct not-found message; the log text for it is not sent to the
+  client.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 111
+    method: get_photometry_plot
+    params:
+      id: plot-1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_photometry_plot
+    result:
+      name: Example target
+      save: true
+      stars:
+      - pix:
+        - 512.5
+        - 384.25
+        radec_deg:
+        - 210.8
+        - 54.3
+        ref_mag: 0
+        measure_mag: 12.4
+        err: 0.03
+        MJD: 60000.5
+        loc_date: '2026-01-31 21:15:00'
+        id: star-1
+        name: Example target
+        star_type: target
+        is_reference: false
+    code: 0
+    id: 111
+- name: not-found
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_photometry_plot
+    error: fail to operate
+    code: 207
+    id: 112
+see_also:
+- get_photometry_stars
+- get_saved_photometry_stars
+- set_photometry
+spec:
+- spec/control/solving-and-annotation.md#photometry

@@ -1,0 +1,50 @@
+title: scope_fine_move params
+type: object
+required:
+- speed
+description: Named object only; there is no positional top-level binding. A nested object {x, y} for speed
+  fails the array check. Unknown members are ignored.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build)
+properties:
+  speed:
+    type: array
+    description: Two numbers [x, y] bound positionally to the two axes. Missing or non-array speed is
+      logged and fails with a thread-local formatter code that is not a fixed 104/108. Native controller
+      rate values (same number space as scope_speed_move speeds), passed without conversion after the
+      dur_sec division and clamps; the physical unit is unresolved.
+    minItems: 2
+    maxItems: 2
+    items:
+      type: number
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (array check @0x7fa04, binding
+      @0x7fb8c)
+  limit:
+    type:
+    - boolean
+    - integer
+    description: When true, comparable x/y values are clamped to [-16, 16] after any altitude compensation.
+      Boolean or integer (nonzero is true).
+    x-default: 'true'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (clamp @0x7fc90-0x7fccc)
+  dur_sec:
+    type: integer
+    description: 'Duration divisor: each axis value is divided by dur_sec (as a double, then narrowed
+      to float) before the axis command, and the handler waits for the scope to stop. A value of the wrong
+      type keeps the default. No positive-duration validator; zero, negative and overflow outcomes are
+      unresolved.'
+    x-default: '1'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (@0x7fcd0-0x7fd1c)
+  backlash_comp:
+    type:
+    - boolean
+    - integer
+    description: Pass a backlash-compensation flag to the axis command. Boolean or integer.
+    x-default: 'false'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build)

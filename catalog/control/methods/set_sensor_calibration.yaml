@@ -1,0 +1,91 @@
+kind: method
+name: set_sensor_calibration
+summary: Write balance-sensor and/or compass-sensor calibration values.
+description: Replaces calibration values and persists them to configuration. The balance sensor is replaced
+  wholesale from the supplied members; the compass sensor is patched with the float-typed members present.
+  The handler ignores configuration write and sentinel failures and still reports success, so a success
+  reply does not guarantee that every member was stored.
+grade: MUTATOR / established (64-bit build, command-socket invocation); 32-bit build probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, set_sensor_calibration @0xdc460, SetGsenCalibration @0x123c60
+side_effects: Writes balance components sequentially to globals and configuration and sets its exist flag
+  to the aggregate success; sets the compass exist flag and writes the supplied members individually.
+  Partial changes can survive an ignored failure. Every full call also makes the shared diagnostic log
+  writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_sensor_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_sensor_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetSensorCalibrationParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params is not an object
+  label: expected object param
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'Sentinel (-999) rejection and configuration-write failures are swallowed: the reply is still
+  result 0.'
+examples:
+- name: set
+  summary: Set both sensors (shape per static analysis; values invented)
+  of: request
+  payload:
+    id: 62
+    method: set_sensor_calibration
+    params:
+      balanceSensor:
+        x: 0.5
+        y: 0.25
+        z: 9.5
+      compassSensor:
+        x: 1.5
+        y: -2.5
+        z: 3.5
+        x11: 1.25
+        x12: 0.5
+        y11: 0.5
+        y12: 1.25
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_sensor_calibration
+    result: 0
+    code: 0
+    id: 62
+- name: not-object
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_sensor_calibration
+    error: expected object param
+    code: 107
+    id: 63
+see_also:
+- get_sensor_calibration
+- start_gsensor_calibration
+spec:
+- spec/control/polar-alignment.md#g-sensor-and-stored-calibration

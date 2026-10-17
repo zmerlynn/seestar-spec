@@ -1,0 +1,97 @@
+kind: method
+name: get_app_setting
+summary: Read app-setting values stored on the device, selected by key or all of them.
+description: Opens the app-setting group of the configuration and either enumerates every key or reads
+  the requested ones. There are no defaults for missing keys. Despite being a getter it can create a lock
+  file as a side effect of opening the settings store.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build); SettingConfig::OpenKey @0x6bfda0
+side_effects: Opens the settings XML, which takes a file lock created on demand (a lock file may be created)
+  and can log XML failures. No setting value is written. Observer tier B.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_app_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_app_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetAppSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_app_setting success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetAppSettingResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 236
+  trigger: Enumeration succeeded but returned zero items
+  label: xml item is not found
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: OpenKey or Read failures propagate the configuration layer's own error code; the transitive
+  errno-to-code mapping is not established. No result on error.
+examples:
+- name: all
+  summary: Enumerate all keys
+  of: request
+  payload:
+    id: 161
+    method: get_app_setting
+- name: select
+  summary: Read named keys (invented)
+  of: request
+  payload:
+    id: 162
+    method: get_app_setting
+    params:
+    - example_flag
+    - example_label
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_app_setting
+    result:
+      example_flag: true
+      example_label: north
+      example_count: 3
+    code: 0
+    id: 161
+- name: empty
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_app_setting
+    error: xml item is not found
+    code: 236
+    id: 163
+see_also:
+- set_app_setting
+spec:
+- spec/control/device-state-and-settings.md#app-and-test-settings

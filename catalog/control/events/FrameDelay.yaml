@@ -1,0 +1,90 @@
+kind: event
+name: FrameDelay
+summary: Legacy autosave the between-frame delay start and end.
+description: Sent by the legacy autosave worker when the between-frame delay begins (state start with
+  seconds, through the V helper) and when it ends (state complete, through the S helper, without seconds).
+  The S helper adds error and code only for a supplied code greater than zero; the V helper adds none.
+  No per-second countdown is established. Broadcast on TCP 4700 to every retained socket. The app defines
+  the name as a constant but no event branch handling it is established. A 32-bit counterpart emitter
+  exists; full parity is not established.
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, AutosaveFrameSleep @0x211b30 (64-bit build); 32-bit counterpart
+  present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: FrameDelay event
+  type: object
+  discriminator: Event
+  description: Delay transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: FrameDelay
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AutosaveFrameSleep @0x211b30
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - complete
+      description: 'Legacy literal: start when the delay begins, complete when it ends.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AutosaveFrameSleep @0x211b30
+    error:
+      type: string
+      description: Message for code. The S helper writes it only when the caller supplies a code greater
+        than zero.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Written only when the caller supplies a code greater than zero; never written as 0
+        by this helper.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    seconds:
+      type: integer
+      description: Delay length in seconds, sent with start through the value-state helper.
+      x-required-when: state is start
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AutosaveFrameSleep @0x211b30
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, AutosaveFrameSleep @0x211b30
+examples:
+- name: start
+  summary: Delay begins (READ shape; values invented)
+  of: payload
+  payload:
+    Event: FrameDelay
+    Timestamp: '1234.123456789'
+    state: start
+    seconds: 30
+- name: complete
+  summary: Delay ends (READ shape; value invented)
+  of: payload
+  payload:
+    Event: FrameDelay
+    Timestamp: '1234.123456789'
+    state: complete
+see_also:
+- Target
+- Sequence
+- get_app_state
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#legacy-plan-events
+- spec/control/events-overview.md

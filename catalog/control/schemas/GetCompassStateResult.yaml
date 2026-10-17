@@ -1,0 +1,17 @@
+title: get_compass_state result
+type: object
+required:
+- number
+description: Result object of get_compass_state.
+properties:
+  number:
+    type: integer
+    description: Number of compass samples currently held (sample vector length divided by 16, read under
+      the compass mutex). It is a sample count, not a calibration-state enumeration. Range not established
+      beyond non-negative.
+    minimum: 0
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_compass_state @0xb92c0 and getCompassState helper (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, get_compass_state @0xb92c0

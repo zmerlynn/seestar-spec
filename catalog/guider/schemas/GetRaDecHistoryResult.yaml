@@ -1,0 +1,99 @@
+title: get_ra_dec_history result
+type: object
+description: Cached guiding history as parallel arrays.
+required:
+- Number
+- RADistanceRaw
+- DECDistanceRaw
+- RADuration
+- RADirection
+- DECDuration
+- DECDirection
+- IsSettle
+- IsDither
+properties:
+  Number:
+    type: integer
+    description: Number of history entries.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (64-bit guider build)
+  RADistanceRaw:
+    type: array
+    description: 'Raw RA error distances, one number per history entry, copied without conversion (the same value as the GuideStep member of that name). Scale probably pixels (INFERRED).'
+    items:
+      type: number
+      x-confidence: READ (type, no conversion); INFERRED (scale)
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  DECDistanceRaw:
+    type: array
+    description: 'Raw Dec error distances, one number per history entry, copied without conversion (the same value as the GuideStep member of that name). Scale probably pixels (INFERRED).'
+    items:
+      type: number
+      x-confidence: READ (type, no conversion); INFERRED (scale)
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  RADuration:
+    type: array
+    description: 'RA correction durations, one integer per history entry; milliseconds INFERRED. 0 for a step with no RA correction.'
+    items:
+      type: integer
+      x-confidence: READ (type); unit INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  RADirection:
+    type: array
+    description: 'RA correction directions, one string per history entry; the literal set is not established. A step with no RA correction stores the literal string "null" (a JSON string, not null).'
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  DECDuration:
+    type: array
+    description: 'Dec correction durations, one integer per history entry; milliseconds INFERRED. 0 for a step with no Dec correction.'
+    items:
+      type: integer
+      x-confidence: READ (type); unit INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  DECDirection:
+    type: array
+    description: 'Dec correction directions, one string per history entry; the literal set is not established. A step with no Dec correction stores the literal string "null" (a JSON string, not null).'
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  IsSettle:
+    type: array
+    description: 'Settle marker, one integer per history entry: 1 if the guider was settling at that step, else 0. A number, not a JSON boolean.'
+    items:
+      type: integer
+      enum:
+      - 0
+      - 1
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+  IsDither:
+    type: array
+    description: 'Dither marker, one integer per history entry: the same one-shot dither flag as the GuideStep member (1 on one step only; set by a dither INFERRED), else 0. A number, not a JSON boolean.'
+    items:
+      type: integer
+      enum:
+      - 0
+      - 1
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x77270 (per-entry fill; serializers <<double @0x158e10, <<int @0x15b510, <<string @0x158ac0) and history push in NotifyGuideStep @0x6fc94-0x6fca8 (64-bit guider build); 32-bit not checked
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x77270 (64-bit guider build)

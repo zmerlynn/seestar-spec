@@ -1,0 +1,86 @@
+kind: method
+name: get_camera_state
+summary: Report whether a camera is open.
+description: Returns result.state as close when no camera is open and idle otherwise; when open and the
+  camera info lookup succeeds it also returns name and path. The handler never reports an exposure state.
+  Params are not read.
+grade: MUTATOR / established (64-bit build; 32-bit build PURE GETTER, probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc22e0 (64-bit build)
+side_effects: In the 64-bit build the opened-camera lookup refreshes the shared camera metadata record
+  and may log; nothing is opened, closed or moved. The 32-bit build copies cached metadata only.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_camera_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_camera_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc22e0 (64-bit build)
+reply_success:
+  title: get_camera_state success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetCameraStateResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc22e0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The handler has no error branch of its own.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 23
+    method: get_camera_state
+- name: ok-closed
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_state
+    result:
+      state: close
+    code: 0
+    id: 23
+- name: ok-open
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_camera_state
+    result:
+      state: idle
+      name: Example camera
+      path: example-path-0
+    code: 0
+    id: 24
+see_also:
+- open_camera
+- close_camera
+- get_camera_info
+spec:
+- spec/control/viewing-and-exposure.md#camera-lifecycle

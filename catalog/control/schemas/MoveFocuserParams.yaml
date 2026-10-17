@@ -1,0 +1,25 @@
+title: move_focuser params
+type: object
+required:
+- step
+properties:
+  step:
+    type: integer
+    description: Target logical focuser position in INFERRED focuser steps (no range check in the parser;
+      the accepted range is delegated to the focuser driver). Missing, null or wrong type gives 104. Converted
+      with stored numerator, denominator and base values into the driver target.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)
+  ret_step:
+    type:
+    - boolean
+    - integer
+    description: When true (or nonzero) the reply carries the reported step. Other types leave the default.
+    default: false
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build); the app's DTO default
+      (true) differs from this firmware default
+description: Object form. Positional form [step, ret_step] is also accepted; extra positions are ignored.
+  Absent or non-object, non-array params give an empty map and therefore 104.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe7a10 (64-bit build)

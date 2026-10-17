@@ -1,0 +1,85 @@
+kind: method
+name: start_compass_calibration
+summary: Begin compass-sensor sampling for a compass calibration run (resets the sample buffer and starts
+  the sampling timer).
+description: No parameters are read. Under the compass mutex the device clears its sample vector, count
+  and timestamps, sets its compass calibration state to 1 (sampling) and starts a periodic timer (first
+  delay 1 ms, interval 100 ms). If the timer fails to start, the state is reset to 0. A success reply
+  means sampling was started; the calibration itself is computed later, after stop_compass_calibration.
+  No mount motion is requested by this call; see start_scope_move_round. Progress is reported by CompassCalibration
+  events (see get_compass_state for the sample counter).
+grade: MUTATOR / established (64-bit build and 32-bit build, command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc8c40 (64-bit build); helper startCompassCalibration
+  (64-bit build)
+side_effects: Resets compass sampling state (sample buffer, count, timestamps), sets the calibration state
+  to sampling and starts a 100 ms sampling timer. Full command-socket calls also incur the shared diagnostic
+  (logging) writes; this is why the strict grade is MUTATOR even for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_compass_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_compass_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc8c40 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Compass state is not 0 (a run is already sampling or finishing) or the calculation thread is
+    running. The helper assigns no code, so the dispatcher default applies.
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Failure of the sampling timer start gives an error code that is unresolved. A mutex failure
+  throws and is not a documented error reply.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: start_compass_calibration
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_compass_calibration
+    result: 0
+    code: 0
+    id: 21
+- name: already-sampling
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_compass_calibration
+    error: fail to operate
+    code: 207
+    id: 22
+see_also:
+- get_compass_state
+- stop_compass_calibration
+- start_scope_move_round
+spec:
+- spec/control/polar-alignment.md#compass-calibration

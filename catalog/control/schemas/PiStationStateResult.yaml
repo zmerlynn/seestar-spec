@@ -1,0 +1,61 @@
+title: pi_station_state result
+type: object
+required:
+- server
+description: Station-mode connection state. The same object is used for the Station event member and for
+  the station member of the device state. server is a case-insensitive test for a supplicant-running marker
+  in the script output, not a direct test that the connection is COMPLETED. When server is false every
+  other member is absent; empty script output also yields only server false.
+properties:
+  server:
+    type: boolean
+    description: Always present.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  freq:
+    type: integer
+    description: Frequency in MHz (unit INFERRED). Only when server is true.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  ip:
+    type: string
+    description: Station IP address. Only when server is true.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  ssid:
+    type: string
+    description: Connected network name. Only when server is true.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  gateway:
+    type: string
+    description: Gateway address. Only when server is true.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  netmask:
+    type: string
+    description: Netmask. Only when server is true.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  sig_lev:
+    type: integer
+    description: Received signal level of the associated access point as reported by the wireless driver
+      (iwconfig Signal level), an unscaled integer, normally negative dBm. Only when server is true.
+    x-confidence: READ (no scaling); unit INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+  key_mgmt:
+    type: string
+    description: Key-management mode text. Only when server is true.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+      @0xb0c80 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbc6e0, ns_net::pi_station_state @0x700140, PrintStationState
+  @0xb0c80 (64-bit build)

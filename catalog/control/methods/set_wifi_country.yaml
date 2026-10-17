@@ -1,0 +1,96 @@
+kind: method
+name: set_wifi_country
+summary: Set the Wi-Fi regulatory country of the device.
+description: Runs the network script's country command with the supplied text, which is formatted unquoted
+  into a shell command line, so whitespace splits it and shell metacharacters are interpreted (INFERRED).
+  No format check is made; validation is left to the wireless driver, and the helper does not examine the
+  command's exit status or output, so success does not show the country was applied or that the value was
+  valid. A value equal to the stored code does nothing; otherwise the script applies the change in the
+  background after the reply and restarts the access point. An empty string resets the country to the
+  factory default. Clients MUST send only an uppercase ISO 3166-1 alpha-2 code.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcdd70, ns_net::set_wifi_country @0x6fc4c0 (64-bit
+  build)
+side_effects: Runs a shell command (no timeout) that stores the country and, in the background, stops the station
+  supplicant and access point, applies the regulatory country and restarts the access point, briefly
+  interrupting it.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_wifi_country request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_wifi_country
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetWifiCountryParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcdd70, ns_net::set_wifi_country @0x6fc4c0
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params missing, null, an empty array, missing country key, or not a string
+  label: expected string param
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No country-value validation error exists; the device never checks the value.
+examples:
+- name: object-form
+  summary: Set country
+  of: request
+  payload:
+    id: 61
+    method: set_wifi_country
+    params:
+      country: XX
+- name: scalar-form
+  summary: Bare string
+  of: request
+  payload:
+    id: 62
+    method: set_wifi_country
+    params: XX
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wifi_country
+    result: 0
+    code: 0
+    id: 61
+- name: missing
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wifi_country
+    error: expected string param
+    code: 105
+    id: 63
+see_also:
+- pi_set_ap
+- pi_set_5g
+spec:
+- spec/control/network.md#access-point

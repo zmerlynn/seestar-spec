@@ -1,0 +1,108 @@
+kind: method
+name: start_func
+summary: 'Start the GoPixel function: centre the mount on a displayed-image pixel.'
+description: Runs the general relay and mount-occupancy guard, converts the displayed pixel to a raw pixel
+  through the video crop and ROI (the 32-bit build converts X and Y separately and has no conversion failure
+  branch), then starts the centring worker asynchronously and returns at once with result 0. The guard
+  may instead relay the request and return the peer reply. If x or y is malformed after an accepted name,
+  the reply contains only the dispatcher metadata (no result and no error). While running, the centring
+  function emits a function event carrying cur_pix, a two-integer array of the current raw pixel; its
+  event name is not established from this handler and the request name GoPixel MUST NOT be assumed equal
+  to it. The app 3.3.2 sends x and y as integer pixels of the unrotated wide-camera RTSP frame (origin
+  top-left, x right, y down), scaled from the tap to the stream's native size (READ, app 3.3.2), and never
+  sends stop_func GoPixel (READ, bounded search).
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdade0, StartCenterPixel @0x17da50 (64-bit build); app 3.3.2
+  BaseDeviceViewModel.startGoPixel, ModeRtspGoViewDelegate.startPreGo, ModeRtspViewModel.mapTouchToImagePoint
+side_effects: Stores the target pixel and starts centring work that moves the mount; refuses a concurrent
+  centring thread.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_func request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_func
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartFuncParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 100
+  trigger: params not an object, name missing, not a string, or not GoPixel
+  label: invalid request
+- code: 203
+  trigger: 'Guard: local or remote mount is occupied'
+  label: equipment is moving
+- code: 209
+  trigger: Pixel conversion found invalid crop or show dimensions; or the selected camera is not the one
+    required
+  label: invalid value
+- code: 268
+  trigger: A centring thread is already running
+  label: operation is in progress
+- code: 212
+  trigger: Worker thread could not be created
+  label: fail to create thread
+- code: 300
+  trigger: 'Relay: main-process user context is null'
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: 'Also listed in the evidence: 524 (function conflict) belongs to the guard variant used by
+  other methods; the occupancy variant used here does not reach it. On a conversion or start failure
+  the handler serializes the current thread error code without setting one itself; failures that set
+  no code (lower crop calculation) give an unresolved code.'
+examples:
+- name: go-pixel
+  summary: Values invented
+  of: request
+  payload:
+    id: 61
+    method: start_func
+    params:
+      name: GoPixel
+      x: 540
+      y: 960
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_func
+    result: 0
+    code: 0
+    id: 61
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_func
+    error: equipment is moving
+    code: 203
+    id: 62
+see_also:
+- stop_func
+- is_func_work
+spec:
+- spec/control/solving-and-annotation.md#goto-to-a-pixel
+- spec/control/special-modes.md#function-control-methods
+- spec/control/errors.md#replies-with-extra-or-missing-members

@@ -1,0 +1,47 @@
+title: set_user_location params
+type:
+- object
+- array
+description: Object with lon, lat and force, or the positional array [lon, lat, force] (longitude first,
+  unlike scope_set_location). lon and lat are required numbers; integer or real accepted through the shared
+  number helper. force is mapped by name but never looked up or used by the handler. The store step
+  validates coordinate ranges (its exact thresholds are not separately established; the loader used by
+  get_user_location accepts longitude strictly inside -360.1..360.1 and latitude inside -90.1..90.1).
+  A failed store is logged and the handler continues, so an out-of-range pair is not by itself an error
+  reply. The app always sends
+  the object form with all three members (OBSERVED 2026-10-12, both force values seen).
+required:
+- lon
+- lat
+properties:
+  lon:
+    type: number
+    description: Site longitude in decimal degrees, positive east (INFERRED, strong; the stored value is
+      passed unchanged to an east-positive astronomy routine and negated for the mount's west-positive site
+      command).
+    x-confidence: READ (member and numeric parse); unit and east-positive sign INFERRED
+    x-basis: static analysis of firmware 9.31, guider handler @0x7e660, float_param @0x7e77c (64-bit build)
+  lat:
+    type: number
+    description: Site latitude, degrees INFERRED.
+    x-confidence: READ (member and numeric parse); unit INFERRED
+    x-basis: static analysis of firmware 9.31, guider handler @0x7e660, float_param @0x7e7f8 (64-bit build)
+  force:
+    type: boolean
+    description: Sent by the app (OBSERVED, both true and false). Not read by the 64-bit handler; in particular
+      it does not force a time or zone change, and it is not the flag passed to the mount location update.
+      Clients MAY omit it.
+    x-confidence: READ (not used by handler); OBSERVED on the wire 2026-10-12
+    x-basis: static analysis of firmware 9.31, guider handler @0x7e660 (64-bit build); app 3.3.2 SetUserLocationParams
+      DTO; wire observation 2026-10-12
+prefixItems:
+- type: number
+  description: lon
+- type: number
+  description: lat
+- type: boolean
+  description: force (ignored)
+minItems: 2
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7e660 (64-bit build); app 3.3.2 SetUserLocationParams
+  DTO

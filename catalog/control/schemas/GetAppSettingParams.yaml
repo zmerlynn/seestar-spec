@@ -1,0 +1,17 @@
+title: get_app_setting params
+description: 'Optional selector: an array of strings naming the keys to read (intended form, INFERRED
+  from the traversal and the companion setter). With no params, no child list, or an empty array or object,
+  every stored key is enumerated. In a nonempty list only string children are used and everything else
+  is skipped, including object member names; a lone scalar string is not treated as a selector. Behaviour
+  for malformed scalar params other than these safe cases is unresolved.'
+type:
+- array
+- object
+- 'null'
+items:
+  type: string
+  description: Name of a stored app-setting key to read.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd6aa0 (64-bit build)

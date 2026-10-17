@@ -1,0 +1,114 @@
+kind: method
+name: scope_get_state
+summary: Read the mount horizontal and equatorial coordinates.
+description: 'Needs a connected mount (315) that reports horizontal coordinates (210). Reads alt and az
+  from the controller (a failure replies with the driver''s error code), then adds ra and dec from the
+  same reader as scope_get_ra_dec, so that getter''s recovery and tracking-state side branches can run.
+  If only the RA/Dec read fails, the reply carries both an error (the thread error code) and a partial
+  result holding alt and az; a client MUST check for error first. INFERRED units, from the controller
+  reply parsers - alt, az and dec in degrees, ra in hours. ra and dec are passed through from the controller
+  with no precession or epoch conversion (READ); which epoch the controller reports is unresolved. Served
+  by the guider process (TCP 4400); a client on the main command port reaches it through the imager unknown-method
+  relay, which is unavailable to guest-table clients. The native-handler grade below does not describe
+  the relay. Mount serial (firmware 9.31, READ): :GA, :GZ.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build; error-then-result fall-through
+  @0x751a8-0x751c0), driver GetHoriCoords @0xee730, GetRaDec @0x698f0 -> mount vtable+368 = ScopeAM5::GetCoordinates
+  @0xeeb20 (sends :GR# and :GD#, parses HMS/DMS, only a -1000 sentinel check; base Scope::GetCoordinates
+  @0x3c150 is an error stub; no J2000/JNow/precession code in the guider)
+side_effects: Live query of the connected mount through the native mount layer; no motion or setting change
+  is established. Tier C rests on the supplied native mount query path; other runtime-selected mount implementations
+  are unresolved. The RA/Dec read can also run recovery and update tracking-state bookkeeping.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetStateResult.yaml
+        description: Object with alt, az, ra, dec; only alt and az when the RA/Dec read fails (that reply
+          also carries error and a nonzero code).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x74f90 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 210
+  trigger: The mount driver does not report horizontal coordinates
+  label: not supported
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+errors_note: A failed controller read replies with the thread error code (207 when the RA/Dec reader has
+  no live or cached pair); those codes are not exhausted by this table. An RA/Dec read failure returns
+  that error together with a partial result.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: scope_get_state
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_state
+    result:
+      alt: 45.0
+      az: 180.0
+      ra: 6.75
+      dec: 20.5
+    code: 0
+    id: 5
+- name: err-315
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_state
+    error: mount is not connected
+    code: 315
+    id: 6
+see_also:
+- scope_get_location
+- scope_get_pierside
+- scope_is_moving
+- scope_get_mode
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#position-and-connection-state
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

@@ -1,0 +1,94 @@
+kind: method
+name: scope_set_guide_rate
+summary: Set the mount guide rate; the supplied scope implementations always reject it.
+description: 'Despite the set_ name the native handler is established as a PURE GETTER: on every supplied
+  scope type the guide-rate capability returns false and the setter stubs only record an error. A disconnected
+  mount gives 315; a connected one gives 210 before the parameters are parsed. The declared numeric parameter
+  is therefore latent and a success reply is not produced by these builds. Clients SHOULD NOT rely on
+  this method. Via the imager command port (4700) the request reaches this handler only as a forwarded
+  unknown method; see the control service for the relay. No serial traffic (firmware 9.31, READ).'
+grade: PURE GETTER / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x71ea0 (64-bit build)
+side_effects: 'None in the supplied scope types: the capability and setter bodies are error-only stubs.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_guide_rate request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_guide_rate
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetGuideRateParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x71ea0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 108
+  trigger: 'Latent: guide rate not a number (integer or real accepted)'
+  label: expected float param
+- code: 207
+  trigger: 'Latent: generic operation failure'
+  label: fail to operate
+- code: 210
+  trigger: Connected scope reports no guide-rate support (all supplied scope types)
+  label: not supported
+- code: 315
+  trigger: No mount connected
+  label: mount is not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 41
+    method: scope_set_guide_rate
+    params: 0.5
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_guide_rate
+    result: 0
+    code: 0
+    id: 41
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_guide_rate
+    error: not supported
+    code: 210
+    id: 42
+see_also:
+- scope_set_slew_rate
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

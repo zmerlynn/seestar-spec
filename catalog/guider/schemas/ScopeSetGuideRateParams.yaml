@@ -1,0 +1,13 @@
+title: scope_set_guide_rate params
+type:
+- number
+- array
+description: 'Latent parameter: a number, or an array whose first element is the number. Parsed only on
+  a path the supplied scope types never reach. No range, clamp or default.'
+items:
+  type: number
+  description: 'Positional form: the first element is the value.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, guider handler @0x71ea0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x71ea0 (64-bit build)

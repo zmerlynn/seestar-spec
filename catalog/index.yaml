@@ -1,0 +1,14 @@
+# Top-level catalog index. A catalog entry id is <service>/<name>; names are unique across services.
+format: seestar-catalog/0.2
+schema_dialect: https://json-schema.org/draft/2020-12/schema
+firmware: "9.31"
+common_schemas: common/schemas/
+services:
+  - {name: control, index: control/index.yaml, summary: "TCP 4700 JSON control stream: methods, replies, events."}
+  - {name: guider, index: guider/index.yaml, summary: "zwoair_guider command/event server (TCP 4400), reached directly or by imager relay of unknown control methods."}
+  - {name: serial-bridge, index: serial-bridge/index.yaml, summary: "Guider-process serial bridge: raw ser2net socket (TCP 4030) and its control table (TCP 4040)."}
+  - {name: updater, index: updater/index.yaml, summary: "zwoair_updater JSON control/event server (TCP 4350) and binary upload socket (TCP 4361)."}
+  - {name: discovery, index: discovery/index.yaml, summary: "UDP scan and access-point discovery."}
+  - {name: files, index: files/index.yaml, summary: "Imager image/file endpoints (image sockets TCP 4800/4804, album/file socket TCP 4801); binary or text replies."}
+  - {name: video, index: video/index.yaml, summary: "RTSP and preview streams. No JSON methods; specified in spec/media/video.md (entries empty by design)."}
+  - {name: cloud, index: cloud/index.yaml, summary: "ZWO account REST API, cloud auth and relay authorization. Binary and HTTP, not JSON-RPC; specified in spec/auth/ (entries empty by design)."}

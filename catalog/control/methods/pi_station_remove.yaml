@@ -1,0 +1,98 @@
+kind: method
+name: pi_station_remove
+summary: Remove a saved station-mode Wi-Fi network profile from the device.
+description: 'Runs the device''s network script synchronously to delete the profile whose SSID matches
+  exactly. The script removes one matched profile per interface list, saves the default-interface configuration
+  explicitly, and conditionally reconfigures the wireless interface when the removed profile was the active
+  one. A success reply does not prove the profile was removed or that the connection dropped: neither
+  the script exit status nor the individual remove/save results are checked.'
+grade: MUTATOR / established (64-bit and 32-bit builds, by command-socket invocation, which always writes shared diagnostics); the effect of the handler itself is probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcda90 (64-bit build), ns_net::pi_station_remove @0x6fc9d0;
+  supplied remove script
+side_effects: Deletes a saved network profile and persists the default-interface network configuration;
+  may reconfigure the wireless interface and disconnect the current station link. Synchronous, no helper
+  timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_remove request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_remove
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiStationRemoveParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcda90 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: ssid missing, null, empty array, or not a string
+  label: expected string param
+- code: 217
+  trigger: ssid is the empty string
+  label: string is empty
+- code: 207
+  trigger: Command output contains the text error (case-insensitive)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: If the command runner itself fails, its thread-local error code is forwarded; the exact set
+  of such codes is unresolved.
+examples:
+- name: object-form
+  summary: Remove a profile by SSID
+  of: request
+  payload:
+    id: 21
+    method: pi_station_remove
+    params:
+      ssid: ExampleNet
+- name: scalar-form
+  summary: Bare string form
+  of: request
+  payload:
+    id: 22
+    method: pi_station_remove
+    params: ExampleNet
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_remove
+    result: 0
+    code: 0
+    id: 21
+- name: empty-ssid
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_remove
+    error: string is empty
+    code: 217
+    id: 23
+see_also:
+- pi_station_list
+- pi_station_select
+- pi_station_state
+spec:
+- spec/control/network.md#station-wi-fi-client

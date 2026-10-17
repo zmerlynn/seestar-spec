@@ -1,0 +1,83 @@
+kind: method
+name: trigger_test_crash
+summary: Deliberately crash the control process (crash-reporter test hook).
+description: 'Takes no parameters. The handler logs an intentional-crash message and raises signal 11
+  (SIGSEGV); it adds no result, code or error. No successful reply is established, and the connection
+  is expected to drop. The signal number is not a JSON-RPC code. On the fault the control process logs
+  the signal, finalises any AVI recording, writes a crash dump through an external crash reporter and
+  terminates with the default signal action (READ handler; INFERRED order). The process does not restart
+  itself; whether the host restarts it is unresolved. DESTRUCTIVE: terminates the control process and
+  interrupts any running session. No app emitter was found.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xa8270, signal handler @0xa7640, main @0x9c260, CrashHandler::Start
+  @0x7074c0 (64-bit build); handler @0x4c830 (32-bit build)
+side_effects: Terminates the control process via SIGSEGV after logging, AVI finalisation and a crash dump.
+  No state guard. Restart by the host and network teardown behaviour are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: trigger_test_crash request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: trigger_test_crash
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xa8270 (64-bit build); handler @0x4c830 (32-bit
+        build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: trigger_test_crash reply (conditional)
+  type: object
+  description: 'No reply is established: the handler raises SIGSEGV. If the signal returns and dispatch
+    continues, only the pre-built envelope remains and the handler adds no result, code or error.'
+  required:
+  - method
+  - id
+  properties:
+    jsonrpc:
+      type: string
+      const: '2.0'
+      x-confidence: INFERRED
+      x-basis: conditional envelope only if raise() returns
+    Timestamp:
+      type: string
+      x-confidence: INFERRED
+      x-basis: conditional envelope only if raise() returns
+    method:
+      type: string
+      const: trigger_test_crash
+      x-confidence: INFERRED
+      x-basis: conditional envelope only if raise() returns
+    id:
+      $ref: ../../common/schemas/Id.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-level error code exists. Whether any reply is ever sent after the signal is unresolved.
+examples:
+- name: crash
+  of: request
+  payload:
+    id: 81
+    method: trigger_test_crash
+see_also: []
+spec:
+- spec/control/maintenance.md#diagnostic-and-dangerous-methods

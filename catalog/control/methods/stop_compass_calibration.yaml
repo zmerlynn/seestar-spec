@@ -1,0 +1,92 @@
+kind: method
+name: stop_compass_calibration
+summary: 'Finish or cancel the compass calibration run: with force 0 compute from the collected samples,
+  with nonzero force discard them.'
+description: 'Reads optional integer force (default 0). In sampling state (1): force nonzero sets state
+  2, stops the movement thread, deletes the sampling timer and resets state to 0 (cancel); force 0 freezes
+  the samples, sets state 3, stops the movement thread and timer and starts the calibration calculation
+  thread (reset to 0 if that thread cannot start). If the state is not 1, the call succeeds only when
+  force is 0 and the state is already 3. The calculation runs asynchronously; its outcome is a CompassCalibration
+  event with state complete or fail. The call can block while stopping the movement thread (no finite
+  deadline established). There is no requirement that the mount be parked.'
+grade: MUTATOR / established (64-bit build and 32-bit build, command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdc270 (64-bit build); helper stopCompassCalibration
+  (64-bit build)
+side_effects: Stops the scope movement worker and sampling timer, changes the calibration state, and for
+  force 0 starts the asynchronous calculation thread. Full command-socket calls also incur the shared
+  diagnostic (logging) writes; this is why the strict grade is MUTATOR even for the read-only calls.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: stop_compass_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: stop_compass_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StopCompassCalibrationParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: State is not 1 and not (force 0 with state 3); the helper assigns no code so the dispatcher
+    default applies. Also used when the calculation thread cannot start if that path assigns no code (unresolved).
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Thread-start failure code is unresolved. Mutex failures throw and are not a documented error
+  reply.
+examples:
+- name: calculate
+  of: request
+  payload:
+    id: 24
+    method: stop_compass_calibration
+    params:
+      force: 0
+- name: cancel
+  of: request
+  payload:
+    id: 25
+    method: stop_compass_calibration
+    params:
+      force: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_compass_calibration
+    result: 0
+    code: 0
+    id: 24
+- name: not-sampling
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: stop_compass_calibration
+    error: fail to operate
+    code: 207
+    id: 26
+see_also:
+- start_compass_calibration
+- get_compass_state
+- start_scope_move_round
+spec:
+- spec/control/polar-alignment.md#compass-calibration

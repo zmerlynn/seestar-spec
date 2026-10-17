@@ -1,0 +1,18 @@
+title: set_app_setting parameters object
+type: object
+description: Every member name is a dynamic configuration key stored under the app-setting group; there
+  is no fixed key list. Values of type integer, string, boolean or floating point are written by their
+  JSON type; arrays, objects, null and other values are ignored. Keys not mentioned are unchanged and
+  {} succeeds without writing. The configuration path is built into a 255-byte buffer, so very long keys
+  truncate; key sanitisation is unresolved. Floating-point precision is unresolved.
+additionalProperties:
+  anyOf:
+  - type: integer
+  - type: string
+  - type: boolean
+  - type: number
+  description: Value stored under the member name as its key. Other JSON types are silently skipped.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xcb350 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcb350 (64-bit build)

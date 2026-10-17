@@ -1,0 +1,94 @@
+kind: method
+name: eject_disk
+summary: Eject (unmount) an external storage device.
+description: 'Resolves the storage, marks it as ejecting, recalculates storage priority and starts the
+  unmount and check logic under a mutex. A success reply means the eject was accepted: the helper returns
+  success even when the storage is already not mounted, and unmount failures are not propagated. Unmount
+  completion is not guaranteed by the reply.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xca9b0, CStorageHotPlug::Eject @0x316b70, get_app_storage_id
+  @0x3161c0 (64-bit build)
+side_effects: Marks the storage as ejecting, changes storage priority and initiates unmount; the image
+  save path may change as a consequence.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: eject_disk request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: eject_disk
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: string
+      description: 'Optional storage name. Absent: the handler picks the mounted storage with index 1,
+        else index 2 (none mounted fails with 207). A string is resolved case-insensitively through a
+        model-dependent name table; the names are not enumerated here, and an unrecognised or empty string
+        fails with 207. Any present non-string value, including null, array and object, fails with 105.
+        No object or positional form.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xca9b0, CStorageHotPlug::Eject @0x316b70, get_app_storage_id
+        @0x3161c0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: params present but not a string
+  label: expected string param
+- code: 207
+  trigger: No default mounted storage, or the name is not recognised (or empty)
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A false return from Eject propagates the thread error code, but the immediate helper normally
+  returns true; further unmount failure mapping is unresolved.
+examples:
+- name: default
+  summary: Eject the default mounted storage
+  of: request
+  payload:
+    id: 80
+    method: eject_disk
+- name: named
+  summary: Name invented; real names depend on the model
+  of: request
+  payload:
+    id: 81
+    method: eject_disk
+    params: usb
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: eject_disk
+    result: 0
+    code: 0
+    id: 80
+- name: not-found
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: eject_disk
+    error: fail to operate
+    code: 207
+    id: 82
+see_also:
+- list_mass_storage
+spec:
+- spec/control/power-and-storage.md#eject-and-format

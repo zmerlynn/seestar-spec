@@ -1,0 +1,25 @@
+title: get_gain result
+type: object
+description: Cached gain of the guide camera.
+required:
+- min
+- max
+- val
+properties:
+  min:
+    type: integer
+    description: Lower gain limit.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)
+  max:
+    type: integer
+    description: Upper gain limit.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)
+  val:
+    type: integer
+    description: Current gain value.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x75940 (64-bit guider build)

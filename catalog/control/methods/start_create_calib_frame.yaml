@@ -1,0 +1,123 @@
+kind: method
+name: start_create_calib_frame
+summary: Start the calibration-frame creation worker (automatic or custom bias/flat).
+description: Refused with 524 first if a View function, ViewPlan, planet stack, batch stack or any mount-occupying
+  function is active. Then initialises the shared calibration parameters, optionally creates the customer
+  library directory, and starts a named worker. Success acknowledges the start, not the creation of any
+  file. With wide_cam the request is relayed to the peer process first. Progress is reported by
+  CreateCalibFrame function events; only the custom path adds exp_us, adu and type. Each new bias or flat replaces
+  the in-memory frame of its kind as soon as it finishes, before the file is written and regardless of
+  customer_library; a failed or stopped run empties the in-memory frame of the kind being built.
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, start_create_calib_frame @0xdd0e0, StartCreateCalib @0x3bc420, CreateCalib @0x3bafa0
+  (slot write @0x3bb478, release on failure @0x3bb8f8, @0x3bb984, @0x3bba00, @0x3bba20), CreateCalibFunc
+  @0x3bbb30 (save @0x3bbcf0), AppCreateCalibFunc @0x3bbe70 (64-bit build)
+side_effects: Initialises the shared calibration state, may run a directory creation for the customer
+  library, selects the automatic or custom worker and starts it. Synchronous setup with no explicit short
+  timeout, then asynchronous capture. Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_create_calib_frame request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_create_calib_frame
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/StartCreateCalibFrameParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 524
+  trigger: A View function, ViewPlan, planet stack, batch stack or mount-occupying function is active;
+    checked before parsing
+  label: function conflict
+- code: 210
+  trigger: wide_cam requested but the model does not support wide star view
+  label: not supported
+- code: 106
+  trigger: customer_library present with a type other than boolean or integer (local path)
+  label: expected bool param
+- code: 318
+  trigger: Camera not opened
+  label: device not connected
+- code: 268
+  trigger: A calibration worker is already running
+  label: operation is in progress
+- code: 204
+  trigger: Invalid calibration kind or ADU range
+  label: out of limit
+- code: 218
+  trigger: Customer directory could not be created or accessed
+  label: fail to write file
+- code: 300
+  trigger: Relay with no caller context
+  label: internal error
+- code: 207
+  trigger: Flat-kind lookup failed for an invalid wheel position
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Thread-start and peer errors are forwarded and not fully enumerated. A relay failure can
+  append a second error fragment to the reply.
+examples:
+- name: auto
+  summary: Automatic calibration into the customer library (shape OBSERVED in app encoder analysis; values
+    invented)
+  of: request
+  payload:
+    id: 51
+    method: start_create_calib_frame
+    params:
+      customer_library: true
+- name: custom-flat
+  summary: Custom flat with an ADU window
+  of: request
+  payload:
+    id: 52
+    method: start_create_calib_frame
+    params:
+      wide_cam: false
+      type: flat
+      customer_library: true
+      exp_us: 20000
+      adu_min: 10000
+      adu_max: 40000
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_create_calib_frame
+    result: 0
+    code: 0
+    id: 51
+- name: conflict
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_create_calib_frame
+    error: function conflict
+    code: 524
+    id: 53
+see_also:
+- restore_factory_calib_frame
+- set_calib_frame
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#bias-and-flat-frames

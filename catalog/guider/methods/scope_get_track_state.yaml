@@ -1,0 +1,128 @@
+kind: method
+name: scope_get_track_state
+summary: 'Guider: query the mount for whether tracking is currently on.'
+description: 'Guider getter for the tracking state. Registered in the guider dispatcher table; on 4700
+  it is reached through the imager method-not-found relay (mount-and-motion R1, R2). READ: the handler
+  needs a connected mount (315) whose driver can control tracking (210), then reads the tracking state;
+  a read failure replies with the driver''s error code. The result is a bare boolean, or {"value": <bool>}
+  when params hold ret_obj true. When not tracking the reply also carries top-level members track_error
+  (error text) and track_code (integer driver code). The handler then runs the track-state check, which
+  emits ScopeTrack when the state or code differs from the last values it reported, so the method is graded
+  MUTATOR / tier C. A client SHOULD still prefer ScopeTrack (mount-and-motion R34, R35). Mount serial
+  (firmware 9.31, READ): :GU; absence of the letter n means tracking (INFERRED letter meaning).'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider dispatcher table, handler @0x80500 (64-bit guider build;
+  CanControlTrack slot +648, GetTrackState slot +656, MethodRetSwitch<bool> @0x89060, CheckTrackState
+  @0x41be0), @0x78944 (32-bit build); imager GetTrackState @0x186210 (64-bit build); static analysis of
+  app 3.3.2, DeviceService track-state job
+side_effects: Queries the live mount through the Scope driver, then runs the track-state check, which
+  can emit ScopeTrack. No persisted configuration write. READ.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_track_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_track_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table (64-bit build, entry @0x1f1a00)
+    params:
+      description: 'Optional. Only ret_obj is read: {"ret_obj": true} wraps the result as {"value": <bool>}.
+        The imager and the app both send no params member.'
+      type: object
+      properties:
+        ret_obj:
+          type: boolean
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, guider handler @0x80500, MethodRetSwitch<bool> @0x89060
+            (64-bit guider build)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x80500, MethodRetSwitch<bool> @0x89060
+        (64-bit guider build); imager GetTrackState @0x186210; static analysis of app 3.3.2, DeviceService
+        track-state job
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetTrackStateResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x80500 (64-bit guider build)
+      track_error:
+        type: string
+        description: Error text for track_code. Present only when not tracking.
+        x-required-when: result is false
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x80500 (64-bit guider build)
+      track_code:
+        type: integer
+        description: The driver's tracking error code. Present only when not tracking.
+        x-required-when: result is false
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x80500 (64-bit guider build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+- code: 210
+  trigger: The mount driver cannot control tracking
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: A failed tracking read replies with the driver's error code; those codes are not exhausted
+  by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 131
+    method: scope_get_track_state
+- name: tracking
+  summary: Tracking on
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_track_state
+    result: true
+    code: 0
+    id: 131
+- name: not-tracking
+  summary: Tracking off, with the driver's code and text (values invented)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_track_state
+    result: false
+    track_error: fail to operate
+    track_code: 207
+    code: 0
+    id: 132
+see_also:
+- scope_set_track_state
+- ScopeTrack
+- control/get_device_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#tracking
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

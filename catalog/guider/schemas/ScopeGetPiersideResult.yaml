@@ -1,0 +1,9 @@
+title: scope_get_pierside result
+type: string
+enum:
+- unknown
+- pier_east
+- pier_west
+description: Side of pier; "unknown" is returned by the unsupported branch.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x79cd0 (64-bit build)

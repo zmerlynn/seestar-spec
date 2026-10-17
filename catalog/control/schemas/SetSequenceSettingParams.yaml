@@ -1,0 +1,60 @@
+title: set_sequence_setting params
+type: object
+description: Autosave and sequence behaviour settings. All members optional; missing or wrong-typed members
+  keep the current value.
+properties:
+  delay_first:
+    type: integer
+    description: Delay before the first frame. Seconds (INFERRED). Changing it is subject to the sequence-edit
+      gate (224).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  delay_between_frame:
+    type: integer
+    description: Delay between frames. Seconds (INFERRED). Changing it is subject to the sequence-edit
+      gate (224).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  group_by_slot:
+    type: boolean
+    description: Group output by slot. Changing it is subject to the sequence-edit gate (224).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  merid_flip:
+    type: boolean
+    description: Perform a meridian flip during the sequence.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  group_name:
+    type: string
+    description: 'Output group name. Stored after filename sanitising: forward slashes and the characters
+      : * ? " < > | are removed and surrounding spaces trimmed; an all-space or empty name follows a no-capture
+      branch (behaviour not established).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build), RegularizeFilename
+  park_mount:
+    type: boolean
+    description: Park the mount at the end of the sequence.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  shutdown_pi:
+    type: boolean
+    description: Shut down the device at the end of the sequence.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  close_cooler:
+    type: boolean
+    description: Switch off the cooler at the end of the sequence.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+  target_coord:
+    type: array
+    items:
+      type: number
+    description: 'Array of numbers replacing coordinate 0 then 1 (RA, Dec: INFERRED; units not established).
+      One element keeps coordinate 1; empty keeps both. A wrong-type element stops parsing and keeps earlier
+      replacements; a third element is logged and parsing stops after two. No error is raised for these.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcfca0 (64-bit build)

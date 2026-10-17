@@ -1,0 +1,87 @@
+kind: method
+name: play_sound
+summary: Play a numbered voice prompt on the device speaker.
+description: Builds the path of a sound file from the language selection and the sound number, checks
+  that it exists, kills any playback already running and starts the new playback in the background. The
+  reply means playback was submitted, not that it finished; the launch command result is not tested. No
+  camera or mount precondition.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdca90 (64-bit build), PlaySoundCmd @0x6e15f0
+side_effects: Stops any current sound playback and starts a new, audible one.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: play_sound request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: play_sound
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      type: object
+      description: Optional. Missing, null, non-object or array params, or a missing or non-integer num,
+        silently use the default. There is no positional form.
+      properties:
+        num:
+          type: integer
+          description: Sound number. Strict JSON integer only (boolean, float, string, null fall back
+            to the default); the low signed 32 bits are used; no range or enum check. Which numbers work
+            depends on the sound files installed for the selected language.
+          x-default: '1'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, handler @0xdca90 (64-bit build), PlaySoundCmd @0x6e15f0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdca90 (64-bit build), PlaySoundCmd @0x6e15f0
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 255
+  trigger: The sound file for the selected language and number is not accessible
+  label: file not exist
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No other explicit error branch was found in the helper; language-load behaviour may alter
+  the selected path.
+examples:
+- name: play-1
+  of: request
+  payload:
+    id: 81
+    method: play_sound
+    params:
+      num: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: play_sound
+    result: 0
+    code: 0
+    id: 81
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: play_sound
+    error: file not exist
+    code: 255
+    id: 82
+see_also: []
+spec:
+- spec/control/maintenance.md#demonstration-mode-and-sound

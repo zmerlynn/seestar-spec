@@ -1,0 +1,93 @@
+kind: method
+name: del_batch_stack_file
+summary: Delete the stored batch-stack files of one frame type.
+description: Deletes, from storage, every file in the selected frame type's stored batch list and then
+  empties the list, regardless of individual deletion results. Omitting params selects the light list.
+  There is no per-file selector.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe27e0, DelBatchStackFile @0x3a6760 (64-bit build)
+side_effects: Calls the media-delete routine on each path in the selected list (files are deleted, not
+  just list entries), then frees the list. Individual deletion failures are ignored. No camera-open or
+  current-task check, no rollback, no timeout; filesystem calls are synchronous. Every full call also
+  makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: del_batch_stack_file request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: del_batch_stack_file
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/DelBatchStackFileParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe27e0, DelBatchStackFile @0x3a6760 (64-bit
+        build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params supplied but not an object (including explicit null)
+  label: expected object param
+- code: 105
+  trigger: '64-bit build: frame_type absent or not a string in a supplied object'
+  label: expected string param
+- code: 207
+  trigger: frame_type string is not light, dark, bias or flat
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Deletion failures are not reported. No active-batch guard was found in the audited helper.
+examples:
+- name: dark
+  summary: Delete the stored dark list files (shape from the evidence; values invented)
+  of: request
+  payload:
+    id: 44
+    method: del_batch_stack_file
+    params:
+      frame_type: dark
+- name: default-light
+  summary: Params omitted selects light
+  of: request
+  payload:
+    id: 45
+    method: del_batch_stack_file
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: del_batch_stack_file
+    result: 0
+    code: 0
+    id: 44
+- name: bad-frame-type
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: del_batch_stack_file
+    error: expected string param
+    code: 105
+    id: 46
+see_also:
+- set_batch_stack_setting
+- get_batch_stack_setting
+spec:
+- spec/control/stacking.md#batch-stack

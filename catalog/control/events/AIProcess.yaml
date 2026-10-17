@@ -1,0 +1,131 @@
+kind: event
+name: AIProcess
+summary: State of the AI denoise worker.
+description: 'startDeNoise runs a named AIProcess function: begin, then completion, cancel or failure.
+  Function-state family (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms
+  when the timer is started or the state is terminal; code and error at fail even when the stored code
+  is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working notifications
+  can be suppressed while the function cache still changes, so a receiver cannot rely on seeing every
+  transition. The events audit establishes no task members beyond the function-state family. The RPC reference
+  reads a status formatter that writes ori_name and dst_name only in the complete state; those are included
+  here as optional and INFERRED. Recipients: all retained 4700 sockets. No reply-before-event order is
+  established: the RPC reply that starts the worker and the worker''s events can arrive in either order.
+  No fixed cadence. The app uses state to set an in-progress flag.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, startDeNoise @0x3f16b0 (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AIProcess event
+  type: object
+  discriminator: Event
+  description: Function-state members; complete may add file names.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: AIProcess
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, name binding initialiser @0xa62f0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; startDeNoise @0x3f16b0
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    ori_name:
+      type: string
+      description: Source image name. The value literal in this build is ori_path.jpg.
+      x-required-when: state complete
+      x-confidence: INFERRED (formatter READ in the RPC reference; binding to this Event INFERRED there,
+        unresolved in the events audit)
+      x-basis: static analysis of firmware 9.31, AI status formatter @0x3f11a0
+    dst_name:
+      type: string
+      description: Result image name. The value literal in this build is dst_path.jpg.
+      x-required-when: state complete
+      x-confidence: INFERRED (formatter READ in the RPC reference; binding to this Event INFERRED there,
+        unresolved in the events audit)
+      x-basis: static analysis of firmware 9.31, AI status formatter @0x3f11a0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, startDeNoise @0x3f16b0, SendFuncEvent @0x6e4e20
+examples:
+- name: working
+  summary: Worker running (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AIProcess
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 800
+- name: complete
+  summary: Completion with formatter names (INFERRED binding; values from formatter literals)
+  of: payload
+  payload:
+    Event: AIProcess
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 5600
+    ori_name: ori_path.jpg
+    dst_name: dst_path.jpg
+see_also:
+- start_ai_process
+- check_ai_process
+- stop_func
+spec:
+- spec/control/solving-and-annotation.md#ai-processing
+- spec/control/events-overview.md

@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: verify_client params
+description: >-
+  Signature over the challenge, and the challenge itself. Object form or positional [sign, data]. Extra
+  object members and array elements beyond the second are ignored; with duplicate object members the
+  first occurrence wins. Clients MUST send data (see verify_client).
+oneOf:
+- type: object
+  required:
+  - sign
+  properties:
+    sign:
+      type: string
+      description: >-
+        Base64 (no line wrapping) of the signature over the data bytes. The device verifies it with
+        SHA-1 against an RSA public key compiled into the firmware; the matching private signing key is
+        held by the official app and is not part of this specification. PKCS#1 v1.5 padding is INFERRED
+        from the default behaviour of the verification utility the device invokes.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, set_cli_verified @0x6b5ff0 (decodes base64, verifies with
+        a SHA-1 digest utility), preprocessClientAuth @0x6b6bb0 (64-bit imager build); app 3.3.2 VerifyAction
+        (base64 without wrapping)
+    data:
+      type: string
+      description: >-
+        The challenge string from get_verify_str on this same socket, unchanged. It is written for
+        verification with its exact byte length (no terminator added) and must equal the socket's stored
+        challenge. When absent, the device instead verifies against hardware serial bytes, a factory path
+        that can switch the whole process into factory mode; it is not the normal handshake.
+      x-required-when: always for a normal client (omission selects the factory path)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, set_cli_verified @0x6b5ff0, preprocessClientAuth @0x6b6bb0
+        (64-bit imager build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (64-bit imager build); 32-bit
+    counterpart @0x6814d8
+- type: array
+  minItems: 1
+  prefixItems:
+  - type: string
+    description: sign (see object form).
+  - type: string
+    description: data (see object form).
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (64-bit imager build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (64-bit imager build)

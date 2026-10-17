@@ -1,0 +1,108 @@
+kind: method
+name: get_control_value
+summary: Read one camera control by name (value, type, and radio choices).
+description: Reads the named control under the camera mutex. Despite being a read, the 64-bit build can
+  write diagnostic logging state and, for the Temperature control on a main-process build, sends an internal
+  request to the peer processor (internal id 9101) and updates pending-request bookkeeping; a failed relay
+  only drops value_wide. While that relay waits for its reply, the connection handler can run the peer-connect
+  callback, which sends an internal set_local_storage_info request that updates the local storage record; this
+  is why the tier is C on the 64-bit main process. Tier B describes only the local route that runs no such
+  callback; the 32-bit build was not reassessed and stays B. For exact-case TargetTemp the reply value is the cached target temperature. Alternate
+  casings still resolve the control but skip that override.
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+  @0x1546f0 (64-bit build)
+side_effects: Writes shared logging state/files (Temperature) and, on the 64-bit main process for Temperature,
+  shared pending-request and transport bookkeeping, and the relay wait can trigger a peer-connect callback
+  that updates the local storage record (tier C, 64-bit main process). No camera setting changes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_control_value request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_control_value
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetControlValueParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+        @0x1546f0 (64-bit build)
+reply_success:
+  title: get_control_value success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetControlValueResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xf5660, GetControlVal @0x11d7f0, camera GetControlVal
+          @0x1546f0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: name missing or not a string (including absent, null or scalar params)
+  label: expected object param
+- code: 109
+  trigger: No available control matches the name
+  label: unexpected param
+- code: 318
+  trigger: Camera absent or closed, or negative camera id
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Further numeric-control read errors are unresolved. Camera library return codes are internal
+  and never reach the wire. Units are fixed per control (exposure microseconds, INFERRED; temperature tenths
+  of a degree C; target temperature degrees C; gain tenths of a dB on multiplicative-gain sensors; READ,
+  camera library); see viewing-and-exposure R17b.
+examples:
+- name: temperature
+  of: request
+  payload:
+    id: 60
+    method: get_control_value
+    params:
+      name: temperature
+- name: ok-number
+  summary: Numeric control (value invented; shape INFERRED from the documented branch)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_control_value
+    result:
+      name: temperature
+      type: number
+      value: 31.5
+    code: 0
+    id: 60
+- name: unknown
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_control_value
+    error: unexpected param
+    code: 109
+    id: 61
+see_also:
+- set_control_value
+- get_controls
+spec:
+- spec/control/viewing-and-exposure.md#camera-and-isp-settings

@@ -1,0 +1,18 @@
+title: get_connected_focuser entry
+type: object
+required:
+- name
+- id
+properties:
+  name:
+    type: string
+    description: Focuser name from the cached focuser list.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd3bd0 (64-bit build)
+  id:
+    type: integer
+    description: Stored record id of the focuser (not renumbered by the reply).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xd3bd0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xd3bd0 (64-bit build)

@@ -1,0 +1,17 @@
+title: scope_get_time result
+type: array
+minItems: 2
+maxItems: 2
+description: Two strings, [offset, UTC] in that order. Text formats unresolved.
+prefixItems:
+- type: string
+  description: Time-zone offset text. Format unresolved.
+  x-confidence: unresolved
+  x-basis: static analysis of firmware 9.31, handler @0x79560 (64-bit build)
+- type: string
+  description: UTC time text. Format unresolved.
+  x-confidence: unresolved
+  x-basis: static analysis of firmware 9.31, handler @0x79560 (64-bit build)
+items: false
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x79560 (64-bit build)

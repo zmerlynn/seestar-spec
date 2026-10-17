@@ -1,0 +1,248 @@
+title: iscope_get_app_state function node
+type: object
+description: 'One node of the device function tree, keyed in the parent object by the function''s runtime
+  name. Always carries state; other members depend on the node''s state and on the print callback attached
+  to that function. The member list is open: callback-specific members not listed here exist (the full
+  inventory is unresolved), and listed ones appear only under the conditions given.'
+properties:
+  state:
+    type: string
+    enum:
+    - idle
+    - working
+    - complete
+    - fail
+    - cancel
+    description: Function state.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncTree @0x6e2150, FormatFuncDetail @0x6e1ce0
+  stage:
+    type: string
+    description: Present when the node has a stage name, including the name of a printable child. Not
+      restricted to the view-stage names (idle, AutoFocus, AutoGoto, Stack, Sleep, CheckPhotoMetry).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncTree @0x6e2150, FormatFuncDetail @0x6e1ce0
+  error:
+    type: string
+    description: 'Present only when state is fail: message for code, fallback fail to operate. A failure
+      here is inside a successful outer reply.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncTree @0x6e2150, FormatFuncDetail @0x6e1ce0
+  code:
+    type: integer
+    description: 'Present only when state is fail: the node''s own numeric error code, unrelated to the
+      outer reply code.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncTree @0x6e2150, FormatFuncDetail @0x6e1ce0
+  lapse_ms:
+    type: integer
+    description: 'Milliseconds on a monotonic clock: elapsed while working, or end minus start for ended
+      states. Can be absent when idle.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintFuncTree @0x6e2150, FormatFuncDetail @0x6e1ce0
+  mode:
+    type: string
+    description: 'View callback: current view mode name; solar-system modes (moon, sun, planet) serialise
+      as solar_sys.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  target_type:
+    type: string
+    description: 'View callback: moon, sun or planet, only for solar_sys mode.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  cam_id:
+    type: integer
+    description: 'View callback: camera id; enumeration not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  target_ra_dec:
+    type: array
+    items:
+      type: number
+    description: 'View callback: present when both coordinates differ from the -999 sentinel by more than
+      0.1. Order RA then Dec (INFERRED); units and epoch not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  target_name:
+    type: string
+    description: 'View callback: present when the stored target name is nonempty.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  star_type:
+    type: integer
+    description: 'View callback: present when the stored value is >= 0; enum not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  lp_filter:
+    type: boolean
+    description: 'View callback: light-pollution filter intent; equivalence with hardware state not established.'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  gain:
+    type: integer
+    description: 'View callback: camera gain, only if the control value read succeeds; scale not established.'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, PrintViewStarInfo @0x3c4f20
+  stacked_frame:
+    type: integer
+    description: 'Stack callback: accepted frame count (INFERRED).'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  dropped_frame:
+    type: integer
+    description: 'Stack callback: ignored frame count (INFERRED).'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  frame_errcode:
+    type: integer
+    description: 'Stack callback, ordinary capture branch: frame error code, independent of the node code;
+      enumeration not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  can_annotate:
+    type: boolean
+    description: 'Stack callback, ordinary capture branch: annotation eligibility.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  scene_shooting:
+    type: boolean
+    description: 'Stack callback, ordinary capture branch: scene-shooting flag; meaning not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  cont_capt_frame:
+    type: integer
+    description: 'Stack callback, continuous-capture branch: last stacked frame number (INFERRED a count).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  file_saved:
+    type: boolean
+    description: 'Stack callback: saved-video flag (not a filename).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  angle:
+    type: number
+    description: 'Stack callback, photometry branch: present when outside the -999 sentinel band. Degrees
+      (INFERRED).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  csv_saved:
+    type: boolean
+    description: 'Stack callback, photometry branch: photometry CSV saved flag.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  progress:
+    type: integer
+    description: 'Stack callback, wide-mosaic branch: progress; range and units not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  stitch_progress:
+    type: integer
+    description: 'Stack callback, wide-mosaic branch: stitch progress; range and units not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  part_complete:
+    type: boolean
+    description: Stack callback, wide-mosaic branch.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  ra_dec:
+    type: array
+    items:
+      type: number
+    description: 'Stack callback (wide-mosaic branch) and solve-result callback (state complete): two
+      numbers, RA then Dec (INFERRED); units and epoch not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  jpg_name:
+    type: string
+    description: 'Stack callback: relative name of the saved large JPEG, when nonempty; path convention
+      not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  auto_exp_us:
+    type: integer
+    description: 'Stack callback: runtime auto exposure when enabled and positive. Microseconds (INFERRED).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840 (64-bit build)
+  output_file:
+    $ref: ./OutputFile.yaml
+    description: 'Stack and planet-stack callbacks: cached output-file object, `{path, files}` with one
+      file entry. Not a scalar filename.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ExtStackState @0x198840, GetOutputFileInfo @0x127ed0 (64-bit build)
+  exp_us:
+    type: integer
+    description: 'Calibration-frame and auto-exposure callbacks: exposure. Microseconds (INFERRED).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus, StackAutoExpPrintEvent @0x197a70
+  adu:
+    type: integer
+    description: 'Calibration-frame callback (custom types): ADU level; physical bounds not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus
+  type:
+    type: string
+    enum:
+    - bias
+    - flat_IR
+    - flat_LP
+    description: 'Calibration-frame callback: bias, flat_IR or flat_LP.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintMakeCalibStatus, table @0xaadd68
+  hpc_num:
+    type: integer
+    description: 'Hot-pixel-correction callback: present if the camera info read succeeds.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintMakeHPCStatus
+  center_xy:
+    type: array
+    items:
+      type: integer
+    description: 'Autofocus callback: two integers (image x, y; INFERRED), only when the day-autofocus
+      flag is set and the center is available.'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, PrintAfInfo @0x2694a0
+  count:
+    type: integer
+    description: 'Auto-goto callback: stored counter; meaning not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintAutoGotoInfo @0x16e8b0
+  hint:
+    type: boolean
+    description: 'Auto-goto callback: stored flag; meaning not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintAutoGotoInfo @0x16e8b0
+  ra_dec_deg_j2000:
+    type: array
+    items:
+      type: number
+    description: 'Photometry-check callback, state complete: two numbers in degrees, J2000 (from the field
+      name).'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintCheckPhotoMetry @0x1fa810
+  fps:
+    type: number
+    description: 'Continuous-exposure callback: frames per second (INFERRED).'
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, PrintContExpState @0x20c6c0
+  percent:
+    type: integer
+    description: 'Planet-stack callback: percent; range not established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintPlanetStackState @0x3330e0
+  input_thn:
+    type: string
+    description: 'Planet-stack callback: input name, when nonempty.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, PrintPlanetStackState @0x3330e0
+  plan:
+    type: object
+    description: 'ViewPlan callback: present only when a plan is held. Members: plan_name, update_time_seestar
+      (when nonempty), plan_target_af, viewplan_gohome, list (target objects, see the ViewPlan event and
+      set_view_plan). Cached target extensions and output-file objects are not fully established.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, FormatViewPlan @0x404630
+additionalProperties: true
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, PrintFuncTree @0x6e2150, FormatFuncDetail @0x6e1ce0

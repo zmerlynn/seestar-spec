@@ -1,0 +1,93 @@
+kind: method
+name: get_connected_wheels
+summary: List filter wheels; the firmware reports one fixed entry.
+description: Reads no parameters. EnumWheels unconditionally creates one record with name EFW and id 0,
+  so the reply does not prove a physical wheel is attached. The wheel is not opened or moved. No path
+  member is present.
+grade: PURE GETTER / probable (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd41d0, EnumWheels @0x300bf0 (64-bit build)
+side_effects: Formats a request-local list from a fixed descriptor; does not open or move the wheel. No
+  precondition or timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_connected_wheels request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_connected_wheels
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd41d0 (64-bit build)
+reply_success:
+  title: get_connected_wheels reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: array
+        description: Wheel records. The inspected build always returns exactly one.
+        items:
+          type: object
+          required:
+          - name
+          - id
+          properties:
+            name:
+              type: string
+              description: Wheel model name; the literal EFW in the inspected build.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, EnumWheels @0x300bf0 (64-bit build)
+            id:
+              type: integer
+              description: Wheel id; 0 in the inspected build. Usable as the open_wheel parameter.
+              x-confidence: READ
+              x-basis: static analysis of firmware 9.31, EnumWheels @0x300bf0 (64-bit build)
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, EnumWheels @0x300bf0 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd41d0, EnumWheels @0x300bf0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 61
+    method: get_connected_wheels
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_connected_wheels
+    result:
+    - name: EFW
+      id: 0
+    code: 0
+    id: 61
+see_also:
+- open_wheel
+- get_wheel_state
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position

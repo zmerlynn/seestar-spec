@@ -1,0 +1,129 @@
+kind: method
+name: scope_speed_move
+summary: Start, update or stop a continuous manual move of the mount along a direction at a given speed.
+description: 'Requires a connected mount that supports it. A nonzero move stores the shared move parameters
+  (change time, angle, duration, speed) and starts, or updates, a repeat worker that sends the axis speed
+  and timed-move commands; the reply is sent when the worker has been started, long before motion ends,
+  and the handler does not branch on the start result. Repeated requests update the same shared parameters.
+  A request whose effective speed is below 0.01 in magnitude (or percent below 0.01) is an immediate stop:
+  it sends zero speeds on both axes and polls for up to roughly 1000 ms before replying with result 0.
+  No completion event exists for this method. The repeat worker also starts a movement-limit worker that
+  polls the controller status; when the controller reports an axis limit it asks the imager to play a
+  warning sound, emits a guider Alert event with code 532 (upper limit), 533 (lower limit), 540 or 541
+  (both with the fallback text fail to operate), and waits about 3 s before checking again. The limit
+  geometry is controller-defined (INFERRED). A client SHOULD stop the move when it receives one of these
+  alerts. Speeds are written raw to the controller as its native rate value (per-axis clamp 1440); the
+  physical unit is unresolved (needs a device test). Mount serial (firmware 9.31, READ): :Rv<d or r> axis
+  rate, then a timed move or :MTD<dir>; speed is clamped to 1440 and below 0.01 becomes an abort.'
+grade: 'MUTATOR / established (64-bit build; 32-bit build: C / MUTATOR established independently, full
+  contract parity unresolved)'
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build); axis command helper
+  @0x68870; repeat worker @0x6a0e0; movement-limit worker CheckMoveLimit @0x6dc60, SendAlert @0x6d9a0;
+  32-bit handler @0x73d30
+side_effects: Writes shared move parameters, starts or controls the repeat-move and movement-limit workers
+  and sends axis speed and timed-move commands to the mount controller; a stop sends zero speeds. At an
+  axis limit the limit worker asks the imager to play a sound and emits Alert (532, 533, 540 or 541).
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_speed_move request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_speed_move
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/ScopeSpeedMoveParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7d9f0 (64-bit guider build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 102
+  trigger: Invalid parameters; two separate branches exist but their exact triggers are unresolved
+  label: invalid params
+- code: 104
+  trigger: level, angle or dur_sec is required but missing or not an integer
+  label: expected int param
+- code: 203
+  trigger: The mount is in a state that does not admit the move
+  label: equipment is moving
+- code: 210
+  trigger: The mount or its driver does not support the move
+  label: not supported
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: A missing or non-numeric percent (with no numeric speed) is rejected by a parameter branch
+  whose code is not separately established. Further branches forward an error code set by the mount driver
+  or a helper; the codes are not exhausted by this table.
+examples:
+- name: move
+  summary: Move shape as the app sends it (values invented)
+  of: request
+  payload:
+    id: 41
+    method: scope_speed_move
+    params:
+      percent: 50
+      angle: 90
+      level: 1
+      dur_sec: 3
+- name: stop
+  summary: Immediate stop
+  of: request
+  payload:
+    id: 42
+    method: scope_speed_move
+    params:
+      percent: 0
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_speed_move
+    result: 0
+    code: 0
+    id: 41
+- name: no-mount
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_speed_move
+    error: mount is not connected
+    code: 315
+    id: 43
+see_also:
+- scope_goto
+- scope_park
+- scope_fine_move
+- control/Alert
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#joystick-moves-scope_speed_move
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

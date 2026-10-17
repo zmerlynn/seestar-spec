@@ -1,0 +1,93 @@
+kind: method
+name: get_wheel_state
+summary: 'Report the wheel state: closed, idle, moving, calibrating or error.'
+description: Reads no parameters. Result state is close when no wheel is selected (no other member). Otherwise
+  id and unidirection are included and state is calibrating or moving when the status query reports the
+  movement thread running (calibrating if the calibration flag is set), idle when it is not and the status
+  code is zero, or error with result-level error and code members when the status code is nonzero. Those
+  nested members do not change the envelope code, which stays 0. In the 64-bit build the status routine
+  initialises calibration, code and unidirection to false/0 and returns only the movement-thread flag,
+  so ordinary results are close, idle and moving; calibrating and error remain handler possibilities.
+grade: PURE GETTER / probable (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbbaa0, GetWheelStatus @0x3018a0 (64-bit build)
+side_effects: Reads selected-wheel and movement-thread flags; no mode change, hardware open or close,
+  or file write. Locks may block; no method-specific timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_wheel_state request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_wheel_state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xbbaa0 (64-bit build)
+reply_success:
+  title: get_wheel_state reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetWheelStateResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbbaa0, GetWheelStatus @0x3018a0 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 91
+    method: get_wheel_state
+- name: closed
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_state
+    result:
+      state: close
+    code: 0
+    id: 91
+- name: moving
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_state
+    result:
+      state: moving
+      id: 0
+      unidirection: false
+    code: 0
+    id: 92
+see_also:
+- get_wheel_position
+- open_wheel
+- close_wheel
+- set_wheel_position
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position
+- spec/control/errors.md#replies-with-extra-or-missing-members

@@ -1,0 +1,84 @@
+kind: method
+name: scope_sync_planet
+summary: Sync the mount to the current Sun or Moon position, depending on the view mode.
+description: 'No request parameters are read. Only valid when the device view mode is 2 (Moon) or 3 (Sun);
+  otherwise it replies 300. The device computes the body''s coordinates, divides RA by 15 (INFERRED: RA
+  is converted to hours), and sends a scope_sync request with [RA, Dec] to the mount, waiting up to 10000
+  ms for the reply. A success reply carries no position. The Moon path also refreshes the memoised user
+  location.'
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc86a0, MountSync @0x186fc0 (64-bit build)
+side_effects: Changes the mount's alignment model by issuing a sync, and may refresh the memoised user
+  location. The 10000 ms value is a delegated wait on the mount reply, not a guarantee that the whole
+  call finishes in 10 s.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_sync_planet request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_sync_planet
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc86a0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 300
+  trigger: View mode is not 2 or 3
+  label: internal error
+- code: 241
+  trigger: The single request to the mount process could not be sent
+  label: send request to guider error
+- code: 502
+  trigger: The mount reply could not be parsed, or reported an absent, sentinel or 207 code
+  label: mount sync failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other mount reply codes are propagated unchanged. The complete set of lower waiter failures
+  is unresolved.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: scope_sync_planet
+- name: ok
+  of: reply_success
+  payload:
+    method: scope_sync_planet
+    result: 0
+    code: 0
+    id: 100
+- name: wrong-view-mode
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_sync_planet
+    error: internal error
+    code: 300
+    id: 101
+see_also:
+- get_planet_position
+spec:
+- spec/control/mount-and-motion/goto-and-manual-motion.md#sync
+- spec/control/special-modes.md#sync-and-pointing

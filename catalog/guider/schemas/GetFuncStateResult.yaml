@@ -1,0 +1,27 @@
+title: get_func_state result
+type: object
+description: Cached function state of the guider process.
+required:
+- dark_library
+properties:
+  dark_library:
+    type: object
+    description: Dark-library worker progress.
+    required:
+    - is_working
+    - percent
+    properties:
+      is_working:
+        type: boolean
+        description: True while the dark-library worker is running.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)
+      percent:
+        type: number
+        description: Progress of the dark-library worker. Range (0-100 versus 0-1) not established.
+        x-confidence: READ number; range unresolved
+        x-basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x707b0 (64-bit guider build)

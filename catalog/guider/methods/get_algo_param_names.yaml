@@ -1,0 +1,102 @@
+kind: method
+name: get_algo_param_names
+summary: List the parameter names of the active guiding algorithm for an axis.
+description: Params are an object {axis} or an array [axis]; axis is ra/x or dec/y (case-insensitive).
+  Selects the active guiding algorithm and returns its parameter names as an array of strings.
+  Parameter names per algorithm (READ) are hysteresis {hysteresis, aggression, minMove};
+  lowpass {slopeWeight, minMove}; lowpass2 {aggressiveness, minMove}; resist-switch {aggression, fastSwitch,
+  minMove}. minMove is in pixels (INFERRED).
+  Resist-switch aggression is a fraction from 0 to 1, not a percentage (READ); limits are on set_algo_param. The method is registered in the guider command table (TCP 4400);
+  a request that reaches the main imager and is relayed to the guider is a separate route with its own
+  side effects, outside this entry's tier.
+grade: PURE GETTER / probable (64-bit build; 32-bit build matches (READ))
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x81e50 (64-bit build); GetParamNames for Hysteresis
+  @0xe25b0, Lowpass @0xe3a50, Lowpass2 @0xe4ee0, ResistSwitch @0xe6280
+side_effects: None established for the handler itself; the algorithm name getter is a virtual call whose
+  target set is not closed.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_algo_param_names request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_algo_param_names
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/GetAlgoParamNamesParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x81e50 (64-bit build)
+reply_success:
+  title: get_algo_param_names success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: array
+        items:
+          type: string
+        description: Parameter names accepted by get_algo_param for the axis.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, guider handler @0x81e50 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: axis missing or not a string
+  label: expected string param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Example shows the hysteresis set.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 8
+    method: get_algo_param_names
+    params:
+      axis: dec
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_algo_param_names
+    result:
+    - hysteresis
+    - aggression
+    - minMove
+    code: 0
+    id: 8
+- name: error-105
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_algo_param_names
+    error: expected string param
+    code: 105
+    id: 9
+see_also:
+- get_algo_param
+spec:
+- spec/guider/index.md#method-groups

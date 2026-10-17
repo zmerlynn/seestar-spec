@@ -1,0 +1,92 @@
+title: scan_iscope result
+type: object
+description: >-
+  Discovery record. The device omits members it cannot fill; exact optional-member conditions and
+  serialized bytes are unresolved. There is no address member: a client takes the device address from
+  the reply datagram's source address. Members model and pwd exist in the Android DTO only (legacy) and
+  are not emitted by the 9.31 builder.
+required: [sn]
+properties:
+  sn:
+    type: string
+    minLength: 1
+    description: Device serial (hardware serial when available). The Android app requires it non-empty
+      and keys its device list on it.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 UDP receiver
+  ssid:
+    type: string
+    description: Display name (the device's AP name).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 UDP receiver
+  product_model:
+    type: string
+    description: Product model; the app maps it to a model and sub-model.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 Result DTO
+  custom_model:
+    type: string
+    description: Optional sub-model refinement read from the device environment; emitted only when non-empty.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0
+  is_verified:
+    type: boolean
+    description: Hardware activation state. Not the TCP client-authentication state. The app reads it
+      for source addresses ending in .1 and prompts for activation when false.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 UDP receiver
+  tcp_client_num:
+    type: integer
+    minimum: 0
+    description: Distinct external source IPs retained by the 4700 control server, unverified sockets
+      included, internal (localhost) connections excluded. The app refuses a LAN connect at 8 or more;
+      absent is treated as 0.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0 and common_netThd @0x6b7430; app 3.3.2 LAN tab;
+      the 64-bit producer getTcpConnNum @0xad5d0 (9.31) is a call-for-call match with @0xbb5a0 (9.75), both
+      tail calls into socket_json_server::getExtConnNumEv; the 32-bit scan_iscope @0x17b820 (9.31) is a
+      byte-identical match with @0x196cb8 (9.75), and the 32-bit getTcpConnNum @0x4e5d8 (9.31) with
+      @0x52fc0 (9.75) likewise
+  connect_lock:
+    type: boolean
+    description: LAN lock enabled. The app then asks for a six-character password and compares its MD5
+      with password locally; nothing is sent to the device.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 lock popup; the 64-bit
+      producer isConnectLockEnable @0x1232a0 (9.31) is a call-for-call match with @0x145eb0 (9.75), the
+      only differences being rodata/GOT layout shifts; the 32-bit producer @0xaef90 (9.31) is a
+      byte-identical match with @0xc4c48 (9.75)
+  password:
+    type: string
+    description: MD5 digest of the lock password as hex text. Secret-equivalent; do not log.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 lock popup; the 64-bit
+      producer getPassword @0x123150 (9.31) is a call-for-call match with @0x145d60 (9.75), the only
+      differences being rodata/GOT layout shifts. The 32-bit producer @0xb1238 (9.31) versus @0xc4b58
+      (9.75) keeps the same logic and call sequence; the only difference is that a standard-library
+      string move-construction the 9.31 build calls as a function is inlined in 9.75, growing the
+      function from 172 to 216 bytes with no behavior change.
+  serc:
+    type: string
+    description: Access point's key-management (security) mode, the raw wpa_key_mgmt text of the
+      hostapd configuration of the band the AP is linked to (every matching line's value, space-joined;
+      empty when absent). Not the pre-shared key. No firmware component writes wpa_key_mgmt, so the
+      value comes from the base system image and its value set is unresolved. Same in the 32-bit build.
+      The app DTO types it as a string and does not use it.
+    x-confidence: READ (source, format, no firmware writer); unresolved (value set)
+    x-basis: 'static analysis of firmware 9.31. 64-bit scan_iscope @0x1e7ae0 calls GetApState @0x6fd790 (third output is ap_key_mgmt @0xb4fb98); ns_net::pi_get_AP @0x702510 runs "network.sh ap_state" (format @0x96b058) and stores the key_mgmt regex capture (@0x96b1e8) in that global. 32-bit scan_iscope @0x17b820 calls GetApState @0x6b8158 at 0x17bd6c (third output global @0xab2414). network.sh ap_state prints key_mgmt= from "grep -w wpa_key_mgmt | cut -d= -f2" of the wlan0.conf link in the pi user home, a symlink that link_5g points at AP_2.4G.conf or AP_5G.conf. No script or binary in the iscope32/iscope64 packages writes wpa_key_mgmt (set_key_value is used on the AP files only for ssid, wpa_passphrase, channel, autochannel_enabled); the AP conf files are not shipped. App 3.3.2 Result DTO and BleWifiData (no reader of serc). Firmware 9.75 64-bit GetApState @0x775c00
+      (size 148 vs 9.31''s 104 at @0x6fd790) adds a pthread mutex lock/unlock, with an unwind-safe
+      unlock-on-throw path, around the same three conditional string-field copies at the same 0x20
+      stride; the data returned is unchanged. The 32-bit GetApState @0x6b8158 (9.31) is a byte-identical
+      match with @0x6ef3a8 (9.75), same size both builds; the 9.75 locking change was not made in the
+      32-bit build.'
+  bssid:
+    type: string
+    description: Optional; advertised by the firmware.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 Result DTO
+  can_star_mode_sel_cam:
+    type: boolean
+    description: Capability flag (camera selection in star mode, INFERRED from the name).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, scan_iscope @0x1e7ae0; app 3.3.2 Result DTO

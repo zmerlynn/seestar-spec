@@ -1,0 +1,78 @@
+kind: event
+name: DeviceChange
+summary: Hot-plug notification for storage, serial or camera devices arriving or leaving.
+description: 'Broadcast on storage, serial and camera hot-plug transitions. Emitted by the imager on TCP
+  4700 (channel I) and by the guider on TCP 4400 (channel G); guider event lines are forwarded onto 4700
+  by the imager main process. The imager notifier writes arrival, device and auto_open; the guider serial-refresh
+  producer writes arrival and device directly and omits auto_open, so auto_open is not required on all
+  origins. Family: custom; no state or error. APK consumer: DeviceEventPart (special branch for internal
+  storage).'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_imager_server_event::NotifyDeviceChange @0xad6e0;
+  guider CFdHandler::SerialRefresh @0x27a40 (64-bit builds)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: DeviceChange event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - arrival
+  - device
+  properties:
+    Event:
+      type: string
+      const: DeviceChange
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceChange @0xad6e0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    arrival:
+      type: boolean
+      description: true on arrival, false on removal.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceChange @0xad6e0, guider SerialRefresh @0x27a40
+    device:
+      type: string
+      description: Device identifier or name supplied by the hot-plug source; vocabulary not closed.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceChange @0xad6e0, guider SerialRefresh @0x27a40
+    auto_open:
+      type: boolean
+      description: Notifier argument on the imager path.
+      x-required-when: imager NotifyDeviceChange producer; absent on the guider serial-refresh producer
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyDeviceChange @0xad6e0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifyDeviceChange @0xad6e0
+examples:
+- name: storage-arrival
+  summary: Imager form (READ shape, not captured; values invented)
+  of: payload
+  payload:
+    Event: DeviceChange
+    Timestamp: '1234.123456789'
+    arrival: true
+    device: udisk
+    auto_open: false
+- name: serial-removal
+  summary: Guider serial form without auto_open (READ shape; values invented)
+  of: payload
+  payload:
+    Event: DeviceChange
+    Timestamp: '1234.123456789'
+    arrival: false
+    device: ttyS1
+see_also:
+- list_mass_storage
+- get_connected_cameras
+spec:
+- spec/control/power-and-storage.md#storage-events

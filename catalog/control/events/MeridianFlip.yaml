@@ -1,0 +1,91 @@
+kind: event
+name: MeridianFlip
+summary: 'Legacy meridian flip: range entry, flip and retry.'
+description: Sent by the legacy meridian-flip operation (meridian-range entry, flip, retry) through the
+  S and V helpers. state is start, complete or fail. count comes from the range-entry retry path. error
+  and code appear only when a code greater than zero is supplied (S rule). Broadcast on TCP 4700 to every
+  retained socket. The event is not a full get_app_state merid_flip snapshot. The app defines the name
+  as a constant but no event branch handling it is established. A 32-bit counterpart exists.
+grade: PURE GETTER (observation only; receiving the event changes nothing)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, MeridianFlip @0x188530, EnterMeridRange @0x187e20 (64-bit build);
+  32-bit counterparts present
+side_effects: None for the receiver; the device sends this without a request.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: MeridianFlip event
+  type: object
+  discriminator: Event
+  description: Meridian-flip transition.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: MeridianFlip
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, MeridianFlip @0x188530, EnterMeridRange @0x187e20
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - complete
+      - fail
+      description: Legacy literal.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, MeridianFlip @0x188530, EnterMeridRange @0x187e20
+    error:
+      type: string
+      description: Message for code. The S helper writes it only when the caller supplies a code greater
+        than zero.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    code:
+      type: integer
+      description: Written only when the caller supplies a code greater than zero; never written as 0
+        by this helper.
+      x-required-when: caller-supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState @0xb0430
+    count:
+      type: integer
+      description: Meridian-range entry retry count, sent through the value-state helper.
+      x-required-when: value-state send from the meridian-range entry path
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, EnterMeridRange @0x187e20
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, MeridianFlip @0x188530, EnterMeridRange @0x187e20
+examples:
+- name: start
+  summary: Flip begins (READ shape; values invented)
+  of: payload
+  payload:
+    Event: MeridianFlip
+    Timestamp: '1234.123456789'
+    state: start
+    count: 1
+- name: complete
+  summary: Flip done (READ shape)
+  of: payload
+  payload:
+    Event: MeridianFlip
+    Timestamp: '1234.123456789'
+    state: complete
+see_also:
+- MountSettle
+- get_merid_setting
+- set_merid_setting
+- get_merid_delta
+- get_app_state
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#meridian-flip

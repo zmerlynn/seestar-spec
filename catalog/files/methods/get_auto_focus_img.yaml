@@ -1,0 +1,58 @@
+kind: method
+name: get_auto_focus_img
+summary: Fetch the cached auto-focus image as a binary transfer.
+description: Params are not consumed. Registered in the imager image table of both builds; the request
+  is JSON but the response is a binary transfer or a textual no-image error, not ordinary command JSON.
+  Reads the auto-focus image cache and sends it as uncompressed raw (dataType 2). READ. Freshness is unresolved.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, imager handler @0x113980 (64-bit build), GetAFImage @0x268780
+side_effects: Reads the auto-focus image cache; diagnostic logging makes the strict grade MUTATOR. The
+  full image and compression descendants are not bounded.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_auto_focus_img request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_auto_focus_img
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager image table (64-bit and 32-bit builds)
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager handler @0x113980 (64-bit build)
+reply_success:
+  title: get_auto_focus_img success reply
+  description: Not an ordinary command reply. The cached auto-focus image as uncompressed raw (dataType
+    2). 80-byte big-endian header (spec/media/image-sockets.md#reply-framing), then the payload; errors
+    are text replies with dataType 1.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager handler @0x113980 (64-bit build), GetAFImage @0x268780
+reply_error:
+  title: get_auto_focus_img failure reply
+  description: Failure is a text reply (imgType 0, dataType 1) on the same endpoint (for example, no image
+    available). No top-level JSON code member.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager handler @0x113980 (64-bit build), GetAFImage @0x268780
+errors: []
+errors_note: No numeric error code was recovered for the direct handler; textual errors only. Dispatcher
+  errors do not apply to this endpoint as established.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: get_auto_focus_img
+see_also:
+- get_camera_img
+spec:
+- spec/media/image-sockets.md#registered-methods

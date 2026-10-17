@@ -1,0 +1,104 @@
+kind: method
+name: start_find_star
+summary: Start the star-detection worker on the current image or a named file.
+description: Replies with integer result 0 once the worker thread has been created; detection runs asynchronously.
+  Progress is reported by FindStar events (state start, then complete with a result object equal to the
+  get_find_star_result payload, or fail with error and code). Runtime image and detection failures appear
+  in events and cached status, not as immediate RPC errors. Fetch the outcome with get_find_star_result.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd15a0, StartFindStar @0x268e30, worker @0x269780 (64-bit
+  build)
+side_effects: Rejects if the worker is already running, resets the cached result to an empty object with
+  internal status 207, stores the start time and file name and starts the thread. Needs an image to process.
+  No mode or park predicate and no processing timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_find_star request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_find_star
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: 'Optional image file name. The handler converts an array to its first element. A string,
+        or an array whose first element is a string, is appended verbatim to the image path (even when
+        empty; no extension or existence test) and that file is analysed. Absent params or an empty array
+        means no filename and the worker uses the current image or stack. An explicit empty string differs
+        from absent: it forms the base path. Trailing array elements are ignored. Explicit null, a non-string
+        scalar, an object or [null] is rejected with 105. No key form is accepted.'
+      anyOf:
+      - type: string
+      - type: array
+        minItems: 1
+        items:
+          type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd15a0, StartFindStar @0x268e30, worker @0x269780
+        (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Params present after array conversion but not a string
+  label: expected string param
+- code: 268
+  trigger: The find-star worker is already running
+  label: operation is in progress
+- code: 212
+  trigger: The worker thread could not be created
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Whether a complete event is guaranteed after stop_find_star, and every detection-format failure
+  code, are unresolved.
+examples:
+- name: current-image
+  of: request
+  payload:
+    id: 121
+    method: start_find_star
+- name: named-file
+  of: request
+  payload:
+    id: 122
+    method: start_find_star
+    params:
+    - Example_001.fit
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_find_star
+    result: 0
+    code: 0
+    id: 121
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_find_star
+    error: operation is in progress
+    code: 268
+    id: 123
+see_also:
+- stop_find_star
+- get_find_star_result
+spec:
+- spec/control/solving-and-annotation.md#find-star

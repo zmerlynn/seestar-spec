@@ -1,0 +1,35 @@
+type: object
+description: Both members omitted is a no-op. Quality is applied before transfer mode validation; an earlier
+  restart or write is not rolled back. The 32-bit build reads only image_transfer_mode. Firmware 9.75 adds raw_bin2.
+  Firmware 9.75 adds raw_bin2 (a changed value is saved, an equal one is a no-op). Within the preview branch a
+  value of image_transfer_mode above 1 gives 102.
+properties:
+  rtsp_quality:
+    type: string
+    description: Smooth or HighQuality. Wrong type 105, unknown 102. Rejected with 524 while a video recording
+      is active, even before the same-value check. An active stream may restart.
+    enum:
+    - Smooth
+    - HighQuality
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
+  image_transfer_mode:
+    type: string
+    description: Jpg (0) or Raw (1). Built-in default Raw, overridden by the stored config at load. Governs
+      the image encoding of get_current_img, get_stacked_img, get_photometry_img and begin_streaming on
+      4800/4804 (Jpg gives JPEG). READ. No effect on RTSP (INFERRED). Wrong type 105, unknown 102.
+    enum:
+    - Jpg
+    - Raw
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build); shouldTransferJpg (mode
+      0), name table, config loader; no reads in the RTSP code (finding #338)
+  raw_bin2:
+    type:
+    - boolean
+    - integer
+    description: 'Firmware 9.75, app 3.4.0: binned raw preview option; wrong type 106. A value equal to the stored one is a no-op; otherwise it is saved and a persistence failure returns the thread error code. Not accepted by firmware 9.31.'
+    x-confidence: READ; meaning INFERRED
+    x-basis: static analysis of firmware 9.75, resolver reports, handler @0x10a230 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)

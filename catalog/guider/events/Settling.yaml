@@ -1,0 +1,96 @@
+kind: event
+name: Settling
+summary: 'Settle progress from the guide controller: distance from lock and elapsed time.'
+description: 'Sent on guide-controller settle-state updates, between SettleBegin and SettleDone (INFERRED
+  order); callback-driven, no helper throttle, so the count per settle phase is not fixed. Sent by the
+  guider process (zwoair_guider) on its TCP 4400 event server to every retained connection (G/all). The
+  main imager process, which is a client of 4400, recognises event lines and forwards them unchanged onto
+  TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager process deliberately does not
+  forward 4400 events. The imager''s forwarding test is lexical (the exact text "Event":" in the line).
+  Custom guider producer: there is no lowercase state, code or error member; member names are capitalised
+  as shown and capitalisation is wire-significant. No Android app consumer is established for this name;
+  the imager''s peer-event waiter may consume it. Ordering against RPC replies and other guider events
+  is not guaranteed; no sequence number, replay or fixed cadence exists. Runtime reachability of the retained
+  guiding functionality on every model is unresolved.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0 and
+  GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts present
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Settling event
+  type: object
+  discriminator: Event
+  description: Custom guider producer with four settle-progress members.
+  required:
+  - Event
+  - Timestamp
+  - Distance
+  - Time
+  - SettleTime
+  - StarLocked
+  properties:
+    Event:
+      type: string
+      const: Settling
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0
+        and GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts
+        present
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+    Distance:
+      type: number
+      description: Distance from the lock position; pixels INFERRED.
+      x-confidence: READ (type); unit INFERRED
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0
+        and GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts
+        present
+    Time:
+      type: number
+      description: Elapsed settling time; seconds INFERRED. Not the Timestamp.
+      x-confidence: READ (type); unit INFERRED
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0
+        and GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts
+        present
+    SettleTime:
+      type: number
+      description: Target settling time; seconds INFERRED.
+      x-confidence: READ (type); unit INFERRED
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0
+        and GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts
+        present
+    StarLocked:
+      type: boolean
+      description: Whether the guide star is locked.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0
+        and GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts
+        present
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifySettling @0x6e8e0
+    and GuidingLog::NotifySettlingStateChange @0x4a790 (64-bit guider build); 32-bit counterparts present
+examples:
+- name: settling
+  summary: Static example (READ shape, not captured; values invented)
+  of: payload
+  payload:
+    Event: Settling
+    Timestamp: '1234.123456789'
+    Distance: 0.82
+    Time: 4.0
+    SettleTime: 10.0
+    StarLocked: true
+see_also:
+- guide
+- dither
+spec:
+- spec/guider/index.md#events

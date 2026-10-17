@@ -1,0 +1,78 @@
+kind: method
+name: start_gsensor_calibration
+summary: Start the gravity-sensor calibration worker.
+description: No parameters are read. Starts the named CalibGSensor worker, which replaces and persists
+  the gravity-sensor calibration. Success acknowledges the start only. Rejected while a previous calibration
+  thread is running.
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, start_gsensor_calibration @0xc8e30, StartCalibGSen @0x124070
+side_effects: Creates the function state on first use and starts the named CalibGSensor thread; the worker
+  replaces and persists the sensor calibration values. Every full call also makes the shared diagnostic
+  log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_gsensor_calibration request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_gsensor_calibration
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, start_gsensor_calibration @0xc8e30, StartCalibGSen @0x124070
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 268
+  trigger: A gravity-sensor calibration thread is already running
+  label: operation is in progress
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: If the thread cannot be started the infrastructure error is forwarded; its code set is not
+  established. Function-state events from the named-thread machinery are not fully audited.
+examples:
+- name: start
+  of: request
+  payload:
+    id: 64
+    method: start_gsensor_calibration
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_gsensor_calibration
+    result: 0
+    code: 0
+    id: 64
+- name: running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_gsensor_calibration
+    error: operation is in progress
+    code: 268
+    id: 65
+see_also:
+- stop_gsensor_calibration
+- get_sensor_calibration
+spec:
+- spec/control/polar-alignment.md#g-sensor-and-stored-calibration

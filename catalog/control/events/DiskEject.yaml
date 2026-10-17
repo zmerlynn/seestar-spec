@@ -1,0 +1,68 @@
+kind: event
+name: DiskEject
+summary: Queued storage-eject status notification.
+description: 'The storage hot-plug component queues an eject status (stage string plus storage type) and
+  later flushes queued events, broadcasting each on TCP 4700 (channel I). Delivery is therefore deferred
+  relative to the eject step it reports. state is complete when the requested unmount succeeded (or the
+  storage was already unmounted) and fail when it did not, in which case the storage stays mounted; no
+  code or error is added. An eject request for storage that is not mounted produces no DiskEject, and
+  physical removal produces DeviceChange with arrival false instead. Family: queued custom. APK: defined
+  constant only; no Event branch established.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, CStorageHotPlug::AddEjectEvent @0x317fd0 (both callers in
+  CStorageHotPlug::RunUmount), CStorageHotPlug::Eject, CStorageHotPlug::NotifyEvents @0x315e60 (64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: DiskEject event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - state
+  - device
+  properties:
+    Event:
+      type: string
+      const: DiskEject
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CStorageHotPlug::NotifyEvents @0x315e60
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - complete
+      - fail
+      description: complete when the unmount succeeded or the storage was already unmounted; fail when it
+        did not (the storage stays mounted).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CStorageHotPlug::AddEjectEvent @0x317fd0
+    device:
+      type: string
+      description: Storage-type name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CStorageHotPlug::AddEjectEvent @0x317fd0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, CStorageHotPlug::AddEjectEvent @0x317fd0
+examples:
+- name: eject
+  summary: READ shape, not captured; values invented
+  of: payload
+  payload:
+    Event: DiskEject
+    Timestamp: '1234.123456789'
+    state: complete
+    device: udisk
+see_also:
+- eject_disk
+- list_mass_storage
+spec:
+- spec/control/power-and-storage.md#storage-events

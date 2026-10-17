@@ -1,0 +1,15 @@
+title: reset_factory_focal_pos result
+type: object
+required:
+- focal_pos
+description: Local success result. A relayed reply is not established.
+properties:
+  focal_pos:
+    type: integer
+    description: Stored focus position after the reset. INFERRED to be the logical (UI) focus position,
+      not a measurement in millimetres.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdbf60, Reset2FactoryFocalPos @0x27db50 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdbf60, Reset2FactoryFocalPos @0x27db50 (64-bit build)

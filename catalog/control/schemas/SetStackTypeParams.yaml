@@ -1,0 +1,23 @@
+title: set_stack_type params
+type: object
+description: Parameters of set_stack_type. The device also accepts the positional form [type, autoexp]
+  (first two array elements); other object keys are ignored.
+required:
+- type
+properties:
+  type:
+    type: string
+    description: 'Frame type to stack: light, dark, bias or flat, matched case-insensitively and exactly.
+      An empty or unrecognised name is rejected with 209. ''unknown'' is not accepted.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe7250, SetStackType @0x1927d0 (64-bit build)
+  autoexp:
+    type: boolean
+    description: Auto-exposure flag. Parsed only when type is flat; accepts a JSON boolean or integer
+      (zero is false, non-zero true). A present value of any other type is rejected with 106 when type
+      is flat, and silently ignored for light, dark and bias.
+    x-default: 'false'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe7250, SetStackType @0x1927d0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe7250, SetStackType @0x1927d0 (64-bit build)

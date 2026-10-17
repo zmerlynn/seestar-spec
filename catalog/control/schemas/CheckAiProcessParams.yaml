@@ -1,0 +1,27 @@
+title: check_ai_process params
+type: object
+description: Object params only; arrays, scalars and null mean no keys (current image, no crop). These
+  are the only keys read; the adjustment, dbe and sharp members of start_ai_process are ignored.
+properties:
+  name:
+    type: string
+    description: Image to process, resolved against the image root. Default empty selects the current
+      image. Non-string (including null) is rejected with 105.
+    x-default: empty string = current image
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)
+  crop:
+    type: array
+    description: Crop polygon as up to eight integers. Absent defaults to [-1,0,0,0,0,0,0,0]; only the
+      first eight elements are read, short or empty arrays leave the rest at default, extras are ignored.
+      A negative first value means no crop. INFERRED to be four (x,y) corner pairs in image pixels; no
+      bounds or order validation. Non-integer element is rejected with 104, non-array or null with 102.
+    items:
+      type: integer
+      x-confidence: INFERRED
+      x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)
+    x-default: '[-1,0,0,0,0,0,0,0]'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)

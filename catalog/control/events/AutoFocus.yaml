@@ -1,0 +1,232 @@
+kind: event
+name: AutoFocus
+summary: Autofocus progress and result, from the function detail and the direct V-curve callback.
+description: 'Sent by AutoFocusFunc (F, formatter adds center_xy) and by the direct/value producer fed from the
+  V-curve callback (start, working, complete, fail; result embedded as JSON; position; error/code on failure). Function-state
+  family (F): SendFuncEvent formats the named function detail. state is always present; stage only when non-empty;
+  lapse_ms while the timer runs or at a terminal state; error and code at fail (even when the stored code is zero;
+  lookup failure gives ''fail to operate''); cancel omits code and error; route is optional function ancestry. The
+  sender does no deduplication and needs no preceding working event. Detail flags can suppress the working or non-working
+  sends while the cached function tree still changes, so a receiver can miss transitions. Cadence depends on focus
+  steps and exposures. The V-curve members and last_point shape are READ; what separates status_flag 2 from 3 is unresolved. A
+  failed autofocus triggered inside a capture run does not stop that run. Channels I (TCP 4700) and W (TCP 4702,
+  forwarded onto 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest
+  and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other
+  events. APK 3.3.2 consumes it (route-based scenery/moon/sun/planet handling).'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, AutoFocusFunc @0x26e240, CbTellVCurveParameter @0x26cd00, PrintAfInfo @0x2694a0
+  (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AutoFocus event
+  type: object
+  discriminator: Event
+  description: Autofocus event, F or direct producer.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: AutoFocus
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, Ev constructor @0x6f74c0; AutoFocusFunc @0x26e240, CbTellVCurveParameter
+        @0x26cd00, PrintAfInfo @0x2694a0 (64-bit build)
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      - start
+      description: 'Union. F: idle, working, complete, fail, cancel. Direct producer: start, working, complete,
+        fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, AutoFocusFunc @0x26e240
+    stage:
+      type: string
+      description: Only when the detail holds a non-empty stage string; value set unresolved.
+      x-required-when: stage string non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: 'Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working
+        or started-but-unfinished, otherwise end minus start. Independent of Timestamp.'
+      x-required-when: timer started (working) or terminal state
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Stored error code; present at fail even when zero.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SendFuncEvent @0x6e4e20, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-ancestry names at send time (for example View, Stack); may be absent. Not an address.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    center_xy:
+      type: array
+      items:
+        type: integer
+      minItems: 2
+      maxItems: 2
+      description: Focus centre, two integers in display/image pixels (conversion-specific).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintAfInfo @0x2694a0 (64-bit build)
+    result:
+      anyOf:
+      - type: object
+        description: V-curve object form (members seen in the callback; nesting varies).
+        properties:
+          curve:
+            type: array
+            items:
+              type: number
+            maxItems: 3
+            description: Three fitted coefficients of the V-curve (a quadratic in focuser step, INFERRED); empty
+              on the first report.
+            x-confidence: READ (three numbers); INFERRED (quadratic)
+            x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+          points:
+            type: array
+            items:
+              type: array
+              prefixItems:
+              - type: integer
+              - type: number
+              minItems: 2
+              maxItems: 2
+            description: '[step, value] samples: focuser step (integer) and focus metric (number).'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+          x_scale:
+            type: array
+            items:
+              type: integer
+            minItems: 2
+            maxItems: 2
+            description: Plotting range of focuser steps, [low, high].
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+          y_scale:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 2
+            description: Plotting range of the focus metric, [low, high].
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+          status_flag:
+            type: integer
+            enum:
+            - 1
+            - 2
+            - 3
+            description: 1 on the first report (empty curve); 2 or 3 on later reports, chosen by an internal fit
+              flag. What separates 2 from 3 is unresolved.
+            x-confidence: READ (values); unresolved (meaning of 2 vs 3)
+            x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00, AutoFoucsFuctional::AutoFocus
+              @0x288320 (64-bit build)
+          last_point:
+            type: array
+            prefixItems:
+            - type: integer
+            - type: number
+            minItems: 2
+            maxItems: 2
+            description: '[position, value]: the final focuser position and its focus metric, built after the
+              run. That the metric is star size (HFD) is INFERRED.'
+            x-confidence: READ (shape); INFERRED (metric)
+            x-basis: static analysis of firmware 9.31, AutoFocusFunc @0x26e240 (64-bit build)
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+      - type: array
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+      description: Direct callback data embedded as JSON (object or array), not a quoted string. Nesting varies
+        by callback.
+      x-required-when: direct callback progress/result
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, CbTellVCurveParameter @0x26cd00 (64-bit build)
+    position:
+      type: integer
+      description: Focuser position, when the legacy branch appends it.
+      x-required-when: legacy position branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AutoFocusFunc @0x26e240, CbTellVCurveParameter @0x26cd00, PrintAfInfo
+        @0x2694a0 (64-bit build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, AutoFocusFunc @0x26e240, CbTellVCurveParameter @0x26cd00, PrintAfInfo
+    @0x2694a0 (64-bit build)
+examples:
+- name: working
+  summary: F progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: AutoFocus
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 3100
+    center_xy:
+    - 960
+    - 540
+    route:
+    - View
+    - Initialise
+- name: progress-curve
+  summary: Direct V-curve progress (READ member names; values invented)
+  of: payload
+  payload:
+    Event: AutoFocus
+    Timestamp: '1234.123456789'
+    state: working
+    result:
+      curve:
+      - 0.01
+      - -1.2
+      - 40.0
+      points:
+      - - 1500
+        - 4.1
+      - - 1520
+        - 3.2
+      x_scale:
+      - 1400
+      - 1700
+      y_scale:
+      - 1.5
+      - 4.5
+      status_flag: 2
+see_also:
+- start_auto_focuse
+- stop_auto_focuse
+- FocuserMove
+- get_app_state
+- iscope_get_app_state
+spec:
+- spec/control/focus-and-filter.md#autofocus
+- spec/control/events-overview.md

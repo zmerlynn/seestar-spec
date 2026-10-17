@@ -1,0 +1,100 @@
+kind: method
+name: scope_get_connection_para
+summary: Report the mount driver's connection parameters (baud rate for Serial, address and port for TCP).
+description: Reads the driver's connection description through the connection chooser and the cached settings
+  getter, with a diagnostic print. The getter passes a null string-output pointer, so the serial auto-selection
+  and its log line are bypassed (those belong to callers such as mount_scan_port). The remaining refresh
+  and diagnostic still make this a strict MUTATOR at tier B. Params are not consumed.
+grade: MUTATOR / established (strict; native handler, 64-bit build)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x74dd0 (64-bit build); ScopeAM5::GetConnectionPara
+  @0xf2df0, log print @0xf2ecc; formatter sites @0x74ee4 (207), @0x74e84 (300)
+side_effects: Refreshes the connection-description cache and writes a diagnostic log line; no serial setter,
+  read or write.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_connection_para request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_connection_para
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x74dd0 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: scope_get_connection_para reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/ScopeGetConnectionParaResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x74dd0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 207
+  trigger: Operation fails
+  label: fail to operate
+- code: 300
+  trigger: Internal scope or chooser object missing
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: query
+  summary: Params omitted
+  of: request
+  payload:
+    id: 140
+    method: scope_get_connection_para
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_connection_para
+    result:
+      address: 192.0.2.10
+      port: 9999
+      connection_type: TCP
+    code: 0
+    id: 140
+  summary: TCP mode; invented documentation-range address
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_connection_para
+    error: fail to operate
+    code: 207
+    id: 141
+see_also:
+- scope_get_connection_mode
+- mount_scan_port
+spec:
+- spec/guider/index.md#method-groups

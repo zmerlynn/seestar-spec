@@ -1,0 +1,58 @@
+kind: event
+name: AutoCloseMount
+summary: Guider notification that the mount connection was closed automatically.
+description: 'N family (NotifyEvent): Event and Timestamp only. Sent from the guider''s GetRaDec callback when
+  it closes the mount automatically (the closing condition itself is not detailed here). Sent by the guider
+  (zwoair_guider) event server on TCP 4400 to every retained connection, with no verified or master/guest filter.
+  The main imager process, which holds a client connection to 4400, recognizes peer event lines by the exact
+  substring "Event":" and re-broadcasts the original line unchanged to all retained connections on TCP 4700,
+  so ordinary 4700 clients see it too; the auxiliary imager process (4702) deliberately does not forward 4400
+  events, avoiding a duplicate copy. Because the forwarding test is lexical, the forwarded line is byte-identical
+  to the guider''s. No universal order relative to RPC replies or other events, no sequence number, no replay.
+  No APK consumer is established. The connection members of scope_get_state overlap; an identical result is
+  not established. 32-bit build matches (READ); its emitter fills the same members from the same callers.'
+grade: PURE GETTER (shape only; observation for the receiver)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, GetRaDec callback lambda @0x6a4c0 (64-bit guider build); 32-bit counterpart
+  @0x6732c
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: AutoCloseMount event
+  type: object
+  discriminator: Event
+  description: Event and Timestamp only (N family).
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: AutoCloseMount
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetRaDec callback lambda @0x6a4c0 (64-bit guider build); 32-bit
+        counterpart @0x6732c
+    Timestamp:
+      type: string
+      description: Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar
+        time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider Ev constructor @0x15bc90 calls guider getTimestamp @0x13c100
+        (clock_gettime clock id 1, format %ld.%09ld) (64-bit guider build)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, GetRaDec callback lambda @0x6a4c0 (64-bit guider build); 32-bit
+    counterpart @0x6732c
+examples:
+- name: closed
+  summary: N-family event (READ shape, value invented)
+  of: payload
+  payload:
+    Event: AutoCloseMount
+    Timestamp: '1234.123456789'
+see_also:
+- scope_get_state
+- scope_get_ra_dec
+spec:
+- spec/control/mount-and-motion/tracking-park-and-state.md#position-and-connection-state

@@ -1,0 +1,82 @@
+kind: method
+name: pi_reboot
+summary: 'Reboots the device: start the shutdown worker; the reply acknowledges acceptance, not completion.'
+description: No request parameters are read. Calls StartShutdown with flag 1 (0 = shutdown, 1 = reboot).
+  If no shutdown worker is running, a shared shutdown/reboot flag is written and the worker thread is
+  started; the reply is sent when the thread has been launched, before the device actually goes down.
+  A second call while the worker runs is rejected with 268.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xce150, StartShutdown @0x122710 (64-bit build)
+side_effects: Writes the shared shutdown/reboot flag and starts the shutdown worker thread; the device
+  then powers off or restarts after the reply. No wait for completion and no handler timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_reboot request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_reboot
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xce150, StartShutdown @0x122710 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 268
+  trigger: A shutdown/reboot worker is already running
+  label: operation is in progress
+- code: 212
+  trigger: Worker thread could not be created (downstream of the thread start; exact propagation not fully
+    established)
+  label: fail to create thread
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: The 212 row is possible via the thread start helper; other helper failures propagate their
+  own code (unresolved).
+examples:
+- name: request
+  summary: No parameters
+  of: request
+  payload:
+    id: 41
+    method: pi_reboot
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_reboot
+    result: 0
+    code: 0
+    id: 41
+- name: already-running
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_reboot
+    error: operation is in progress
+    code: 268
+    id: 42
+see_also:
+- pi_shutdown
+spec:
+- spec/control/power-and-storage.md#shutdown-reboot-and-sleep

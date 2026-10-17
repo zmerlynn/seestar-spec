@@ -1,0 +1,19 @@
+title: scope_get_location result
+type: array
+minItems: 2
+maxItems: 2
+description: Two-element array [latitude, longitude].
+prefixItems:
+- type: number
+  description: Site latitude. Degrees INFERRED, not established.
+  x-confidence: INFERRED
+  x-basis: static analysis of firmware 9.31, handler @0x788b0 (64-bit build)
+- type: number
+  minimum: -180
+  maximum: 180
+  description: Site longitude, normalised by the handler into a +-180 range.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0x788b0 (64-bit build)
+items: false
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x788b0 (64-bit build)

@@ -1,0 +1,20 @@
+title: is_func_work params
+type: object
+required:
+- keys
+description: Object params are required; there is no positional alternative.
+properties:
+  keys:
+    type: array
+    description: Function names to test. String elements are searched in the function tree; other element
+      types are skipped (logged), not rejected. An empty array, or an array with no string elements, yields
+      false. Missing, null or non-array is an error.
+    items:
+      type: string
+      description: Function name.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xdb950, FindWorkFunc @0x6d8cd0 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb950, FindWorkFunc @0x6d8cd0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdb950, FindWorkFunc @0x6d8cd0 (64-bit build)

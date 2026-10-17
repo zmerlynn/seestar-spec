@@ -1,0 +1,18 @@
+title: get_polar_align_image result
+type: array
+minItems: 2
+maxItems: 2
+prefixItems:
+- type: boolean
+  description: Slot 0 file is accessible.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xb3280, CanAccess @0x6dd6a0 (64-bit build)
+- type: boolean
+  description: Slot 1 file is accessible.
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, handler @0xb3280, CanAccess @0x6dd6a0 (64-bit build)
+items: false
+description: Fixed two-element array of existence checks, slot 0 first. Reports an access(F_OK) test,
+  not file contents or validity.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb3280, CanAccess @0x6dd6a0 (64-bit build)

@@ -1,0 +1,58 @@
+kind: event
+name: SelectCamera
+summary: Notification that the selected imaging process (main or wide view) changed.
+description: 'Broadcast on TCP 4700 (channel I) when the process switch changes the selected imaging process.
+  Family: custom; no state or error. APK consumers: DeviceEventPart; DeviceService app-state handler (route
+  check disabled for this name).'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, SwitchProc @0x3c1a00 (64-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: SelectCamera event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  - selected_cam
+  properties:
+    Event:
+      type: string
+      const: SelectCamera
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SwitchProc @0x3c1a00
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    selected_cam:
+      type: string
+      enum:
+      - View
+      - SecondView
+      - unknown
+      description: Process view name; unknown is the fallback for an unrecognized process type.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SwitchProc @0x3c1a00, get_proc_view_name
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, SwitchProc @0x3c1a00
+examples:
+- name: switched-to-wide
+  summary: READ shape, not captured
+  of: payload
+  payload:
+    Event: SelectCamera
+    Timestamp: '1234.123456789'
+    selected_cam: SecondView
+see_also:
+- set_setting
+- get_setting
+- iscope_get_app_state
+spec:
+- spec/control/events/variants-and-consumers.md#app-consumer-behaviour-non-normative
+- spec/control/events-overview.md

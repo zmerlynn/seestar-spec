@@ -1,0 +1,11 @@
+title: get_solve_obj row
+type: array
+minItems: 3
+maxItems: 3
+items:
+  type: number
+description: 'Three numbers taken from a four-value AXY record of a star detected in the last solve image:
+  values 0, 1 and 3 are emitted and value 2 is discarded. Taken to be x, y (pixels) and background (INFERRED
+  from the solver''s usual extraction-table column order); not RA/Dec.'
+x-confidence: READ (column selection); INFERRED (meanings)
+x-basis: static analysis of firmware 9.31, get_solve_obj @0xb2ef0, GetObjFromAxy @0x15efa0 (64-bit build)

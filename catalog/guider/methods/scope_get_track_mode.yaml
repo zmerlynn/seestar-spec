@@ -1,0 +1,101 @@
+kind: method
+name: scope_get_track_mode
+summary: Read the current tracking mode name and the list of selectable modes.
+description: 'Live mount query returning the current tracking mode name, the driver list of modes and
+  the current index. Value sets are driver defined and unresolved. Served by the guider process (TCP 4400);
+  a client on the main command port reaches it through the imager unknown-method relay, which is unavailable
+  to guest-table clients. The native-handler grade below does not describe the relay. Mount serial (firmware
+  9.31, READ): :GT.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build)
+side_effects: Live query of the connected mount through the native mount layer; no motion or setting change
+  is established. Tier C rests on the supplied native mount query path; other runtime-selected mount implementations
+  are unresolved. The driver list is formatted by the call.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_get_track_mode request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_get_track_mode
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/ScopeGetTrackModeResult.yaml
+        description: Object containing name, list and index.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0x81390 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+errors_note: Further branches forward the error code recorded by the native mount layer; those codes are
+  not exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 5
+    method: scope_get_track_mode
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_track_mode
+    result:
+      name: sidereal
+      list:
+      - sidereal
+      - lunar
+      - solar
+      index: 0
+    code: 0
+    id: 5
+- name: err-315
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_get_track_mode
+    error: mount is not connected
+    code: 315
+    id: 6
+see_also:
+- scope_get_slew_rate
+- scope_get_state
+- scope_is_moving
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

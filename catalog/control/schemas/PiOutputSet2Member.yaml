@@ -1,0 +1,49 @@
+title: pi_output_set2 member
+type: object
+description: 'Settings for one output. Every nested key is optional; a missing or wrong-typed nested key
+  silently keeps the initial or current value and never produces an error. For port<N> members the current
+  values are loaded first (fallback defaults: type "other", state false, is_pwm false, value 100). dslr
+  starts from the same defaults and forces is_pwm false after parsing. beep, heater and wide_heater start
+  at type "other", state false, is_pwm false, value 0, then force is_pwm true and also read freq.'
+properties:
+  type:
+    type: string
+    description: Output type tag. No enumeration is enforced by the parser.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  value:
+    type: number
+    description: Duty percent. No range check in the parser; with state true a computed duty outside 0..range
+      fails with 204, with state false the duty is forced to 0.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  state:
+    type:
+    - boolean
+    - integer
+    description: Output on/off.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  is_pwm:
+    type:
+    - boolean
+    - integer
+    description: Select PWM (true) or digital mode. Forced by the handler for dslr (false) and for beep,
+      heater and wide_heater (true).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+  freq:
+    type: integer
+    description: PWM frequency, read only for beep, heater and wide_heater members; unit not stated in
+      the evidence (Hz INFERRED). Non-negative values (including 0) are accepted, negative values are
+      rejected internally with 204 which is not serialized; no upper bound; the helper result is ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+      @0x324650, SetFreq @0x3260a0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex
+  @0x324650, SetFreq @0x3260a0 (64-bit build)

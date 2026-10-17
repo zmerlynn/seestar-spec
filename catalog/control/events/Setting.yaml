@@ -1,0 +1,265 @@
+kind: event
+name: Setting
+summary: Sparse notification of changed device settings, with serializer-added companions.
+description: 'Broadcast to all retained sockets when settings change, from set_setting and from several
+  internal producers; no timer, debounce or transmitted list of changed keys. Emitted by the main imager
+  on TCP 4700 (channel I) and by the auxiliary (wide) imager on TCP 4702 (channel W), whose event lines
+  the main process forwards onto 4700; wide_cam tells the camera origin. Not a full get_setting snapshot.
+  Producers and their shapes: (1) NotifySettingChange calls the settings serializer filtered to the one
+  changed key, then appends wide_cam. The filtered serializer also always adds stack with light_duration_min,
+  brightness, contrast, saturation and dbe_enable, so even an unrecognized key does not yield an empty
+  event. Filterable top-level members (rec_res_index, ap_changed, light_brightness, typec_mode, alpaca_enable,
+  password, connect_lock) are subject to the same non-P2 and capability conditions as in get_setting;
+  rtsp_roi_index appears only here, never in get_setting. (2) SetStackSetting writes only the changed
+  members, under stack, exp_ms or top level, plus wide_cam; this can carry members that get_setting lists
+  as full-only. (3) SetImgAdjustParams writes stack.brightness, contrast, saturation, dbe_enable plus wide_cam.
+  (4) CheckStackTime writes exp_ms.stack_l plus wide_cam. (5) NotifyRemoteChange writes remote_joined.
+  (6) The set_setting camera-selection branch adds selected_cam. Direct setters suppress unchanged values
+  or normalize them, so suppression rules differ per producer. The payload is open: other serializer members
+  may appear and the complete per-member inventory is the get_setting result. On the 32-bit build light_brightness,
+  rtsp_roi_scale and hdr are absent and the setter path does not write scene_shooting_duration_min. Both
+  builds have the same six producers and the same filtered-notify keys (ap_changed from the AP change notifier
+  and the AP-setting RPC, mosaic, drizzle2x, wide_denoise, wide_cross_offset_show); wide_cross_offset_show is
+  sent from the camera page setter on the 32-bit build and from the camera streaming function on the 64-bit
+  build. Other differences are serializer members only. The password member is sent in clear when selected. Family: custom; no
+  state or error. APK consumers: DeviceEventPart; DeviceService settings handler.'
+grade: PURE GETTER
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifySettingChange @0xf24e0, GetSetting @0xea600, SetStackSetting
+  @0x19b230, SetImgAdjustParams @0x1955b0, NotifyRemoteChange @0xaeaa0 (64-bit build); NotifySettingChange
+  @0x87140 and Setting name references @0x70b98c (32-bit build)
+side_effects: Observation only.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Setting event
+  type: object
+  discriminator: Event
+  required:
+  - Event
+  - Timestamp
+  properties:
+    Event:
+      type: string
+      const: Setting
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySettingChange @0xf24e0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    wide_cam:
+      type: boolean
+      description: Camera origin (true for the wide camera).
+      x-required-when: appended by NotifySettingChange, SetStackSetting, SetImgAdjustParams and CheckStackTime;
+        not established for NotifyRemoteChange
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySettingChange @0xf24e0, SetStackSetting @0x19b230
+    stack:
+      $ref: ../schemas/SettingEventStack.yaml
+      x-required-when: always on the NotifySettingChange filtered path; SetStackSetting or SetImgAdjustParams
+        when they change a stack member
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetStackSetting @0x19b230, SetImgAdjustParams @0x1955b0
+    exp_ms:
+      type: object
+      description: Exposure settings.
+      properties:
+        stack_l:
+          type: integer
+          description: Stack exposure, milliseconds. Written by SetStackSetting and CheckStackTime.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230, CheckStackTime
+        stack_l_auto:
+          type: boolean
+          description: Written by SetStackSetting.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+      x-required-when: SetStackSetting exposure change, CheckStackTime
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230, CheckStackTime
+    user_stack_sim:
+      type: boolean
+      x-required-when: SetStackSetting change
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+    stack_after_goto:
+      type: boolean
+      x-required-when: SetStackSetting change
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+    auto_3ppa_calib:
+      type: boolean
+      x-required-when: SetStackSetting change
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+    auto_master_dark:
+      type: boolean
+      x-required-when: SetStackSetting change
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+    expert_mode:
+      type: boolean
+      x-required-when: SetStackSetting change
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
+    remote_joined:
+      type: boolean
+      x-required-when: NotifyRemoteChange
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyRemoteChange @0xaeaa0
+    selected_cam:
+      type: string
+      enum:
+      - View
+      - SecondView
+      description: Camera-selection companion from set_setting.
+      x-required-when: set_setting changes selected_cam
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, set_setting handler @0xedf40
+    rec_res_index:
+      type: integer
+      description: Recording resolution index; only when the device can set it. Enum unresolved.
+      x-required-when: key selected, non-P2, capability present
+      x-confidence: READ; enum unresolved
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    ap_changed:
+      type: boolean
+      x-required-when: key selected, non-P2, NFC present
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    light_brightness:
+      type: integer
+      x-required-when: exact key selected, non-P2; 64-bit build
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    typec_mode:
+      type: string
+      description: file or net (setter values); only when the query succeeds.
+      x-required-when: key selected, non-P2, query success
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    alpaca_enable:
+      type: boolean
+      x-required-when: key selected, non-P2, definite status from the Alpaca status script
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    password:
+      type: string
+      description: Connection password in clear; not redacted by the device. Treat as sensitive.
+      x-required-when: key selected, non-P2
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    connect_lock:
+      type: boolean
+      x-required-when: key selected, non-P2
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    preview:
+      type: object
+      description: Preview settings; same members as get_setting.preview (rtsp_quality, image_transfer_mode,
+        rtsp_width, rtsp_height).
+      x-required-when: preview key selected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    timelapse:
+      type: object
+      description: Timelapse settings; same members as get_setting.timelapse.
+      x-required-when: timelapse key selected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    mosaic:
+      type: object
+      description: Mosaic parameters; same members as get_setting.mosaic.
+      x-required-when: mosaic key selected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    wide_cross_offset:
+      type: array
+      prefixItems:
+      - type: integer
+      - type: integer
+      minItems: 2
+      maxItems: 2
+      description: '[x, y], sensor pixels INFERRED.'
+      x-required-when: wide camera and exact key selected
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    wide_cross_offset_show:
+      type: array
+      prefixItems:
+      - type: integer
+      - type: integer
+      minItems: 2
+      maxItems: 2
+      description: '[x, y], display coordinates INFERRED.'
+      x-required-when: wide camera and exact key selected
+      x-confidence: READ; unit INFERRED
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    rtsp_roi_index:
+      type: integer
+      description: 0, 1 or 2 for scale about 1, 2 or 4; absent for other continuous scales. Filtered events
+        only.
+      x-required-when: key selected and the compatibility lookup succeeds
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    rtsp_roi_scale:
+      type: number
+      description: Preview ROI scale, dimensionless.
+      x-required-when: exact key selected; 64-bit build
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    hdr:
+      type: boolean
+      x-required-when: exact key selected; 64-bit build
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+    ae_bri_percent:
+      type: number
+      description: Auto-exposure target brightness, percent 0 to 100.
+      x-required-when: exact key selected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifySettingChange @0xf24e0, GetSetting @0xea600
+examples:
+- name: filtered-hdr
+  summary: NotifySettingChange path for a selected key (READ shape, not captured; values invented)
+  of: payload
+  payload:
+    Event: Setting
+    Timestamp: '1234.123456789'
+    hdr: true
+    stack:
+      light_duration_min: 10
+      brightness: 0.0
+      contrast: 0.0
+      saturation: 0.0
+      dbe_enable: false
+    wide_cam: false
+- name: direct-stack-setting
+  summary: SetStackSetting direct member (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Setting
+    Timestamp: '1234.123456789'
+    stack:
+      save_discrete_frame: true
+    wide_cam: false
+- name: remote-joined
+  summary: NotifyRemoteChange (READ shape; value invented)
+  of: payload
+  payload:
+    Event: Setting
+    Timestamp: '1234.123456789'
+    remote_joined: true
+see_also:
+- get_setting
+- set_setting
+- set_test_setting
+- remote_join
+spec:
+- spec/control/events/nested-schemas.md#setting-producers
+- spec/control/device-state-and-settings.md#the-setting-event

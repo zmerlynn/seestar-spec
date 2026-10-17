@@ -1,0 +1,22 @@
+title: list_mass_storage result
+type: object
+description: 'Counts of attached USB mass-storage devices, split by link speed. This is a count only:
+  no capacity, name or descriptor.'
+required:
+- usb2
+- usb3
+properties:
+  usb2:
+    type: integer
+    description: Count of mass-storage lines whose reported speed is at most 480 (Mbit/s); one is subtracted
+      when the USB ID 05e3:0761 marker is seen (a particular hub chip), with no lower clamp, so a negative
+      count is possible.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf7a10 (64-bit build), run_popen @0x6d7500
+  usb3:
+    type: integer
+    description: Count of mass-storage lines whose reported speed is 481 or more (Mbit/s).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xf7a10 (64-bit build), run_popen @0x6d7500
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xf7a10 (64-bit build), run_popen @0x6d7500

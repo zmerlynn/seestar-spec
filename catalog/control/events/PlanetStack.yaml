@@ -1,0 +1,170 @@
+kind: event
+name: PlanetStack
+summary: Progress and result of stacking a recorded planetary/lunar/solar video.
+description: 'Function producer (PlanetStackFunc named PlanetStack): Function-state family (SendFuncEvent):
+  state is always written; stage only when non-empty; lapse_ms when the timer is started or the state
+  is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional.
+  A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function
+  cache still changes, so a receiver cannot rely on seeing every transition. Its formatter adds percent,
+  input_thn when non-empty and output_file on success. The algorithm progress callback also sends direct
+  working events with percent (capped at 99), procedure_code and procedure, and the worker sends a direct
+  fail with code and error (state family) when stacking returns non-zero. Callback-driven; no fixed timer.
+  The 32-bit build has the same three formatter members and the same five-entry procedure table; cadence
+  parity is unresolved.
+  Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that
+  starts the worker and the worker''s events can arrive in either order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, PlanetStackFunc @0x3320f0, progress_call_back @0x332b00, PrintPlanetStackState
+  @0x3330e0, procedure table @0xaadb88 (64-bit build); procedure table @0x72c318 (32-bit build)
+side_effects: Observation only for the receiver. The worker writes the stacked output file.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: PlanetStack event
+  type: object
+  discriminator: Event
+  description: Function-state members plus progress and output members.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: PlanetStack
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PlanetStackFunc @0x3320f0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: 'Function producer: idle, working, complete, fail, cancel. Direct producers use working
+        (progress callback) and fail.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; PlanetStackFunc @0x3320f0;
+        progress_call_back @0x332b00
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: at fail even if 0. Direct fail (NotifyState) when stacking returns
+        non-zero, with error.'
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    percent:
+      type: integer
+      description: Stack percentage. The direct progress callback caps it at 99.
+      x-required-when: function producer (always written by its formatter); direct progress events
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintPlanetStackState @0x3330e0, progress_call_back @0x332b00
+    procedure_code:
+      type: integer
+      description: 'Processing-stage number from the algorithm callback, 0 to 4, mapped to procedure: 0 read
+        frame calculate score, 1 calculate average frame, 2 create ap griad, 3 calculate frame qualities,
+        4 stack frames. Same table in both builds; the out-of-range default name was not checked.'
+      x-required-when: direct progress events
+      x-confidence: READ; out-of-range default unresolved
+      x-basis: static analysis of firmware 9.31, progress_call_back @0x332b00, stack_procedure table @0xaadb88
+        (64-bit build); table @0x72c318 (32-bit build)
+    procedure:
+      type: string
+      description: Processing-stage name for procedure_code 0 to 4 (create ap griad is the firmware spelling).
+      enum:
+      - read frame calculate score
+      - calculate average frame
+      - create ap griad
+      - calculate frame qualities
+      - stack frames
+      x-required-when: direct progress events
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, progress_call_back @0x332b00, stack_procedure table @0xaadb88
+        (64-bit build); table @0x72c318 (32-bit build)
+    output_file:
+      $ref: ../schemas/OutputFile.yaml
+      description: Saved stacked result, `{path, files}` with one file entry; set after the result is saved.
+      x-required-when: function producer, function code 0 and output buffer non-empty
+      x-confidence: READ
+      x-basis: 'static analysis of firmware 9.31, PrintPlanetStackState @0x3330e0, PlanetStackFunc @0x3326a4,
+        GetOutputFileInfo @0x127ed0'
+    input_thn:
+      type: string
+      description: Input thumbnail name.
+      x-required-when: non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintPlanetStackState @0x3330e0
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintPlanetStackState @0x3330e0
+examples:
+- name: progress
+  summary: Direct progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: PlanetStack
+    Timestamp: '1234.123456789'
+    state: working
+    percent: 37
+    procedure_code: 2
+    procedure: create ap griad
+- name: complete
+  summary: Function completion (READ shape; values invented)
+  of: payload
+  payload:
+    Event: PlanetStack
+    Timestamp: '1234.123456789'
+    state: complete
+    lapse_ms: 182000
+    percent: 100
+    input_thn: Jupiter_thn.jpg
+    output_file:
+      path: Planet
+      files:
+      - name: Planet/Stacked_Jupiter.jpg
+        date: '2026-01-01 00:00:00'
+        thn: Planet/Stacked_Jupiter_thn.jpg
+        type: 0
+see_also:
+- start_planet_stack
+- stop_planet_stack
+- clear_planet_stack
+spec:
+- spec/control/stacking.md#planet-stack
+- spec/control/events-overview.md

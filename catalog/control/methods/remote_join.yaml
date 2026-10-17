@@ -1,0 +1,98 @@
+kind: method
+name: remote_join
+summary: Join the device to a remote (cloud relay) service using supplied credentials.
+description: Parses the credentials, fetches the access-point SSID (which may refresh access-point caches),
+  fills the native connection info and delegates to the remote-join library call, waiting up to timeout_sec
+  seconds for it to return. On success the original request text is written to the stored remote-join
+  file and a joined-state change is broadcast. The reply is a bare success. The remote protocol, total
+  blocking time and connection preconditions are unresolved. A failed save of the stored file does not
+  change the success reply.
+  Firmware 9.75 (64-bit build, READ), the request handling and error codes are unchanged. The remote-join library call and the P2P status upload are described in spec/auth/cloud-auth/device-cloud-link.md.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin @0x1a2260
+  (64-bit build); firmware 9.75 (app 3.4.0, 64-bit build) cloud-link resolver report
+side_effects: Writes the remote-join request file, may refresh access-point caches, and broadcasts changed
+  join state; may block for the timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: remote_join request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: remote_join
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/RemoteJoinParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe37c0, ParserRemoteJoin @0xd9ed0, RemoteJoin
+        @0x1a2260 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 104
+  trigger: timeout_sec present but not an integer
+  label: expected int param
+- code: 259
+  trigger: Any credential parse failure (missing or non-string member, or non-object params); the message
+    is misleading
+  label: stack is already running
+- code: 207
+  trigger: The join call returned nonzero
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: join
+  summary: Placeholder credentials
+  of: request
+  payload:
+    id: 60
+    method: remote_join
+    params:
+      host: relay.example.invalid
+      productKey: EXAMPLEKEY
+      deviceName: example-device
+      deviceSecret: example-secret
+      port: '443'
+      timeout_sec: 5
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remote_join
+    result: 0
+    code: 0
+    id: 60
+- name: bad-credentials
+  summary: Returned for any credential parse failure
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: remote_join
+    error: stack is already running
+    code: 259
+    id: 61
+see_also:
+- remote_disjoin
+- remote_disconnect
+spec:
+- spec/auth/account-login/boundaries.md#firmware-boundary
+- spec/control/network.md#remote-access-enrolment

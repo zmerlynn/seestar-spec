@@ -1,0 +1,174 @@
+kind: event
+name: BatchStack
+summary: Progress of the batch stacking worker over stored frames.
+description: 'Function producer: the batch stacking worker runs a named BatchStack function and its formatter
+  adds the task members. Function-state family (SendFuncEvent): state is always written; stage only when
+  non-empty; lapse_ms when the timer is started or the state is terminal; code and error at fail even
+  when the stored code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing,
+  and non-working notifications can be suppressed while the function cache still changes, so a receiver
+  cannot rely on seeing every transition. The formatter writes percent, frame_type, task_type, stacked_img
+  and total_img; remaining_sec, input_thn, output_file and keep are conditional. The 32-bit build lacks
+  startrail_video and keep. Progress depends on work; no timer. Recipients: all retained 4700 sockets.
+  No reply-before-event order is established: the RPC reply that starts the worker and the worker''s events
+  can arrive in either order. No fixed cadence. The Event value is the worker''s function
+  name, which the worker definition sets to the literal BatchStack. APK consumer expectation, not a firmware field: estimated_sec.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900, StartBatchStack @0x3a6190 (64-bit
+  build)
+side_effects: Observation only for the receiver. The worker writes stacked output files.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: BatchStack event
+  type: object
+  discriminator: Event
+  description: Function-state members plus batch progress members.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: BatchStack
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, StartBatchStack @0x3a6190
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: Function-state name. idle is an initial/restored state and is not automatically sent;
+        unknown internal codes fall back to idle. A formatter supporting a state does not mean every run
+        visits it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; StartBatchStack @0x3a6190,
+        BatchStackFunc @0x3ac190
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held.
+      x-required-when: non-empty stage string held
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, independent of Timestamp. Working (or any state with a start
+        and no end time, including complete) uses current monotonic minus start; other terminal states
+        use end minus start.
+      x-required-when: 'function producer: timer started (working) or terminal state'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
+        omits it. Firmware 9.75, comet task: the worker stores 204 when the input or expanded list exceeds 200 frames, 9004 when too few candidates remain and 9005 or 9002 from the preflight; that these reach this member is unresolved.'
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    error:
+      type: string
+      description: Message for code; present with code. Lookup failure gives fail to operate.
+      x-required-when: state is fail (function producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-tree ancestry (for example View, Stack) built at send time. May be absent;
+        not an address.
+      x-required-when: optional; absent is a legitimate branch
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    remaining_sec:
+      type: integer
+      description: Estimated remaining time; seconds INFERRED.
+      x-required-when: cached value >= 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    percent:
+      type: number
+      description: Current percentage.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    frame_type:
+      type: string
+      description: Task frame type.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    task_type:
+      type: string
+      enum:
+      - deepsky
+      - startrail_image
+      - startrail_video
+      - comet
+      description: Task type. startrail_video is 64-bit only.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    stacked_img:
+      type: integer
+      description: Processed input count.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    total_img:
+      type: integer
+      description: Total input count.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    input_thn:
+      type: string
+      description: Input thumbnail name.
+      x-required-when: non-empty
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+    output_file:
+      $ref: ../schemas/OutputFile.yaml
+      description: Saved stacked result on the completing event, `{path, files}` with one file entry; the
+        comet dual-stack task reports its own the same way.
+      x-required-when: cached flag says output is available
+      x-confidence: READ
+      x-basis: 'static analysis of firmware 9.31, PrintBatchStackState @0x3a6900, BatchStackFunc @0x3ac190,
+        RunBatchCometDualStackTask @0x3a5390, GetOutputFileInfo @0x127ed0'
+    keep:
+      type: boolean
+      description: Callback option. 64-bit build only.
+      x-required-when: 64-bit build
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, PrintBatchStackState @0x3a6900
+examples:
+- name: working
+  summary: Progress (READ shape; values invented)
+  of: payload
+  payload:
+    Event: BatchStack
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 30500
+    remaining_sec: 95
+    percent: 24.0
+    frame_type: light
+    task_type: deepsky
+    stacked_img: 12
+    total_img: 50
+    keep: false
+see_also:
+- start_batch_stack
+- stop_batch_stack
+- clear_batch_stack
+- get_batch_stack_setting
+spec:
+- spec/control/stacking.md#batch-stack
+- spec/control/events-overview.md

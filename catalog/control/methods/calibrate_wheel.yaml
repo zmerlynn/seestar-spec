@@ -1,0 +1,70 @@
+kind: method
+name: calibrate_wheel
+summary: Filter-wheel calibration request; in firmware 9.31 it always fails.
+description: 'No params are read. The handler has a nominal success branch but the calibration routine
+  returns failure unconditionally in both builds, so a reply is always an error: 318 when the wheel handle
+  is negative, 203 when the checked thread is running, otherwise 210. No wheel movement or calibration
+  happens. Considering only the handler and its callees the method would be a pure getter; the grade below
+  is for the whole call, which also reaches the shared diagnostic logger.'
+grade: MUTATOR / established (full command-socket call; shared diagnostic writes; 64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xce8b0 (64-bit build), CalibrateWheel @0x301720
+side_effects: Reads wheel handle and thread state and sets the request-local error; no motion, calibration
+  or setting change. Every call also performs shared request/reply diagnostic logging.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: calibrate_wheel request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: calibrate_wheel
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+  description: 'Unreachable in firmware 9.31: no success reply is produced.'
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Wheel handle is negative
+  label: device not connected
+- code: 203
+  trigger: The checked thread is running
+  label: equipment is moving
+- code: 210
+  trigger: Otherwise (the usual reply)
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Because the method always errors, no reply_success example exists.
+examples:
+- name: calibrate
+  summary: Bare request
+  of: request
+  payload:
+    id: 151
+    method: calibrate_wheel
+- name: not-supported
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: calibrate_wheel
+    error: not supported
+    code: 210
+    id: 151
+see_also: []
+spec:
+- spec/control/focus-and-filter.md#names-and-settings

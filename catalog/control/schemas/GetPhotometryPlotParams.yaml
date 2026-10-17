@@ -1,0 +1,15 @@
+title: get_photometry_plot params
+type: object
+required:
+- id
+description: Object, or a positional array [id]. Unknown members are ignored.
+properties:
+  id:
+    type: string
+    description: Plot id (case-sensitive map key). Required string. A missing id, scalar or null params,
+      or a non-string id (including an integer) gives 104, whose message says expected int although a
+      string is required. An empty string passes the parser but ordinarily fails the lookup.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe2ad0 (64-bit build)

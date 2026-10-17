@@ -1,0 +1,145 @@
+kind: event
+name: Sequence
+summary: Legacy autosave sequence and frame transitions.
+description: 'Legacy producers (AutoSavePlan, AutoSaveSequences, camera exposure) send one event per sequence/frame
+  transition, through the state family (state, plus error/code when code > 0) or the custom NotifySequence
+  (state plus id, frame, total_lapse_frame, total_frame). Inside a legacy plan run, the plan-progress helper
+  sends frame_start and frame_complete with state and progress only (the same object as get_app_state
+  progress). In a sequence-list run, start and complete carry state only, fail adds error and code
+  (253 is a client stop), and frame_complete alone carries id, frame, total_lapse_frame and total_frame;
+  frame_start is sent only inside a legacy plan run. No lapse_ms or route. Recipients: all retained 4700 sockets. The APK defines the name only;
+  no app event branch is established. No reply-before-event order is established: the RPC reply that starts
+  the worker and the worker''s events can arrive in either order. No fixed cadence.'
+grade: PURE GETTER (observation only)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0, AutoSavePlan @0x30ea00, AutoSaveSequences
+  @0x217d80 (start @0x217e2c), AutoSaveExpProcess @0x216e20 (frame_complete @0x217670), CamExpose
+  @0x2189d0 (complete @0x2192dc, fail @0x219acc), plan-progress helper NotifyPlan @0xb2040 (callers near @0x30cef0, @0x30d088) (64-bit build)
+side_effects: Observation only for the receiver.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: Sequence event
+  type: object
+  discriminator: Event
+  description: State and sequence counters, or state and progress inside a legacy plan run.
+  required:
+  - Event
+  - Timestamp
+  - state
+  properties:
+    Event:
+      type: string
+      const: Sequence
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60
+    state:
+      type: string
+      enum:
+      - start
+      - frame_start
+      - frame_complete
+      - complete
+      - fail
+      description: Caller-supplied literal.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0, AutoSavePlan @0x30ea00, AutoSaveSequences
+        @0x217d80
+    id:
+      type: integer
+      description: Sequence id.
+      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
+    frame:
+      type: integer
+      description: Started or completed frame index.
+      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
+    total_lapse_frame:
+      type: integer
+      description: Completed frame total across the sequence.
+      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
+    total_frame:
+      type: integer
+      description: Planned frame total.
+      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
+    progress:
+      $ref: ../schemas/PlanEventProgress.yaml
+      description: Legacy plan progress; same formatter output as get_app_state progress.
+      x-required-when: plan-progress producer (frame_start, frame_complete inside a legacy plan run)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyPlan @0xb2040, FormatPlanProgress @0x308e90
+    error:
+      type: string
+      description: Message for code.
+      x-required-when: supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState
+    code:
+      type: integer
+      description: Supplied error code.
+      x-required-when: supplied code > 0
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, NotifyState
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
+examples:
+- name: frame-complete
+  summary: Frame done (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Sequence
+    Timestamp: '1234.123456789'
+    state: frame_complete
+    id: 2
+    frame: 5
+    total_lapse_frame: 15
+    total_frame: 30
+- name: plan-frame-start
+  summary: Frame start inside a legacy plan run (READ shape; values invented)
+  of: payload
+  payload:
+    Event: Sequence
+    Timestamp: '1234.123456789'
+    state: frame_start
+    progress:
+      targets:
+        total: 2
+        lapse: 0
+      cur_plan:
+        total: 2
+        lapse: 0
+      cur_target:
+        total: 30
+        lapse: 12
+        target_name: Example target
+        id: 1
+      cur_seq:
+        total: 30
+        lapse: 12
+        frame_type: light
+        id: 1
+      plan_end: false
+see_also:
+- Target
+- set_sequence
+- get_sequence
+- clear_sequence
+- start_exposure
+- get_app_state
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#legacy-plan-events
+- spec/control/events/nested-schemas.md#legacy-plan-progress
+- spec/control/events-overview.md

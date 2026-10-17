@@ -1,0 +1,98 @@
+kind: method
+name: get_wheel_position
+summary: Return the current filter-wheel position, or -1 while it is moving.
+description: Reads no parameters. The result is -1 while the movement thread is running, otherwise the
+  cached current or target position. set_wheel_position accepts positions 0 to 2. The physical filter
+  mapping, and whether the idle cached value always matches the hardware, are unresolved. Fails with 318
+  when no wheel is selected.
+grade: PURE GETTER / probable (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd2e00, GetWheelPosition @0x301130 (64-bit build)
+side_effects: Reads the selected id, thread status and cached position and sets the request-local error;
+  no mode change, hardware open or close, or file write. Locks may block.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_wheel_position request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_wheel_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd2e00 (64-bit build)
+reply_success:
+  title: get_wheel_position reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: integer
+        minimum: -1
+        description: -1 while the wheel movement thread is running; otherwise the cached position (0 to
+          2 in values the setter accepts).
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xd2e00, GetWheelPosition @0x301130 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: No wheel selected
+  label: device not connected
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  of: request
+  payload:
+    id: 141
+    method: get_wheel_position
+- name: idle
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_position
+    result: 1
+    code: 0
+    id: 141
+- name: moving
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_position
+    result: -1
+    code: 0
+    id: 142
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_position
+    error: device not connected
+    code: 318
+    id: 143
+see_also:
+- set_wheel_position
+- get_wheel_state
+- open_wheel
+spec:
+- spec/control/focus-and-filter.md#lifecycle-and-position

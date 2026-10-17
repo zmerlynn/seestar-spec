@@ -1,0 +1,16 @@
+title: check_ai_process result
+type: object
+required:
+- gap_ok
+properties:
+  gap_ok:
+    type: boolean
+    description: True when the mosaic has no significant black gap. The helper also returns true without
+      checking when the current image is not a mosaic stack, a given name does not contain the lowercase
+      text mosaic, or the image cannot be loaded, so true is not proof the image was read. For a loaded
+      mosaic, after the optional rotate and crop, true means fewer than 800 black-edge samples were counted.
+      Sample geometry is unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xdb180, CheckMosaicGap @0x3f1c80 (64-bit build)

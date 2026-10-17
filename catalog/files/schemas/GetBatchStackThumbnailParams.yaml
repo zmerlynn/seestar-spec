@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: GetBatchStackThumbnailParams
+description: 'Optional. Absent or null params select light frames. Present params must be an object (107
+  otherwise) with a string frame_type (105 otherwise). Names other than the four listed: behaviour unresolved.'
+type:
+- object
+- 'null'
+additionalProperties: true
+x-confidence: READ; other frame_type names unresolved
+x-basis: static analysis of firmware 9.31, imager handler @0x1f05a0 (64-bit build), parse_batch_frame_type
+  @0xda4d0
+properties:
+  frame_type:
+    type: string
+    enum:
+    - light
+    - dark
+    - bias
+    - flat
+    description: Frame type of the batch stack. Clients SHOULD send only these four names.
+    x-confidence: READ
+    x-basis: 'static analysis of firmware 9.31, imager handler @0x1f05a0 (64-bit build), parse_batch_frame_type
+      @0xda4d0 (string-compare table: light 0, dark 1, bias 2, flat 3)'
+required:
+- frame_type

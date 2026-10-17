@@ -1,0 +1,69 @@
+kind: method
+name: get_power_supply
+summary: 'Query power supply status (not implemented: always fails with not supported).'
+description: The handler only formats error 210 with the message not supported and returns; it queries
+  nothing, reads no params and carries no result. No battery, voltage or current members exist. A device
+  was OBSERVED (2026-10-12) returning exactly this (code 210, an error string, no result) for a bare
+  request.
+grade: PURE GETTER / established (64-bit build; 32-bit build probable)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xa8fa0 (64-bit build); also OBSERVED on a device (2026-10-12)
+side_effects: None. Error formatting only; no device query or state change.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_power_supply request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_power_supply
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xa8fa0 (64-bit build)
+reply_success:
+  title: get_power_supply success reply
+  description: 'No success reply exists in this build: the handler always returns error 210. Observed
+    on a device as well.'
+  not: {}
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Always
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: read
+  of: request
+  payload:
+    id: 45
+    method: get_power_supply
+- name: not-supported
+  summary: The only reply this build produces
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_power_supply
+    error: not supported
+    code: 210
+    id: 45
+see_also:
+- set_power_led_mode
+spec:
+- spec/control/power-and-storage.md#power-supply-query

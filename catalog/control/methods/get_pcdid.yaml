@@ -1,0 +1,78 @@
+kind: method
+name: get_pcdid
+summary: Read the board identifier from a fixed ADC channel.
+description: No request parameters are read. The wire name is get_pcdid although the handler is internally
+  named for a pcbid; the name is not to be corrected. The handler runs a fixed shell command that reads
+  one ADC channel from sysfs, parses the text and maps it to a small identifier. If the command cannot
+  be started the handler returns normally with neither result nor error, so the reply carries only the
+  metadata members, id and no code; INFERRED. An empty or non-numeric reading raises a C++ conversion
+  exception whose wire effect is unresolved. Logging the command and value may write or rotate log files.
+grade: MUTATOR / established (both builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xb8f60 (both builds; handler symbol is named for a
+  PCB id)
+side_effects: Runs a read-only shell command on a sysfs file; shared log state and log files may be updated.
+  No ADC configuration is written. No timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_pcdid request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_pcdid
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xb8f60 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    title: get_pcdid success reply
+    properties:
+      result:
+        $ref: ../schemas/GetPcdidResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xb8f60 (both builds; handler symbol is named
+          for a PCB id)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No explicit error is serialised. The popen failure code 214 is set internally but not sent
+  by this handler.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 111
+    method: get_pcdid
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_pcdid
+    result:
+      pcbid: 1
+    code: 0
+    id: 111
+see_also: []
+spec:
+- spec/control/maintenance.md#device-section
+- spec/control/errors.md#replies-with-extra-or-missing-members

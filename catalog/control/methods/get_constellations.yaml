@@ -1,0 +1,96 @@
+kind: method
+name: get_constellations
+summary: Return the image size and constellation annotations for the last solved image.
+description: Takes no parameters. Runs a supplied plotting command on the temporary WCS file with camera-dependent
+  options and reads the image dimensions. If the command output has no annotations fragment the reply
+  still succeeds with image_size alone. An error reply discards the partly built object. The same helper
+  feeds the Annotate event of the solve path; the causal mapping from this getter to those events is unresolved.
+  Observer tier is D because the external plotting closure and the FITS library bodies are unresolved
+  (a native candidate would be B).
+grade: MUTATOR / established (both builds)
+side_effect_tier: D
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc3180, GetConstellations @0x201aa0 (64-bit build)
+side_effects: Invokes an external command and reads the WCS file; the sentinel avoids annotation-cache
+  writes, but subprocess and diagnostics establish a strict mutation. No handler timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_constellations request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_constellations
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc3180, GetConstellations @0x201aa0 (64-bit
+        build)
+reply_success:
+  title: get_constellations reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetConstellationsResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc3180, GetConstellations @0x201aa0 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 255
+  trigger: Command output contains "No such file"
+  label: file not exist
+- code: 214
+  trigger: The command cannot be started
+  label: fail to run command
+- code: 207
+  trigger: WCS dimensions failed or are not positive and no more specific code was set
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Additional error codes from the dimension and FITS parsing helpers are unresolved.
+examples:
+- name: query
+  of: request
+  payload:
+    id: 101
+    method: get_constellations
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_constellations
+    result:
+      image_size:
+      - 1080
+      - 1920
+    code: 0
+    id: 101
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_constellations
+    error: file not exist
+    code: 255
+    id: 102
+see_also: []
+spec:
+- spec/control/object-lists.md#constellation-overlay

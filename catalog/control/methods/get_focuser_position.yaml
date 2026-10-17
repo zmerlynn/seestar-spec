@@ -1,0 +1,107 @@
+kind: method
+name: get_focuser_position
+summary: Read the current focuser position in UI steps.
+description: Requires an open focuser. Reads the hardware count and maps it to logical UI steps with the
+  cached UI and hardware maxima and base positions, rounding and clamping to 0..UI maximum; with non-positive
+  maxima it outputs 0 and can still succeed. The strict grade is MUTATOR because failed reads write diagnostic
+  log state; no setting or motion changes.
+grade: MUTATOR / established (64-bit build; 32-bit build established)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe3bc0, GetPosition @0x15be70, MethodRetSwitch @0xffec0
+  (64-bit build)
+side_effects: Reads the hardware position; failures write diagnostic log state. No cache or hardware update,
+  no motion.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_focuser_position request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_focuser_position
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/GetFocuserPositionParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe3bc0 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        $ref: ../schemas/GetFocuserPositionResult.yaml
+        description: Position as an integer, or as {step} when ret_obj is true.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xe3bc0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 318
+  trigger: Focuser is not open
+  label: device not connected
+- code: 300
+  trigger: Hardware position read fails
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: A malformed ret_obj never produces a parser error.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 20
+    method: get_focuser_position
+- name: as-object
+  summary: Ask for an object result
+  of: request
+  payload:
+    id: 21
+    method: get_focuser_position
+    params:
+      ret_obj: true
+- name: ok
+  summary: Plain integer (value invented)
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_position
+    result: 1200
+    code: 0
+    id: 20
+- name: ok-object
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_position
+    result:
+      step: 1200
+    code: 0
+    id: 21
+- name: closed
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_focuser_position
+    error: device not connected
+    code: 318
+    id: 22
+see_also:
+- move_focuser
+- get_focuser_state
+- set_focuser_value
+spec:
+- spec/control/focus-and-filter.md#lifecycle

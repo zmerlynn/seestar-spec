@@ -1,0 +1,36 @@
+title: guide params
+description: Either a named object or a positional array [recalibrate, settle]. The settle member is required;
+  recalibrate is optional in the object form (whether it may be omitted positionally is unresolved).
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler 0x7c810 (64-bit build)
+oneOf:
+- type: object
+  required:
+  - settle
+  properties:
+    recalibrate:
+      type:
+      - boolean
+      - integer
+      description: Request a fresh calibration before guiding. Boolean or integer (nonzero is true). The
+        device may honour or suppress the request depending on a persisted allow-recalibrate setting.
+      x-default: false (INFERRED)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7c810 (64-bit build)
+    settle:
+      $ref: GuideSettle.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, parse_settle @0x69eb0
+- type: array
+  minItems: 2
+  maxItems: 2
+  description: Positional form [recalibrate, settle]; same member meanings.
+  prefixItems:
+  - type:
+    - boolean
+    - integer
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler 0x7c810 (64-bit build)
+  - $ref: GuideSettle.yaml
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, parse_settle @0x69eb0

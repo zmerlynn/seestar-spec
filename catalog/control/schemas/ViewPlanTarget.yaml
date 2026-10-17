@@ -1,0 +1,121 @@
+title: ViewPlan target
+type: object
+description: >-
+  One scheduled target. Members not listed (for example camera, second_camera.exp_ms and
+  other app-side fields) are ignored by the firmware parser even though apps send them.
+required: [start_min, duration_min, target_id, camera_mode]
+properties:
+  start_min:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Start, minutes after device-local midnight (unit INFERRED). Values of 1440 or more are accepted and run past midnight. Signed 32-bit; no range check, extreme values wrap in the deadline arithmetic.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseTargetInfo path in ParseViewPlan @0x40a930; unit by naming and use in ViewPlanFunc @0x401c20; values above 1440 OBSERVED (2026-10-12)
+  duration_min:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Duration in minutes (proved by the multiplication by 60 in the worker). Not range-checked.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ViewPlanFunc @0x401c20
+  target_id:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Opaque id, stored as signed 32-bit although the app type is wider. No uniqueness check.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, json_parse_num @0x6f5930
+  camera_mode:
+    type: string
+    enum: [tele, wide, dual]
+    description: >-
+      Exact lowercase match. wide and dual require second_camera and mount; dual then forces
+      capt_type 0 and wide_size_index 0. On the 32-bit build the member may be absent, a
+      non-string is rejected with 105 and any string other than tele with 209 (parity not otherwise established).
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930 (64-bit); 32-bit @0x385410
+  skip:
+    type: [boolean, integer]
+    default: false
+    description: A skipped target is not run but still takes part in overlap and day-selection arithmetic. Parse failure is ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930
+  alias_name:
+    type: string
+    default: ""
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930
+  target_name:
+    type: string
+    default: ""
+    description: Bad type ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseTargetInfo @0x40a270
+  target_ra_dec:
+    type: array
+    items: {type: number}
+    minItems: 2
+    x-default: "[-999, -999] sentinel"
+    description: >-
+      RA in hours, Dec in degrees (INFERRED). Only the first two numbers are read. Absent, short or
+      malformed values do not reject the plan; they leave the sentinel (a parsed RA may survive a failed Dec).
+      No range or finiteness check. Real values have 32-bit float precision.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseTargetInfo @0x40a270; units from getViewPlanTargetInfoJnow @0x401970; echo precision OBSERVED (2026-10-12)
+  lp_filter:
+    type: [boolean, integer]
+    default: false
+    description: Light-pollution filter. Bad type ignored. After the target's goto succeeds, true moves the
+      filter wheel to slot 2 (LP) and false leaves it at slot 1 (IRCUT); not restored afterwards. A failed
+      goto returns the wheel to its previous slot.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseTargetInfo @0x40a270; AutoGotoFunc @0x172d90 (move to 1 at
+      0x172fd4, ViewPlan test 0x173ebc, lp_filter test 0x173ed4, move to 2 at 0x1751bc) (64-bit build)
+  star_type:
+    type: integer
+    default: -1
+    description: Bad type ignored.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseTargetInfo @0x40a270
+  mosaic:
+    $ref: './Mosaic.yaml'
+  second_camera:
+    type: object
+    x-required-when: camera_mode is wide or dual
+    description: Ignored for tele. Must contain a stack object.
+    required: [stack]
+    properties:
+      stack:
+        type: object
+        required: [capt_type, wide_size_index]
+        properties:
+          capt_type:
+            type: string
+            enum: [stack, startrails, timelapse]
+            description: Matched ASCII case-insensitively, unlike camera_mode. Maps to internal ids 0, 4, 5. Other names fail with 207.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, get_capt_type_id lookup and comparator @0x6d6814
+          wide_size_index:
+            type: integer
+            minimum: 0
+            maximum: 3
+            description: Unsigned comparison below 4; negatives are rejected.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930 (64-bit build; no such path on the 32-bit build)
+  mount:
+    type: object
+    x-required-when: camera_mode is wide or dual
+    description: Ignored for tele.
+    required: [tracking]
+    properties:
+      tracking:
+        type: [boolean, integer]
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, ParseViewPlan @0x40a930 (64-bit build)

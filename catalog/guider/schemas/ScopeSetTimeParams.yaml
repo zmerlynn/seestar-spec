@@ -1,0 +1,28 @@
+title: scope_set_time params
+type:
+- object
+- array
+description: Object with offset and utc strings, or the positional array [offset, utc]. Both are required
+  strings. The handler applies no lexical check; the mount driver parses both, converts the pair to local
+  date and time and sends the zone offset, date and time to the mount. A year whose last two digits are
+  21 or less is rejected (207).
+required:
+- offset
+- utc
+properties:
+  offset:
+    type: string
+    description: Zone offset in hours, positive east of UTC ("8" for UTC+8); fractions are allowed and
+      are sent to the mount as minutes. The local date and time are computed with the integer hours.
+    x-confidence: READ (syntax); INFERRED (east-positive sign, from the mount command's convention)
+    x-basis: static analysis of firmware 9.31, guider handler @0x7b540, ScopeAM5::SetTime, Utc2Local,
+      SetTimeCmd (64-bit build)
+  utc:
+    type: string
+    description: UTC date-time text that must contain YYYY-MM-DDTHH:MM:SS. It is found by search, not an
+      anchored match, so trailing text such as Z or a fraction is tolerated.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7b540, Utc2Local / String2Date (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, guider handler @0x7b540 (64-bit build)

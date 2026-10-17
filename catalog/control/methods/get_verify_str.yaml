@@ -1,0 +1,97 @@
+kind: method
+name: get_verify_str
+summary: Fetch a fresh per-socket challenge string for client verification.
+description: >-
+  First step of client verification. Matched by the authentication preprocessor before any method
+  table, so it is answered even on an unverified external connection (and is not one of the main-table
+  names). Params are ignored. The device generates a fresh 32-character challenge, stores it for this
+  socket (replacing any earlier one) and returns it as result.str with code 0. It does not clear an
+  existing verified flag. The challenge is valid only on the socket that fetched it. Only single requests
+  get this dedicated reply; inside a batch from an unverified client the whole batch is consumed
+  silently. The app treats code 103 on its first get_verify_str as a legacy device without verification
+  and continues; any other failure ends its session. Ports with this preprocessor: 4700, 4701, 4702,
+  4400 and 4040. Verification on 4040 also gates the 4030 serial bridge by source IP (ports.md R3a).
+firmware_9_75: >-
+  Firmware 9.75: the 32-character challenge is the base64 form of 24 random bytes from a cryptographic
+  generator (9.31 used the C library rand()). Each call also resets this socket's verified state and any
+  earlier secure-communication session, so a client must run verify_client again afterwards.
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0, cli_verify_get_randstr @0x6b2550
+  (64-bit imager build); 32-bit preprocessClientAuth @0x6814d8; app 3.3.2 VerifyAction and GetVerifyStrCmd
+side_effects: Replaces this socket's stored challenge (connection-local state). No device setting or
+  hardware state changes. Tier B is INFERRED (per-socket session bookkeeping only); no tier was graded
+  for the authentication preprocessor, and tier A is excluded because the challenge store is a shared
+  session write.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_verify_str request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_verify_str
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (name matched before table
+        dispatch)
+    params:
+      description: Ignored. The app sends no params member. Clients SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0; app 3.3.2 GetVerifyStrCmd
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: get_verify_str success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetVerifyStrResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, preprocessClientAuth @0x6b6bb0 (64-bit imager build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: Request has no id; reply has id null and no method member
+  label: invalid id
+errors_note: No handler error is established. Invalid JSON gets the ordinary 101 parse-error reply. Code 103
+  is not sent by a build with this preprocessor; the app treats 103 on its first get_verify_str as a legacy
+  device without verification.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: get_verify_str
+- name: ok
+  summary: Challenge value is a placeholder of the right length, not a captured value
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_verify_str
+    result:
+      str: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+    code: 0
+    id: 1
+- name: no-id
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    error: invalid id
+    code: 200
+    id: null
+see_also:
+- verify_client
+- pi_is_verified
+- test_connection
+spec:
+- spec/control/session-handshake/verification-and-roles.md#client-verification

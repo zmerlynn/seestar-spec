@@ -1,0 +1,106 @@
+kind: method
+name: pi_output_set
+summary: Set one or more auxiliary outputs (GPIO, PWM, DSLR, beeper) by name.
+description: 'Applies each named member in request order. Writes are sequential and not transactional:
+  earlier writes persist when a later member fails. A success reply does not prove that every write took
+  effect: the handler ignores the hardware-write return for dslr, esp and beep members. Failure paths
+  that break out of the member loop after appending an error can also append the success members, so a
+  reply can carry both error and result (duplicate envelope keys); treat the first code as authoritative
+  and do not infer success from a trailing code 0. Numeric names without any digit in a port or gpio name
+  are silently ignored.'
+grade: MUTATOR / established (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xf8250, GPIOController::WriteByIndex @0x324650, Write
+  @0x323ab0 (64-bit build)
+side_effects: Changes output level or PWM duty, writes per-port setting name/state/value/is_pwm and the
+  shared output cache; hardware effect is controlled by per-port flags. No rollback, no timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_output_set request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_output_set
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/PiOutputSetParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xf8250, GPIOController::WriteByIndex @0x324650,
+        Write @0x323ab0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: params absent, null or not an object (or array with no object first element)
+  label: expected object param
+- code: 209
+  trigger: A member value is not a boolean, integer or real
+  label: invalid value
+- code: 207
+  trigger: Unexpected regular-expression match shape while extracting the port/gpio number
+  label: fail to operate
+- code: 204
+  trigger: Port index out of range, or computed PWM duty out of range
+  label: out of limit
+- code: 273
+  trigger: GPIO connection or driver failure on a checked write
+  label: GPIO operation failed
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: set-port
+  summary: Turn port 1 on at 60 percent PWM and the DSLR line off (values invented)
+  of: request
+  payload:
+    id: 5
+    method: pi_output_set
+    params:
+      port1: 60
+      dslr: false
+- name: array-form
+  summary: Array spelling with a boolean state
+  of: request
+  payload:
+    id: 6
+    method: pi_output_set
+    params:
+    - port0: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_set
+    result: 0
+    code: 0
+    id: 5
+- name: wrong-type
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_output_set
+    error: invalid value
+    code: 209
+    id: 7
+see_also:
+- pi_output_get
+- pi_output_set2
+- pi_output_get2
+spec:
+- spec/control/power-and-storage.md#power-led-and-auxiliary-outputs

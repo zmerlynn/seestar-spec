@@ -1,0 +1,125 @@
+kind: method
+name: guide
+summary: Start guiding (calibrating first if required) with the given settle criteria.
+description: Checks that the dark-build workflow is not busy, asks the guide controller whether guiding
+  is possible, optionally honours the recalibrate flag, then starts the controller's guide workflow, which
+  changes capture, calibration and guiding state. A success reply (result 0) means the start was accepted,
+  not that calibration or guiding has settled. Calibration, guide and settling notifications follow as
+  events whose full list and ordering are unresolved.
+grade: MUTATOR / established (native handler, 64-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x7c810 (64-bit build); controller guide workflow PhdController::Guide
+  @0x59e30; formatter sites @0x7c948 (268), @0x7c8d4 (107), @0x7ca5c (106)
+side_effects: 'Starts or restarts the guide controller workflow: capture, calibration and guiding state
+  change; calibration and guiding notifications are produced asynchronously.'
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: guide request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: guide
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider dispatcher table
+    params:
+      $ref: ../schemas/GuideParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler 0x7c810 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: guide reply_success
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: integer
+        const: 0
+        description: Integer 0 after the controller accepts the start.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler 0x7c810 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 268
+  trigger: Dark-build status check fails (INFERRED mapping from the formatter site)
+  label: operation is in progress
+- code: 107
+  trigger: settle missing or not an object (INFERRED mapping from the formatter site)
+  label: expected object param
+- code: 102
+  trigger: A settle member (pixels, time or timeout) is missing
+  label: invalid params
+- code: 106
+  trigger: recalibrate present with a type other than boolean or integer (INFERRED mapping from the formatter
+    site)
+  label: expected bool param
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+errors_note: Controller, parser and thread-local errors are forwarded with codes that this table does
+  not exhaust; the mapping of the three explicit codes to triggers is partly inferred from the formatter
+  sites.
+examples:
+- name: object
+  summary: Named form; values invented
+  of: request
+  payload:
+    id: 40
+    method: guide
+    params:
+      recalibrate: false
+      settle:
+        pixels: 1.5
+        time: 10
+        timeout: 60
+- name: positional
+  summary: Positional form; values invented
+  of: request
+  payload:
+    id: 41
+    method: guide
+    params:
+    - true
+    - pixels: 1.5
+      time: 10
+      timeout: 60
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: guide
+    result: 0
+    code: 0
+    id: 40
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: guide
+    error: operation is in progress
+    code: 268
+    id: 42
+see_also:
+- loop
+- guide_pulse
+spec:
+- spec/guider/guiding.md#guiding-workflow

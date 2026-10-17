@@ -1,0 +1,30 @@
+title: set_paused params
+description: Object {paused, type} or positional array [paused, type]. paused is required. type matters
+  only when paused is true.
+anyOf:
+- type: object
+  required:
+  - paused
+  properties:
+    paused:
+      type:
+      - boolean
+      - integer
+      description: Pause flag; integer nonzero is true. Missing or other types give 106. False requests
+        mode 0 (resume) and skips all type handling.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7cdb0 (64-bit build)
+    type:
+      description: Only read when paused is true. Missing selects mode 1 (ordinary pause, in which exposures continue and corrections
+        are skipped); the string "full" selects mode 2 (full pause, in which frames are dropped and no exposure is scheduled); any
+        other string selects mode 1; a present non-string gives 105. Ignored (even if malformed)
+        when paused is false.
+      x-default: absent (mode 1)
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x7cdb0 (64-bit build)
+- type: array
+  minItems: 1
+  items:
+    description: Positional form [paused, type].
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, guider handler @0x7cdb0 (64-bit build)

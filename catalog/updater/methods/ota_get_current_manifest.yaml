@@ -1,0 +1,143 @@
+kind: method
+name: ota_get_current_manifest
+summary: 'Updater (firmware 9.75): read the device identity and the installed module manifest.'
+description: 'Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the
+  64-bit and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The
+  handler clears the thread error code and calls the updater''s single OTA manager. The OTA methods do
+  not use the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350
+  is wrapped is not established. Firmware update is a high-risk operation; do not send this to a real
+  device to test it. Replies with four identity members (product, hardware platform, device model, system
+  architecture) and, when the on-device manifest file is present and valid, the main version and the installed
+  modules. If the file is missing, unreadable or invalid the reply carries only the four identity members
+  (a full-OTA fallback; the device logs it). The manifest is valid when its schema version is 1, its main
+  version is a non-empty string and its module list is non-empty, with each module having a safe name
+  (no duplicates) and a non-empty version. The identity values differ by build: hardware platform 1126bp
+  and architecture aarch64 on the 64-bit build, 1126 and armv7l on the 32-bit build. The device model
+  is the model string with S30P, S50P and S30Plus mapped to S30 Pro, S50 Pro and S30 Plus; other values
+  (for example S80) pass through. These identity members match the fields the app sends to the vendor
+  API when it looks up a target.'
+grade: PURE GETTER / probable
+side_effect_tier: B
+confidence: READ (firmware 9.75); partly INFERRED, see description
+basis: static analysis of firmware 9.75, updater RPC handler @0x26580 (64-bit build), OTA manager; app
+  3.3.2 OtaService DTOs
+side_effects: None; reads a local file.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: ota_get_current_manifest request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: ota_get_current_manifest
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, updater dispatcher table, handler @0x26580 (64-bit build)
+    params:
+      description: Not read by the handler. The app omits it. Clients SHOULD omit it.
+      x-confidence: READ (app 3.3.2 emitter); firmware handler reads no params INFERRED
+      x-basis: app 3.3.2 OtaService; firmware 9.75 handler @0x26580 (64-bit build)
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - properties:
+      result:
+        type: object
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        properties:
+          product:
+            type: string
+            description: Product name; the literal seestar.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          hardware_platform:
+            type: string
+            description: 'Hardware platform literal: 1126bp (64-bit build) or 1126 (32-bit build).'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          device_model:
+            type: string
+            description: Device model name, for example S30 Pro, S50 Pro, S30 Plus, S50, S30 or S80.
+            x-confidence: READ (mapping); the set of values is INFERRED
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          system_architecture:
+            type: string
+            description: aarch64 (64-bit build) or armv7l (32-bit build).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+          main_version:
+            type: string
+            description: Installed main version string.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            x-required-when: the on-device manifest is valid
+          modules:
+            type: array
+            description: Installed modules (from the device manifest file). Present only when that file
+              is valid.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Module name.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+                version:
+                  type: string
+                  description: Module version string.
+                  x-confidence: READ
+                  x-basis: static analysis of firmware 9.75, updater OTA manager (64-bit build)
+        required:
+        - product
+        - hardware_platform
+        - device_model
+        - system_architecture
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors: []
+errors_note: No handler-specific error is established; an invalid local manifest is not an error (identity-only
+  reply).
+examples:
+- name: request
+  of: request
+  payload:
+    id: 100
+    method: ota_get_current_manifest
+  summary: App shape; params omitted (READ)
+- name: ok
+  of: reply_success
+  summary: Shape READ; all values invented
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: ota_get_current_manifest
+    result:
+      product: seestar
+      hardware_platform: 1126bp
+      device_model: S30 Pro
+      system_architecture: aarch64
+      main_version: '9.75'
+      modules:
+      - name: example_module
+        version: '1.0'
+    code: 0
+    id: 100
+see_also:
+- ota_get_session
+- ota_begin
+- ota_prepare_module
+- ota_retry_upgrade
+- ota_abort
+- begin_recv
+- OtaUpdate
+spec:
+- spec/updater/index.md#ota-methods-firmware-975
+- spec/updater/ota-package-handling.md#ota-package-handling

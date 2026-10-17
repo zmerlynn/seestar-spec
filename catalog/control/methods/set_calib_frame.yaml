@@ -1,0 +1,128 @@
+kind: method
+name: set_calib_frame
+summary: Select the calibration frame file for a frame type and enable or disable it.
+description: Replaces the selected calibration file name and enable flag for the given frame type. When
+  enabling, the device reads the frame's FITS dimensions, updates its size metadata and persists the dimensions
+  and file name; when disabling it skips the FITS lookup but still replaces the name. Refused while a
+  Stack is running with the same frame type. The configuration write result is ignored.
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, set_calib_frame @0xd8fa0, SetCalibrateFrame @0x193090
+side_effects: Updates the selected calibration file name, enable flag and, when enabling, size metadata
+  and cached-loaded flag; persists enabled settings. Blocks on synchronous file and configuration work
+  without an explicit timeout. Every full call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_calib_frame request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_calib_frame
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - type: object
+        required:
+        - type
+        - name
+        - enable
+        properties:
+          type:
+            type: string
+            description: 'Frame type: dark, bias or flat. light parses but is rejected with 209, as is
+              any unknown name.'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, set_calib_frame @0xd8fa0, SetCalibrateFrame @0x193090
+          name:
+            type: string
+            description: Calibration file name; concatenated onto the device's save-directory path when
+              enabling (formatted path limited to 255 bytes, no other normalisation).
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, set_calib_frame @0xd8fa0, SetCalibrateFrame @0x193090
+          enable:
+            type:
+            - boolean
+            - integer
+            description: Enable flag; integer nonzero is true.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, set_calib_frame @0xd8fa0, SetCalibrateFrame @0x193090
+      - type: array
+        minItems: 3
+        prefixItems:
+        - type: string
+        - type: string
+        - type:
+          - boolean
+          - integer
+      description: Object, or positional array [type, name, enable]; extra elements ignored.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, set_calib_frame @0xd8fa0, SetCalibrateFrame @0x193090
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: type or name is not a string
+  label: expected string param
+- code: 106
+  trigger: enable is not a boolean or integer
+  label: expected bool param
+- code: 209
+  trigger: Unsupported frame type (light, unknown type or unknown name)
+  label: invalid value
+- code: 259
+  trigger: A Stack work function is active and its capture frame type equals the requested type
+  label: stack is already running
+- code: 207
+  trigger: Enabling and the FITS dimensions of the file cannot be read
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Deeper FITS failures and exceptions are unresolved.
+examples:
+- name: enable-dark
+  summary: Enable a dark frame (shape per static analysis; name invented)
+  of: request
+  payload:
+    id: 41
+    method: set_calib_frame
+    params:
+      type: dark
+      name: example_dark.fit
+      enable: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_calib_frame
+    result: 0
+    code: 0
+    id: 41
+- name: light-rejected
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_calib_frame
+    error: invalid value
+    code: 209
+    id: 42
+see_also:
+- get_calib_frame
+- set_calib_param
+spec:
+- spec/control/calibration-frames/frames-and-interactions.md#selecting-frames

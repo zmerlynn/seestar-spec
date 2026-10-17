@@ -1,0 +1,5 @@
+title: scope_get_mode result
+type: string
+description: Mount mode name. The value set is unresolved.
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0x7a170 (64-bit build)

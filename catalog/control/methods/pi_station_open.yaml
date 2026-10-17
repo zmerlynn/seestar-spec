@@ -1,0 +1,81 @@
+kind: method
+name: pi_station_open
+summary: Enable station-mode (client) Wi-Fi on the device.
+description: Calls the network helper that changes station-server availability with the flag true. No
+  request parameters are read. The app (3.3.2) chooses between pi_station_open and pi_station_close from
+  one boolean (READ). Success means the script output contained no error text.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcd870, ns_net::pi_station_server @0x6fcf70 (64-bit
+  build)
+side_effects: Runs a network command synchronously (no timeout) that changes station-mode availability
+  or configuration.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_station_open request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_station_open
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, scalar, object and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcd870 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 214
+  trigger: The network script process could not be started
+  label: fail to run command
+- code: 207
+  trigger: Script output contains the text error
+  label: fail to operate
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No result member on errors; further script failures are not established.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 121
+    method: pi_station_open
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_open
+    result: 0
+    code: 0
+    id: 121
+- name: script-error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_station_open
+    error: fail to operate
+    code: 207
+    id: 122
+see_also:
+- pi_station_close
+- pi_station_state
+- pi_station_select
+spec:
+- spec/control/network.md#station-wi-fi-client

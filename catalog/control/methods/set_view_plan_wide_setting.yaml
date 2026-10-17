@@ -1,0 +1,118 @@
+kind: method
+name: set_view_plan_wide_setting
+summary: Set the wide-camera capture type, frame size and optional exposure settings used by view plans,
+  saving the previous settings for later restore.
+description: Only on the device process type 2 (the meaning of that value is not established here; a different
+  process replies 210). Copies the current stack settings, sets the supplied wide-camera fields (and the
+  optional exposure group) and applies them. The first apply while no snapshot is held saves the prior
+  settings so restore_view_plan_wide_setting can undo it. Before applying, the device also clears the
+  saved stack-result filename and duration and resets the image id to 65535, so get_view_plan_stack_result
+  output changes even if the apply later fails. Application is not shown to be transactional and the relative
+  order of the Setting event and the reply is not established. Registered in the 64-bit build only; no
+  32-bit support is inferred.
+grade: MUTATOR / probable (64-bit build; absent from the 32-bit build)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xdf0c0, SetViewPlanStackSetting @0x1a0ce0, SetStackSetting
+  @0x19b230 (64-bit build only)
+side_effects: Updates persistent stack and camera settings synchronously, stores a prior-settings snapshot
+  (first apply only), resets the saved stack-result metadata, and may emit a Setting event listing changed
+  fields (wide_cam, and a stack object with members such as capt_type, wide_size_index, scene_separate,
+  scene_shooting_duration_min and exposure members; no full snapshot is established). No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_view_plan_wide_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_view_plan_wide_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetViewPlanWideSettingParams.yaml
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: Device process type is not 2
+  label: not supported
+- code: 107
+  trigger: params absent or not an object
+  label: expected object param
+- code: 104
+  trigger: capt_type or wide_size_index missing or not an integer, or an optional integer member missing
+    or not an integer when the group is used
+  label: expected int param
+- code: 209
+  trigger: capt_type is not 0, 4 or 5
+  label: invalid value
+- code: 204
+  trigger: wide_size_index outside 0..3, or scene_shooting_duration_min or exp_ms below 1
+  label: out of limit
+- code: 106
+  trigger: scene_separate or auto_exp_enable present with a type other than boolean or integer
+  label: expected bool param
+- code: 524
+  trigger: Apply failed because the stack simulator is still enabled while the exposure changes
+  label: function conflict
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: Other state-dependent apply failures are reachable and are not exhaustively enumerated.
+examples:
+- name: request
+  summary: Required members only
+  of: request
+  payload:
+    id: 50
+    method: set_view_plan_wide_setting
+    params:
+      capt_type: 0
+      wide_size_index: 1
+- name: with-exposure
+  summary: With the optional exposure group
+  of: request
+  payload:
+    id: 51
+    method: set_view_plan_wide_setting
+    params:
+      capt_type: 4
+      wide_size_index: 0
+      scene_separate: false
+      scene_shooting_duration_min: 20
+      exp_ms: 10000
+      auto_exp_enable: false
+- name: ok
+  of: reply_success
+  payload:
+    method: set_view_plan_wide_setting
+    result: 0
+    code: 0
+    id: 50
+- name: bad-capt-type
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_view_plan_wide_setting
+    error: invalid value
+    code: 209
+    id: 52
+see_also:
+- restore_view_plan_wide_setting
+- get_view_plan_stack_result
+- set_view_plan
+spec:
+- spec/control/legacy-plans-and-sequences/events-and-observation.md#viewplan-wide-camera-helpers

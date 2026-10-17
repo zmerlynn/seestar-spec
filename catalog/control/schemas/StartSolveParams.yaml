@@ -1,0 +1,23 @@
+title: start_solve params
+description: 'Optional. An object {ra} or an array [ra]; every other shape (absent, null, scalar, empty
+  array) behaves as no params. Only a string `ra` has an effect; absent, null or non-string values silently
+  select a solve of the live image. The name `ra` is misleading: it is not a coordinate.'
+oneOf:
+- type: object
+  properties:
+    ra:
+      type: string
+      description: File name to solve. The device concatenates the image storage root and this string
+        (no path normalisation or range check; an empty string is accepted) and solves that stored image.
+        That the string is a file name is INFERRED from the concatenation. No dec, path or other key is
+        read.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe5c00, StartSolve @0x1fb9f0, StartSolveImg
+        @0x1fbb90, CheckSolveExec @0x1fb810 (64-bit build)
+- type: array
+  items:
+    type: string
+  description: '[ra]; first element only (INFERRED to follow the object form).'
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe5c00, StartSolve @0x1fb9f0, StartSolveImg @0x1fbb90,
+  CheckSolveExec @0x1fb810 (64-bit build)

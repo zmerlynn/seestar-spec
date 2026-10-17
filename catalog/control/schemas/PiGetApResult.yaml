@@ -1,0 +1,21 @@
+title: pi_get_ap result
+type: object
+x-required-when: ssid and passwd always present on success (firmware 9.31 and 9.75)
+description: >-
+  Current access-point credentials. Firmware 9.31: both members are always present on success and absent on
+  failure. Firmware 9.75 (64-bit build): the shape is unchanged but passwd is an enc1 string (secure-communication
+  chapter); a connection without a session gets error 570. There is no wifi object.
+properties:
+  ssid:
+    type: string
+    description: Access-point SSID as reported by the network script.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbfc70, ns_net::pi_get_AP @0x702510 (64-bit build)
+  passwd:
+    type: string
+    description: Access-point key. Firmware 9.75 returns an enc1 token here, not plaintext. Note the member
+      is named passwd here, whereas the setter pi_set_ap takes key.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbfc70, ns_net::pi_get_AP @0x702510 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbfc70, ns_net::pi_get_AP @0x702510 (64-bit build)

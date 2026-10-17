@@ -1,0 +1,87 @@
+kind: method
+name: reset_plan
+summary: Reset the progress of legacy plans, targets or sequences.
+description: Resets capture progress and per-plan status of the selected items and marks the plans changed;
+  with no selector every plan is reset. Contents (names, settings) are kept.
+grade: MUTATOR / probable (64-bit build; 32-bit build probable)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xcfa20, ResetPlan @0x30e050 (64-bit build)
+side_effects: Resets progress counters through the target-reset helper, clears per-plan status, marks
+  plans changed and persists the map (save result ignored). No explicit timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: reset_plan request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: reset_plan
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/LegacyPlanSelectorParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xcfa20, ResetPlan @0x30e050 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Selector container is malformed
+  label: expected object param
+- code: 209
+  trigger: target_id without plan_id, or seq_id without target_id
+  label: invalid value
+- code: 224
+  trigger: Exposure mode 2 is active and the plan exposure worker is running
+  label: cannot edit sequence unless reset the progress
+- code: 200
+  trigger: No selected plan was processed, or the delegated target reset failed
+  label: invalid id
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: one-plan
+  summary: Reset plan 1 (values invented)
+  of: request
+  payload:
+    id: 61
+    method: reset_plan
+    params:
+      plan_id: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_plan
+    result: 0
+    code: 0
+    id: 61
+- name: target-without-plan
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: reset_plan
+    error: invalid value
+    code: 209
+    id: 62
+see_also:
+- delete_plan
+- clear_plan
+- get_plan
+- set_plan
+spec:
+- spec/control/legacy-plans-and-sequences/plans.md#selectors

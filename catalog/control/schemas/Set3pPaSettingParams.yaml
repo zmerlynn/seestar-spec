@@ -1,0 +1,24 @@
+title: set_3p_pa_setting params
+type: object
+properties:
+  is_pa_3p:
+    type:
+    - boolean
+    - integer
+    description: Select three-point alignment. Boolean or integer (nonzero true). A wrong type keeps the
+      current value.
+    x-default: current value
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcb820, Set3PPaSetting @0x120380 (64-bit build)
+  rotate_angle:
+    type: number
+    description: Rotation angle, degrees (INFERRED). Integer or float; truncated toward zero to an integer.
+      No range check; behaviour for out-of-range or NaN input is not established. A wrong type keeps the
+      current value.
+    x-default: current value
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xcb820, Set3PPaSetting @0x120380 (64-bit build)
+description: Patch over the stored setting. Missing or wrong-typed members keep their current value; unknown
+  members are ignored. Only an object is accepted (an array, even [object], gives 107).
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xcb820, Set3PPaSetting @0x120380 (64-bit build)

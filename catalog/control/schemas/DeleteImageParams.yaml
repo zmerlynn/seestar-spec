@@ -1,0 +1,29 @@
+title: delete_image params
+type:
+- object
+- array
+description: Object form {name, storage?}, or positional [name] / [[name1, name2]] (storage is not available
+  positionally). A bare string is not accepted.
+properties:
+  name:
+    type:
+    - string
+    - array
+    description: File name, or array of names, relative to the image directory. Non-string array items
+      are skipped; an empty array is a no-op success. No default.
+    items:
+      type: string
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, AddImages @0xae600 (64-bit build)
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe5210, AddImages @0xae600 (64-bit build)
+  storage:
+    type: string
+    description: Storage selector, matched case-insensitively against the model-dependent storage names
+      (sd, udisk, plus emmc on models that have it). A missing or non-string value silently uses the current
+      image path. An unrecognised string gives 204.
+    x-default: the current image save path
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xe5210 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xe5210 (64-bit build)

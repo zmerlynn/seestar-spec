@@ -1,0 +1,154 @@
+kind: event
+name: ViewPlan
+summary: Device-initiated notification of the ViewPlan worker state, with the held plan attached.
+grade: PURE GETTER (shape only; the terminal-state formatter also persists the plan to storage)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, print_plan_state @0x405ce0, FormatViewPlan @0x404630 (64-bit
+  build); working event OBSERVED once (2026-10-12)
+side_effects: Observation only for the receiver. On the device, the terminal-state callback writes the
+  plan file and a separate reporting record.
+payload:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: ViewPlan event
+  type: object
+  discriminator: Event
+  description: 'Emitted on ViewPlan worker state changes: working at worker start (before day selection),
+    then one terminal state (complete, fail or cancel) when the worker ends. The inspected scheduling
+    loop sends no periodic ViewPlan event. Delivery can be suppressed or dropped (no callback configured,
+    skip-flagged terminal sends); a receiver that connects mid-run sees neither transition. complete means
+    the loop ended, not that every target succeeded.'
+  required:
+  - Event
+  - Timestamp
+  - state
+  - lapse_ms
+  properties:
+    Event:
+      type: string
+      const: ViewPlan
+      description: Discriminator.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, ViewPlan detail constructor name string @0x72fab8
+    Timestamp:
+      type: string
+      description: Decimal string with nine fractional digits from a monotonic clock; not a calendar time.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, getTimestamp @0x6d7a60; shape OBSERVED (2026-10-12)
+    state:
+      type: string
+      enum:
+      - idle
+      - working
+      - complete
+      - fail
+      - cancel
+      description: The complete state table. idle is an initial/restored state and is not automatically
+        sent as an event.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, get_func_state_name @0x6d8c10; working OBSERVED once
+        (2026-10-12)
+    stage:
+      type: string
+      description: Only when a non-empty stage string is held; no ViewPlan stage literal is established.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    code:
+      type: integer
+      description: Present when state is fail. 207 when the worker aborts on a second schedule overlap
+        (see the scheduling chapter). 536 when a start is requested while a ViewPlan/demonstrate
+        sequence is already running (a thread-local error code set by `StartDemonstrate`, guarded by
+        `IsViewPlanRunning`).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, MyThr @0x6e57d0,
+        StartDemonstrate @0x1a33f0 (64-bit imager build)
+    error:
+      type: string
+      description: Message for code; present with code when state is fail.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    lapse_ms:
+      type: integer
+      description: Elapsed milliseconds, signed 32-bit low bits. Running state uses current monotonic
+        minus start; terminal states use end minus start.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    route:
+      type: array
+      items:
+        type: string
+      description: Function-parent path when included; may be absent.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0
+    plan:
+      type: object
+      description: Added only when the held target list is non-empty. Shape is that of the held plan,
+        not a validator schema.
+      properties:
+        plan_name:
+          type: string
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatViewPlan @0x404630
+        update_time_seestar:
+          type: string
+          description: Only when non-empty.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatViewPlan @0x404630
+        plan_target_af:
+          type: boolean
+          description: Read from a device setting, not from the held parsed flag; the two can differ.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatViewPlan @0x404630; echo OBSERVED (2026-10-12)
+        viewplan_gohome:
+          type: boolean
+          description: Read from a device setting, as for plan_target_af.
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatViewPlan @0x404630; echo OBSERVED (2026-10-12)
+        list:
+          type: array
+          items:
+            $ref: ../schemas/ViewPlanEventTarget.yaml
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.31, FormatTarget @0x403480
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, print_plan_state @0x405ce0; echo of a sent plan OBSERVED
+        (2026-10-12)
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, print_plan_state @0x405ce0
+examples:
+- name: working
+  summary: Start of a run (shape OBSERVED once; values invented)
+  of: payload
+  payload:
+    Event: ViewPlan
+    Timestamp: '1234.123456789'
+    state: working
+    lapse_ms: 0
+    plan:
+      plan_name: Example plan
+      plan_target_af: false
+      viewplan_gohome: true
+      list:
+      - target_id: 1790000000
+        target_name: Example target
+        start_min: 1200
+        duration_min: 90
+        skip: false
+        camera_mode: tele
+        lp_filter: false
+- name: failed-second-rollover
+  summary: Static example of a fail event (READ, not captured)
+  of: payload
+  payload:
+    Event: ViewPlan
+    Timestamp: '1234.123456789'
+    state: fail
+    code: 207
+    error: fail to operate
+    lapse_ms: 5
+see_also:
+- set_view_plan
+- clear_view_plan
+spec:
+- spec/control/plan-scheduling.md#events
+- spec/control/events/nested-schemas.md#viewplanplan-and-cached-target-objects

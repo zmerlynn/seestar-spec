@@ -1,0 +1,75 @@
+kind: method
+name: begin_streaming
+summary: 'Image socket: start a live-view frame stream for the requesting client.'
+description: 'Image-socket (4800/4804) method. Accepted only in continuous exposure; otherwise the reply
+  is the error text `only available for continuous exposure`. On success the handler registers the calling
+  connection with its request id in the shared stream-subscriber list (under a lock), replies with the
+  text `done`, and starts the live-view streaming thread. That thread waits up to 500 ms for each new
+  preview frame and pushes one framed image per new frame to every registered connection, reusing that
+  connection''s request id: JPEG in Jpg mode, otherwise uncompressed raw (dataType 2). A connection whose
+  write fails is dropped from the stream. READ. It mutates shared streaming state and starts a thread:
+  MUTATOR / tier C. The 32-bit build matches (READ). Firmware 9.75 (64-bit): when the preview setting raw_bin2 is true, raw 16-bit Bayer (imgType 1) and RGB48 (imgType 5) frames on the non-JPEG path are binned 2x2 before sending; the header width, height and bytes 20 to 23 are halved and imgType is unchanged (READ; 32-bit not checked).'
+grade: 'MUTATOR / established (64-bit build; 32-bit build matches (READ))'
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x115000
+  (64-bit build), @0xa5210 (32-bit build); static analysis of app 3.3.2, MainFileManager.startStream;
+  handler signature begin_streaming(int,int,const json_value*,socket_json_imager_server_binary*); subscriber
+  std::map; GetViewMode/GetExpMode; CMyThread::Start on FocusStreamingThread (500 ms new-frame wait; "reponse
+  error, erased" on write failure)
+side_effects: Registers the client in the shared stream-subscriber list under a mutex and starts the live-view
+  streaming thread; reads the current view and exposure modes. A client whose write fails is removed from
+  the list. READ.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: begin_streaming request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: begin_streaming
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler
+        @0x115000 (64-bit build), @0xa5210 (32-bit build)
+    params:
+      description: Not read by the handler. The app sends no params member. Clients SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x115000 (64-bit build); static analysis of
+        app 3.3.2, MainFileManager.startStream
+reply_success:
+  title: begin_streaming success reply
+  description: 'Not an ordinary command reply. First the text `done` (imgType 0, dataType 0), then one
+    framed image per new preview frame carrying the same id byte, until stop_streaming or a write error:
+    JPEG (imgType 4) in Jpg mode, otherwise uncompressed raw (dataType 2). 80-byte big-endian header (spec/media/image-sockets.md#reply-framing),
+    then the payload; errors are text replies with dataType 1.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x115000
+    (64-bit build), @0xa5210 (32-bit build)
+reply_error:
+  title: begin_streaming error reply
+  description: 'Text reply (imgType 0, dataType 1): `only available for continuous exposure` when the
+    device is not in continuous exposure. A write error during streaming is not reported; the connection
+    is dropped from the stream. No top-level JSON code member.'
+  x-confidence: READ
+  x-basis: static analysis of firmware 9.31, imager binary image table (serves 4800/4804), handler @0x115000
+    (64-bit build), @0xa5210 (32-bit build)
+errors: []
+errors_note: No numeric code reaches the client. The handler's only error is the text `only available
+  for continuous exposure`; malformed or unknown requests get the dispatcher text replies (spec/media/image-sockets.md#grammar,
+  R4).
+examples:
+- name: request
+  of: request
+  payload:
+    id: 1
+    method: begin_streaming
+see_also:
+- stop_streaming
+- get_current_img
+spec:
+- spec/media/image-sockets.md#streaming-start-and-stop

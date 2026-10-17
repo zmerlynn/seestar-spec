@@ -1,0 +1,43 @@
+title: pi_output_get2 entry
+type: object
+description: State of one output. freq is present only for a single selected beep, heater or wide_heater
+  read; reset and raw-GPIO selections, and every element of the all-ports array, omit it.
+required:
+- type
+- state
+- value
+- is_pwm
+properties:
+  type:
+    type: string
+    description: Output type tag.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+      Read @0x323e70 (64-bit build)
+  state:
+    type: boolean
+    description: Output on/off.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+      Read @0x323e70 (64-bit build)
+  value:
+    type: number
+    description: Raw cached or read duty percent; not forced to 0 when state is false.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+      Read @0x323e70 (64-bit build)
+  is_pwm:
+    type: boolean
+    description: True when the output is in PWM mode.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+      Read @0x323e70 (64-bit build)
+  freq:
+    type: integer
+    description: PWM frequency from the controller cache; Hz is INFERRED from PWM frequency arithmetic.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70,
+      Read @0x323e70 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xbed80, GPIOController::ReadByIndex @0x324a70, Read
+  @0x323e70 (64-bit build)

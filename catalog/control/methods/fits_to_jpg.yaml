@@ -1,0 +1,98 @@
+kind: method
+name: fits_to_jpg
+summary: Convert a stored FITS image to a JPEG with EXIF metadata.
+description: Synchronously converts the named FITS file and writes a JPEG next to it, then adds EXIF metadata
+  (maker, model, firmware, date). If an accessible JPEG of the output name already exists the call succeeds
+  at once without converting, even if the FITS changed. The handler ignores the boolean status of its
+  path-relativising step. Nothing about the conversion (dimensions, progress) is returned. No event is
+  emitted.
+grade: MUTATOR / established (64-bit build); 32-bit build probable
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xbd430, Fit2Jpg @0x121de0 (64-bit build)
+side_effects: Creates or overwrites a JPEG file and writes EXIF; a JPEG can remain on disk when the EXIF
+  step fails.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: fits_to_jpg request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: fits_to_jpg
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/FitsToJpgParams.yaml
+reply_success:
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/FitsToJpgResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xbd430, Fit2Jpg @0x121de0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 105
+  trigger: Filename missing, null, empty array or not a string
+  label: expected string param
+- code: 207
+  trigger: Name has no FITS suffix, output name could not be built, or the conversion failed without setting
+    a code
+  label: fail to operate
+- code: 258
+  trigger: Output file could not be opened (propagated from the write step)
+  label: open file failed
+- code: 218
+  trigger: Short write of the output file (propagated)
+  label: fail to write file
+- code: 300
+  trigger: EXIF update failed, after the JPEG may already be written
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: convert
+  summary: Values invented
+  of: request
+  payload:
+    id: 12
+    method: fits_to_jpg
+    params:
+      name: Example_stack.fit
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: fits_to_jpg
+    result:
+      jpg_name: Example_stack.jpg
+    code: 0
+    id: 12
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: fits_to_jpg
+    error: expected string param
+    code: 105
+    id: 13
+see_also:
+- get_albums
+spec:
+- spec/media/files-and-album.md#album-methods-on-4700

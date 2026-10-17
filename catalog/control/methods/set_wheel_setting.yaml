@@ -1,0 +1,112 @@
+kind: method
+name: set_wheel_setting
+summary: Update the filter-wheel slot names and/or per-slot exposure times.
+description: Params are an object (or an array whose first element is an object). Optional names (string
+  array) and exp_sec (number array, integers or reals); absent members leave the corresponding map unchanged,
+  a member of the wrong container type is silently ignored, unknown keys are ignored and an empty object
+  succeeds. A wrong element type fails with 105 (names) or 108 (exp_sec). Each array is applied through
+  a setter that needs an open wheel and exactly as many entries as the current map. Members are applied
+  in wire order and the first failure stops processing; changes already applied stay, with no rollback.
+  Persists via SaveEFWName and SaveEFWExp.
+grade: MUTATOR / probable (64-bit and 32-bit builds)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xd2130 (64-bit build)
+side_effects: Replaces the in-memory name and/or exposure maps and writes them to persistent storage.
+  No rollback, no timeout.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_wheel_setting request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_wheel_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      $ref: ../schemas/SetWheelSettingParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xd2130 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 107
+  trigger: Params missing or not an object (after unwrapping an array)
+  label: expected object param
+- code: 105
+  trigger: An element of names is not a string
+  label: expected string param
+- code: 108
+  trigger: An element of exp_sec is not a number
+  label: expected float param
+- code: 318
+  trigger: No wheel is open
+  label: device not connected
+- code: 209
+  trigger: Array length differs from the current slot count
+  label: invalid value
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+examples:
+- name: request
+  summary: Update exposures only (values invented)
+  of: request
+  payload:
+    id: 131
+    method: set_wheel_setting
+    params:
+      exp_sec:
+      - 10
+      - 10
+      - 15
+- name: both
+  of: request
+  payload:
+    id: 132
+    method: set_wheel_setting
+    params:
+      names:
+      - Dark
+      - IR cut
+      - Light pollution
+      exp_sec:
+      - 10
+      - 10
+      - 15
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_setting
+    result: 0
+    code: 0
+    id: 131
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_wheel_setting
+    error: invalid value
+    code: 209
+    id: 133
+see_also:
+- get_wheel_setting
+- get_wheel_slot_name
+- set_wheel_slot_name
+spec:
+- spec/control/focus-and-filter.md#names-and-settings

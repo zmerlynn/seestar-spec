@@ -1,0 +1,15 @@
+title: get_sensor_temperature result
+type: object
+required:
+- temperature
+properties:
+  temperature:
+    type: number
+    description: Temperature from the inertial (IMU) sensor, as a float widened to double. Despite the
+      method name this is established to be the IMU, not the imaging-camera sensor. Unit, range, runtime
+      sensor model and physical placement are unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb6cf0, gsensor_temperature @0x3c71b0 (64-bit
+      build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb6cf0, gsensor_temperature @0x3c71b0 (64-bit build)

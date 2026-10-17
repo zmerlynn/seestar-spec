@@ -1,0 +1,87 @@
+kind: method
+name: set_all_connected
+summary: Connect or disconnect all equipment.
+description: true connects all operational equipment and false disconnects it, through the equipment dialog
+  logic. The value MUST be an actual JSON boolean (bare or as the first array element); an integer is
+  rejected with 106 because this handler tests the node type directly. A missing equipment dialog gives
+  300; a connection failure is also reported (code 201 in the source, not in its explicit error list).
+  Event ordering and subtype-specific errors are unresolved. Via the imager command port (4700) the request
+  reaches this handler only as a forwarded unknown method; see the control service for the relay.
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, guider handler @0x74100 (64-bit build)
+side_effects: Connects or closes camera, mount and auxiliary equipment connections.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: set_all_connected request
+  required:
+  - id
+  - method
+  - params
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: set_all_connected
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/SetAllConnectedParams.yaml
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider handler @0x74100 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 106
+  trigger: Parameter is not a JSON boolean
+  label: expected bool param
+- code: 300
+  trigger: Equipment dialog object missing
+  label: internal error
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+examples:
+- name: request
+  summary: Example request (values invented)
+  of: request
+  payload:
+    id: 50
+    method: set_all_connected
+    params: true
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_all_connected
+    result: 0
+    code: 0
+    id: 50
+- name: error
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: set_all_connected
+    error: expected bool param
+    code: 106
+    id: 51
+see_also:
+- set_connected
+spec:
+- spec/guider/index.md#method-groups

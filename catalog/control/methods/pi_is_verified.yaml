@@ -1,0 +1,80 @@
+kind: method
+name: pi_is_verified
+summary: Report whether the device passes its hardware/licence verification check.
+description: No request parameters are read. Returns the boolean produced by the verification routine;
+  a false value is a successful reply, not an error. The routine refreshes cached verification, model
+  and serial values and runs fixed signature/digest utilities on scratch files, which is why the strict
+  grade is MUTATOR even though no licence or setting is activated or written back by this call. Observer
+  tier B is probable only (conventional utility semantics assumed, not established).
+grade: MUTATOR / established (64-bit and 32-bit builds)
+side_effect_tier: B
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc4ba0, hardwareVerify @0x320140 (64-bit build)
+side_effects: Refreshes verification, model and serial memo caches and writes fixed scratch files used
+  by the verification utilities; diagnostics are logged. No licence activation or settings write is reached.
+  Tier B is probable (INFERRED from conventional utility behaviour); utility success and cryptographic
+  validity are unresolved.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: pi_is_verified request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: pi_is_verified
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc4ba0, hardwareVerify @0x320140 (64-bit build)
+reply_success:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  title: pi_is_verified success reply
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        type: boolean
+        description: True when verification passes; false is still a successful reply.
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc4ba0, hardwareVerify @0x320140 (64-bit
+          build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  summary: No parameters
+  of: request
+  payload:
+    id: 51
+    method: pi_is_verified
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: pi_is_verified
+    result: true
+    code: 0
+    id: 51
+see_also:
+- pi_encrypt
+spec:
+- spec/control/maintenance.md#device-section
+- spec/control/session-handshake/verification-and-roles.md#enforcement

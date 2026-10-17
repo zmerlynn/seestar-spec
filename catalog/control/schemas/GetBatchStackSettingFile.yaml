@@ -1,0 +1,37 @@
+title: get_batch_stack_setting file record
+type: object
+description: One retained input file. Files that are missing or inaccessible are pruned from the list
+  rather than emitted.
+required:
+- name
+- date
+- thn
+- type
+properties:
+  name:
+    type: string
+    description: Stored path of the file.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+      @0x3a7010 (64-bit build)
+  date:
+    type: string
+    description: File date string from the image info. Time zone and format are unresolved.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+      @0x3a7010 (64-bit build)
+  thn:
+    type: string
+    description: Thumbnail name or path for the file.
+    x-confidence: INFERRED
+    x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+      @0x3a7010 (64-bit build)
+  type:
+    type: integer
+    description: File type code. The complete enumeration is unresolved.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList
+      @0x3a7010 (64-bit build)
+x-confidence: READ
+x-basis: static analysis of firmware 9.31, handler @0xb7270, GetFileList @0x3a8b90, FormatFileList @0x3a7010
+  (64-bit build)

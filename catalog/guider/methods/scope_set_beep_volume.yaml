@@ -1,0 +1,92 @@
+kind: method
+name: scope_set_beep_volume
+summary: Set the mount beep volume.
+description: 'Calls the mount beep-volume setter, which sends a sound-volume command to the device. Success
+  returns integer 0; whether the volume actually changed is not acknowledged in the reply. Served by the
+  guider process (TCP 4400); a client on the main command port reaches it through the imager unknown-method
+  relay, which is unavailable to guest-table clients. The native-handler grade below does not describe
+  the relay. Mount serial (firmware 9.31, READ): :SBu0, :SBu1 or :SBu2.'
+grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0x71080 (64-bit build)
+side_effects: Sends a sound-volume command to the mount device.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: scope_set_beep_volume request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: scope_set_beep_volume
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, guider command table
+    params:
+      $ref: ../schemas/ScopeSetBeepVolumeParams.yaml
+      description: Volume value.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0x71080 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 204
+  trigger: Volume index above 2
+  label: out of limit
+- code: 200
+  trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: no method of type string (a non-string method counts as missing)'
+  label: invalid request
+- code: 101
+  trigger: 'Dispatcher: text fails to parse'
+  label: 'invalid JSON request: <reason> on line <n> ...'
+- code: 103
+  trigger: 'Dispatcher: unregistered method'
+  label: method not found
+- code: 104
+  trigger: params missing or not an integer scalar
+  label: expected int param
+- code: 315
+  trigger: No mount is connected
+  label: mount is not connected
+errors_note: Further branches forward the error code recorded by the native mount layer; those codes are
+  not exhausted by this table.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 21
+    method: scope_set_beep_volume
+    params: 1
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_beep_volume
+    result: 0
+    code: 0
+    id: 21
+- name: err-104
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: scope_set_beep_volume
+    error: expected int param
+    code: 104
+    id: 22
+see_also:
+- scope_set_connection_mode
+- scope_set_eq_mode
+spec:
+- spec/guider/index.md#method-groups
+- spec/guider/mount-serial-commands.md#the-scope_-method-to-command-mapping

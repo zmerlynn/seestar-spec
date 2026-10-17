@@ -1,0 +1,83 @@
+kind: method
+name: get_wheel_setting
+summary: Return the filter-wheel slot names and per-slot exposure times.
+description: Reads no parameters. The result object always carries names (string array) and exp_sec (number
+  array), each enumerating its in-memory map in ascending slot-key order, even when empty. The two arrays
+  are not guaranteed by the formatter to align slot for slot. The exp_sec unit is seconds (INFERRED from
+  the member name). No wheel needs to be open.
+grade: PURE GETTER / probable (64-bit and 32-bit builds)
+side_effect_tier: A
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xc2be0, GetSlotName @0x301110, GetSlotExp @0x301120
+  (64-bit build)
+side_effects: Serialises references to the in-memory name and exposure maps; no writes, no wait, no open-wheel
+  check.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: get_wheel_setting request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: get_wheel_setting
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      description: Not read. Omission, null, object, scalar and array all take the same path. Clients
+        SHOULD omit it.
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xc2be0 (64-bit build)
+reply_success:
+  title: get_wheel_setting reply (success)
+  allOf:
+  - $ref: ../../common/schemas/ReplySuccessWith.yaml
+  - type: object
+    properties:
+      result:
+        $ref: ../schemas/GetWheelSettingResult.yaml
+        x-confidence: READ
+        x-basis: static analysis of firmware 9.31, handler @0xc2be0 (64-bit build)
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: No handler-specific error is reachable.
+examples:
+- name: request
+  of: request
+  payload:
+    id: 121
+    method: get_wheel_setting
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: get_wheel_setting
+    result:
+      names:
+      - Dark
+      - IR cut
+      - Light pollution
+      exp_sec:
+      - 10.0
+      - 10.0
+      - 10.0
+    code: 0
+    id: 121
+see_also:
+- set_wheel_setting
+- get_wheel_slot_name
+- set_wheel_slot_name
+spec:
+- spec/control/focus-and-filter.md#names-and-settings

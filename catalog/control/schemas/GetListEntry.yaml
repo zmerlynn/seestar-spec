@@ -1,0 +1,18 @@
+title: get_list entry
+type: object
+required:
+- name
+- obj_number
+properties:
+  name:
+    type: string
+    description: List display name.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_list @0xb4db0 (64-bit build)
+  obj_number:
+    type: integer
+    description: Number of objects in the list.
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.31, get_list @0xb4db0 (64-bit build)
+x-basis: static analysis of firmware 9.31, get_list @0xb4db0 (64-bit build)
+x-confidence: READ

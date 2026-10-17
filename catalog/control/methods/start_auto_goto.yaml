@@ -1,0 +1,133 @@
+kind: method
+name: start_auto_goto
+summary: Start the auto-goto worker towards an RA/Dec target.
+description: Rejected when a View function is active. Before storing the target the device refuses sentinel
+  coordinates, targets below the horizon and targets it cannot go to. Success means the goto worker thread
+  was started, not that the target was reached; mount, read and solver failures happen asynchronously
+  and are reported through AutoGoto events (payload unresolved).
+grade: MUTATOR / established (D64 and D32 command-socket invocation)
+side_effect_tier: C
+confidence: READ
+basis: static analysis of firmware 9.31, handler @0xe7700, StartAutoGoto @0x16d5b0 (64-bit build)
+side_effects: Overwrites the global auto-goto parameters, resets goto status, and starts the named goto
+  worker (function 0). The horizon check can refresh the cached location before a later error. Every full
+  call also makes the shared diagnostic log writes.
+request:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  title: start_auto_goto request
+  required:
+  - id
+  - method
+  properties:
+    id:
+      $ref: ../../common/schemas/Id.yaml
+    method:
+      type: string
+      const: start_auto_goto
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, dispatcher table
+    params:
+      anyOf:
+      - type: object
+        required:
+        - ra
+        - dec
+        properties:
+          ra:
+            type: number
+            description: Right ascension. Treated as hours (the horizon computation multiplies it by 15).
+              No range validation.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe7700, StartAutoGoto @0x16d5b0 (64-bit
+              build)
+          dec:
+            type: number
+            description: Declination in degrees. No range validation.
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.31, handler @0xe7700, StartAutoGoto @0x16d5b0 (64-bit
+              build)
+      - type: array
+        minItems: 2
+        prefixItems:
+        - type: number
+        - type: number
+      description: 'Object with two required numeric members, or a positional array of the same two numbers
+        in the order given by `required`; extra array elements are ignored. Absent, null, scalar, short
+        array, missing or non-numeric member: error 108.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.31, handler @0xe7700, StartAutoGoto @0x16d5b0 (64-bit build)
+reply_success:
+  $ref: ../../common/schemas/ReplySuccess.yaml
+reply_error:
+  $ref: ../../common/schemas/ReplyError.yaml
+errors:
+- code: 210
+  trigger: A View function is active (view mode nonzero); checked before parsing
+  label: not supported
+- code: 108
+  trigger: Params missing, not an object/array of two numbers, or either member not a JSON number
+  label: expected float param
+- code: 268
+  trigger: The goto worker thread is already running
+  label: operation is in progress
+- code: 209
+  trigger: Either coordinate is within 0.1 of the sentinel -999
+  label: invalid value
+- code: 270
+  trigger: Computed target altitude is at or below the horizon
+  label: below horizon
+- code: 210
+  trigger: The target cannot be gone to (CannotGoto check)
+  label: not supported
+- code: 200
+  trigger: 'Dispatcher: request has no id'
+  label: invalid id
+- code: 100
+  trigger: 'Dispatcher: method missing or not a string'
+  label: invalid request
+errors_note: If the worker thread cannot be started, the thread-infrastructure error is forwarded; its
+  code set is not established. The worker emits AutoGoto events whose payload is unresolved here.
+examples:
+- name: goto
+  summary: Goto an RA/Dec target (shape per static analysis; values invented)
+  of: request
+  payload:
+    id: 31
+    method: start_auto_goto
+    params:
+      ra: 5.5
+      dec: 22
+- name: positional
+  summary: Positional form
+  of: request
+  payload:
+    id: 32
+    method: start_auto_goto
+    params:
+    - 5.5
+    - 22
+- name: ok
+  of: reply_success
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_auto_goto
+    result: 0
+    code: 0
+    id: 31
+- name: below-horizon
+  of: reply_error
+  payload:
+    jsonrpc: '2.0'
+    Timestamp: '1234.123456789'
+    method: start_auto_goto
+    error: below horizon
+    code: 270
+    id: 33
+see_also:
+- stop_auto_goto
+- start_auto_goto_pixel
+spec:
+- spec/control/solving-and-annotation.md#auto-goto
+- spec/control/mount-and-motion/goto-and-manual-motion.md#solved-goto-start_auto_goto
