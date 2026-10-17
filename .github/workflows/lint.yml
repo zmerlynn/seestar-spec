@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2 jsonschema==4.23.0
       - name: Generated files are up to date
         run: |
           python -B tools/reindex.py
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2 jsonschema==4.23.0
       - name: Recheck against the current v1
         run: |
           major=$(tr -d '[:space:]' < tools/MAJOR)
