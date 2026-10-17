@@ -38,9 +38,9 @@ Do not put any of these in an issue, a pull request or an attachment:
 - firmware images, app packages or large excerpts of them;
 - packet captures or logs that have not been reduced to the fields that matter.
 
-If you find any of these already published here, do not open a public issue: report it privately
-through GitHub's private vulnerability reporting (the Security tab). Security problems in the device,
-the app or the vendor's services belong with the vendor, not here.
+## Reporting sensitive data
+
+If you find any of these already published here, do not open a public issue. Report it privately through GitHub's private vulnerability reporting (the **Security** tab, **Report a vulnerability**); see [SECURITY](SECURITY.md). Security problems in the device, the app or the vendor's services belong with the vendor, not here.
 
 ## Pull requests
 
