@@ -8,7 +8,8 @@ If you find any of the following here, in a file, its history, an issue or a pul
 
 - passwords, tokens, private keys, licence or session values, account names or e-mail addresses;
 - device identifiers (serial numbers, UIDs, MAC addresses) or real IP addresses;
-- vendor-confidential material, or content taken from other implementations (see the [clean-room rule](CONTRIBUTING.md#clean-room-rule)).
+- vendor-confidential material;
+- text, names or claims that appear to come from another implementation rather than from the firmware, the app or a device: for example wording copied from another project, or a claim that matches one but has no source of its own here (see the [clean-room rule](CONTRIBUTING.md#clean-room-rule)).
 
 Say where you found it (file and section, or a link) and what kind of data it is. Do not repeat the value itself in your report.
 
