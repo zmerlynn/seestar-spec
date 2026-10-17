@@ -51,7 +51,7 @@ Follow [CONVENTIONS](CONVENTIONS.md). In short:
 - Keep binary addresses and internal function names out of prose; they go in the catalog's basis
   fields.
 - The catalog is the source of truth for methods and events. Never edit `docs/` by hand: run
-  `tools/reindex.py` and `tools/gen_cards.py`, then `tools/lint.py` (Python 3 with PyYAML).
+  `tools/reindex.py` and `tools/gen_cards.py`, then `tools/lint.py` (Python 3 with PyYAML and jsonschema).
 - Never remove a section heading or file that is on `v1`. To rename, move or withdraw one, leave a
   notice at the old place ([Permalink compatibility](CONVENTIONS.md#permalink-compatibility)).
   `tools/permalinks.py check --base origin/v1 --ref HEAD` shows what a change would remove.

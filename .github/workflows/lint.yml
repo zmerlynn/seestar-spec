@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2 jsonschema==4.23.0
       - name: Generated files are up to date
         run: |
           python -B tools/reindex.py
@@ -32,7 +32,7 @@ jobs:
       - name: Permalinks on v1 are kept
         run: |
           major=$(tr -d '[:space:]' < tools/MAJOR)
-          git fetch --no-tags origin "refs/heads/v$major:refs/remotes/origin/v$major"
+          git rev-parse --verify --quiet "origin/v$major" > /dev/null  # fetched by checkout (fetch-depth 0)
           python -B tools/permalinks.py check --base "origin/v$major" --ref HEAD
 
   # After main passes, fast-forward v<MAJOR> to it. A plain push: GitHub refuses it unless it
@@ -54,12 +54,12 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2 jsonschema==4.23.0
       - name: Recheck against the current v1
         run: |
           major=$(tr -d '[:space:]' < tools/MAJOR)
           echo "major=$major" >> "$GITHUB_ENV"
-          git fetch --no-tags origin "refs/heads/v$major:refs/remotes/origin/v$major"
+          git rev-parse --verify --quiet "origin/v$major" > /dev/null  # fetched by checkout (fetch-depth 0)
           python -B tools/permalinks.py check --base "origin/v$major" --ref "$GITHUB_SHA"
       - name: Fast-forward v1
         env:
