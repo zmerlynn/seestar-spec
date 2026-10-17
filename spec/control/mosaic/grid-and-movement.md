@@ -113,38 +113,51 @@ protocol specification.
 
 ### The firmware 9.75 planner
 
-R10a. Firmware 9.75, app 3.4.0 (READ): the 9.31 spiral planner and a second dead-code planner are
-gone. One planner remains, which builds an axis-aligned rectangular grid of centers on the canvas
-and requires the footprints of neighbouring positions to overlap. The pitch argument of R9 is
-unused; the step is derived from the frame footprint, a maximum step and the required overlap
-(the exact derivation is unresolved). The wide-camera branch of R9 is not in this planner.
+R10a. Firmware 9.75, app 3.4.0 (READ): parameter initialization, the duration estimate (R26) and list regeneration (R14) all call a new planner, which builds an axis-aligned rectangular grid of centers on the canvas. The 9.31 planner's code is still present in the imager, but none of those three paths calls it; that nothing else calls it is INFERRED. The pitch argument of R9 and the wide-camera branch of R9 do not take part in the new planner.
 
-R10b. Firmware 9.75 (READ): with maximum step `Lmax` (canvas pixels), the grid has
+The planner's footprint is the current frame width `Fw` and height `Fh` when both are positive. Otherwise each is the matching canvas dimension divided by the stored canvas scale (or by 1 when that scale is not positive), rounded half away from zero, with a minimum of 1. READ.
+
+R10b. Firmware 9.75 (READ): the maximum step `Lmax` (canvas pixels) comes from an overlap bound evaluated at 1801 orientations. All arithmetic is binary64 and is evaluated in the order written. `k` is the binary64 value `0x1.9999999999998p-2`, which is 1 minus the next binary64 value above 0.6 (INFERRED from the 32-bit build, which computes it that way).
 
 ```
-ncols = ceil((W - 200) / Lmax - 1e-9) + 1
-nrows = ceil((H - 200) / Lmax - 1e-9) + 1
+M = largest finite double
+for i = 0 .. 1800:
+    if i = 0: c = 1, t = 0
+    else:     theta = ((i * 0.1) * pi) / 180;  c = |cos theta|;  t = |sin theta|
+    for (a, b) in ((c/Fw, t/Fh), (t/Fw, c/Fh)):
+        s = a + b
+        v = ((a * 4) * b) * k
+        D = fma(s, s, -v)                       (one rounding)
+        q = sqrt(D) if D > 0 else 0
+        L = (2*k) / (s + q) if s + q > 2^-52 else 0
+        M = min(M, L)
+Lmax = max(0, ceil(M) - 1)
 ```
 
-columns and rows. The positions are symmetric about the canvas center. A canvas whose `W` or `H`
-is 200 or less yields an empty list. The 200 is consistent with the 100-pixel margin of R10 on each
-side (INFERRED).
+`Lmax` is an integer-valued double: an integral `M` is still reduced by one. A canvas whose `W` or `H` is 200 or less, or an `Lmax` below 1, yields an empty list. INFERRED: `L` is the smaller root of `a*b*L^2 - (a+b)*L + k = 0`, i.e. the largest shift at which two aligned footprints still overlap by more than 0.6 at that orientation. The 0.1-degree scan is a finite sample, not a continuous optimum. The 32-bit build forms `D` with separate roundings (R10f).
 
-R10c. Firmware 9.75 (READ): the position nearest the canvas center is visited first. The route is
-logged as a rectangular spiral over the minimum grid, entered from the center anchor and its
-neighbour; the exact order of the later positions is INFERRED from that log text and is not
-specified here.
+The grid then has
 
-R10d. Firmware 9.75 (READ): the planner verifies the grid before returning it. The pairwise
-overlap of neighbouring frame footprints must exceed 0.6 (the threshold appears in a log line as a
-strict "greater than" requirement), checked over a scan of 1801 sample angles, and a coverage check
-must leave zero uncovered area. If the check fails the planner returns an empty list. The meaning of
-a coverage failure for a client (no centers, so no mosaic movement) is INFERRED; no error code is tied
-to it in the code read.
+```
+ncols = max(1, ceil((W - 200) / Lmax - 1e-9) + 1)
+nrows = max(1, ceil((H - 200) / Lmax - 1e-9) + 1)
+```
 
-R10e. Firmware 9.75 (READ): the planner is called when the parameters are initialized, when the
-duration estimate is computed (R26) and when frames are stacked and the list is regenerated.
-Estimates computed by 9.75 are larger than 9.31 estimates for the same inputs (R13a, R26).
+columns and rows. READ. The 200 is consistent with the 100-pixel margin of R10 on each side (INFERRED). `Lmax` bounds the pitch but is not necessarily the pitch: each axis's pitch is fitted between margins that depend on the footprint and the requested rotation, and is floored. Each coordinate is placed symmetrically about the canvas center and then rounded half away from zero on its own, so the rounded grid need not be exactly symmetric; the middle coordinate of an odd count is the rounded canvas center. READ. Further margin checks, not specified here, can reject the candidate grid. The counts therefore do not guarantee that a grid is returned.
+
+R10c. Firmware 9.75 (READ): the first position is an anchor at the canvas center, `(round(W/2), round(H/2))` rounded half away from zero. It need not be a grid position. The remaining order is defined on grid indices (column `x`, row `y`):
+
+1. List the perimeters clockwise from the outside in. For bounds `left, right, top, bottom`: the top row left to right; the right column from `top+1` to `bottom`; if the bottom row is distinct, that row from `right-1` down to `left`; if the left column is distinct from the right one, that column from `bottom-1` down to `top+1`. Shrink each bound by one and repeat.
+2. Reverse the whole list. Call it `Q`.
+3. Find the first entry of `Q` with the smallest squared index distance `d` to `((ncols-1)/2, (nrows-1)/2)`. Ties keep the earlier entry. Let `j` be its zero-based index.
+4. Reverse the prefix `Q[0 : j+1]` if `d > 1e-12`, otherwise the prefix `Q[0 : j]`. The rest of `Q` is unchanged.
+5. After the anchor, append the pixel position of each entry of `Q` in order. Skip any entry whose integer coordinates equal the anchor.
+
+For example (INFERRED from these rules), a 3 by 3 grid gives the anchor `(1,1)` and then `(0,1),(0,2),(1,2),(2,2),(2,1),(2,0),(1,0),(0,0)`. A 5 by 3 grid gives `(2,1)` and then `(3,1),(1,1),(0,1),...`, so successive positions are not always neighbours. The number of unique positions `N` is `ncols*nrows` plus one when no grid position coincides with the anchor; R13a's `F = num*N` counts the anchor. INFERRED.
+
+R10d. Firmware 9.75 (READ): the planner checks the route at the requested rotation (not over the 1801 orientations of R10b) before returning it. The step from the anchor to the first grid position must overlap by strictly more than 0.6. A later position must overlap its predecessor by more than 0.6, or else an earlier position within a search window that is not specified here; once such an earlier reference has been used, later positions are also checked that way. The planner also rasterizes the rotated footprints into a mask at one-sixteenth scale, `max(1, ceil(W/16))` by `max(1, ceil(H/16))`, and requires zero uncovered mask pixels. A raster check does not prove exact continuous coverage (INFERRED). If any check fails, the planner returns an empty list. There is no retry with a larger grid. What a client sees for an empty list (no centers, so no mosaic movement) is INFERRED; no error code is tied to it in the code read.
+
+R10e. Firmware 9.75 (READ): the planner is called when the parameters are initialized, when the duration estimate is computed (R26) and when frames are stacked and the list is regenerated. A 9.75 estimate is not always larger than the 9.31 estimate for the same inputs: a canvas with a dimension of 200 or less gives 9.75 an empty list and a zero estimate, while 9.31 always keeps its center. INFERRED (static counterexample).
 
 R10f. Firmware 9.75, 32-bit build: the same planner exists. Parity of the arithmetic is not
 established. READ (existence) / unresolved.
@@ -183,25 +196,23 @@ READ. List exhaustion is therefore neither completion nor a deadline. INFERRED.
 
 ## Movement
 
-R15. Firmware 9.31 (firmware 9.75 behaviour is unresolved, see the [open
-questions](../mosaic.md#open-questions)): for each stacked frame, star matching locates the current
-image on the canvas. If it is within 100 pixels of the current node, the device advances to the next
-node and computes the offset to it in the current frame; otherwise it computes a correction to the
-current node. Offsets are truncated to whole pixels. READ.
+R15. Firmware 9.31, and firmware 9.75 (READ): for each stacked frame, star matching locates the current image on the canvas. If it is strictly less than 100 pixels from the current node, the device advances to the next node and computes the offset to it in the current frame; otherwise it computes a correction to the current node. Offsets are truncated toward zero to whole pixels. A repeated node at identical coordinates gives a zero offset. READ.
+
+R15a. Firmware 9.75 (READ): on the first frame, if the first queued position is within 1.5 pixels (inclusive) of the canvas center (integer-divided `W/2, H/2`), one list entry is consumed before the first movement target is chosen; if that empties the list, movement is cleared. The 100-pixel test of R15 still governs later arrivals. The matching steps keep the same sequence as 9.31; whether the imported matching library behaves identically is unresolved.
 
 R16. For the ordinary mosaic a nonzero offset `(dx, dy)` becomes one guider
 [`scope_fine_move`](../../../docs/guider/methods/scope_fine_move.md) request:
 
 ```
 speed = [ -dx * P / 15,  dy * P / 15 ]   (single precision)
-backlash_comp = true; no limit member
-P = 206.265 * pixel_size * bin / focal_length
+limit = 0; backlash_comp = true
+P = 206.265 * pixel_size * bin / focal_length   (double, then rounded to single)
 ```
 
-READ. Axis semantics and signs inside the mount are outside the imager (unresolved). Each
+READ, firmware 9.31 and 9.75; the request text and its `"limit":0,` and `"backlash_comp":true,` members are byte-identical in both. The products and the division by 15 are single precision. How the guider treats `limit` 0 is in its method page; the imager does not establish the mount-side effect. Axis semantics and signs inside the mount are outside the imager (unresolved). Each
 center is not a full goto with plate solve. READ.
 
-R17. A refused or timed-out fine move (10 s request wait, success text check) is logged and
+R17. Firmware 9.31 and 9.75: a refused or timed-out fine move (a 10,000 ms request-wait timeout; success means the reply text contains `"result":0`) is logged and
 capture continues; it does not end the mosaic. READ.
 
 A separate wide-mosaic branch moves to absolute centers with an ordinary guider

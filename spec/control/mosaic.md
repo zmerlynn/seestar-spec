@@ -155,12 +155,7 @@ unresolved.
   recovers `u` in alt-azimuth mode). The zero direction and the absence of a fixed cardinal meaning
   are settled in [R20a](mosaic/grid-and-movement.md#orientation).
 - The imported rotation, star matching, coordinate and refraction routines' exact behaviour.
-- Firmware 9.75: how the maximum step of the new planner is derived from the frame footprint, the
-  visiting order after the first node, and whether the movement and star-matching code ([R15 to
-  R17](mosaic/grid-and-movement.md#movement)) is unchanged. The per-frame image-data function grew
-  from 1832 to 2132 instructions and no `scope_fine_move` string was found in the 9.75 imager, so
-  R16 in firmware 9.75 is unresolved. The wire effect of the mosaic goto source (R8c in stacking.md)
-  and of the stitch-error text is unresolved.
+- Firmware 9.75: the exact results of the imported sine, cosine and star-matching routines, and bit-exact 32-bit parity of the planner arithmetic. The step derivation, route order and ordinary movement request are settled ([R10a to R10d](mosaic/grid-and-movement.md#the-firmware-975-planner), [R15 to R17](mosaic/grid-and-movement.md#movement)). The wire effect of the mosaic goto source (R8c in stacking.md) and of the stitch-error text is unresolved.
 - Firmware 9.31: which runtime camera takes the wide pitch branch; which request selects the
   starry/wide stack type that enables the wide-mosaic branch, and how its 207 status reaches the
   client.
