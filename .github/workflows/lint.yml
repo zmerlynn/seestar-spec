@@ -32,7 +32,7 @@ jobs:
       - name: Permalinks on v1 are kept
         run: |
           major=$(tr -d '[:space:]' < tools/MAJOR)
-          git fetch --no-tags origin "refs/heads/v$major:refs/remotes/origin/v$major"
+          git rev-parse --verify --quiet "origin/v$major" > /dev/null  # fetched by checkout (fetch-depth 0)
           python -B tools/permalinks.py check --base "origin/v$major" --ref HEAD
 
   # After main passes, fast-forward v<MAJOR> to it. A plain push: GitHub refuses it unless it
@@ -59,7 +59,7 @@ jobs:
         run: |
           major=$(tr -d '[:space:]' < tools/MAJOR)
           echo "major=$major" >> "$GITHUB_ENV"
-          git fetch --no-tags origin "refs/heads/v$major:refs/remotes/origin/v$major"
+          git rev-parse --verify --quiet "origin/v$major" > /dev/null  # fetched by checkout (fetch-depth 0)
           python -B tools/permalinks.py check --base "origin/v$major" --ref "$GITHUB_SHA"
       - name: Fast-forward v1
         env:
