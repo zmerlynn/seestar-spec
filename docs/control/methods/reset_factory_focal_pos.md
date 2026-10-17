@@ -25,7 +25,7 @@ Side effects: Updates the global focal position and writes the camera-specific f
 | `id` | any | yes | - | Client-chosen request identifier, echoed in the reply as parsed (same JSON type). Required; a request without one is rejected with code 200. The device accepts any JSON value: zero, negative, string, null, boolean and composite ids are all treated as real requests, not notifications. Clients SHOULD use an integer or a string and SHOULD keep ids unique among outstanding requests. On early dispatcher errors (100, 200) the reply carries id null. [READ] |
 | `method` | string | yes | - | Fixed value `"reset_factory_focal_pos"`. [READ] |
 | `params` | object | no | - | Optional object only; absent, null, array or scalar params select the local reset. Unknown members are ignored. No positional form. [READ] |
-| `params.wide_cam` | boolean\|integer | no | false | Target the wide camera. Boolean or integer (nonzero is true); a wrong type is treated as false. When true: 210 if the wide camera has autofocus (CanWideCamAf); otherwise a process-type-1 device relays the original request to the peer, a process-type-2 device resets locally, and any other process type gives 300. The slave's parser is unresolved. [READ] |
+| `params.wide_cam` | boolean\|integer | no | false | Target the wide camera. Boolean or integer (nonzero is true); a wrong type is treated as false. When true: 210 if the wide camera has autofocus; otherwise a process-type-1 device relays the original request to the peer, a process-type-2 device resets locally, and any other process type gives 300. The slave's parser is unresolved. [READ] |
 
 ## Reply
 

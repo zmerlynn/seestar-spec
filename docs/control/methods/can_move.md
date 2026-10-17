@@ -14,7 +14,7 @@ Set the global movement-permission flag to enabled.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xc7c00 (64-bit build) |
 
-No parameters are read. Writes the global flag g_can_move = 1. Despite the name it is not a capability getter and it does not itself issue a motion or stop command; what the flag gates is not established by this handler. No precondition, no error branch.
+No parameters are read. Writes the global movement-permission flag to 1. Despite the name it is not a capability getter and it does not itself issue a motion or stop command; what the flag gates is not established by this handler. No precondition, no error branch.
 
 Side effects: Sets the shared movement-permission flag to enabled. Full command-socket calls also incur the shared diagnostic (logging) writes; this is why the strict grade is MUTATOR even for the read-only calls.
 

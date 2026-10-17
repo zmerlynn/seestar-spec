@@ -9,6 +9,12 @@ carry the transports below it ([../transport/ports.md](../transport/ports.md),
 [../transport/p2p-tunnel/index.md](../transport/p2p-tunnel/index.md)). Related settings are in
 [device-state-and-settings.md](device-state-and-settings.md).
 
+App names: “Wi-Fi” is the access point; “2.4G Wi-Fi” and “5G Wi-Fi” pick its band; “Wi-Fi connection
+area” is the regulatory country; “Station Mode” is the Wi-Fi client, which the app's “Telescope
+Network” steps require (the app calls it the “bridged WLAN”; that wording does not imply a layer-2
+bridge). Joining “Telescope Network” uses remote-access enrolment. Names are the English strings of
+iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 ## Conventions
 
 RFC 2119 / RFC 8174 key words bind clients. Labels **READ**, **OBSERVED**, **INFERRED** and
@@ -199,13 +205,13 @@ in the saved network entry. Whether the external passphrase/supplicant tooling i
 any length limit on the 1-to-7-byte or 64-byte edge cases was not established by static reading
 (no such binary was found in the extracted packages). unresolved.
 
-R17e. The trigger for 104 (left unresolved in an earlier reading) is a present-but-non-integer
-`timeout_sec`. Full error set: 107 (`para` present but not an object), 105 (missing or non-string
-`ssid`, or `psk` present but not a string), 104 (`timeout_sec` present and not an integer), 106
-(`hidden` present and not a boolean or integer), 102 (decoded `psk` length invalid), 570 to 573
-(crypto session or decode failure), 214 (script could not be started), 207 (script output
-contained "error"), 209 (`timeout_sec` <= 0, checked only after the configuration write, as in
-R18), 212 (the connection check thread failed to start). READ (both builds).
+R17e. The trigger for 104 is a present-but-non-integer `timeout_sec`. Full error set: 107 (`para`
+present but not an object), 105 (missing or non-string `ssid`, or `psk` present but not a string),
+104 (`timeout_sec` present and not an integer), 106 (`hidden` present and not a boolean or integer),
+102 (decoded `psk` length invalid), 570 to 573 (crypto session or decode failure), 214 (script could
+not be started), 207 (script output contained "error"), 209 (`timeout_sec` <= 0, checked only after
+the configuration write, as in R18), 212 (the connection check thread failed to start). READ (both
+builds).
 
 R17f. Because the request is ordinary JSON, an embedded NUL byte in `ssid` truncates the value at
 the NUL for a JSON parser that represents strings as C strings internally; a client MUST NOT rely

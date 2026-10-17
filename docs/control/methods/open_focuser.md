@@ -50,7 +50,7 @@ Side effects: Opens the focuser hardware handle, caches the hardware maximum and
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-Internal IsMoving poll failures can set 300 or 318 but are suppressed once Open itself reports success. The exact model predicate behind 210 is unresolved.
+Internal motion-poll failures can set 300 or 318 but are suppressed once opening the focuser succeeds. The exact model predicate behind 210 is unresolved.
 
 ## Example
 

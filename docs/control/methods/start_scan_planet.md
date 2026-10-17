@@ -45,7 +45,7 @@ Side effects: Runs the relay check (occupy type 1; in firmware 9.75 it is called
 
 | Code | Trigger | Label |
 |---|---|---|
-| 524 | StartScanSun: function state is not 1 or view mode is not one of 2, 3, 4 | `function conflict` |
+| 524 | the Sun-scan starter: function state is not 1 or view mode is not one of 2, 3, 4 | `function conflict` |
 | 203 | Relay check: the local or second-camera mount is occupied | `equipment is moving` |
 | 212 | Worker thread could not be created or has no thread function | `fail to create thread` |
 | 300 | Relay forwarding helper has a null context | `internal error` |

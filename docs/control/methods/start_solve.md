@@ -51,7 +51,7 @@ Side effects: Resets solve state and starts or restarts the solver worker thread
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-StartSolve and StartSolveImg failures forward the helper's error code unnamed.
+Solving and image-solving failures forward the helper's error code unnamed.
 
 ## Example
 

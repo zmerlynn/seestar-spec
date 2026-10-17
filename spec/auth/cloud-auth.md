@@ -7,6 +7,11 @@ messages. Above it sits [account login](account-login.md), which supplies the ZW
 sit the [Kalay/IOTC session](../transport/iotc/index.md) (rendezvous, records, GCM
 contract) and the [P2P tunnel](../transport/p2p-tunnel/index.md) (port mappings, tunnel login).
 
+App names: the Seestar app calls the remote-access feature that these files describe “Telescope
+Network” (also “Remote Connection”): joining a device to it, choosing a remote location, and
+connecting to a joined device from anywhere. Names are the English strings of iOS app 3.4.0; links
+are READ (app call sites) unless marked.
+
 The chapter is split into these files:
 
 | File | Content |
@@ -170,63 +175,63 @@ length is not fixed across builds. READ (two builds), INFERRED (rule).
 ## Open questions
 
 - Several reply fields are opaque: bytes 36–51 and 68–69 of `0x1008`; 18–19, 40–55 and 72–73 of
-  `0x100c`; 48–59 and 70–71 of the precheck record reply; the first form of `0x0229`; parts of
-  hello replies. unresolved (server-side). The `0x0806` telemetry body layout. unresolved.
-- DNS/NAT64 conversion of the 16-byte address entries. unresolved. Ignored address bytes and
-  opaque punch metadata: see [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions).
+  `0x100c`; 48–59 and 70–71 of the precheck record reply; the first form of `0x0229`; parts of hello
+  replies. unresolved (server-side). The `0x0806` telemetry body layout. unresolved.
+- DNS/NAT64 conversion of the 16-byte address entries. unresolved. Ignored address bytes and opaque
+  punch metadata: see [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions).
 - How the cloud derives the licence and tunnel account it sends in `p2p_message` (R1a): see
-  [sdk-licence.md R46a](cloud-auth/sdk-licence.md#device-side-sdk-start). Firmware 9.75: whether
-  the cloud still sends `sdkLicenseKey`, what the embedded default licence is bound to, and the
-  32-bit parity of the licence change beyond string presence. unresolved (server-side) / unresolved.
-- Firmware 9.75 device cloud link: resolved in [device-cloud-link.md](cloud-auth/device-cloud-link.md)
-  (MQTT parameters, duplicate-message filter, remote command types, P2P status report, monitor and
-  occupy timers). Still open there: the action string of command type 6, the success return value of the
-  relay handler, whether the cloud accepts the status report's `code` member beyond `initFailed`, the
-  host selection and fallback endpoints of the MQTT link (the broker address is a per-device input), and
-  32-bit logic parity (strings and symbols only). Server-side meaning of each reported status:
-  unresolved (server-side).
-- iOS 3.4.0: the endpoint mapping (`device-p2p/retrieve`, `device-p2p/stop`, `my-device/remote-unbind`
-  with `deviceSn` and `deviceModel`), the response shapes and the remote-unbind error-code mapper
-  are READ ([http-api.md: Optional remote-feature catalogue](cloud-auth/http-api.md#optional-remote-feature-catalogue)).
-  Neither disconnect-device nor remote-unbind has a visible caller in any unencrypted iOS
-  framework; the call site is inferred to be in the encrypted main executable, out of reach.
-  Open: the wire keys of the WeChat login ticket and the `apple` authType value
-  (INFERRED), the composition of the connect list ([endpoints.md](account-login/endpoints.md)), and
-  the meaning of the remote-unbind error codes 400002/400020/400021. iOS headers and signing:
-  unresolved (encrypted executable).
-- Server meaning of relay timeout 60000 versus 60: unresolved (server-side); see
-  [relay.md R100](cloud-auth/relay.md#legacy-relay-messages-device-sdk).
+  [sdk-licence.md R46a](cloud-auth/sdk-licence.md#device-side-sdk-start). Firmware 9.75: whether the
+  cloud still sends `sdkLicenseKey`, what the embedded default licence is bound to, and the 32-bit
+  parity of the licence change beyond string presence. unresolved (server-side) / unresolved.
+- Firmware 9.75 device cloud link: specified in
+  [device-cloud-link.md](cloud-auth/device-cloud-link.md) (MQTT parameters, duplicate-message
+  filter, remote command types, P2P status report, monitor and occupy timers). Open questions there:
+  the action string of command type 6, the success return value of the relay handler, whether the
+  cloud accepts the status report's `code` member beyond `initFailed`, the host selection and
+  fallback endpoints of the MQTT link (the broker address is a per-device input), and 32-bit logic
+  parity (strings and symbols only). Server-side meaning of each reported status: unresolved
+  (server-side).
+- iOS 3.4.0: the endpoint mapping (`device-p2p/retrieve`, `device-p2p/stop`,
+  `my-device/remote-unbind` with `deviceSn` and `deviceModel`), the response shapes and the
+  remote-unbind error-code mapper are READ ([http-api.md: Optional remote-feature
+  catalogue](cloud-auth/http-api.md#optional-remote-feature-catalogue)). Neither disconnect-device
+  nor remote-unbind has a visible caller in any unencrypted iOS framework; the call site is inferred
+  to be in the encrypted main executable, out of reach. Open: the wire keys of the WeChat login
+  ticket and the `apple` authType value (INFERRED), the composition of the connect list
+  ([endpoints.md](account-login/endpoints.md)), and the meaning of the remote-unbind error codes
+  400002/400020/400021. iOS headers and signing: unresolved (encrypted executable).
+- Server meaning of relay timeout 60000 versus 60: unresolved (server-side); see [relay.md
+  R100](cloud-auth/relay.md#legacy-relay-messages-device-sdk).
 - Server issuance, lifetime and revocation of allocations; cooldowns; meaning of unhandled cloud
   codes; whether the busy limit is per account, device or credential. unresolved (server-side).
-- Live server-key rotation, DTLS parameters and TCP record coalescing: see
-  [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions). Live OpenSSL configuration: see
-  [dtls.md R5](../transport/iotc/dtls.md#version-and-cipher-suite).
-- Server handling of omitted optional members in the HTTP bodies. (App side settled: request
-  bodies use a default Gson without null serialization, so null members are omitted, and the
-  one request enum is sent as `email`/`mobile`; see
-  [http-api.md R10](cloud-auth/http-api.md). READ (app 3.3.2).) unresolved (server-side).
+- Live server-key rotation, DTLS parameters and TCP record coalescing: see [iotc/index.md: Open
+  questions](../transport/iotc/index.md#open-questions). Live OpenSSL configuration: see [dtls.md
+  R5](../transport/iotc/dtls.md#version-and-cipher-suite).
+- Server handling of omitted optional members in the HTTP bodies. (App behaviour: request bodies use
+  a default Gson without null serialization, so null members are omitted, and the one request enum
+  is sent as `email`/`mobile`; see [http-api.md R10](cloud-auth/http-api.md). READ (app 3.3.2).)
+  unresolved (server-side).
 - The app library does not build Nebula gateway names from `nebulaDomainFromLicense`: the gateway
   builder is exported only by the global SDK library and has no caller in any app library, so the
-  Seestar connection path never reaches it. Settled in
-  [sdk-licence.md: Licence JSON](cloud-auth/sdk-licence.md#licence-json). READ (app library, SDK 4.3.8).
-- Server meaning of relay result values outside the table, and of server alert codes other than
-  1 and 2. unresolved (server-side).
-- Reconnect retry limit and cooldown (app side settled). An automatic reconnect is one linear
-  pass with no loop, backoff, counter or cooldown: local teardown, device detail, offline check,
-  `online-link`, connect. Detail and `online-link` share a 30000 ms deadline, and a separate
-  30000 ms watchdog ends the attempt with a timeout. Because a reconnect is admitted only from
-  the connected state, a failed attempt cannot start another: each loss of an established
-  session gets at most one automatic reconnect. A success re-arms it, and a failure leaves the
-  link disconnected until the user connects again. The UI shows the failure and does not retry.
-  A pending device reboot (a persisted flag, cleared by the next successful connect) suppresses
-  it. Cancelling during a reconnect is checked between stages and ends the attempt as a
-  cancelled connect. Manual connects count consecutive failures of certain TUTK and cloud codes,
-  resetting the count at three, and impose no wait. What the count drives is not visible in the
-  decompile. See
-  [P2P tunnel R74–R75](../transport/p2p-tunnel/seestar-profile.md#readiness-and-reconnect).
-  READ (app 3.3.2). Server-side rate limits remain unresolved (server-side).
-- Whether any relay authorization path exists outside the P2P-server control exchange (for
-  example an HTTP relay login). Not found; INFERRED absent, not proven.
+  Seestar connection path never reaches it. Specified in [sdk-licence.md: Licence
+  JSON](cloud-auth/sdk-licence.md#licence-json). READ (app library, SDK 4.3.8).
+- Server meaning of relay result values outside the table, and of server alert codes other than 1
+  and 2. unresolved (server-side).
+- Reconnect retry limit and cooldown (app behaviour specified below). An automatic reconnect is one
+  linear pass with no loop, backoff, counter or cooldown: local teardown, device detail, offline
+  check, `online-link`, connect. Detail and `online-link` share a 30000 ms deadline, and a separate
+  30000 ms watchdog ends the attempt with a timeout. Because a reconnect is admitted only from the
+  connected state, a failed attempt cannot start another: each loss of an established session gets
+  at most one automatic reconnect. A success re-arms it, and a failure leaves the link disconnected
+  until the user connects again. The UI shows the failure and does not retry. A pending device
+  reboot (a persisted flag, cleared by the next successful connect) suppresses it. Cancelling during
+  a reconnect is checked between stages and ends the attempt as a cancelled connect. Manual connects
+  count consecutive failures of certain TUTK and cloud codes, resetting the count at three, and
+  impose no wait. What the count drives is not visible in the decompile. See [P2P tunnel
+  R74–R75](../transport/p2p-tunnel/seestar-profile.md#readiness-and-reconnect). READ (app 3.3.2).
+  Server-side rate limits remain unresolved (server-side).
+- Whether any relay authorization path exists outside the P2P-server control exchange (for example
+  an HTTP relay login). Not found; INFERRED absent, not proven.
 
 ## Appendix: How to validate on a live device (non-normative)
 

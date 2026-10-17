@@ -7,6 +7,13 @@ the filter wheel ([focus-and-filter.md](focus-and-filter.md)); its products are 
 [stacking.md](stacking.md). Event framing is in [events/families.md](events/families.md).
 Per-method detail stays in the catalog cards.
 
+App names: “Dark Frame Capture” (and its wide-angle form) builds master darks; “Dark Frame Library”
+and “Enable Dark Frame Library” are the temperature dark library (INFERRED); “Dark Correction” and
+“Capture dark frame before each enhancement” are `auto_master_dark`, a separate setting; “Hot Pixels
+Correction” (and its wide-angle form) is HPC; “Flat Capture” and “Restore Factory Flats” are the
+flat-frame methods. Names are the English strings of iOS app 3.4.0; links are READ (app call sites)
+unless marked.
+
 ## Conventions
 
 As in [viewing-and-exposure.md](viewing-and-exposure.md#conventions): RFC 2119 words bind

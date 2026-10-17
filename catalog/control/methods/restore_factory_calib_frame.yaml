@@ -73,8 +73,9 @@ reply_success:
           enum:
           - 0
           - 1
-          description: 1 when no flat calibration files remain, 0 when flat files are available (INFERRED
-            reading of !HasCalibFlatFiles after reload); not the number of files removed.
+          description: '1 when no flat calibration files remain, 0 when flat files are available
+            (INFERRED from the negated flat-file availability check after reload); not the number of
+            files removed.'
           x-confidence: INFERRED
           x-basis: static analysis of firmware 9.31, restore_factory_calib_frame @0xdcc70, RestoreCustomerCalib
             @0x3bdd80

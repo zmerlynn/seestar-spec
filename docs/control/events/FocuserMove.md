@@ -14,7 +14,7 @@ Focuser movement state with the resulting position.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, img_focuser_gpio::MoveWait @0x15c3a0, CamRtxpFunc @0x156fe0, StartView @0x3c1f50 (64-bit build) |
 
-Sent by the focuser MoveWait worker (F family) and directly by StartView (on the model/camera branch that opens or restores the focuser) and the auxiliary RTSP/view refresh, which build a complete event with position and route. Function-state family (F): SendFuncEvent formats the named function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even when the stored code is zero; lookup failure gives 'fail to operate'); cancel omits code and error; route is optional function ancestry. The sender does no deduplication and needs no preceding working event. Detail flags can suppress the working or non-working sends while the cached function tree still changes, so a receiver can miss transitions. Channels I (TCP 4700) and W (TCP 4702, forwarded onto 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.
+Sent by the focuser movement-wait worker (F family) and directly by the view starter (on the model/camera branch that opens or restores the focuser) and the auxiliary RTSP/view refresh, which build a complete event with position and route. Function-state family (F): the event formatter formats the named function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even when the stored code is zero; lookup failure gives 'fail to operate'); cancel omits code and error; route is optional function ancestry. The sender does no deduplication and needs no preceding working event. Detail flags can suppress the working or non-working sends while the cached function tree still changes, so a receiver can miss transitions. Channels I (TCP 4700) and W (TCP 4702, forwarded onto 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.
 
 Side effects: Observation only for the receiver.
 
@@ -28,12 +28,12 @@ None. Events are sent by the device without a request; the payload is below.
 |---|---|---|---|---|
 | `Event` | string | yes | - | Discriminator. Fixed value `"FocuserMove"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
-| `state` | string | yes | - | F state table; the direct StartView/RTSP producer sends complete. One of: `idle`, `working`, `complete`, `fail`, `cancel`. [READ] |
+| `state` | string | yes | - | F state table; the direct view starter/RTSP producer sends complete. One of: `idle`, `working`, `complete`, `fail`, `cancel`. [READ] |
 | `stage` | string | if stage string non-empty | - | Only when the detail holds a non-empty stage string; value set unresolved. [READ] |
 | `lapse_ms` | integer | if timer started (working) or terminal state | - | Elapsed milliseconds (signed 32-bit low bits): current monotonic time minus start while working or started-but-unfinished, otherwise end minus start. Independent of Timestamp. [READ] |
 | `error` | string | if state is fail (F formatter) | - | Message for code. [READ] |
 | `code` | integer | if state is fail (F formatter) | - | Stored error code; present at fail even when zero. [READ] |
-| `route` | array<string> | no | - | Function ancestry (F) or an explicit view route; the StartView producer sends a one-element route naming the view. [READ] |
+| `route` | array<string> | no | - | Function ancestry (F) or an explicit view route; the view starter producer sends a one-element route naming the view. [READ] |
 | `position` | integer | no | - | Focuser position; motor steps INFERRED. [READ] |
 
 ## Errors
@@ -42,7 +42,7 @@ None. Failures appear in the payload (`code`, `error`) when `state` is `fail`.
 
 ## Example
 
-Event, view-restore - Direct complete from StartView (READ shape; values invented):
+Event, view-restore - Direct complete from view starter (READ shape; values invented):
 
 ```json
 {"Event":"FocuserMove","Timestamp":"1234.123456789","state":"complete","position":1580,"route":["View"]}

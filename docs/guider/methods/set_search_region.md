@@ -16,7 +16,7 @@ Set the guider star search region size.
 
 Params is a scalar integer or one-element array holding it. The value is stored directly in the guide object (search region); there is no range check, and the unit is pixels by inference from its use in star search (INFERRED). The accepted path does not guard against an absent guide object.
 
-Side effects: Writes the guider SearchRegion field (an operational star-search setting). When reached through an imager relay on the main table the same request can additionally trigger the reconnect callback described in the guider service notes (relay eligibility is a separate outer gate).
+Side effects: Writes the guider search-region field (an operational star-search setting). When reached through an imager relay on the main table the same request can additionally trigger the reconnect callback described in the guider service notes (relay eligibility is a separate outer gate).
 
 ## Request params
 

@@ -10,6 +10,11 @@ the events that report motion. It sits on the command channel described in
 pre-start window in [plan-scheduling.md: The worker](plan-scheduling.md#the-worker); both are out of scope here.
 Per-method parameters and error tables live in the catalog cards linked below.
 
+App names: “Open Arm” raises the arm (`scope_move_to_horizon`) and “Close Arm” parks it (home);
+“Track” is mount tracking; “JoyStick” is manual motion; “EQ Mode” and “Switch to Alt/Az Mode” change
+the mount mode. Names are the English strings of iOS app 3.4.0; links are READ (app call sites)
+unless marked.
+
 ## Conventions
 
 Keywords and labels are used as in [plan-scheduling.md: Conventions](plan-scheduling.md#conventions):
@@ -161,11 +166,6 @@ send coordinates of date (JNow). INFERRED.
 - 32-bit build parity beyond the primary effects of `scope_goto`, `scope_speed_move`,
   `scope_park`, `scope_set_track_state`, `scope_get_ra_dec` and `scope_sync`, which were
   established separately.
-- The order of the `ScopeGoto`/`ScopeTrack` events relative to the `scope_goto` reply
-  ([goto-and-manual-motion R15](mount-and-motion/goto-and-manual-motion.md#raw-slew-scope_goto)).
-  unresolved. Partial tracing suggests the reply is written only after the watcher worker's start
-  call returns, but confirming this needs tracing into the watcher's thread-entry function for an
-  actual synchronization point; a good candidate for a dedicated follow-up static-analysis pass.
 - Which epoch (J2000 or of-date) the controller reports in `scope_get_state`
   ([tracking-park-and-state R43](mount-and-motion/tracking-park-and-state.md#position-and-connection-state)).
   unresolved; not determined by the device firmware.

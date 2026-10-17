@@ -48,21 +48,24 @@ This section describes what app 3.3.2 does with events. It is evidence of client
 not of firmware requiredness, units or presence. A compatible device does not need to satisfy
 app DTO fields that firmware never sends.
 
-- The app reads CRLF-delimited lines and routes every non-`jsonrpc` line to its event
-  dispatcher. Its main socket is 4700. A second "event socket" class in the app is empty. READ.
-- A new-style service sees each event before the legacy UI switch, so an event can be handled
-  even if the old UI ignores it. READ.
-- Unknown names map to an internal `Unknown` sentinel and are dropped. READ.
-- The app normalizes only `idle`, `working`, `cancel`, `complete`, `fail`; any other state
-  (`start`, `moving`, `downloading`, `frame_complete`, `save fail`, `on`, `off`, ...) becomes
-  `idle` inside the app. That is app behaviour, not firmware normalization. READ.
+- The app reads CRLF-delimited lines and routes every non-`jsonrpc` line to its event dispatcher.
+  Its main socket is 4700. A second "event socket" class in the app is empty. READ.
+- A new-style service sees each event before the legacy UI switch, so an event can be handled even
+  if the old UI ignores it. READ.
+- Unknown names map to an internal Unknown-name sentinel sentinel and are dropped. READ.
+- The app normalizes only `idle`, `working`, `cancel`, `complete`, `fail`; any other state (`start`,
+  `moving`, `downloading`, `frame_complete`, `save fail`, `on`, `off`, ...) becomes `idle` inside
+  the app. That is app behaviour, not firmware normalization. READ.
 - For "app state" events the new service drops an event with no `route`, except for
-  [`SelectCamera`](../../../docs/control/events/SelectCamera.md), [`ViewPlan`](../../../docs/control/events/ViewPlan.md), `Target`, [`Demonstrate`](../../../docs/control/events/Demonstrate.md) and `ViewTargetNameChanged`. [`Station`](../../../docs/control/events/Station.md)
-  and [`CompassCalibration`](../../../docs/control/events/CompassCalibration.md) are also exempt. READ. A stand-in device SHOULD therefore include
-  `route` on other app-state F events. INFERRED.
+  [`SelectCamera`](../../../docs/control/events/SelectCamera.md),
+  [`ViewPlan`](../../../docs/control/events/ViewPlan.md), `Target`,
+  [`Demonstrate`](../../../docs/control/events/Demonstrate.md) and `ViewTargetNameChanged`.
+  [`Station`](../../../docs/control/events/Station.md) and
+  [`CompassCalibration`](../../../docs/control/events/CompassCalibration.md) are also exempt. READ.
+  A stand-in device SHOULD therefore include `route` on other app-state F events. INFERRED.
 - The app merges partial `PiStatus` events into retained state. READ.
-- The app expects `output_file` as `{path: string, files: array}`. READ. This matches the
-  firmware shape (R67a).
+- The app expects `output_file` as `{path: string, files: array}`. READ. This matches the firmware
+  shape (R67a).
 
 R67a. One firmware builder makes every `output_file` and `wide_output_file` member (`Stack`,
 `PlanetStack`, `BatchStack`, `Target`, `ViewPlan`). The object has `path` (string, the output
@@ -97,9 +100,9 @@ Non-normative. A device is not expected to send these; a client MUST NOT rely on
 |---|---|---|
 | `Align` | legacy dispatcher compares it and ignores it | no emitter in any 9.31 binary or vendor library; app-only legacy name (READ) |
 | `StackExpLoop` | legacy dispatcher compares it | no emitter in any 9.31 binary or vendor library; app-only name. The related worker has a blank function name, so the F sender suppresses it (READ) |
-| `ExposureTag` | app-internal event derived from `Exposure` | local to the app; no wire emitter (READ) |
-| `OtaUpdate` | new OTA channel on 4350 expects `state`, `stage`, `code`, `error`, `main_version`, `need_reboot` (no `Timestamp` required) | no emitter in either packaged updater (READ); other firmware versions are out of scope |
-| `Unknown` | fallback sentinel | not a wire event |
+| Local exposure-tag notification | app-internal event derived from `Exposure` | local to the app; no wire emitter (READ) |
+| `OtaUpdate` | new OTA channel on 4350 expects `state`, `stage`, `code`, `error`, `main_version`, `need_reboot` (no `Timestamp` required) | no emitter in either packaged firmware 9.31 updater (READ); other firmware versions are out of scope |
+| Unknown-name sentinel | fallback sentinel | not a wire event |
 
 R68. The legacy firmware-update screen uses `Version`, `Receive` and `Update` on 4350; the newer
 `OtaUpdate` workflow is a different protocol, not an alias. A client MUST NOT substitute one name
@@ -143,9 +146,9 @@ R72. Updater `Update.desc` values include `copy file`, `write disk`, `update mou
 `restart server` and progress descriptions parsed from script output; D32 and D64 scripts differ.
 READ. Percent values are not fixed.
 
-R73. App inventory: 60 compared, recognized or derived names (including `Unknown` and
-`ExposureTag`), 44 typed enum values, 77 defined constants; 4 consumed names lack an emitter
-(2.2). READ.
+R73. App inventory: 60 compared, recognized or derived names (including Unknown-name sentinel and
+Local exposure-tag notification), 44 typed enum values, 77 defined constants; 4 consumed names lack
+an emitter (2.2). READ.
 
 ## Wire-shape examples
 

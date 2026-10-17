@@ -47,9 +47,9 @@ reply_success:
         type: array
         minItems: 3
         maxItems: 3
-        description: 'Exactly three integers: 0, 131, then the MaxValue of the first control the SDK reported
-          at camera open, truncated to 32 bits (READ). Meaning [minimum gain, segment break (high-conversion-gain
-          point), maximum gain] INFERRED. Unit unresolved.'
+        description: 'Exactly three integers: 0, 131, then the maximum value of the first control
+          the SDK reported at camera open, truncated to 32 bits (READ). Meaning [minimum gain,
+          segment break (high-conversion-gain point), maximum gain] INFERRED. Unit unresolved.'
         items:
           type: integer
           x-confidence: READ (values and source); INFERRED (meaning)

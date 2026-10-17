@@ -1,10 +1,10 @@
 kind: method
 name: pi_shutdown
 summary: 'Powers the device off: start the shutdown worker; the reply acknowledges acceptance, not completion.'
-description: No request parameters are read. Calls StartShutdown with flag 0 (0 = shutdown, 1 = reboot).
-  If no shutdown worker is running, a shared shutdown/reboot flag is written and the worker thread is
-  started; the reply is sent when the thread has been launched, before the device actually goes down.
-  A second call while the worker runs is rejected with 268.
+description: 'No request parameters are read. Calls the shutdown starter with flag 0 (0 = shutdown,
+  1 = reboot). If no shutdown worker is running, a shared shutdown/reboot flag is written and the
+  worker thread is started; the reply is sent when the thread has been launched, before the device
+  actually goes down. A second call while the worker runs is rejected with 268.'
 grade: MUTATOR / probable (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ

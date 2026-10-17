@@ -14,7 +14,7 @@ Developer diagnostic that loads a fixed image (64-bit build) or reference file (
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xd31e0, WideMosaicGetStackImage @0x18ad70 (64-bit build); handler @0x67834, LoadPmRef @0x18a490 (32-bit build) |
 
-Takes no parameters. The 64-bit build allocates a full-frame buffer, loads a fixed stacked image into it through WideMosaicGetStackImage, frees it and returns the helper result as a JSON boolean; false is still a code 0 success. The 32-bit build instead loads a fixed photometry reference file into a temporary vector and returns integer 0 unconditionally. The two builds implement different tests and the result type differs by build. No app emitter was found.
+Takes no parameters. The 64-bit build allocates a full-frame buffer, loads a fixed stacked image into it through the wide-mosaic stacked-image reader, frees it and returns the helper result as a JSON boolean; false is still a code 0 success. The 32-bit build instead loads a fixed photometry reference file into a temporary vector and returns integer 0 unconditionally. The two builds implement different tests and the result type differs by build. No app emitter was found.
 
 Side effects: Reads a fixed file into request-local memory. Transitive diagnostic logging can write log files and mutate shared logging state. No persistent image write is established. Synchronous, no timeout. Allocation failure on the 64-bit build may throw; the exception-to-wire behaviour is unresolved.
 

@@ -52,8 +52,8 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: OpenKey or Read failures propagate the configuration layer's own error code; the transitive
-  errno-to-code mapping is not established. No result on error.
+errors_note: 'Configuration-key open or read failures propagate the configuration layer''s own error
+  code; the transitive errno-to-code mapping is not established. No result on error.'
 examples:
 - name: all
   summary: Enumerate all keys

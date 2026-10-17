@@ -41,14 +41,14 @@ reply_success:
         maxItems: 2
         prefixItems:
         - type: number
-          description: Stored x-axis calibration angle (xAngle).
+          description: Stored x-axis calibration angle.
           x-confidence: READ number; radians INFERRED
           x-basis: static analysis of firmware 9.31, handler @0x79220 (64-bit guider build)
         - type: number
-          description: Stored y-axis calibration angle (yAngle).
+          description: Stored y-axis calibration angle.
           x-confidence: READ number; radians INFERRED
           x-basis: static analysis of firmware 9.31, handler @0x79220 (64-bit guider build)
-        description: Calibration angles [xAngle, yAngle].
+        description: Calibration angles [x-axis angle, y-axis angle].
         x-confidence: READ
         x-basis: static analysis of firmware 9.31, handler @0x79220 (64-bit guider build)
 reply_error:

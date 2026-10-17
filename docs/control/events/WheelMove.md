@@ -14,7 +14,7 @@ Filter-wheel movement start, completion with position, or failure.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, WheelMove worker @0x3008c0, GetSlotsNum @0x302310 (64-bit build) |
 
-Sent by the wheel movement worker and by slot-count initialisation (open_wheel), after the actual movement and position read. State family (NotifyState): caller-supplied state literal; error and code only when the supplied code is greater than 0. The complete event uses the value overload and carries position. No lapse_ms or route. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
+Sent by the wheel movement worker and by slot-count initialisation (open_wheel), after the actual movement and position read. State family (S): caller-supplied state literal; error and code only when the supplied code is greater than 0. The complete event uses the value overload and carries position. No lapse_ms or route. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
 
 Side effects: Observation only for the receiver.
 

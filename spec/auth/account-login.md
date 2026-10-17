@@ -7,6 +7,10 @@ authorization in [cloud-auth.md](cloud-auth.md), which consumes the token produc
 is ordinary HTTPS; the telescope firmware is not involved ([Firmware boundary](account-login/boundaries.md#firmware-boundary)). The device-side remote
 control methods are in [the control catalogue](../../docs/control/methods/remote_join.md).
 
+App names: the app's “Log In” screen is the interactive login described here. A logged-in account is
+a prerequisite for “Telescope Network”. Names are the English strings of iOS app 3.4.0; links are
+READ (app call sites) unless marked.
+
 ## Contents
 
 | Contents | File |
@@ -41,18 +45,18 @@ Throughout, `E<T>` means the response envelope `{"code": int, "msg": string, "da
 
 ## Endpoint selection
 
-R1. The app sends all account requests to a single fixed production origin, `https://api.seestar.com/`
-([embedded-constants.md: ZWO vendor HTTP API hosts (app)](cloud-auth/embedded-constants.md#zwo-vendor-http-api-hosts-app)),
-over HTTPS. The base URL ends in `/`, and endpoint paths start with `/v1/`. READ. Example:
-`https://api.seestar.com/v1/user/login`.
+R1. The app sends all account requests to a single fixed production origin, "the ZWO account API
+host" ([embedded-constants.md: ZWO vendor HTTP API hosts (app)](cloud-auth/embedded-constants.md#zwo-vendor-http-api-hosts-app)),
+over HTTPS. The base URL ends in `/`, and endpoint paths start with `/v1/`. READ. Example: the
+login request is `/v1/user/login` on that origin.
 
 R2. The account host is a different origin from the remote-allocation host used by
-[cloud-auth.md](cloud-auth.md) ("the remote API host", `https://api-ithings.zwoastro.com`,
+[cloud-auth.md](cloud-auth.md) ("the ZWO remote API host",
 [embedded-constants.md: ZWO vendor HTTP API hosts (app)](cloud-auth/embedded-constants.md#zwo-vendor-http-api-hosts-app)).
 READ. A client MUST NOT assume the two share cookies, base URL or error conventions (INFERRED).
 
 R3. Host selection does not depend on the email domain, country or locale. A development test
-host, `http://api-seestar-test.zwoastro.cn/`, is shipped but is reachable only through a
+host is shipped but is reachable only through a
 developer build switch that is off in this release; production is always chosen. READ. A client
 SHOULD make the base URL configurable (INFERRED: regional or test deployments are not excluded by
 evidence).

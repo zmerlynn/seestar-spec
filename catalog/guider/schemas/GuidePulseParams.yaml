@@ -16,8 +16,8 @@ oneOf:
       x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
     amount:
       type: integer
-      description: Pulse duration in milliseconds (passed to the Mount::Move path). No range check or
-        clamp in the handler.
+      description: 'Pulse duration in milliseconds (passed to the mount pulse movement path). No
+        range check or clamp in the handler.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
     which:

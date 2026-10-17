@@ -6,15 +6,19 @@ ZWO remote API: common headers and envelope, device selection, remote-session al
 token used here comes from [account login](../account-login.md); the allocation it returns is
 consumed by the SDK ([sdk-licence.md](sdk-licence.md)).
 
+App names: these are the HTTP calls behind the app's “Telescope Network” screens: “Remote location”
+and “Change remote location”, “Device Sharing” (“Share with friends”), “Device transfer” (moving
+remote management rights) and “Remote Restart”. The app's separate “Device ownership transfer” and
+account binding screens use other endpoints that this specification does not cover (unresolved).
+Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 Basis: static analysis of app 3.3.2 (Java layer); observations from 2026-10-10 to 2026-10-12.
 
 ## Host, transport and headers
 
-The remote API is a JSON-over-HTTPS service on "the ZWO remote API host",
-`https://api-ithings.zwoastro.com` in production
+The remote API is a JSON-over-HTTPS service on "the ZWO remote API host" in production
 ([embedded-constants.md: ZWO vendor HTTP API hosts (app)](embedded-constants.md#zwo-vendor-http-api-hosts-app)). Release
-builds use the production host; development builds use a separate test host,
-`http://api-ithings-test.zwoastro.cn`. Both come from a JSON asset in the app. READ. Paths below
+builds use the production host; development builds use a separate plain-HTTP test host. Both come from a JSON asset in the app. READ. Paths below
 are relative to the host root; the app joins them with exactly one `/`. READ.
 
 R10. Bodies are JSON objects serialized with default Gson naming (Java member name = JSON
@@ -144,15 +148,14 @@ Device record members (READ, as declared by the app):
 | nullable boolean | `isShared` |
 | object | `location` with strings `city`, `country`, `district`, `province` |
 
-`deviceStatus`: 0 inactive, 1 online, 2 offline, 3 shooting, 4 occupied. READ. An absent or
-null value reads as 0; a number outside the list is handled as offline. READ. The device-detail
-precheck before allocation refuses only offline; inactive, online, shooting and occupied all go
-on to `online-link`. READ. OBSERVED (2026-10-12, sanitized field-type capture): `deviceStatus`
-was an **integer** in both list and detail replies, including the detail replies during busy
-windows. The word "occupied" in earlier observation notes is the status name, not the wire
-value. A string here would make the app's Gson decode fail. INFERRED. `shareStartTime` and
-`shareExpirationTime` were integers on the wire although declared as strings; Gson accepts this.
-OBSERVED / INFERRED.
+`deviceStatus`: 0 inactive, 1 online, 2 offline, 3 shooting, 4 occupied. READ. An absent or null
+value reads as 0; a number outside the list is handled as offline. READ. The device-detail precheck
+before allocation refuses only offline; inactive, online, shooting and occupied all go on to
+`online-link`. READ. OBSERVED (2026-10-12, sanitized field-type capture): `deviceStatus` was an
+**integer** in both list and detail replies, including the detail replies during busy windows. The
+status name "occupied" is distinct from its wire value. A string here would make the app's Gson
+decode fail. INFERRED. `shareStartTime` and `shareExpirationTime` were integers on the wire although
+declared as strings; Gson accepts this. OBSERVED / INFERRED.
 
 Member requirements (READ unless marked):
 
@@ -355,14 +358,14 @@ type only; server authorization rules, response contents and units are unresolve
 | POST `/v1/lbs/reverse-geocode` | reverse geocode | `language`, `latitude`, `longitude`, `radius`, `returnPoi` |
 
 The iOS app 3.4.0 network framework adds three remote endpoints, mapped from its API-name table to
-the URL table (READ). The disconnect-device API posts to `/v1/device-p2p/retrieve` (this resolves
-the earlier INFERRED mapping), the stop-connect API uses `/v1/device-p2p/stop` (the stop call of
-[Reports and stop](#reports-and-stop)), and the remote-unbind API posts to `/v1/my-device/remote-unbind`. Both new APIs report
-POST as their method (the literal method value is READ; that it means POST is INFERRED by analogy
-to other write-action APIs in the same table, no literal "POST" name was found bound to it) and
-send a body of exactly `deviceSn` and `deviceModel` (both strings; READ from the two APIs'
-property lists in the iOS network framework). Neither API has a visible caller anywhere in the
-app's unencrypted frameworks; the call site is presumably in the app's main executable, which is
+the URL table (READ). The disconnect-device API posts to `/v1/device-p2p/retrieve` , the
+stop-connect API uses `/v1/device-p2p/stop` (the stop call of [Reports and
+stop](#reports-and-stop)), and the remote-unbind API posts to `/v1/my-device/remote-unbind`. Both
+new APIs report POST as their method (the literal method value is READ; that it means POST is
+INFERRED by analogy to other write-action APIs in the same table, no literal "POST" name was found
+bound to it) and send a body of exactly `deviceSn` and `deviceModel` (both strings; READ from the
+two APIs' property lists in the iOS network framework). Neither API has a visible caller anywhere in
+the app's unencrypted frameworks; the call site is presumably in the app's main executable, which is
 copy-protected and out of reach of static analysis. Confirmed-present-but-not-visibly-called.
 INFERRED (reachability).
 

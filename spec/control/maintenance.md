@@ -9,6 +9,11 @@ chapters: [device-state-and-settings.md](device-state-and-settings.md) (snapshot
 [power-and-storage.md](power-and-storage.md) (shutdown, format). The firmware updater service is
 specified in [updater/index.md](../updater/index.md).
 
+App names: “Demonstration Mode” is the demonstrate worker (the split between it and “Exhibition Demo
+Mode”, which may set `mock_mode`, is INFERRED); “Simulated Stargazing” is `user_stack_sim`; “Factory
+Mode” drives the factory test methods. Names are the English strings of iOS app 3.4.0; links are
+READ (app call sites) unless marked.
+
 ## Conventions
 
 RFC 2119 / RFC 8174 key words bind clients. Labels **READ**, **OBSERVED**, **INFERRED** and
@@ -76,11 +81,10 @@ R5a. Firmware 9.75 adds to `device` six capability flags, `can_motion_monitor`,
 mask), plus `main_version` and `modules` as in R3. `can_dark_correction` is now always true. READ.
 Clients MUST treat every capability flag as optional.
 
-R5b. The six flags are bits 0 to 5 of one per-model capability mask, in the order listed in R5a
-(bit 0 `can_motion_monitor`, 1 `can_dual_capture`, 2 `can_4k_quality`, 3 `can_wide_mosaic_8k`,
-4 `can_comet_post_stack`, 5 `can_roi_smart_follow`). The flag names and the bit assignment are
-INFERRED (earlier reports, not re-traced in the resolution pass); the mask values per model are
-READ in those reports but their model-name mapping is INFERRED:
+R5b. The six flags are bits 0 to 5 of one per-model capability mask, in the order listed in R5a (bit
+0 `can_motion_monitor`, 1 `can_dual_capture`, 2 `can_4k_quality`, 3 `can_wide_mosaic_8k`, 4
+`can_comet_post_stack`, 5 `can_roi_smart_follow`). The flag names and the bit assignment are
+INFERRED; the mask values per model are READ, but their model-name mapping is INFERRED:
 
 | Model identifier | Mask | Bits set (names INFERRED) |
 |---|---|---|

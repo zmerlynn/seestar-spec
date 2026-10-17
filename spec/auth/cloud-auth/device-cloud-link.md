@@ -6,6 +6,10 @@ the status the device reports back, the `remote_*` RPCs that set the link up, an
 timers. The ZWO HTTP side that a client uses is in [http-api.md](http-api.md); the SDK start that
 a `p2p_init` command triggers is in [sdk-licence.md](sdk-licence.md#device-side-sdk-start). Requirement numbers continue the R46 series of that file.
 
+App names: joining “Telescope Network” ends with the `remote_join` RPC described here; the app's
+“Remote Restart” is the cloud `reboot_device` command, distinct from the local `pi_reboot`. Names
+are the English strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 Basis: static analysis of the 64-bit imager of firmware 9.31 and 9.75. The 32-bit imager was checked for
 symbol and string presence only (stated per item). Statements are tagged "firmware 9.31" or "firmware
 9.75"; an untagged statement holds for both. Nothing was run on a device and no server was contacted.

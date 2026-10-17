@@ -14,7 +14,7 @@ Notification that the current view target name was replaced by an accepted or ma
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifyViewTargetNameChanged @0x41a620 (64-bit build) |
 
-Broadcast on TCP 4700 (channel I) when an accepted or matched target name replaces the cached view target name (for example after iscope_accept_target_name); the event accompanies the cache update. No timer. Both names are display-normalized. route is the function-parent path when the producer includes it; the accepting handler is only shown to send the two names, so route is optional. The 32-bit build has the same emitter and member names. Family: custom; no state or error. APK consumer: DeviceService app-state handler (route check disabled for this name).
+Broadcast on TCP 4700 (channel I) when an accepted or matched target name replaces the cached view target name (for example after iscope_accept_target_name); the event accompanies the cache update. No timer. Both names are display-normalized. route is the function-parent path when the producer includes it; the accepting handler is only shown to send the two names, so route is optional. The 32-bit build has the same emitter and member names. Family: custom; no state or error. APK consumer: the app device service app-state handler (route check disabled for this name).
 
 Side effects: Observation only.
 

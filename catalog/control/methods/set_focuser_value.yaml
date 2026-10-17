@@ -1,14 +1,15 @@
 kind: method
 name: set_focuser_value
 summary: Set a focuser control value (backlash or step-register reset).
-description: Requires an open focuser. reset_step converts the requested UI step with the cached scaling,
-  writes the hardware position register (eaf_set_position) and updates the cached logical position, hardware
-  position and remainder; this resets the position counter and is not demonstrated motor travel. backlash
-  calls eaf_set_backlash, which in the 64-bit build is a stub that always fails, so an open focuser always
-  replies 300 for backlash there. In the 32-bit build the backend is chosen when the focuser is opened. One backend
-  is a stub that also fails (300), the other stores the backlash value in the device configuration and
-  succeeds when the focuser is open, so there backlash can succeed and persist (READ).
-  max_step has no setter (210). No rollback and no wait.
+description: 'Requires an open focuser. reset_step converts the requested UI step with the cached
+  scaling, writes the hardware position register (eaf_set_position) and updates the cached logical
+  position, hardware position and remainder; this resets the position counter and is not
+  demonstrated motor travel. backlash calls the focuser backlash setter, which in the 64-bit build
+  is a stub that always fails, so an open focuser always replies 300 for backlash there. In the
+  32-bit build the backend is chosen when the focuser is opened. One backend is a stub that also
+  fails (300), the other stores the backlash value in the device configuration and succeeds when the
+  focuser is open, so there backlash can succeed and persist (READ). max_step has no setter (210).
+  No rollback and no wait.'
 grade: MUTATOR / probable (64-bit build; 32-bit build differs for backlash only, where it can persist the
   value (READ))
 side_effect_tier: C

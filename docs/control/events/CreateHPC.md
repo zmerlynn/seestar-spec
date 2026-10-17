@@ -14,7 +14,7 @@ State of hot-pixel correction (HPC) creation.
 | Confidence | READ (emitter and payload members); INFERRED (event name) |
 | Basis | static analysis of firmware 9.31, StartHPC @0x3bc980, PrintMakeHPCStatus @0x3bd7c0 (64-bit build) |
 
-Sent by the named CreateHPC function started by StartHPC. Function-state family (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function cache still changes, so a receiver cannot rely on seeing every transition. The status callback adds hpc_num when the camera information read succeeds. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence. The function detail is named CreateHPC (READ); that the event carries that name is INFERRED.
+Sent by the named CreateHPC function started by the hot-pixel-correction starter. Function-state family (F): state is always written; stage only when non-empty; lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function cache still changes, so a receiver cannot rely on seeing every transition. The status callback adds hpc_num when the camera information read succeeds. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence. The function detail is named CreateHPC (READ); that the event carries that name is INFERRED.
 
 Side effects: Observation only for the receiver. The worker may move the filter wheel and writes the correction data.
 
@@ -34,7 +34,7 @@ None. Events are sent by the device without a request; the payload is below.
 | `code` | integer | if state is fail (function producer) | - | Function producer: present when state is fail, even if the stored code is 0. cancel omits it. [READ] |
 | `error` | string | if state is fail (function producer) | - | Message for code; present with code. Lookup failure gives fail to operate. [READ] |
 | `route` | array<string> | if optional; absent is a legitimate branch | - | Function-tree ancestry (for example View, Stack) built at send time. May be absent; not an address. [READ] |
-| `hpc_num` | integer | if camera information read (GetCamInfo) succeeds | - | Count taken from camera information; meaning of the count beyond its name is unresolved. [READ] |
+| `hpc_num` | integer | if camera information read succeeds | - | Count taken from camera information; meaning of the count beyond its name is unresolved. [READ] |
 
 ## Errors
 

@@ -1,18 +1,20 @@
 kind: event
 name: AutoFocus
 summary: Autofocus progress and result, from the function detail and the direct V-curve callback.
-description: 'Sent by AutoFocusFunc (F, formatter adds center_xy) and by the direct/value producer fed from the
-  V-curve callback (start, working, complete, fail; result embedded as JSON; position; error/code on failure). Function-state
-  family (F): SendFuncEvent formats the named function detail. state is always present; stage only when non-empty;
-  lapse_ms while the timer runs or at a terminal state; error and code at fail (even when the stored code is zero;
-  lookup failure gives ''fail to operate''); cancel omits code and error; route is optional function ancestry. The
-  sender does no deduplication and needs no preceding working event. Detail flags can suppress the working or non-working
-  sends while the cached function tree still changes, so a receiver can miss transitions. Cadence depends on focus
-  steps and exposures. The V-curve members and last_point shape are READ; what separates status_flag 2 from 3 is unresolved. A
-  failed autofocus triggered inside a capture run does not stop that run. Channels I (TCP 4700) and W (TCP 4702,
-  forwarded onto 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest
-  and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other
-  events. APK 3.3.2 consumes it (route-based scenery/moon/sun/planet handling).'
+description: 'Sent by the autofocus worker (F, formatter adds center_xy) and by the direct/value
+  producer fed from the V-curve callback (start, working, complete, fail; result embedded as JSON;
+  position; error/code on failure). Function-state family (F): the event formatter formats the named
+  function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs
+  or at a terminal state; error and code at fail (even when the stored code is zero; lookup failure
+  gives ''fail to operate''); cancel omits code and error; route is optional function ancestry. The
+  sender does no deduplication and needs no preceding working event. Detail flags can suppress the
+  working or non-working sends while the cached function tree still changes, so a receiver can miss
+  transitions. Cadence depends on focus steps and exposures. The V-curve members and last_point
+  shape are READ; what separates status_flag 2 from 3 is unresolved. A failed autofocus triggered
+  inside a capture run does not stop that run. Channels I (TCP 4700) and W (TCP 4702, forwarded onto
+  4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest
+  and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC
+  replies or other events. APK 3.3.2 consumes it (route-based scenery/moon/sun/planet handling).'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

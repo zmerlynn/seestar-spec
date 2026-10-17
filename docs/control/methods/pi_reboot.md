@@ -14,7 +14,7 @@ Reboots the device: start the shutdown worker; the reply acknowledges acceptance
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xce150, StartShutdown @0x122710 (64-bit build) |
 
-No request parameters are read. Calls StartShutdown with flag 1 (0 = shutdown, 1 = reboot). If no shutdown worker is running, a shared shutdown/reboot flag is written and the worker thread is started; the reply is sent when the thread has been launched, before the device actually goes down. A second call while the worker runs is rejected with 268.
+No request parameters are read. Calls the shutdown starter with flag 1 (0 = shutdown, 1 = reboot). If no shutdown worker is running, a shared shutdown/reboot flag is written and the worker thread is started; the reply is sent when the thread has been launched, before the device actually goes down. A second call while the worker runs is rejected with 268.
 
 Side effects: Writes the shared shutdown/reboot flag and starts the shutdown worker thread; the device then powers off or restarts after the reply. No wait for completion and no handler timeout.
 

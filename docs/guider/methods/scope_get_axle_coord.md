@@ -14,7 +14,7 @@ Query the connected mount for its two axle coordinates.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0x78e20 (64-bit build); ScopeAM5::GetAxleCoords @0xef700 |
 
-Performs a live mount query (ScopeAM5::GetAxleCoords) and returns a two-number array. Axis units and frame are unresolved. Params are not consumed. Mount serial (firmware 9.31, READ): :GDd, :GDr.
+Performs a live mount query and returns a two-number array. Axis units and frame are unresolved. Params are not consumed. Mount serial (firmware 9.31, READ): :GDd, :GDr.
 
 Side effects: Live query to the mount controller for the axis coordinates; no motion.
 

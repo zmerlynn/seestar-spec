@@ -1,15 +1,16 @@
 kind: event
 name: CheckPhotoMetry
 summary: State of the photometry check stage, with the solved coordinate at completion.
-description: 'The view stage started by check_photometry runs CheckPhotoMetryFunc as a named function
-  before capture. Function-state family (SendFuncEvent): state is always written; stage only when non-empty;
-  lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored
-  code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
-  notifications can be suppressed while the function cache still changes, so a receiver cannot rely on
-  seeing every transition. Its formatter adds ra_dec_deg_j2000 only in complete; it is not present while
-  working. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC
-  reply that starts the worker and the worker''s events can arrive in either order. No fixed cadence.
-  The RPC reference leaves the Event-name binding unresolved; the events audit reads it.'
+description: 'The view stage started by check_photometry runs the photometry-check worker as a named
+  function before capture. Function-state family (F): state is always written; stage only when
+  non-empty; lapse_ms when the timer is started or the state is terminal; code and error at fail
+  even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail
+  sends nothing, and non-working notifications can be suppressed while the function cache still
+  changes, so a receiver cannot rely on seeing every transition. Its formatter adds ra_dec_deg_j2000
+  only in complete; it is not present while working. Recipients: all retained 4700 sockets. No
+  reply-before-event order is established: the RPC reply that starts the worker and the worker''s
+  events can arrive in either order. No fixed cadence. The RPC reference leaves the Event-name
+  binding unresolved; the events audit reads it.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

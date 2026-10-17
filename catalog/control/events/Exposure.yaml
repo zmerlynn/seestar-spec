@@ -2,26 +2,32 @@ kind: event
 name: Exposure
 summary: 'Exposure progress from two producers: the legacy page/start/downloading/complete/fail sender and the function-state
   Exposure detail.'
-description: 'Two producers share the name; select the contract by members, not by name. (1) Legacy SendExpEvent
-  (named single exposures, stack exposure cycle, sequence-list capture frames): sent only when the exposure parameter''s event flag is set; always
-  page, then tag if non-empty, then caller extension-map members; start adds exp_us and gain; downloading adds nothing;
-  the terminal branch sends complete for code 0 or fail with error and code for a non-zero code. It never carries
-  lapse_ms, exp_ms, port or route. (2) F detail named Exposure: Function-state family (F): SendFuncEvent formats
-  the named function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or
-  at a terminal state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail to
-  operate''); cancel omits code and error; route is optional function ancestry. The sender does no deduplication
-  and needs no preceding working event. Detail flags can suppress the working or non-working sends while the cached
-  function tree still changes, so a receiver can miss transitions. Its formatter adds exp_ms and port. Legacy microseconds
-  and F milliseconds are separate serializer paths. The legacy extension map has exactly one member in both builds:
-  ac_count (integer, the auto-goto attempt counter), on exposures taken by auto-goto and its solve retry; other legacy
-  Exposure events carry no extension members. Cadence follows exposure
-  and readout time; no fixed progress timer. Channels I (TCP 4700) and W (TCP 4702, forwarded onto 4700 by the main
-  imager). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified
-  sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. OBSERVED (2026-10-12,
-  firmware not matched to 9.31, stored plan imaging): about one exposure cycle per 63 s gave a legacy start event,
-  then near the end a burst of two legacy page/state events and two F events (route of length 2); a fail with code
-  514 was also seen. Legacy fail codes are 253 (client stop command such as stop_exposure, iscope_stop_view or
-  stop_stack), 514 (interrupted by an internal stop; produced only by application workers, never by the camera layer, so not a camera or sensor fault) and 238 (retries exhausted) (READ). The APK also derives a local ExposureTag event from Exposure; that is not a wire event.'
+description: 'Two producers share the name; select the contract by members, not by name. (1) Legacy
+  exposure notifier (named single exposures, stack exposure cycle, sequence-list capture frames):
+  sent only when the exposure parameter''s event flag is set; always page, then tag if non-empty,
+  then caller extension-map members; start adds exp_us and gain; downloading adds nothing; the
+  terminal branch sends complete for code 0 or fail with error and code for a non-zero code. It
+  never carries lapse_ms, exp_ms, port or route. (2) F detail named Exposure: Function-state family
+  (F): the event formatter formats the named function detail. state is always present; stage only
+  when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even
+  when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and
+  error; route is optional function ancestry. The sender does no deduplication and needs no
+  preceding working event. Detail flags can suppress the working or non-working sends while the
+  cached function tree still changes, so a receiver can miss transitions. Its formatter adds exp_ms
+  and port. Legacy microseconds and F milliseconds are separate serializer paths. The legacy
+  extension map has exactly one member in both builds: ac_count (integer, the auto-goto attempt
+  counter), on exposures taken by auto-goto and its solve retry; other legacy Exposure events carry
+  no extension members. Cadence follows exposure and readout time; no fixed progress timer. Channels
+  I (TCP 4700) and W (TCP 4702, forwarded onto 4700 by the main imager). Delivery: ordinary
+  broadcast to every retained socket of the emitting server (master, guest and never-verified
+  sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other
+  events. OBSERVED (2026-10-12, firmware not matched to 9.31, stored plan imaging): about one
+  exposure cycle per 63 s gave a legacy start event, then near the end a burst of two legacy
+  page/state events and two F events (route of length 2); a fail with code 514 was also seen. Legacy
+  fail codes are 253 (client stop command such as stop_exposure, iscope_stop_view or stop_stack),
+  514 (interrupted by an internal stop; produced only by application workers, never by the camera
+  layer, so not a camera or sensor fault) and 238 (retries exhausted) (READ). The APK also derives a
+  local exposure-tag event from Exposure; that is not a wire event.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ; all four producer shapes OBSERVED (2026-10-12)
@@ -62,8 +68,8 @@ payload:
       - cancel
       - start
       - downloading
-      description: 'Union of two producers. F: idle, working, complete, fail, cancel. Legacy SendExpEvent: start,
-        downloading, complete, fail.'
+      description: 'Union of two producers. F: idle, working, complete, fail, cancel. Legacy
+        exposure notifier: start, downloading, complete, fail.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, SendExpEvent @0x214440; OBSERVED (2026-10-12)
         start, downloading, working, complete, fail, cancel

@@ -60,7 +60,7 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: SetFocalLen itself never fails.
+errors_note: 'The focal-length setter itself never fails.'
 examples:
 - name: request
   summary: Array form (values invented)

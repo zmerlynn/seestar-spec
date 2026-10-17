@@ -26,10 +26,10 @@ confidence: READ
 basis: static analysis of firmware 9.31, handler @0x7e660 (64-bit build), SaveUserLocation @0x141af0, GetCalibLocatOffset,
   ScopeAM5::SetSiteLatLong, registration
   @0x74548 (32-bit build); wire observation 2026-10-12
-side_effects: Persists the user longitude/latitude settings and refreshes the geographic caches and configuration
-  timestamp (SaveUserLocation); unless View is running, attempts to update the mount's site location. The store
-  happens before the mount update, so it is not undone when the mount step fails (INFERRED from call order).
-  The stored-site change was OBSERVED 2026-10-12 via get_device_state readback.
+side_effects: 'Persists the user longitude/latitude settings and refreshes the geographic caches and
+  configuration timestamp; unless View is running, attempts to update the mount''s site location.
+  The store happens before the mount update, so it is not undone when the mount step fails (INFERRED
+  from call order). The stored-site change was OBSERVED 2026-10-12 via get_device_state readback.'
 request:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object

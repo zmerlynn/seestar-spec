@@ -1,12 +1,12 @@
 kind: method
 name: pi_output_set2
 summary: Set auxiliary outputs from per-output setting objects (state, duty, PWM mode, frequency).
-description: 'Object-valued variant of pi_output_set. Members are applied sequentially with no rollback.
-  The reply is a bare success: it does not prove the hardware or frequency change was applied, because
-  the named dslr, beep and heater branches ignore driver and SetFreq results. As with pi_output_set, a
-  loop-breaking error can be followed by an appended success result, producing duplicate envelope keys.
-  The companion app sends a heater member with state, value and freq when switching the dew heater (INFERRED
-  from the app data-transfer object).'
+description: 'Object-valued variant of pi_output_set. Members are applied sequentially with no
+  rollback. The reply is a bare success: it does not prove the hardware or frequency change was
+  applied, because the named dslr, beep and heater branches ignore driver and frequency-setting
+  results. As with pi_output_set, a loop-breaking error can be followed by an appended success
+  result, producing duplicate envelope keys. The companion app sends a heater member with state,
+  value and freq when switching the dew heater (INFERRED from the app data-transfer object).'
 grade: MUTATOR / established (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ

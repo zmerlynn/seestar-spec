@@ -8,6 +8,12 @@ work that runs inside a view: [stacking.md](stacking.md), [focus-and-filter.md](
 [solving-and-annotation.md](solving-and-annotation.md), [calibration-frames.md](calibration-frames.md)
 and [plan-scheduling.md](plan-scheduling.md). Per-method detail stays in the catalog cards.
 
+App names: the home-screen modes “Stargazing” (`mode:star`), “Scenery” (`mode:scenery`) and “Milky
+Way” (the wide-camera star view, not a separate mode) all start a view here. “Continuous Capture” is
+`stack.capt_type:cont_capt`. “4K” and “Telephoto resolution” set `wide_4k` and `main_8k`; which
+preset sets `main_8k` is INFERRED. Names are the English strings of iOS app 3.4.0; links are READ
+(app call sites) unless marked.
+
 ## Conventions
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119 and RFC 8174. They bind
@@ -126,19 +132,19 @@ stops the whole view or one named stage.
 
 R4. `params` MUST be an object with a string `mode`. Optional members: `target_name`,
 `target_ra_dec` (two numbers: RA in decimal hours, then Dec in degrees; coordinates of date,
-INFERRED, so a client SHOULD precess J2000 positions first), `lp_filter`,
-`target_type` (solar_sys only), `mosaic`, `selected_cam` (View or SecondView). READ. The
-`mosaic` members and their effect at capture are in [mosaic.md](mosaic.md);
-firmware 9.75 (app 3.4.0) adds three optional members, `goto_capt_type`, `goto_capture_settings`
-and `stack_exp_ms`, and the codes 104 and 209 on them. READ (members and codes); their types are
-INFERRED and their meaning is unresolved. In 9.75 StartView and StartViewStarStage set the
-capture type and settings, update the stack exposure, save the star filter position and call the
-mosaic goto source setup (a mosaic goto source starts a normal stack after the goto; see
-[stacking.md](stacking.md)); the view stop also differs. A client SHOULD NOT send the new members
-until their semantics are decoded; a mosaic view has
-no completion of its own and runs until stopped. `lp_filter` is passed to the target's goto; it moves the wheel to
-the LP slot only inside a ViewPlan or with `stack.auto_lenhance` on, and the view start itself
-never moves the wheel ([focus-and-filter R22d](focus-and-filter.md#factory-names-the-dark-slot-and-automatic-moves)). READ.
+INFERRED, so a client SHOULD precess J2000 positions first), `lp_filter`, `target_type` (solar_sys
+only), `mosaic`, `selected_cam` (View or SecondView). READ. The `mosaic` members and their effect at
+capture are in [mosaic.md](mosaic.md); firmware 9.75 (app 3.4.0) adds three optional members,
+`goto_capt_type`, `goto_capture_settings` and `stack_exp_ms`, and the codes 104 and 209 on them.
+READ (members and codes); their types are INFERRED and their meaning is unresolved. In 9.75 the view
+starter and star-stage starter set the capture type and settings, update the stack exposure, save
+the star filter position and call the mosaic goto source setup (a mosaic goto source starts a normal
+stack after the goto; see [stacking.md](stacking.md)); the view stop also differs. A client SHOULD
+NOT send the new members until their semantics are decoded; a mosaic view has no completion of its
+own and runs until stopped. `lp_filter` is passed to the target's goto; it moves the wheel to the LP
+slot only inside a ViewPlan or with `stack.auto_lenhance` on, and the view start itself never moves
+the wheel ([focus-and-filter
+R22d](focus-and-filter.md#factory-names-the-dark-slot-and-automatic-moves)). READ.
 
 R5. The ViewPlan guard runs first: while a ViewPlan worker runs, both start and stop return
 536 before any parameter is parsed. READ. A client MUST stop the plan
@@ -468,13 +474,14 @@ the start of an asynchronous save, reported by
 literal `save fail` with a space; some fail paths have no `code`). READ.
 
 Firmware 9.75: the camera library (libASICamera2.so) changed (about 4.0 MB to 4.4 MB). For the
-S585MC the 16-bit output path sends a new command word, SetGain adds one, SetExp reorders a
-sensor register write and adds a 1000.0 constant, and the cooler code grew. No change in the wire
-units of R17b was found. READ (the diff), unresolved (effect of the S585MC-specific changes on
-other sensors). The device-side control table, ids, names and dispatch logic in R17-R17e (what
-`get_controls` returns, how `set_control_value`/`get_control_value` resolve a name, the absence
-of a range check, and the 210/318 error paths) are confirmed unchanged in firmware 9.75 on both
-the 64-bit and 32-bit builds (identical instruction counts; only relocation differences). READ.
+S585MC the 16-bit output path sends a new command word, the gain setter adds one, and the exposure
+setter reorders a sensor register write and adds a 1000.0 constant, and the cooler code grew. No
+change in the wire units of R17b was found. READ (the diff), unresolved (effect of the
+S585MC-specific changes on other sensors). The device-side control table, ids, names and dispatch
+logic in R17-R17e (what `get_controls` returns, how `set_control_value`/`get_control_value` resolve
+a name, the absence of a range check, and the 210/318 error paths) are confirmed unchanged in
+firmware 9.75 on both the 64-bit and 32-bit builds (identical instruction counts; only relocation
+differences). READ.
 
 ### Additional camera control rules
 

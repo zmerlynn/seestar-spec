@@ -7,10 +7,10 @@ properties:
     type:
     - boolean
     - integer
-    description: 'Target the wide camera. Boolean or integer (nonzero is true); a wrong type is treated
-      as false. When true: 210 if the wide camera has autofocus (CanWideCamAf); otherwise a process-type-1
-      device relays the original request to the peer, a process-type-2 device resets locally, and any
-      other process type gives 300. The slave''s parser is unresolved.'
+    description: 'Target the wide camera. Boolean or integer (nonzero is true); a wrong type is
+      treated as false. When true: 210 if the wide camera has autofocus; otherwise a process-type-1
+      device relays the original request to the peer, a process-type-2 device resets locally, and
+      any other process type gives 300. The slave''s parser is unresolved.'
     x-default: 'false'
     x-confidence: READ
     x-basis: static analysis of firmware 9.31, handler @0xdbf60, Reset2FactoryFocalPos @0x27db50 (64-bit

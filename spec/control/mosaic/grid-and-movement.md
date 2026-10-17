@@ -183,10 +183,11 @@ READ. List exhaustion is therefore neither completion nor a deadline. INFERRED.
 
 ## Movement
 
-R15. Firmware 9.31 (not re-verified for 9.75, see the [open questions](../mosaic.md#open-questions)): for each stacked frame, star matching locates the current image on the canvas. If it is
-within 100 pixels of the current node, the device advances to the next node and computes the
-offset to it in the current frame; otherwise it computes a correction to the current node.
-Offsets are truncated to whole pixels. READ.
+R15. Firmware 9.31 (firmware 9.75 behaviour is unresolved, see the [open
+questions](../mosaic.md#open-questions)): for each stacked frame, star matching locates the current
+image on the canvas. If it is within 100 pixels of the current node, the device advances to the next
+node and computes the offset to it in the current frame; otherwise it computes a correction to the
+current node. Offsets are truncated to whole pixels. READ.
 
 R16. For the ordinary mosaic a nonzero offset `(dx, dy)` becomes one guider
 [`scope_fine_move`](../../../docs/guider/methods/scope_fine_move.md) request:

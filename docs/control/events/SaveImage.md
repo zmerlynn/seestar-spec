@@ -14,7 +14,7 @@ State of saving the current image, with the saved name on success.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifySaveImgOk @0x11a070, SaveImgFunc @0x12bd40, StartSaveBlock @0x12ab80, SaveRtspImgFunc @0x2f73b0 (64-bit build) |
 
-Producers: the save worker, the block save and the RTSP image save. Direct events: start, complete with filename and fullname on success, and save fail. Function-state family (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function cache still changes, so a receiver cannot rely on seeing every transition. State family (NotifyState): caller-supplied state literal; error and code only when the supplied code is greater than 0. The terminal event can arrive after the save_image reply. Channels: imager 4700 and auxiliary 4702 (forwarded to 4700). No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
+Producers: the save worker, the block save and the RTSP image save. Direct events: start, complete with filename and fullname on success, and save fail. Function-state family (F): state is always written; stage only when non-empty; lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function cache still changes, so a receiver cannot rely on seeing every transition. State family (S): caller-supplied state literal; error and code only when the supplied code is greater than 0. The terminal event can arrive after the save_image reply. Channels: imager 4700 and auxiliary 4702 (forwarded to 4700). No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
 
 Side effects: Observation only for the receiver.
 
@@ -34,8 +34,8 @@ None. Events are sent by the device without a request; the payload is below.
 | `code` | integer | if function fail; direct failure with code > 0 | - | Function producer: at fail even if 0. Direct producers: only when the checked save failure code is > 0; some direct failure paths pass 0 and so carry no code/error despite a failure-like state. [READ] |
 | `error` | string | if function fail; direct failure with code > 0 | - | Message for code; present with code. Lookup failure gives fail to operate. [READ] |
 | `route` | array<string> | if optional; absent is a legitimate branch | - | Function-tree ancestry (for example View, Stack) built at send time. May be absent; not an address. [READ] |
-| `filename` | string | if successful save (NotifySaveImgOk) | - | Saved file base name. [READ] |
-| `fullname` | string | if successful save (NotifySaveImgOk) | - | Saved file full name/path. [READ] |
+| `filename` | string | if successful save (save-success notifier) | - | Saved file base name. [READ] |
+| `fullname` | string | if successful save (save-success notifier) | - | Saved file full name/path. [READ] |
 
 ## Errors
 

@@ -2,10 +2,10 @@
 
 This is the entry chapter. It describes the whole stack, from UDP and TCP up to the JSON control
 methods, names the device processes and their ports, and points to every other chapter. Nothing
-sits above it. Below it are the layer chapters: [transport](transport/), [auth](auth/),
-[control](control/), [guider](guider/), [media](media/) and [updater](updater/), plus the
-machine-readable [catalog](../catalog/) and the generated method and event cards in
-[docs](../docs/).
+sits above it. Below it are the layer chapters: [transport](transport/index.md), [auth](auth/index.md),
+[control](control/index.md), [guider](guider/index.md), [media](media/index.md) and
+[updater](updater/index.md), plus the machine-readable [catalog](../catalog/) and the generated
+method and event cards, [indexed by service](../docs/index.md).
 
 ## Conventions
 
@@ -14,9 +14,11 @@ clients. Statements about what "the device" or "the app" does are descriptions.
 
 Every claim carries one label (`CONVENTIONS.md`):
 
-- **READ**: established by static analysis of firmware 9.31 or app 3.3.2.
-- **OBSERVED(date)**: seen on a real device or in a real capture on that date. The live build was
-  not matched to 9.31.
+- **READ**: established by static analysis of firmware or app code: firmware 9.31 or the Android
+  app 3.3.2 unless the claim is tagged with firmware 9.75 or app 3.4.0.
+- **OBSERVED(date)**: seen on a real device or in a real capture on that date. The firmware is
+  named where it matters (the device ran firmware 9.75 from 2026-10-16); earlier observations were
+  not matched to a build.
 - **INFERRED**: a reasoned conclusion that neither source states directly.
 - **unresolved**: not established. Listed in the open-question register ([Open-question register](#open-question-register)).
   **unresolved (server-side)** marks a question only the vendor's servers can answer (their
@@ -25,7 +27,8 @@ Every claim carries one label (`CONVENTIONS.md`):
 
 Basis: static analysis of Seestar firmware 9.31 (64-bit build as reference, 32-bit build as
 corroboration), the Android app 3.3.2 and its native libraries, and wire observations of the
-iOS app and a device. Examples use documentation addresses (192.0.2.x, 198.51.100.x,
+iOS app and a device. Firmware 9.75 and app 3.4.0 (Android, and iOS where stated) are covered as
+version-tagged extensions. Examples use documentation addresses (192.0.2.x, 198.51.100.x,
 203.0.113.x) and synthetic values.
 
 ## What the specification covers
@@ -173,6 +176,9 @@ Details: [session handshake](control/session-handshake.md), [errors](control/err
 Start with this chapter, then [session handshake](control/session-handshake.md) for a LAN client,
 or [transport](transport/index.md) and [auth](auth/index.md) first for a remote client.
 
+To find a feature by its name in the Seestar app, search for the quoted name: each chapter's
+opening paragraph lists the app names (iOS app 3.4.0, English) of the features it covers.
+
 ## Glossary
 
 | Term | Meaning |
@@ -195,11 +201,12 @@ or [transport](transport/index.md) and [auth](auth/index.md) first for a remote 
 | P2P tunnel | Kalay module that forwards TCP connections over RDT in 4-byte-header frames. |
 | PSK | Pre-shared key for DTLS, derived from the tunnel password. |
 | RDT | Kalay reliable data transport: ordered byte stream over IOTC. |
+| Telescope Network | The app's name for remote access through the cloud (the remote path above). |
 | Relay (guider) | Imager forwarding of unknown 4700 methods to 4400. |
 | Relay (Kalay) | Kalay server forwarding packets when direct UDP fails. |
 | UID | The device's Kalay identifier. |
 | Verification | The `get_verify_str` / `verify_client` signature check on control ports. |
-| `err_code` | The firmware's thread-local error variable that handlers forward into replies. |
+| Thread-local error value | The firmware's thread-local error variable that handlers forward into replies. |
 
 ## Open-question register
 
@@ -251,10 +258,6 @@ means it needs device observation.
 
 ### Chapter open questions
 
-- [Second-camera relay routing](control/session-handshake/relay-routing.md#open-questions)
-
-- [BLE transport](transport/ble.md#open-questions)
-
 Each chapter lists its own narrower open questions. `tools/lint.py` checks that every such
 section is listed here.
 
@@ -276,6 +279,7 @@ section is listed here.
 - [Polar alignment and mount sensors](control/polar-alignment.md#open-questions)
 - [Power and storage](control/power-and-storage.md#open-questions)
 - [Control session: heartbeats, initialization, ordering and secondary servers](control/session-handshake/liveness-and-ordering.md#open-questions)
+- [Second-camera relay routing](control/session-handshake/relay-routing.md#open-questions)
 - [Solving, goto and annotation](control/solving-and-annotation.md#not-covered-or-unresolved)
 - [Function states: settings reset, motion monitor, smart follow, sky replay](control/function-states.md#open-questions)
 - [Special modes: Sun, Moon and planets, tracking, recording, streaming, functions](control/special-modes.md#open-questions)
@@ -290,6 +294,7 @@ section is listed here.
 - [Media channels](media/index.md#open-questions)
 - [SMB file sharing](media/smb.md#open-questions)
 - [Video: RTSP, RTMP pipeline and AVI recording](media/video.md#open-questions)
+- [BLE transport](transport/ble.md#open-questions)
 - [Kalay/IOTC session](transport/iotc/index.md#open-questions)
 - [LAN discovery and device selection](transport/lan-discovery.md#open-questions)
 - [P2P tunnel (TCP port forwarding)](transport/p2p-tunnel/index.md#open-questions)

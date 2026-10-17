@@ -90,29 +90,28 @@ held, with device-local mtimes, `MyWorks/` (2026-10-16 20:02), `Autorun/` (2026-
 observing session itself, unrelated to R6b's legacy dark library); `log/` held only small
 `Autorun_Log_<date>_<time>.txt` files. **No `darklibrary` folder was present at the root.**
 `MyWorks/` was not walked. Since the temperature dark library's directory tree is created per
-exposure length on first use (R6h1: "one directory per exposure named `<N>s`"), the simplest
-reading is that this particular device had not yet run a temperature-keyed dark capture, not that
-the share hides the path. INFERRED. Still open: whether `darklibrary/` appears after a temperature
-dark capture has actually run; a repeat listing after the device's next real imaging session is
-expected to settle this.
+exposure length on first use (R6h1: "one directory per exposure named `<N>s`"), the simplest reading
+is that this particular device had not yet run a temperature-keyed dark capture, not that the share
+hides the path. INFERRED. The folder's presence after capture is documented by the observation
+below.
 
-A repeat listing of the same share, after a shoot using 60 s exposures (OBSERVED 2026-10-17
-~07:25Z), settled it: a `darklibrary/` folder is now present at the root, with one subfolder per
-exposure length seen so far (`60s`). Inside, two master darks are present, each stored as a set of
-three files sharing the naming scheme of
-[calibration frames R6h1](../control/calibration-frames/dark-library.md#temperature-dark-library-firmware-975)
+A repeat listing of the same firmware 9.75 share, after a shoot using 60 s exposures (OBSERVED
+2026-10-17 ~07:25Z): a `darklibrary/` folder is present at the root, with one subfolder per exposure
+length seen so far (`60s`). Inside, two master darks are present, each stored as a set of three
+files sharing the naming scheme of [calibration frames
+R6h1](../control/calibration-frames/dark-library.md#temperature-dark-library-firmware-975)
 (master-dark prefix, a small integer field, the exposure, the sensor temperature and a local-time
 timestamp): the `.fit` master itself (about 16.6 MB), a full-size JPEG preview (about 4 MB) sharing
 the same base name, and a thumbnail JPEG (about 22 KB) with a `_thn` suffix on the base name. The
-two masters differ in temperature by about 5 degrees C and were written about 1h15m apart during
-the shoot. The rest of the root is unchanged from the 02:45Z listing (`MyWorks/`, `Autorun/` holding
+two masters differ in temperature by about 5 degrees C and were written about 1h15m apart during the
+shoot. The rest of the root is unchanged from the 02:45Z listing (`MyWorks/`, `Autorun/` holding
 only `Dark/`, `log/` holding only `Autorun_Log` files, and the two `.DS_Store` droppings). OBSERVED.
 
-By later that same shoot a third master had appeared in the same `60s` folder, again as a
-`.fit`/JPEG/`_thn` triple, taking the total to three. OBSERVED 2026-10-17. Detail on all three
-runs, including the first live confirmation of the 2.5 °C selection threshold and a separate,
-previously unnoticed periodic dark capture under `Autorun/Dark/`, is in
-[calibration frames R6n](../control/calibration-frames/dark-library.md#building-the-dark-library).
+On firmware 9.75, by later that same shoot a third master had appeared in the same `60s` folder,
+again as a `.fit`/JPEG/`_thn` triple, taking the total to three. OBSERVED 2026-10-17. Detail on all
+three runs, including the observed 2.5 °C selection threshold and a separate periodic dark capture
+under `Autorun/Dark/`, is in [calibration frames
+R6n](../control/calibration-frames/dark-library.md#building-the-dark-library).
 
 ## Reachability
 

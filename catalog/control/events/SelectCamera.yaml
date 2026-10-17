@@ -1,9 +1,9 @@
 kind: event
 name: SelectCamera
 summary: Notification that the selected imaging process (main or wide view) changed.
-description: 'Broadcast on TCP 4700 (channel I) when the process switch changes the selected imaging process.
-  Family: custom; no state or error. APK consumers: DeviceEventPart; DeviceService app-state handler (route
-  check disabled for this name).'
+description: 'Broadcast on TCP 4700 (channel I) when the process switch changes the selected imaging
+  process. Family: custom; no state or error. APK consumers: the app event dispatcher; the app
+  device service app-state handler (route check disabled for this name).'
 grade: PURE GETTER
 side_effect_tier: B
 confidence: READ

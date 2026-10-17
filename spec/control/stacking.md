@@ -7,6 +7,21 @@ from [calibration-frames.md](calibration-frames.md). Event framing is in
 [events/families.md](events/families.md). Plans that stack automatically are in
 [plan-scheduling.md](plan-scheduling.md). Per-method detail stays in the catalog cards.
 
+App names. Live capture: “Starry Sky” (`capt_type:stack`, INFERRED), “Star Trails” (`startrails`),
+“Time-lapse” (`timelapse`), “Live” enhancement versus continuous capture (INFERRED), “Freeze Ground”
+(`scene_separate`, with its duration), “Save Meteor Frames”, “Trail Rejection”
+(`airplane_line_removal`), “RAW Denoise” (`wide_denoise`), “Star Distortion Correction”
+(`star_correction`), “Save each frame” and “Save all frames” (`save_discrete_ok_frame`,
+`save_discrete_frame`), “Execute enhancement after GOTO” (`stack_after_goto`), and the wide framing
+presets “Original Size”, “8K Portrait”, “8K Landscape” and “180° Landscape” (`wide_size_index` 0 to
+3). “DBE” matches `dbe_enable`, but the app also does DBE locally (INFERRED). Post-processing: “Deep
+Sky Stack” (batch `deepsky`), “Star Trail Stacking” (batch star-trail tasks), “Comet Nucleus
+Stacking” (batch `comet`, INFERRED), “Video Stacking” of a “Planet” or “Solar or Lunar surface”
+(planet stack), and the trail styles “Classic Star Trails”, “Comet Trails” and “Generate Both”
+(maximum, decay, both; INFERRED). The app's “AI Enhance” runs on the phone and is not this device
+processing. Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless
+marked.
+
 ## Conventions
 
 As in [viewing-and-exposure.md](viewing-and-exposure.md#conventions): RFC 2119 words bind
@@ -223,7 +238,7 @@ client MUST tell them apart by `state`.
 
 | Producer | States | Members |
 |---|---|---|
-| Custom (NotifyStackState) | `frame_complete` (`start` listed by the app; no producer found) | `frame_type`, `stacked_frame`, `dropped_frame`, `total_frame`, optional `file_name`, `lapse_ms`, and `error`/`code` always (even code 0) |
+| Custom (stack-frame notifier) | `frame_complete` (`start` listed by the app; no producer found) | `frame_type`, `stacked_frame`, `dropped_frame`, `total_frame`, optional `file_name`, `lapse_ms`, and `error`/`code` always (even code 0) |
 | Function (F) | F states | `frame_errcode`, `stacked_frame`, `dropped_frame`, `can_annotate`, `cont_capt_frame`, `jpg_name`, `angle`, `output_file`, and on the 64-bit build `scene_shooting`, `auto_exp_us`, `file_saved`, mosaic members (`progress`, `stitch_progress`, `part_complete`, `ra_dec`) |
 
 READ. On the 64-bit build the custom notification is sent only as `frame_complete`, once per
@@ -288,9 +303,8 @@ gain the 203 and 524 occupancy outcomes; the same holds for `save_image`, `is_st
 `get_stack_info`. The same relay-only form is used by `start_auto_focuse`, `stop_auto_focuse`,
 `iscope_match_target_name`, `iscope_accept_target_name` and others; the occupancy probes are used
 only by `start_track_object`, `start_smart_follow`, `start_func`, `start_motion_monitor`,
-`start_record_avi` and `start_scan_planet` (see [special-modes.md](special-modes.md)). READ
-(64-bit firmware 9.75, resolved by a later pass). An earlier claim that these stack methods return
-203 or 524 was wrong. The 32-bit build was not checked.
+`start_record_avi` and `start_scan_planet` (see [special-modes.md](special-modes.md)). READ (64-bit
+firmware 9.75). The 32-bit behaviour is unresolved.
 
 ## Saving
 
@@ -426,22 +440,22 @@ key frame to the front of the candidates. READ. The 32-bit build shows none of t
 so its list handling may differ (string-level only, not traced).
 
 R20b. Firmware 9.75, app 3.4.0: a comet batch is the only comet stacker. There is no live comet
-stack and no comet start or stop method; the task takes light frames only and the result is
-saved in the deep-sky folder. `can_comet_post_stack` in `get_device_state` is just a per-model
-capability bit (R5c of [maintenance.md](maintenance.md)), not a mode. READ (a negative result from a
-string and handler review, not an exhaustive proof).
+stack and no comet start or stop method; the task takes light frames only and the result is saved in
+the deep-sky folder. `can_comet_post_stack` in `get_device_state` is just a per-model capability bit
+(R5c of [maintenance.md](maintenance.md)), not a mode. READ (a negative result from a string and
+handler analysis, not an exhaustive proof).
 
 R20c. Firmware 9.75, app 3.4.0: a comet batch is limited to 200 input frames, the constant
-`comet_max_frame_num` reported by `get_setting` (not settable). The count is checked in three places:
-at `start_batch_stack` (input list above 200), in the worker on the input list, and again after the
-list is expanded. Each raises err_code 204 `out of limit`. READ for the places and the code. The
-`start_batch_stack` reply code 204 for the first place is INFERRED from the stored err_code; whether
-the worker-side failures reach the `BatchStack` event with 204 is unresolved. A new preflight scans
-the list for the first frame that contains a comet and skips frames that are not valid FITS, cannot
-be loaded or show no comet; if none is found it fails with 9005 (`comet not found`), and a detector
-initialisation failure gives 9002 (details in [errors.md](errors.md)). With too few usable candidates
-the worker raises 9004. An empty non-comet list gives 267. READ. Firmware 9.31 had no limit and no
-preflight.
+`comet_max_frame_num` reported by `get_setting` (not settable). The count is checked in three
+places: at `start_batch_stack` (input list above 200), in the worker on the input list, and again
+after the list is expanded. Each raises thread-local error value 204 `out of limit`. READ for the
+places and the code. The `start_batch_stack` reply code 204 for the first place is INFERRED from the
+stored thread-local error value; whether the worker-side failures reach the `BatchStack` event with
+204 is unresolved. A new preflight scans the list for the first frame that contains a comet and
+skips frames that are not valid FITS, cannot be loaded or show no comet; if none is found it fails
+with 9005 (`comet not found`), and a detector initialisation failure gives 9002 (details in
+[errors.md](errors.md)). With too few usable candidates the worker raises 9004. An empty non-comet
+list gives 267. READ. Firmware 9.31 had no limit and no preflight.
 
 R21. There is no immediate empty-list check; an empty list fails in the worker. READ.
 

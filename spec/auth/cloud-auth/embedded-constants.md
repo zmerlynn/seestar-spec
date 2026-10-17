@@ -2,7 +2,7 @@
 
 Part of [Cloud authentication and relay authorization](../cloud-auth.md). This file reproduces
 the fixed constants compiled into the ThroughTek SDKs (the two public keys, the legacy transform phrase and the master host-name
-suffixes) and into the vendor app (the third-party login `sign` key and the activation request key) that a compatible client or device needs for interoperability. They are compiled into
+suffixes) and into the vendor app (the third-party login `sign` key, described but withheld, and the activation request key) that a compatible client or device needs for interoperability. They are compiled into
 the libraries and app inspected and are not specific to any account, device or licence. Per-account values (licences, the licence `keyMask`, tunnel
 credentials, tokens) are not reproduced and MUST NOT be published.
 
@@ -72,12 +72,12 @@ The device SDK's 64-bit build stores the phrase as a plain literal, loaded as tw
 during initialization. The device SDK's 32-bit build has no such literal: the plain phrase does not
 occur as a byte sequence in the 32-bit imager, and its initialization routine instead rebuilds the
 same 32-byte phrase from two 32-byte arrays, stored 32 bytes apart, XORed byte-wise — the same
-technique the client SDK uses. READ (both device builds and the client SDK). The iOS app 3.4.0 network framework embeds a phrase as a
-plain literal with no NUL bytes inside (READ); the bytes are not repeated here. Its stored length
-is 36 bytes, which is not the 32 bytes above, and that literal does not occur as a byte sequence in
-either 64-bit imager, so the earlier statement that it is the same phrase as the device's literal is
-not established (the relation, for example a 32-byte phrase followed by four more bytes, is
-unresolved).
+technique the client SDK uses. READ (both device builds and the client SDK). The iOS app 3.4.0
+network framework embeds the phrase as a plain literal: a NUL-terminated 36-byte string whose first
+32 bytes are exactly the phrase above, followed by four more printable ASCII bytes, which are not
+repeated here. READ (iOS app 3.4.0, byte comparison). That 36-byte string does not occur in either
+64-bit imager. Whether the iOS code reads the four extra bytes is unresolved; the transform below, as
+read in the Android client SDK and the device SDK, uses only the first 16.
 
 Only the first 16 bytes (`Charlie is the d`) are used. XORed byte-wise with the licence's
 16-byte `keyMask` (all zero when the licence has none), they form the scrambling key `K` of
@@ -100,11 +100,11 @@ A licence `standalone` entry for the region overrides the constructed name
 
 ## Third-party login `sign` key (app)
 
-The fixed HMAC-MD5 key for `sign` on `/v1/user/oauth/verify`
-([endpoints.md R29](../account-login/endpoints.md)) is the UTF-8 string `seestar` (7 bytes). It is
-the app's default key for its signing helper and is the same in every installation. READ (app
-3.3.2). It is a shared constant, not an account secret; it does not authenticate a user.
-INFERRED.
+The fixed HMAC-MD5 key for `sign` on `/v1/user/oauth/verify` ([endpoints.md
+R29](../account-login/endpoints.md)) is a 7-byte UTF-8 string. Its value is deliberately not given
+here: only the app's WeChat login verification uses it. It is the app's default key for its signing
+helper and is the same in every installation. READ (app 3.3.2). It is a shared constant, not an
+account secret; it does not authenticate a user. INFERRED.
 
 ## Activation request public key (app)
 
@@ -181,23 +181,23 @@ Real values for "the ZWO account API host"
 ([account-login.md: Endpoint selection](../account-login.md#endpoint-selection)) and "the ZWO remote API host"
 ([http-api.md: Host, transport and headers](http-api.md#host-transport-and-headers)). Each is a fixed origin selected by a
 bundled JSON environment asset in the app rather than negotiated at runtime; a development
-switch that would pick the alternate column is hard-coded off in the release build. READ (app
+switch that would pick an alternate set of hosts is hard-coded off in the release build. READ (app
 3.3.2). These are ordinary vendor-operated HTTPS hosts, not SDK-level constants like the SDK constants
 above; they are recorded here, next to the Kalay master-host suffixes, because a client cannot
 interoperate without a starting origin and nothing about the protocol depends on the names
 themselves. A client implementation MAY use any compatible host instead.
 
-| Role | Production host | Development host |
-|---|---|---|
-| Account login and profile endpoints ([account-login.md: Account endpoint catalogue](../account-login/endpoints.md#account-endpoint-catalogue)) | `api.seestar.com` | `api-seestar-test.zwoastro.cn` |
-| Remote-session allocation (`online-link`) and the rest of the remote API ([http-api.md](http-api.md)) | `api-ithings.zwoastro.com` | `api-ithings-test.zwoastro.cn` |
-| Account H5 web pages (browser-rendered; not a JSON API host) | `account.seestar.com` | `test-account.seestar.com` |
-| "common" app endpoint group (connectivity check) | `api.zwoastro.com` | unresolved |
-| H5 share links (NFC pairing, plan sharing) | `app.zwoastro.com` | `test-app.zwoastro.com` |
-| Bluetooth-related API | `bt.zwoastro.com` (also seen as `eo-api-bt.zwoastro.com`) | unresolved |
+| Role | Host |
+|---|---|
+| Account login and profile endpoints ([account-login.md: Account endpoint catalogue](../account-login/endpoints.md#account-endpoint-catalogue)) | `api.seestar.com` |
+| Remote-session allocation (`online-link`) and the rest of the remote API ([http-api.md](http-api.md)) | `api-ithings.zwoastro.com` |
+| Account H5 web pages (browser-rendered; not a JSON API host) | `account.seestar.com` |
+| "common" app endpoint group (connectivity check) | `api.zwoastro.com` |
+| H5 share links (NFC pairing, plan sharing) | `app.zwoastro.com` |
+| Bluetooth-related API | `bt.zwoastro.com` (also seen as `eo-api-bt.zwoastro.com`) |
 
-All hosts are HTTPS except the listed development hosts, which the app reaches over plain HTTP.
-READ (app 3.3.2, from the bundled environment asset).
+All hosts are HTTPS. The app also bundles development hosts for some roles, reached
+over plain HTTP; they are not listed because no release client uses them. READ (app 3.3.2, from the bundled environment asset).
 
 Separately, both firmware builds (the D32 and D64 imager) run a `curl` connectivity check against
 the production "common" host's `/common/v1/network-available` path. READ (firmware 9.31 and 9.75

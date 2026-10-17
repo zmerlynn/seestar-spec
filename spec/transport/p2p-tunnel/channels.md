@@ -169,19 +169,19 @@ slots close both of their sockets. READ.
 
 ### Variables
 
-Per channel: `sentPause` (this endpoint has asked the peer to pause) and `readState` (a
-byte, the peer's control over this endpoint's local socket reads). Both 0 on reset. READ.
+Per channel: `pause-request flag` (this endpoint has asked the peer to pause) and `local read state`
+(a byte, the peer's control over this endpoint's local socket reads). Both 0 on reset. READ.
 
 ### Receiving
 
-| Event | `readState` |
+| Event | `local read state` |
 |---|---|
 | Receive PAUSE `05` | add 2 (a duplicate PAUSE still adds 2, with a warning) |
 | Receive RESUME `06` | set 0 |
 | Receive WAKE `07` (established) | set 2 |
-| Building the socket-read set | include the socket only if `readState < 3` and its read direction is open |
+| Building the socket-read set | include the socket only if `local read state < 3` and its read direction is open |
 | About to read a selected socket | increment unless it is exactly 1 |
-| `readState` is exactly 3 when selected | skip the ordinary read |
+| `local read state` is exactly 3 when selected | skip the ordinary read |
 
 All READ. Interpretation, INFERRED: 0 and 1 allow continuous reading; 2 allows one more read
 and becomes 3; 3 stops reading until WAKE or RESUME. WAKE grants one more read opportunity
@@ -201,14 +201,16 @@ R48. After queueing DATA and after each nonnegative local send, compute
 `Q = this channel's queued bytes + the endpoint's RDT receive-queue bytes` (a failed status
 query counts 0). The RDT term is shared by all channels of the session. READ.
 
-- `Q > high` and `sentPause = 0`: send PAUSE, set `sentPause = 1` even if the write failed.
-- `Q < low` and `sentPause != 0`: send RESUME, clear `sentPause` even if the write failed.
+- `Q > high` and `pause-request flag = 0`: send PAUSE, set `pause-request flag = 1` even if the
+  write failed.
+- `Q < low` and `pause-request flag != 0`: send RESUME, clear `pause-request flag` even if the write
+  failed.
 - Equality triggers nothing.
 
-R49. WAKE: the sender worker counts bytes sent across its scan; once the count exceeds 8196
-and `Q > low`, a channel with `sentPause != 0` MAY be sent `07 ch 00 00` and the count is
-reset. WAKE does not clear `sentPause`. The worker runs on queue notification or every
-100 ms. READ.
+R49. WAKE: the sender worker counts bytes sent across its scan; once the count exceeds 8196 and `Q >
+low`, a channel with `pause-request flag != 0` MAY be sent `07 ch 00 00` and the count is reset.
+WAKE does not clear `pause-request flag`. The worker runs on queue notification or every 100 ms.
+READ.
 
 R50. Separate from PAUSE, the socket reader throttles itself on the RDT send queue: above
 3774873 bytes queued it sleeps 5 ms (modes 0/1) or 10 ms (mode 2) and rechecks; a pass that

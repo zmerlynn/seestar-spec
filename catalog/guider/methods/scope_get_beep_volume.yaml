@@ -1,8 +1,8 @@
 kind: method
 name: scope_get_beep_volume
 summary: Query the connected mount for its beep-volume choices and current selection.
-description: 'Performs a live device query (ScopeAM5::GetBeepVolume) and formats the choice list plus
-  the current index. Params are not consumed. Mount serial (firmware 9.31, READ): :GBu.'
+description: 'Performs a live device query and formats the choice list plus the current index.
+  Params are not consumed. Mount serial (firmware 9.31, READ): :GBu.'
 grade: MUTATOR / established (strict; native handler, 64-bit build)
 side_effect_tier: C
 confidence: READ

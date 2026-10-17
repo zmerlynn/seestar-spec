@@ -52,7 +52,7 @@ Side effects: Updates the storage slot path, stored size, device name and mounte
 | 100 | params absent or not an object (after the process check); also the dispatcher case of a missing or non-string method | `invalid request` |
 | 200 | Dispatcher: request has no id | `invalid id` |
 
-SetLocalDiskInfo has no tested failure branch.
+The local-disk information setter has no tested failure branch.
 
 ## Example
 

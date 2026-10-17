@@ -14,7 +14,7 @@ Progress of copying or moving saved images between storage volumes.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifyExportProgress @0x127810, export worker @0x13b470 (64-bit build) |
 
-Custom progress producer NotifyExportProgress, called by the export worker at start, on progress and at the end. Always writes state, lapse, total, keep and dst_storage; no lapse_ms, route, code or error. Units of lapse/total are caller-specific counts. No timer cap. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence. get_app_state reports the same counts under different names. The APK defines the name only; no app event branch is established.
+Custom progress producer export-progress notifier, called by the export worker at start, on progress and at the end. Always writes state, lapse, total, keep and dst_storage; no lapse_ms, route, code or error. Units of lapse/total are caller-specific counts. No timer cap. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence. get_app_state reports the same counts under different names. The APK defines the name only; no app event branch is established.
 
 Side effects: Observation only for the receiver.
 

@@ -78,16 +78,15 @@ receive-preparation routine, which now also takes the legacy lock (READ,
 connection to exist before `ota_prepare_module` remains INFERRED.
 
 R12f. Version-info function. In firmware 9.75 the updater and the imager each contain a function
-that returns OTA version information (a main version and a list of module versions). READ
-(64-bit; the 32-bit updater has a counterpart). The updater's version reads the local manifest file
-in the device user ASIAIR directory and parses it as JSON (the file of R12d); it contains no socket
-or HTTP code. There is no outbound OTA-version query on TCP port 80: an earlier reading that took
-80-byte list-node deallocations for a port immediate is withdrawn, and the listener and client sets
-are unchanged ([ports.md](../transport/ports.md)). The imager's counterpart is the source of the
+that returns OTA version information (a main version and a list of module versions). READ (64-bit;
+the 32-bit updater has a counterpart). The updater's version reads the local manifest file in the
+device user ASIAIR directory and parses it as JSON (the file of R12d); it contains no socket or HTTP
+code. There is no outbound OTA-version query on TCP port 80, and the listener and client sets are
+unchanged ([ports.md](../transport/ports.md)). The imager's counterpart is the source of the
 `main_version` and `modules` members of the `Version` event (see
 [Version](../../docs/control/events/Version.md)), and the imager's cloud enrollment (`remote_join`)
 calls it before it reports the OTA version, where firmware 9.31 reported the legacy firmware version
 directly. READ. The cloud wire effect of that report is the OTA version and status reports named in
-[cloud-auth.md](../auth/cloud-auth.md). The guider's counterpart was not examined in this review;
-no HTTP use was found for it.
+[cloud-auth.md](../auth/cloud-auth.md). The guider's counterpart is unresolved; no HTTP use was
+found for it.
 

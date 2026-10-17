@@ -14,7 +14,7 @@ Stop the lock-on-sun worker thread and the sun-finding scan.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xcb620, StopLockSun @0x2efbb0 (64-bit build) |
 
-Takes no parameters and replies with integer result 0. The handler calls the thread stop helper on the lock-sun thread and then stops the FindSun scan; helper return values are not tested. The thread stop may set a stop flag and wait, or signal and join the thread, with no timeout, so the call can block. No dedicated event is built; notifications from the ending worker are unresolved. No app emitter was found.
+Takes no parameters and replies with integer result 0. The handler calls the thread stop helper on the lock-sun thread and then stops the Sun scan; helper return values are not tested. The thread stop may set a stop flag and wait, or signal and join the thread, with no timeout, so the call can block. No dedicated event is built; notifications from the ending worker are unresolved. No app emitter was found.
 
 Side effects: Stops the lock-sun worker thread and the sun-finding scan. No mount or mode predicate. Scan completion payload and stop latency are unresolved.
 

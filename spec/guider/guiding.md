@@ -5,6 +5,10 @@ states, methods and a typical sequence), the guider's mount, time and other comm
 imager's dither settings. Labels:
 [index.md: Conventions](index.md#conventions); parsing and reply rules: [index.md: Requests and parameter parsing](index.md#requests-and-parameter-parsing) and [Replies](index.md#replies).
 
+App names: “Dither”, “Tele Dither” and “Wide Dither” are the imager dither settings. “Guiding” and
+“Guiding Settings” match the guiding workflow (INFERRED). Names are the English strings of iOS app
+3.4.0; links are READ (app call sites) unless marked.
+
 ## Guiding workflow
 
 The guider is PHD-style: loop exposures, pick a star, calibrate, guide, and settle after

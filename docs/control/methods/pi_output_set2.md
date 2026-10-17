@@ -14,7 +14,7 @@ Set auxiliary outputs from per-output setting objects (state, duty, PWM mode, fr
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xf70d0, parse_gpio_value @0xe0ee0, GPIOController::WriteByIndex @0x324650, SetFreq @0x3260a0 (64-bit build) |
 
-Object-valued variant of pi_output_set. Members are applied sequentially with no rollback. The reply is a bare success: it does not prove the hardware or frequency change was applied, because the named dslr, beep and heater branches ignore driver and SetFreq results. As with pi_output_set, a loop-breaking error can be followed by an appended success result, producing duplicate envelope keys. The companion app sends a heater member with state, value and freq when switching the dew heater (INFERRED from the app data-transfer object).
+Object-valued variant of pi_output_set. Members are applied sequentially with no rollback. The reply is a bare success: it does not prove the hardware or frequency change was applied, because the named dslr, beep and heater branches ignore driver and frequency-setting results. As with pi_output_set, a loop-breaking error can be followed by an appended success result, producing duplicate envelope keys. The companion app sends a heater member with state, value and freq when switching the dew heater (INFERRED from the app data-transfer object).
 
 Side effects: Writes configured output state, type, duty and PWM mode, and optionally the PWM frequency; changes can persist before a later error.
 

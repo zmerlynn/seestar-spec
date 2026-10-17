@@ -108,8 +108,8 @@ READ (the S50 Pro and S30 Pro labels are INFERRED from the board names). The S50
 Plus-class rows apply when the process's camera id matches the main or the wide camera id. If
 neither matches, the threshold is 2000. READ.
 
-Firmware 9.75 (64-bit), `GetDarkThreshold` rows: S30 Pro main camera 5000; S80 (main or wide) 5000;
-S50 Pro main camera with board info 11 follows a temperature formula with fixed coefficients,
+Firmware 9.75 (64-bit), the dark-threshold reader rows: S30 Pro main camera 5000; S80 (main or wide)
+5000; S50 Pro main camera with board info 11 follows a temperature formula with fixed coefficients,
 about 2100 to 3200 over 0 to 30 degrees C; every other case 5000. The 32-bit threshold is unchanged
 from firmware 9.31. READ. The threshold also feeds the bias maximum (R8, R11b). The 9.31 table above
 applies to firmware 9.31.
@@ -234,7 +234,7 @@ writer.
   suffix. `get_dark_files` (R6l) exposes only the `thn` field, not the preview; whether the device
   itself ever reads the preview or thumbnail file back is unresolved. OBSERVED (file set), READ
   (naming, R6h1).
-- Firmware 9.31 (and the 9.75 reports before a re-read): saving a master in this layout did not
+- Firmware 9.31: saving a master in this layout did not
   delete older files. Firmware 9.75 (64-bit): saving a temperature master deletes other masters of
   the same exposure whose temperature is within 0.05 degree C of the new one; masters at other
   temperatures are kept. A directory-creation or save failure is only logged and the in-memory

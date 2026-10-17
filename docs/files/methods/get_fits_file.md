@@ -36,7 +36,7 @@ Side effects: Writes native diagnostic output. Further file, image, database and
 | Code | Trigger | Label |
 |---|---|---|
 | 105 | name missing or not a string | `expected string param` |
-| 258 | File cannot be opened or read (condition INFERRED from the code's text; an earlier reading as an allocation failure is not confirmed) | `open file failed` |
+| 258 | File cannot be opened or read (condition INFERRED from the code's text) | `open file failed` |
 
 ## Example
 

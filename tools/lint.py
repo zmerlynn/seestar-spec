@@ -221,6 +221,8 @@ PRIVKEY = re.compile("PRIV" + "ATE " + "KE" + "Y")
 # The one file that publishes fixed SDK constants (public keys, phrase, fingerprints).
 # It is exempt from the hex and public-key-block checks only; private keys fail everywhere.
 CONSTANTS_FILE = os.path.join("spec", "auth", "cloud-auth", "embedded-constants.md")
+# A GitHub-owned action pinned to a commit in a workflow: the only other hex the repository allows.
+ACTION_PIN = re.compile(r"^\s*(- )?uses: actions/[\w.-]+@[0-9a-f]{40} # v[0-9.]+$")
 
 
 def ip_ok(m):
@@ -244,13 +246,15 @@ def check_sensitive():
             except UnicodeDecodeError:
                 err(path, "binary file in repository")
                 continue
+            rel = os.path.relpath(path, S.ROOT).replace(os.sep, "/")
             for n, line in enumerate(lines, 1):
-                where = "%s:%d" % (os.path.relpath(path, S.ROOT), n)
+                where = "%s:%d" % (rel, n)
                 for m in IPV4.finditer(line):
                     if not ip_ok(m):
                         err(where, "IPv4 address")
                 constants = os.path.relpath(path, S.ROOT) == CONSTANTS_FILE
-                if HEX.search(line) and not constants:
+                pin = rel.startswith(".github/workflows/") and ACTION_PIN.match(line)
+                if HEX.search(line) and not constants and not pin:
                     err(where, "long hex blob")
                 if PRIVKEY.search(line):
                     err(where, "private key marker")

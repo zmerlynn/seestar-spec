@@ -1,14 +1,15 @@
 kind: event
 name: AviRtmp
 summary: State of playing a recorded AVI file out through the live-stream output.
-description: 'ReadAviFunc sends start, then complete when the frame loop ends, or fail with code and error
-  on initialisation problems (state family: code/error only when > 0). Function-state family (SendFuncEvent):
-  state is always written; stage only when non-empty; lapse_ms when the timer is started or the state
-  is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional.
-  A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function
-  cache still changes, so a receiver cannot rely on seeing every transition. No file name, result or media
-  metadata is added. Recipients: all retained 4700 sockets. No reply-before-event order is established:
-  the RPC reply that starts the worker and the worker''s events can arrive in either order. No fixed cadence.'
+description: 'The AVI-reading worker sends start, then complete when the frame loop ends, or fail
+  with code and error on initialisation problems (state family: code/error only when > 0).
+  Function-state family (F): state is always written; stage only when non-empty; lapse_ms when the
+  timer is started or the state is terminal; code and error at fail even when the stored code is 0
+  (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely
+  on seeing every transition. No file name, result or media metadata is added. Recipients: all
+  retained 4700 sockets. No reply-before-event order is established: the RPC reply that starts the
+  worker and the worker''s events can arrive in either order. No fixed cadence.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

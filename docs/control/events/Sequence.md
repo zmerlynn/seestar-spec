@@ -14,7 +14,7 @@ Legacy autosave sequence and frame transitions.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifySequence @0xaf7f0, AutoSavePlan @0x30ea00, AutoSaveSequences @0x217d80 (start @0x217e2c), AutoSaveExpProcess @0x216e20 (frame_complete @0x217670), CamExpose @0x2189d0 (complete @0x2192dc, fail @0x219acc), plan-progress helper NotifyPlan @0xb2040 (callers near @0x30cef0, @0x30d088) (64-bit build) |
 
-Legacy producers (AutoSavePlan, AutoSaveSequences, camera exposure) send one event per sequence/frame transition, through the state family (state, plus error/code when code > 0) or the custom NotifySequence (state plus id, frame, total_lapse_frame, total_frame). Inside a legacy plan run, the plan-progress helper sends frame_start and frame_complete with state and progress only (the same object as get_app_state progress). In a sequence-list run, start and complete carry state only, fail adds error and code (253 is a client stop), and frame_complete alone carries id, frame, total_lapse_frame and total_frame; frame_start is sent only inside a legacy plan run. No lapse_ms or route. Recipients: all retained 4700 sockets. The APK defines the name only; no app event branch is established. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
+Legacy producers (legacy-plan capture, sequence-list capture, camera exposure) send one event per sequence/frame transition, through the state family (state, plus error/code when code > 0) or the custom sequence-progress notifier (state plus id, frame, total_lapse_frame, total_frame). Inside a legacy plan run, the plan-progress helper sends frame_start and frame_complete with state and progress only (the same object as get_app_state progress). In a sequence-list run, start and complete carry state only, fail adds error and code (253 is a client stop), and frame_complete alone carries id, frame, total_lapse_frame and total_frame; frame_start is sent only inside a legacy plan run. No lapse_ms or route. Recipients: all retained 4700 sockets. The APK defines the name only; no app event branch is established. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
 
 Side effects: Observation only for the receiver.
 
@@ -29,10 +29,10 @@ None. Events are sent by the device without a request; the payload is below.
 | `Event` | string | yes | - | Discriminator. Fixed value `"Sequence"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
 | `state` | string | yes | - | Caller-supplied literal. One of: `start`, `frame_start`, `frame_complete`, `complete`, `fail`. [READ] |
-| `id` | integer | if state frame_complete in a sequence-list run (NotifySequence producer) | - | Sequence id. [READ] |
-| `frame` | integer | if state frame_complete in a sequence-list run (NotifySequence producer) | - | Started or completed frame index. [READ] |
-| `total_lapse_frame` | integer | if state frame_complete in a sequence-list run (NotifySequence producer) | - | Completed frame total across the sequence. [READ] |
-| `total_frame` | integer | if state frame_complete in a sequence-list run (NotifySequence producer) | - | Planned frame total. [READ] |
+| `id` | integer | if state frame_complete in a sequence-list run (sequence-progress notifier producer) | - | Sequence id. [READ] |
+| `frame` | integer | if state frame_complete in a sequence-list run (sequence-progress notifier producer) | - | Started or completed frame index. [READ] |
+| `total_lapse_frame` | integer | if state frame_complete in a sequence-list run (sequence-progress notifier producer) | - | Completed frame total across the sequence. [READ] |
+| `total_frame` | integer | if state frame_complete in a sequence-list run (sequence-progress notifier producer) | - | Planned frame total. [READ] |
 | `progress` | object | if plan-progress producer (frame_start, frame_complete inside a legacy plan run) | - | Legacy plan progress; same formatter output as get_app_state progress. [READ] |
 | `progress.targets` | object | no | - | [READ] |
 | `progress.targets.total` | integer | no | - | Planned target total. [READ] |

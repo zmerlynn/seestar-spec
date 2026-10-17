@@ -7,6 +7,10 @@ startup motor-current check. It is the layer below the `scope_*` methods of
 [index.md](index.md) and [guiding.md](guiding.md); the raw bridge that lets a client share the
 same line is in [serial-bridge.md](serial-bridge.md).
 
+App names: “RA Backlash Compensation (arcsec)” and “DEC Backlash Compensation (arcsec)” are read and
+written through `scope_send_cmd`. Names are the English strings of iOS app 3.4.0; links are READ
+(app call sites) unless marked.
+
 ## Conventions
 
 Labels, RFC 2119 keywords and the reply envelope are as in [index.md: Conventions](index.md#conventions).
@@ -182,7 +186,7 @@ R12. The version string selects features. READ:
 | Version at least | Feature |
 |---|---|
 | 1.1.0 | `:GAT#` tracking-reason query |
-| 1.1.9 | timed moves (`:MT...#`); without it `MotionTimed` fails with 210 |
+| 1.1.9 | timed moves (`:MT...#`); without it the timed-movement helper fails with 210 |
 | 1.2.2 | sync data |
 | 1.6.6 | the model-setting area (`:SH...`) |
 

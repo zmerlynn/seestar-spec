@@ -1,18 +1,18 @@
 kind: event
 name: PlanetStack
 summary: Progress and result of stacking a recorded planetary/lunar/solar video.
-description: 'Function producer (PlanetStackFunc named PlanetStack): Function-state family (SendFuncEvent):
-  state is always written; stage only when non-empty; lapse_ms when the timer is started or the state
-  is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional.
-  A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function
-  cache still changes, so a receiver cannot rely on seeing every transition. Its formatter adds percent,
-  input_thn when non-empty and output_file on success. The algorithm progress callback also sends direct
-  working events with percent (capped at 99), procedure_code and procedure, and the worker sends a direct
-  fail with code and error (state family) when stacking returns non-zero. Callback-driven; no fixed timer.
-  The 32-bit build has the same three formatter members and the same five-entry procedure table; cadence
-  parity is unresolved.
-  Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC reply that
-  starts the worker and the worker''s events can arrive in either order. No fixed cadence.'
+description: 'Function producer (named PlanetStack): Function-state family (F): state is always
+  written; stage only when non-empty; lapse_ms when the timer is started or the state is terminal;
+  code and error at fail even when the stored code is 0 (cancel omits them); route optional. A null
+  or nameless detail sends nothing, and non-working notifications can be suppressed while the
+  function cache still changes, so a receiver cannot rely on seeing every transition. Its formatter
+  adds percent, input_thn when non-empty and output_file on success. The algorithm progress callback
+  also sends direct working events with percent (capped at 99), procedure_code and procedure, and
+  the worker sends a direct fail with code and error (state family) when stacking returns non-zero.
+  Callback-driven; no fixed timer. The 32-bit build has the same three formatter members and the
+  same five-entry procedure table; cadence parity is unresolved. Recipients: all retained 4700
+  sockets. No reply-before-event order is established: the RPC reply that starts the worker and the
+  worker''s events can arrive in either order. No fixed cadence.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -70,8 +70,8 @@ payload:
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
     code:
       type: integer
-      description: 'Function producer: at fail even if 0. Direct fail (NotifyState) when stacking returns
-        non-zero, with error.'
+      description: 'Function producer: at fail even if 0. Direct fail (state notifier) when stacking
+        returns non-zero, with error.'
       x-required-when: state is fail
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0

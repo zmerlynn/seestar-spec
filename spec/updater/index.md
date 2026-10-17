@@ -7,6 +7,9 @@ stream (TCP 4700, [../control/session-handshake.md](../control/session-handshake
 guider ([../guider/index.md](../guider/index.md)); below it are the device's update script and
 storage. See [../00-overview.md](../00-overview.md) for the process map.
 
+App names: “Update Firmware” uses the upload and OTA flows here. Names are the English strings of
+iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 > **High-risk operation.** A firmware upload replaces device software and can update the
 > mount firmware. An interrupted or malformed update can leave the device unusable. This
 > chapter describes the protocol so that clients and stand-in devices interoperate. It is not
@@ -118,20 +121,20 @@ exceeds 255 bytes or has characters other than letters, digits, `-` and `_` give
 the device user's home; failure to create it gives 258. READ.
 
 R5a1. Firmware 9.75 (64-bit build, READ; the 32-bit build has the same method and the `run_update`
-string but no legacy-lock code, INFERRED from absence). The handler requires an object after the shared
-array-to-object step (otherwise 107; the one-element array form of R5 was not re-traced in 9.75). The members are typed strictly by the JSON parser:
+string but no legacy-lock code, INFERRED from absence). The handler requires an object after the
+shared array-to-object step (otherwise 107; the one-element array form of R5 is unverified in
+firmware 9.75). The members are typed strictly by the JSON parser:
 - `file_len` is accepted only as a JSON integer. A float or a string such as `"123.0"` is not
   accepted and `file_len` stays 0.
 - `file_name` and `md5` MUST be strings.
-- `run_update` is accepted only as a JSON literal: `true` sets it and `false` clears it. A numeric `1`
-  is not accepted and the flag stays false. This corrects the 9.31 reading in R5a ("nonzero is
-  true", boolean acceptance INFERRED): in firmware 9.75 the literal is what is read, and the app's
-  `true` is the accepted form. The 9.31 integer read is not re-verified.
+- `run_update` is accepted only as a JSON literal: `true` sets it and `false` clears it. A numeric
+  `1` is not accepted and the flag stays false. Firmware 9.75 accepts the app's `true` literal.
+  Firmware 9.31's integer read is unresolved; boolean acceptance is INFERRED (R5a).
 - A `file_len` of 0 (a signed-integer test only) or an empty `file_name` gives error 1 with the text
   "expected param". The `file_name` rules (102) are unchanged from 9.31.
 - With `run_update` true the destination path is the legacy update package directory plus
-  `file_name` and the handler does not create the file itself; with `run_update` false the path is in
-  the temporary directory and the handler creates the file, failure giving 258 "fail to create
+  `file_name` and the handler does not create the file itself; with `run_update` false the path is
+  in the temporary directory and the handler creates the file, failure giving 258 "fail to create
   file". The legacy package directory is `/etc/zwo/update` on the S30 Plus model class and
   `/tmp/zwo/update` otherwise. READ. Success is result 0.
 
@@ -346,13 +349,6 @@ most one element is INFERRED). `failure` has `stage`, an optional `module`, an i
 inside `failure`, and the entry shape of `missing_modules`.
 
 ## Open questions
-
-Resolved in the firmware 9.75 review: the `ota_abort` reply (R11a), the member set of
-`ota_get_session` (R11b, including per-stage presence) and the `OtaUpdate` recipient rule (R11).
-Resolved in the second 9.75 review: `begin_recv` parameter typing and ordering (R5a1, R5b1), the
-legacy update lock lifetime (R5b2), the failing `Update` codes (R8a), the reboot delay
-([changes R12c](ota-package-handling.md#ota-package-handling)) and the version-info function
-([changes R12f](ota-package-handling.md#ota-package-handling)). The rest stay open.
 
 | Question | State | Where |
 |---|---|---|

@@ -14,7 +14,7 @@ One-member delta reporting the used-storage percentage when it changes.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, CSpaceChecker::GetSpace @0x125ad0, CSpaceChecker::TimeUpdate @0x125cc0 (64-bit build); shape OBSERVED (2026-10-12) |
 
-Broadcast to all retained sockets on TCP 4700 (channel I) after a successful storage-space read that yields a changed integer percentage with a positive total capacity; an identical percentage is suppressed. The periodic updater refreshes when no earlier read exists or more than 5000 ms have elapsed; save, record and refresh paths can force a read. The 5000 ms figure is a refresh condition, not a broadcast rate or rate cap. This is not the full storage-volume getter result. Family: custom; no state or error. APK consumers: DeviceEventPart; DeviceService disk-space handler.
+Broadcast to all retained sockets on TCP 4700 (channel I) after a successful storage-space read that yields a changed integer percentage with a positive total capacity; an identical percentage is suppressed. The periodic updater refreshes when no earlier read exists or more than 5000 ms have elapsed; save, record and refresh paths can force a read. The 5000 ms figure is a refresh condition, not a broadcast rate or rate cap. This is not the full storage-volume getter result. Family: custom; no state or error. APK consumers: the app event dispatcher; the app device service disk-space handler.
 
 Side effects: Observation only.
 

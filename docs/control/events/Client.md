@@ -14,7 +14,7 @@ Guest-mode client list, personalized per recipient with whether that socket is t
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, socket_json_server::guest_mode_notify @0x6b40c0, print_cli_connection @0x6b2a50, print_cli_is_master @0x6b3f10; guider guest_mode_notify @0x117c60 (64-bit builds) |
 
-Sent through the guest-mode notifier when guest-mode connections, the master or client names change; no timer. Only sent while guest mode is on, and only to eligible clients (a per-connection client-info flag can skip entries), each copy personalized with is_master. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400 (channel G); guider event lines reaching the imager are forwarded onto 4700 unchanged (except in the auxiliary process). Family: custom; no state or error. No client UUID or MAC member is asserted. APK consumers: DeviceEventPart; DeviceService client handler.
+Sent through the guest-mode notifier when guest-mode connections, the master or client names change; no timer. Only sent while guest mode is on, and only to eligible clients (a per-connection client-info flag can skip entries), each copy personalized with is_master. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400 (channel G); guider event lines reaching the imager are forwarded onto 4700 unchanged (except in the auxiliary process). Family: custom; no state or error. No client UUID or MAC member is asserted. APK consumers: the app event dispatcher; the app device service client handler.
 
 Side effects: Observation only.
 

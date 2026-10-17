@@ -38,7 +38,7 @@ errors:
   trigger: params is not an integer (or one-element array of integer)
   label: expected int param
 - code: 207
-  trigger: The device-level SetGain call reported failure (value not valid downstream)
+  trigger: 'The device-level gain-setting call reported failure (value not valid downstream)'
   label: fail to operate
 - code: 200
   trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'

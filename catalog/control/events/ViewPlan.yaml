@@ -55,10 +55,10 @@ payload:
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
     code:
       type: integer
-      description: Present when state is fail. 207 when the worker aborts on a second schedule overlap
-        (see the scheduling chapter). 536 when a start is requested while a ViewPlan/demonstrate
-        sequence is already running (a thread-local error code set by `StartDemonstrate`, guarded by
-        `IsViewPlanRunning`).
+      description: 'Present when state is fail. 207 when the worker aborts on a second schedule
+        overlap (see the scheduling chapter). 536 when a start is requested while a
+        ViewPlan/demonstrate sequence is already running (a thread-local error code set by the
+        demonstration starter, guarded by the view-plan running check).'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, MyThr @0x6e57d0,
         StartDemonstrate @0x1a33f0 (64-bit imager build)

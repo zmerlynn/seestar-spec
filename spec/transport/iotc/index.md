@@ -7,6 +7,10 @@ LAN, [discovery](../lan-discovery.md)). Above it sit the [RDT reliable channel](
 [P2P tunnel](../p2p-tunnel.md). The account-side inputs (licence, UID, credentials) come from
 [cloud authorization](../../auth/cloud-auth.md). Stack overview: [00-overview](../../00-overview.md).
 
+App names: an IOTC session is how the app reaches a device joined to “Telescope Network” (the app's
+remote connection). Names are the English strings of iOS app 3.4.0; links are READ (app call sites)
+unless marked.
+
 Sub-chapters:
 
 | File | Contents |
@@ -58,39 +62,42 @@ strings (48 characters in the 64-bit build, 43 in the 32-bit build), so it is th
 (READ, both builds). What changed is the build, not a protocol generation:
 
 - The SDK is built without its logging, so the source-path and log strings are gone, and many static
-  handlers are inlined or folded. In the 64-bit imager the named out-of-line message handlers fall from
-  24 to 15. The count change is compiler inlining and folding, not a protocol change (READ for the opcode
-  set; the inlining of individual handlers is INFERRED from their callees appearing in the dispatcher).
-  The packet dispatcher dispatches the same opcode set as in 9.31: the 0x4xx table of 40 entries matches the
-  9.31 mask chain, and 0x501/0x503, 0x511/0x513, 0x521/0x523 and 0x601 to 0x604 are unchanged. The
-  pair 0x103 and 0x10b is folded into one compare (both reach the relay knock handler), and 0x215/0x216
-  still reach the precheck-reply handler. No master or relay wire message was added or removed. READ.
-  - Fifteen handlers remain out of line: LAN search, precheck reply, relay packet (server to device),
-    P2P packet (client to device), P2P punch (type 2), relay knock, relay session info (both forms), P2P
-    packet (device to client), P2P knock reply and its type 2 form, relay request reply (type 2) and the
-    three small close and alive handlers (`RLY_CLOSE_S2C`, `RLY_ALIVE_S2C`, `P2P_CLOSE_C2D`). The last three
-    are newly out of line, with their bodies inline in 9.31 (INFERRED).
+  handlers are inlined or folded. In the 64-bit imager the named out-of-line message handlers fall
+  from 24 to 15. The count change is compiler inlining and folding, not a protocol change (READ for
+  the opcode set; the inlining of individual handlers is INFERRED from their callees appearing in
+  the dispatcher). The packet dispatcher dispatches the same opcode set as in 9.31: the 0x4xx table
+  of 40 entries matches the 9.31 mask chain, and 0x501/0x503, 0x511/0x513, 0x521/0x523 and 0x601 to
+  0x604 are unchanged. The pair 0x103 and 0x10b is folded into one compare (both reach the relay
+  knock handler), and 0x215/0x216 still reach the precheck-reply handler. No master or relay wire
+  message was added or removed. READ.
+  - Fifteen handlers remain out of line: LAN search, precheck reply, relay packet (server to
+    device), P2P packet (client to device), P2P punch (type 2), relay knock, relay session info
+    (both forms), P2P packet (device to client), P2P knock reply and its type 2 form, relay request
+    reply (type 2) and the three small handlers for relay close, relay alive and client-to-device
+    P2P close. The last three are newly out of line, with their bodies inline in 9.31 (INFERRED).
   - The relay-packet pair (server to client and server to device, identical callee sets in 9.31) is
-    folded into one handler (READ). `RLY_KNOCK1` and `RLY_KNOCK2` are merged into one `RLY_KNOCK`; which opcode selects
-    which variant was not decoded (INFERRED merge).
-  - `HELLO_R`, `NOTIFY_DEVICE_REGISTER`, `REGISTER_SLEEP_R`, `CHECK_DEVICE_STATUS_R`, the P2P alive pair
-    and the knock and punch type 1 family are inlined into the dispatcher (READ: their callees are
-    direct callees of it).
-  The 32-bit build has a different emitted/inlined split again (for example the query-device reply and
-  the relay alive and P2P close handlers), so handler names MUST NOT be used as a cross-build catalogue
-  of supported messages; no parity comparison of the 32-bit logic was made.
+    folded into one handler (READ). The two relay-knock handlers are merged into one relay-knock
+    handler; which opcode selects which variant was not decoded (INFERRED merge).
+  - The hello reply, device-register notification, sleep-register reply, device-status reply, P2P
+    alive pair and the knock and punch type 1 family are inlined into the dispatcher (READ: their
+    callees are direct callees of it). The 32-bit build has a different emitted/inlined split again
+    (for example the query-device reply and the relay alive and P2P close handlers), so handler
+    names MUST NOT be used as a cross-build catalogue of supported messages; no parity comparison of
+    the 32-bit logic was made.
 - Several utility symbols are gone (error-code translation, tunnel close/pause helpers, a
-  per-session limit helper) and the creating-session recycler is no longer a named function. Its 10000 ms
-  and 60000 ms constants are not new: in 9.31 they sit in the recycler, and in 9.75 the same immediates
-  appear inline in the LAN search, the P2P punch (type 2) and the relay knock handlers next to the task
-  creation and session-task insertion calls (READ for the immediates, INFERRED for "inlined recycler";
-  [connect.md: Attempt and cache lifetimes](connect.md#attempt-and-cache-lifetimes)). They are not new timers.
+  per-session limit helper) and the creating-session recycler is no longer a named function. Its
+  10000 ms and 60000 ms constants are not new: in 9.31 they sit in the recycler, and in 9.75 the
+  same immediates appear inline in the LAN search, the P2P punch (type 2) and the relay knock
+  handlers next to the task creation and session-task insertion calls (READ for the immediates,
+  INFERRED for "inlined recycler"; [connect.md: Attempt and cache
+  lifetimes](connect.md#attempt-and-cache-lifetimes)). They are not new timers.
 - The `0x50` constant in the server-version update call is the 80-byte stride of the server record
-  table with a protocol-version byte stored at offset 22 of the record; it is not a wire constant (READ).
-- Where the packet handler was compared by call sequence and immediates (master, relay, knock,
-  punch handlers), it is unchanged. The session limits (64 sessions, 74
-  pre-sessions and the 0x1760 session stride) are unchanged where the allocators were compared.
-  Reply builders, and the logic (as opposed to symbols) of the 32-bit build, were not diffed.
+  table with a protocol-version byte stored at offset 22 of the record; it is not a wire constant
+  (READ).
+- Where the packet handler was compared by call sequence and immediates (master, relay, knock, punch
+  handlers), it is unchanged. The session limits (64 sessions, 74 pre-sessions and the 0x1760
+  session stride) are unchanged where the allocators were compared. Reply builders, and the logic
+  (as opposed to symbols) of the 32-bit build, were not diffed.
 
 ## Connection sequence
 
@@ -183,42 +190,40 @@ See [dtls.md](dtls.md).
 - Firmware 9.75: the opcode-to-variant mapping of the merged relay knock handler, the LAN-search
   reply builder and the 32-bit build's logic ([Firmware 9.75 build comparison](#firmware-975-build-comparison)). unresolved.
 
-- Legacy punch/relay variant tails, unknown modern metadata/tail fields and ignored sockaddr
-  bytes. Local consumers can be traced further; server meaning needs server evidence or decoded
-  traffic. unresolved. (The `0232` status reply's two words now have a local-consumer role; see
+- Legacy punch/relay variant tails, unknown modern metadata/tail fields and ignored sockaddr bytes.
+  Local consumers can be traced further; server meaning needs server evidence or decoded traffic.
+  unresolved. (The `0232` status reply's two words have a local-consumer role; see
   [cloud-auth/master-legacy.md](../../auth/cloud-auth/master-legacy.md#other-legacy-authorization-messages).
   Its second word's absolute unit remains unresolved.)
-- External server key rotation triggers; the live OpenSSL configuration and providers; the negotiated
-  extensions and group (version and cipher are observed, R8); modern TCP record coalescing; scheduler timing.
-  Need observation. unresolved.
+- External server key rotation triggers; the live OpenSSL configuration and providers; the
+  negotiated extensions and group (version and cipher are observed, R8); modern TCP record
+  coalescing; scheduler timing. Need observation. unresolved.
 - App cancellation interleavings, optional LAN-direct selection, remaining option defaults,
-  exhaustive alternate-entry dispatch. unresolved. (The device's tunnel credentials arrive from
-  the cloud and it sets no eight-byte auth key: [sdk-licence.md R46](../../auth/cloud-auth/sdk-licence.md#device-side-sdk-start).)
-- The app loads only the "T" libraries (IOTC, RDT, P2PTunnel and Global). READ (app). The
-  non-"T" IOTC library exports the same symbol names. The "T" build differs in its imports only
-  by four logging and error-string imports, and it carries far more strings (log text). READ (app
-  library, SDK 4.3.8). Full equivalence of the 32-bit firmware build, code-level equivalence of
-  the non-"T" library including its optional HMAC record modes, and historical compatibility
-  remain unresolved.
-- No capture has validated the packet layouts, loss/reorder behaviour, attempt reuse or the
-  try-port algorithm. unresolved.
+  exhaustive alternate-entry dispatch. unresolved. (The device's tunnel credentials arrive from the
+  cloud and it sets no eight-byte auth key: [sdk-licence.md
+  R46](../../auth/cloud-auth/sdk-licence.md#device-side-sdk-start).)
+- The app loads only the "T" libraries (IOTC, RDT, P2PTunnel and Global). READ (app). The non-"T"
+  IOTC library exports the same symbol names. The "T" build differs in its imports only by four
+  logging and error-string imports, and it carries far more strings (log text). READ (app library,
+  SDK 4.3.8). Full equivalence of the 32-bit firmware build, code-level equivalence of the non-"T"
+  library including its optional HMAC record modes, and historical compatibility remain unresolved.
+- No capture has validated the packet layouts, loss/reorder behaviour, attempt reuse or the try-port
+  algorithm. unresolved.
 - Server-side meaning of the `0241` flag and the conditions under which a server answers with
   `030e`. unresolved.
-- A bitfield grammar for the legacy routing word. Only the builder values of
-  [framing R1](framing.md#legacy-header) and the refusal high byte `0x02` are established.
-  unresolved.
-- A hello-serial lifetime. The app library does not compare the reply serial
-  ([framing R24](framing.md#receive-catalogue)); any serial-matching window is local policy.
-  unresolved.
+- A bitfield grammar for the legacy routing word. Only the builder values of [framing
+  R1](framing.md#legacy-header) and the refusal high byte `0x02` are established. unresolved.
+- A hello-serial lifetime. The app library does not compare the reply serial ([framing
+  R24](framing.md#receive-catalogue)); any serial-matching window is local policy. unresolved.
 - A wire generation discriminator for attempts. Legacy frames carry no generation field; the only
   stale-RID rule found is the recent-RID list, which rejects only RIDs refused in a LAN-search
-  precheck, not closed ones ([connect: Attempt and cache lifetimes](connect.md#attempt-and-cache-lifetimes)).
-  Telling an old attempt's frame from a new one with the same visible UID, RID and serial is
-  local policy. unresolved.
-- Server meaning of modern record types other than 1 to 5 and 14, of `100c` unit types other
-  than 1 and 9, and of alert codes other than 1 and 2. unresolved.
-- Whether a master ever sends a `100c` with an empty server list (the app library's handling of
-  an empty list is READ). unresolved. The trigger of the device daily routine that arms the
+  precheck, not closed ones ([connect: Attempt and cache
+  lifetimes](connect.md#attempt-and-cache-lifetimes)). Telling an old attempt's frame from a new one
+  with the same visible UID, RID and serial is local policy. unresolved.
+- Server meaning of modern record types other than 1 to 5 and 14, of `100c` unit types other than 1
+  and 9, and of alert codes other than 1 and 2. unresolved.
+- Whether a master ever sends a `100c` with an empty server list (the app library's handling of an
+  empty list is READ). unresolved. The trigger of the device daily routine that arms the
   force-update prune: see [rendezvous-gcm R9](rendezvous-gcm.md#received-inner-messages).
 
 ## Appendix: How to validate on a live device (non-normative)

@@ -14,7 +14,7 @@ Notification that the selected imaging process (main or wide view) changed.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, SwitchProc @0x3c1a00 (64-bit build) |
 
-Broadcast on TCP 4700 (channel I) when the process switch changes the selected imaging process. Family: custom; no state or error. APK consumers: DeviceEventPart; DeviceService app-state handler (route check disabled for this name).
+Broadcast on TCP 4700 (channel I) when the process switch changes the selected imaging process. Family: custom; no state or error. APK consumers: the app event dispatcher; the app device service app-state handler (route check disabled for this name).
 
 Side effects: Observation only.
 

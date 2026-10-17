@@ -25,7 +25,7 @@ Side effects: Creates the target directory if missing and writes (replaces) the 
 | `id` | any | yes | - | Client-chosen request identifier, echoed in the reply as parsed (same JSON type). Required; a request without one is rejected with code 200. The device accepts any JSON value: zero, negative, string, null, boolean and composite ids are all treated as real requests, not notifications. Clients SHOULD use an integer or a string and SHOULD keep ids unique among outstanding requests. On early dispatcher errors (100, 200) the reply carries id null. [READ] |
 | `method` | string | yes | - | Fixed value `"upload_refstar_info"`. [READ] |
 | `params` | object | yes | - | Required object. Needs refData, or the alias key "refData:" when refData is absent. Unknown keys ignored. [READ] |
-| `params.refData` | array<any> | no | - | Reference-star records. Elements are not parsed or validated; the whole array is serialised unchanged to the device's reference-star file. Empty array allowed; no size bound. The app sends NearbyStarData records (app-side shape INFERRED, not enforced by the device). [READ] |
+| `params.refData` | array<any> | no | - | Reference-star records. Elements are not parsed or validated; the whole array is serialised unchanged to the device's reference-star file. Empty array allowed; no size bound. The app sends nearby-star records (app-side shape INFERRED, not enforced by the device). [READ] |
 | `params.refData:` | array<any> | no | - | Fallback alias key, literally including the trailing colon, read only when refData is absent. A wrong-typed refData does not fall back. [READ] |
 
 ## Reply

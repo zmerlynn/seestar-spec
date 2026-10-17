@@ -1,16 +1,18 @@
 kind: event
 name: FocuserMove
 summary: Focuser movement state with the resulting position.
-description: 'Sent by the focuser MoveWait worker (F family) and directly by StartView (on the model/camera branch
-  that opens or restores the focuser) and the auxiliary RTSP/view refresh, which build a complete event with position
-  and route. Function-state family (F): SendFuncEvent formats the named function detail. state is always present;
-  stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even
-  when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and error; route is
-  optional function ancestry. The sender does no deduplication and needs no preceding working event. Detail flags
-  can suppress the working or non-working sends while the cached function tree still changes, so a receiver can
-  miss transitions. Channels I (TCP 4700) and W (TCP 4702, forwarded onto 4700). Delivery: ordinary broadcast to
-  every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery
-  or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
+description: 'Sent by the focuser movement-wait worker (F family) and directly by the view starter
+  (on the model/camera branch that opens or restores the focuser) and the auxiliary RTSP/view
+  refresh, which build a complete event with position and route. Function-state family (F): the
+  event formatter formats the named function detail. state is always present; stage only when
+  non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even when
+  the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and error;
+  route is optional function ancestry. The sender does no deduplication and needs no preceding
+  working event. Detail flags can suppress the working or non-working sends while the cached
+  function tree still changes, so a receiver can miss transitions. Channels I (TCP 4700) and W (TCP
+  4702, forwarded onto 4700). Delivery: ordinary broadcast to every retained socket of the emitting
+  server (master, guest and never-verified sockets alike); no cadence, delivery or ordering
+  guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -48,7 +50,7 @@ payload:
       - complete
       - fail
       - cancel
-      description: F state table; the direct StartView/RTSP producer sends complete.
+      description: 'F state table; the direct view starter/RTSP producer sends complete.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, state-name table @0xae9468
     stage:
@@ -80,8 +82,8 @@ payload:
       type: array
       items:
         type: string
-      description: Function ancestry (F) or an explicit view route; the StartView producer sends a one-element route
-        naming the view.
+      description: 'Function ancestry (F) or an explicit view route; the view starter producer sends
+        a one-element route naming the view.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, PrintFunParent @0x6e46c0, StartView @0x3c1f50
     position:
@@ -95,7 +97,7 @@ payload:
     @0x3c1f50 (64-bit build)
 examples:
 - name: view-restore
-  summary: Direct complete from StartView (READ shape; values invented)
+  summary: 'Direct complete from view starter (READ shape; values invented)'
   of: payload
   payload:
     Event: FocuserMove

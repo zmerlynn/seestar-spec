@@ -1,9 +1,9 @@
 kind: method
 name: get_connected_wheels
 summary: List filter wheels; the firmware reports one fixed entry.
-description: Reads no parameters. EnumWheels unconditionally creates one record with name EFW and id 0,
-  so the reply does not prove a physical wheel is attached. The wheel is not opened or moved. No path
-  member is present.
+description: 'Reads no parameters. The wheel enumerator unconditionally creates one record with name
+  EFW and id 0, so the reply does not prove a physical wheel is attached. The wheel is not opened or
+  moved. No path member is present.'
 grade: PURE GETTER / probable (64-bit and 32-bit builds)
 side_effect_tier: A
 confidence: READ

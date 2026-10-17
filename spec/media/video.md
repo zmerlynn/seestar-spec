@@ -6,6 +6,10 @@ Overview: [index.md](index.md). Still images: [image-sockets.md](image-sockets.m
 files in the album: [files-and-album.md](files-and-album.md). Events:
 [events chapter](../control/events-overview.md). Ports: [ports.md](../transport/ports.md).
 
+App names: “Photo”, “Video” and “Time-lapse” capture and “RAW format enabled” map to the snapshot
+and AVI recording methods here. Names are the English strings of iOS app 3.4.0; links are READ (app
+call sites) unless marked.
+
 ## Conventions
 
 As in [index.md: Conventions](index.md#conventions). READ claims are for the 64-bit imager build of

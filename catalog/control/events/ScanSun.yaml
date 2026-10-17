@@ -1,18 +1,20 @@
 kind: event
 name: ScanSun
 summary: State of the sun/moon scan worker.
-description: 'StartScanSun starts a named function initialised as ScanSun; it refuses with 524 unless the view
-  mode is 2, 3 or 4 and no other function holds the slot. The worker computes the body position, does a child
-  ScopeGoto, and on S30 Plus-class units then fetches a get_go_cmd command list from the peer unit and sends
-  each command to the mount, then stops the mount. Function-state family (SendFuncEvent): state is always
-  written; stage only when non-empty; lapse_ms when the timer is started or the state is terminal; code and
-  error at fail even when the stored code is 0 (cancel omits them); route optional. A null or nameless detail
-  sends nothing, and non-working notifications can be suppressed while the function cache still changes, so a
-  receiver cannot rely on seeing every transition. The event carries only the function-state members; the
-  function detail is built with the name alone and no extra-member callback (READ). Begin/end transitions; no
-  event timer. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC
-  reply that starts the worker and the worker''s events can arrive in either order. No fixed cadence. The
-  event name is the name the starter gives the function; the start_scan_planet handler itself emits no event.'
+description: 'The Sun-scan starter starts a named function initialised as ScanSun; it refuses with
+  524 unless the view mode is 2, 3 or 4 and no other function holds the slot. The worker computes
+  the body position, does a child ScopeGoto, and on S30 Plus-class units then fetches a get_go_cmd
+  command list from the peer unit and sends each command to the mount, then stops the mount.
+  Function-state family (F): state is always written; stage only when non-empty; lapse_ms when the
+  timer is started or the state is terminal; code and error at fail even when the stored code is 0
+  (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely
+  on seeing every transition. The event carries only the function-state members; the function detail
+  is built with the name alone and no extra-member callback (READ). Begin/end transitions; no event
+  timer. Recipients: all retained 4700 sockets. No reply-before-event order is established: the RPC
+  reply that starts the worker and the worker''s events can arrive in either order. No fixed
+  cadence. The event name is the name the starter gives the function; the start_scan_planet handler
+  itself emits no event.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

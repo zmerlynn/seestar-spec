@@ -89,10 +89,9 @@ Both endpoints implement both policies. READ. A missing ACK never blocks receivi
 
 ### Version-5 receive state
 
-R60. State (initially all zero): `ackNext` (next contiguous sequence expected), `lastContiguous`,
-a pending-cumulative counter, one pending selective run `[runStart, runEnd]` with its header
-template, and a shared "last ACK sent" timestamp. The run is separate from the sorted receive
-queue. READ.
+R60. State (initially all zero): `ackNext` (next contiguous sequence expected), `lastContiguous`, a pending-cumulative counter, one pending selective run `[runStart,
+runEnd]` with its header template, and a shared "last ACK sent" timestamp. The run is
+separate from the sorted receive queue. READ.
 
 R61. For each incoming DATA with sequence `S`: READ.
 
@@ -106,9 +105,8 @@ R61. For each incoming DATA with sequence `S`: READ.
 | Contiguous progress with a run pending | If `runEnd ≤ lastContiguous`, drop the run. Else if `runStart < lastContiguous`, set `runStart = lastContiguous`, then send the run. |
 
 R62. Independently, the send worker flushes any pending ACK2 and SACK2 once its accumulated loop
-time exceeds **99 ms**. So the 3 ms figure is an event-driven threshold, not a timer; the
-fallback is about 100 ms. READ. ACK2 and SACK2 carry `lastContiguous` in the header sequence.
-READ.
+time exceeds **99 ms**. So the 3 ms figure is an event-driven threshold, not a timer; the fallback
+is about 100 ms. READ. ACK2 and SACK2 carry `lastContiguous` in the header sequence. READ.
 
 R63. At startup, an out-of-order first DATA can produce a SACK2 whose header sequence is `(0,0)`
 before packet 0 has arrived, because the watermark starts at zero. INFERRED. Senders MUST NOT
@@ -139,8 +137,8 @@ saved-window/current-window and next-node checks. READ.
 ### RTT and RTO
 
 R69. All RTO state is in microseconds. Initial RTO is **500000**. A sample is taken only from a
-packet whose `tx_count` is less than 2, and is skipped if the wall clock went
-backwards. With `R = now − lastSend`, integer arithmetic, divisions truncating: READ.
+packet whose `tx_count` is less than 2, and is skipped if the wall clock went backwards. With `R =
+now − lastSend`, integer arithmetic, divisions truncating: READ.
 
 ```text
 if SRTT == 0:
@@ -178,13 +176,13 @@ cap. READ. INFERRED consequence: a connection ends by watchdog, transport error,
 
 ### FIN retransmission
 
-R73. When the sweep visits a FIN that is the only queued packet, it sets a FIN-in-flight flag
-and stamps a FIN timestamp, before checking eligibility; this repeats on later sweeps. At the
-end of the wait it compares `(now_us − finTimestamp_us) / 1000` (milliseconds) against
-`RTO_us << 2` (microseconds × 4). READ. The units disagree and the timestamp keeps moving, so
-this is not a "4 × RTO" close rule; the practical effect is unresolved. With a fixed timestamp
-and RTO 500000 the threshold would be 2000000 ms. INFERRED. In practice FIN is retransmitted
-like DATA on RTO, and the watchdog, QUIT or the peer's FIN ends the connection. INFERRED.
+R73. When the sweep visits a FIN that is the only queued packet, it sets a FIN-in-flight flag and
+stamps a FIN timestamp, before checking eligibility; this repeats on later sweeps. At the end of the
+wait it compares `(now_us − finTimestamp_us) / 1000` (milliseconds) against `RTO_us <<
+2` (microseconds × 4). READ. The units disagree and the timestamp keeps moving, so this is not a "4
+× RTO" close rule; the practical effect is unresolved. With a fixed timestamp and RTO 500000 the
+threshold would be 2000000 ms. INFERRED. In practice FIN is retransmitted like DATA on RTO, and the
+watchdog, QUIT or the peer's FIN ends the connection. INFERRED.
 
 R74. A stand-in SHOULD retransmit FIN on RTO and SHOULD give up after the watchdog interval
 without FIN_ACK. INFERRED.
@@ -255,27 +253,25 @@ clamps a computed round-trip sample between a 100 ms floor and an 8 s cap; and t
 routine seeds the initial RTO at 500000 µs. A separate routine recomputes a floating-point dynamic
 send limit and ceilings it at 6500. READ.
 
-A later check traced four more rows the same way, with the same cross-build result (present
-unchanged, same comparison logic, in firmware 9.75 and in the 32-bit build of both firmware
-versions): two small predicate functions take a connection-state value and an elapsed-time value and
-decide whether to send, and separately whether to count down, a heartbeat; the first returns elapsed
-> 99 ms when the state is the "creating" value (zero) and elapsed > 999 ms otherwise, giving the
-HEARTBIT while-creating/established split above; the second additionally requires the state to equal
-the specific "established" value before it allows the count to proceed, so the 999 ms form only
-applies once that exact state is reached. The channel-create routine takes a caller-supplied
-handshake timeout and substitutes 60000 ms when the caller passed zero, giving the DTLS handshake
-row. The plain (non-secure-channel) receive call always passes a 2560-byte buffer and a 200 ms
-timeout to the underlying read primitive; a sibling secure-channel read call in the same thread
-takes the same buffer size but no timeout argument. A `usleep(50000)` call sits in the receive
-thread's retry path reached after a nonpositive read result, matching the "50 ms sleep" clause. The
-send thread computes an elapsed microsecond figure from two stored timestamps and compares it
-against 2000; when exceeded, it refreshes a stored time reference and calls the same dynamic-limit
-routine noted above, matching the Slow write row. `RDT_Write` compares a per-channel queued-byte
-count against 4 MiB (`#0x400, lsl #12` on the 64-bit builds; `#4194304` on the 32-bit builds) and,
-while over it, loops on an `IOTC_Check_Session_Status` check, an unlock, a 100000 µs (`0x186A0`)
-`usleep`, and a re-lock before re-checking, matching the Write backpressure wait row. READ
-(presence and role, both builds, both firmware versions).
+Four further timer rules are unchanged in firmware 9.31 and 9.75, both builds: two small predicate
+functions take a connection-state value and an elapsed-time value and decide whether to send, and
+separately whether to count down, a heartbeat; the first returns elapsed > 99 ms when the state is
+the "creating" value (zero) and elapsed > 999 ms otherwise, giving the HEARTBIT
+while-creating/established split above; the second additionally requires the state to equal the
+specific "established" value before it allows the count to proceed, so the 999 ms form only applies
+once that exact state is reached. The channel-create routine takes a caller-supplied handshake
+timeout and substitutes 60000 ms when the caller passed zero, giving the DTLS handshake row. The
+plain (non-secure-channel) receive call always passes a 2560-byte buffer and a 200 ms timeout to the
+underlying read primitive; a sibling secure-channel read call in the same thread takes the same
+buffer size but no timeout argument. A `usleep(50000)` call sits in the receive thread's retry path
+reached after a nonpositive read result, matching the "50 ms sleep" clause. The send thread computes
+an elapsed microsecond figure from two stored timestamps and compares it against 2000; when
+exceeded, it refreshes a stored time reference and calls the same dynamic-limit routine noted above,
+matching the Slow write row. `RDT_Write` compares a per-channel queued-byte count against 4 MiB
+(both builds) and, while over it, loops on an `IOTC_Check_Session_Status` check, an unlock, a 100000
+µs (`0x186A0`) `usleep`, and a re-lock before re-checking, matching the Write backpressure wait row.
+READ (presence and role, both builds, both firmware versions).
 
 The other rows (send-loop sleep, ACK aggregation, create polling, unsent-packet age, destroy and
-de-initialize retry, NEED_DTLS grace) were not re-traced to their functions for 9.75 or the 32-bit
-build; see [rdt.md: Open questions](../rdt.md#open-questions). unresolved (those rows only).
+de-initialize retry, NEED_DTLS grace) are not established for firmware 9.75 or the 32-bit build; see
+[rdt.md: Open questions](../rdt.md#open-questions). unresolved (those rows only).

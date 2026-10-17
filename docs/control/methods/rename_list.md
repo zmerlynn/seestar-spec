@@ -48,12 +48,12 @@ Side effects: Rewrites the list-name attribute in the persistent XML configurati
 | 105 | old or new missing, null or not a string (or wrong params container) | `expected string param` |
 | 236 | The configuration root or the old list is not found | `xml item is not found` |
 | 225 | A list with the new display name already exists | `xml item already exists` |
-| 234 | Lower SetAttr step: configuration file name storage is empty | `xml file name is empty` |
-| 229 | Lower SetAttr step: the XML key could not be opened | `fail to open xml key` |
+| 234 | Lower XML attribute-setting step: configuration file name storage is empty | `xml file name is empty` |
+| 229 | Lower XML attribute-setting step: the XML key could not be opened | `fail to open xml key` |
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-Lower-level codes 234 and 229 are established for the 64-bit SetAttr only; 32-bit equivalence is not asserted.
+Lower-level codes 234 and 229 are established for the 64-bit XML attribute-setting only; 32-bit equivalence is not asserted.
 
 ## Example
 

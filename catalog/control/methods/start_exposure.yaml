@@ -108,8 +108,8 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: Plan-size, video-start and thread-creation failures below StartExposure are propagated with
-  their own codes and are not enumerated by the source.
+errors_note: 'Plan-size, video-start and thread-creation failures below the exposure starter are
+  propagated with their own codes and are not enumerated by the source.'
 examples:
 - name: light
   of: request

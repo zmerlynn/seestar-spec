@@ -172,9 +172,9 @@ callback receives the identity and asks its application for the password. READ. 
 the account username as identity and the account password, from its remote-connect data. READ.
 The PSK identity and handshake are DTLS fields, not RDT header fields. READ.
 
-R42. Password length limits differ: the app accepts up to 1024 bytes, the firmware up to
-**32** bytes. A client MUST NOT rely on passwords longer than 32 bytes working against the
-device. READ (limits); MUST is INFERRED.
+R42. Password length limits differ: Android app 3.3.2 accepts up to 1024 bytes, firmware 9.31 up to
+**32** bytes. A client MUST NOT rely on passwords longer than 32 bytes working against the device.
+READ (limits); MUST is INFERRED.
 
 R43. Adapter. DTLS bytes are written with IOTC datatype **1** on the RDT channel. The reader uses
 a 1388-byte buffer and 20 ms read slices; a packet arriving with datatype **0** is treated as

@@ -51,8 +51,8 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: Internal IsMoving poll failures can set 300 or 318 but are suppressed once Open itself reports
-  success. The exact model predicate behind 210 is unresolved.
+errors_note: 'Internal motion-poll failures can set 300 or 318 but are suppressed once opening the
+  focuser succeeds. The exact model predicate behind 210 is unresolved.'
 examples:
 - name: request
   of: request

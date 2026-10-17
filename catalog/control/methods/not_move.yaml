@@ -1,9 +1,9 @@
 kind: method
 name: not_move
 summary: Set the global movement-permission flag to disabled.
-description: No parameters are read. Writes the global flag g_can_move = 0. Despite the name it is not
-  a capability getter and it does not itself issue a motion or stop command; what the flag gates is not
-  established by this handler. No precondition, no error branch.
+description: 'No parameters are read. Writes the global movement-permission flag to 0. Despite the
+  name it is not a capability getter and it does not itself issue a motion or stop command; what the
+  flag gates is not established by this handler. No precondition, no error branch.'
 grade: MUTATOR / established (64-bit build, command-socket invocation); 32-bit build probable
 side_effect_tier: C
 confidence: READ

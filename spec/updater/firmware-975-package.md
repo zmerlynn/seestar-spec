@@ -71,16 +71,8 @@ R14. Firmware 9.75 package scripts (READ):
 
 ## Open questions
 
-- **TODO (deliberately not pursued): the fixed OTA package password.** The updater decrypts
-  package modules with `openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:<fixed password>`, confirmed
-  present as this exact construction in both the 64-bit and 32-bit the updater binaries (READ).
-  The password is the same for every device. This specification does not give its value and will
-  not: recovering and publishing a vendor firmware's fixed decryption secret is credential/key
-  extraction, not protocol documentation, and that line was decided explicitly and will not be
-  revisited by asking differently or through another tool. What stays unresolved, and would be fine
-  to document if someone independently establishes it through legitimate means (for example, a
-  vendor disclosure): whether the password is a raw string or itself derived (e.g. from a device
-  serial or a build-time constant), and whether it is shared with any other password-protected
-  artifact in the vendor's pipeline. Everything else about the decrypt step (AES-256-CBC, PBKDF2
-  key derivation, the public signature key) is already documented in
+- **The fixed OTA package password (deliberately withheld).** The updater decrypts package modules
+  with `openssl enc -d -aes-256-cbc -pbkdf2` and a fixed password that is the same for every device,
+  in both the 64-bit and the 32-bit updater. READ. This specification does not give the value.
+  The rest of the decrypt step (AES-256-CBC, PBKDF2 key derivation, the public signature key) is in
   [OTA package handling: OTA package handling](ota-package-handling.md#ota-package-handling).

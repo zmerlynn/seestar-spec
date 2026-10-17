@@ -7,8 +7,8 @@ description: 'Requires a connected, slew-capable mount. The handler stops the mo
   reads the controller''s acceptance and starts a movement-watcher function. It may first query the main
   imager for pod status and compass data and send charge or azimuth set-up commands. Reply code 0 means
   the slew was accepted and the watcher started; the slew then runs on a worker and the function events
-  ScopeGoto and (via tracking checks) ScopeTrack describe its progress, in an order relative to the reply
-  that is not established. The watcher handles terminal status and may turn tracking on at arrival. Only
+  ScopeGoto and (via tracking checks) ScopeTrack describe its progress, and either can reach the client
+  before the reply (a race; firmware 9.31 and 9.75, READ). The watcher handles terminal status and may turn tracking on at arrival. Only
   certain movement states admit a new goto; other states give 203. RA is in hours (the driver multiplies
   by 15 internally) and declination in degrees; epoch is unresolved. Mount serial (firmware 9.31, READ;
   see the mount serial chapter): :SZ (azimuth, alt-az mode only), :CE or :CD, :Sr, :Sd, then :MS; the
@@ -18,7 +18,8 @@ grade: 'MUTATOR / established (64-bit build; 32-bit build: C / MUTATOR establish
 side_effect_tier: C
 confidence: READ
 basis: static analysis of firmware 9.31, guider handler @0x7aba0 (64-bit guider build); driver slew helper
-  @0xf52a0; 32-bit handler @0x75af8
+  @0xf52a0; 32-bit handler @0x75af8; reply versus first event from firmware 9.75
+  64-bit guider watcher start @0x1513d0, first emit @0x14f130 and imager relay reader @0x1a3ef0
 side_effects: Sets the mount target coordinates, writes the slew command to the mount controller, starts
   the movement-watcher worker and may send charge or azimuth set-up commands first. Emits function events
   asynchronously.

@@ -6,6 +6,10 @@ and how a client gates these sockets on the control stream. Overview and catalog
 [index.md](index.md). File socket 4801: [files-and-album.md](files-and-album.md). RTSP and
 recording: [video.md](video.md). Ports and order: [ports.md](../transport/ports.md).
 
+App names: “Live View Format” chooses “Raw” or “JPG” (`preview.image_transfer_mode`), and “Pixel
+Binning” is `preview.raw_bin2`. Names are the English strings of iOS app 3.4.0; links are READ (app
+call sites) unless marked.
+
 ## Conventions
 
 As in [index.md: Conventions](index.md#conventions). READ claims are for the 64-bit imager build of

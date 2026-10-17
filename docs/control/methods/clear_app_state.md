@@ -49,7 +49,7 @@ Side effects: Marks a function-tree entry ignored (hidden from state reports) an
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-IgnoreFunc errors are ignored. Slave relay failures are unresolved.
+Function-ignore errors are ignored. Slave relay failures are unresolved.
 
 ## Example
 

@@ -43,10 +43,10 @@ request:
       properties:
         mode:
           type: string
-          description: 'Required string naming the view mode: star, scenery, moon, sun, planet, solar_sys,
-            none (ASCII case-insensitive). Absent, null or wrong type gives 105. An unrecognised string
-            maps to the same internal value as none, which StartView rejects with 204; accepted ids are
-            0-5.'
+          description: 'Required string naming the view mode: star, scenery, moon, sun, planet,
+            solar_sys, none (ASCII case-insensitive). Absent, null or wrong type gives 105. An
+            unrecognised string maps to the same internal value as none, which the view starter
+            rejects with 204; accepted ids are 0-5.'
           x-confidence: READ
           x-basis: static analysis of firmware 9.31, handler @0xde500, get_view_mode_id @0x3bfd50, table
             @0xaadda8
@@ -231,9 +231,9 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: Downstream StartView, ViewStarSleep and relay failures serialise the thread error code; their
-  code set is not established. One caller branch can append two error fragments (duplicate error/code
-  members).
+errors_note: 'Downstream view starter, star-view sleep and relay failures serialise the thread error
+  code; their code set is not established. One caller branch can append two error fragments
+  (duplicate error/code members).'
 examples:
 - name: star-view
   summary: Start star mode on the first camera with a target (values invented)

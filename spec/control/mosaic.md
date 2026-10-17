@@ -12,6 +12,11 @@ and traversed, and how a mosaic ends. Starting a view is in
 plan timing in [plan-scheduling.md](plan-scheduling.md); mount moves in
 [mount-and-motion.md](mount-and-motion.md). Per-method detail stays in the catalog cards.
 
+App names: “Mosaic Mode” and the “Framing” screen send the `mosaic` object; its “Magnification” and
+“Rotation Angle” controls match `scale` and `angle` (INFERRED). Not every framing label means mosaic
+capture. Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless
+marked.
+
 ## Conventions
 
 As in [plan-scheduling.md](plan-scheduling.md#conventions): RFC 2119 words bind clients;
@@ -145,11 +150,20 @@ unresolved.
 
 ## Open questions
 
-- Which way a positive sky-map rotation `u` turns the drawn mosaic frame on screen, and whether the map is drawn zenith-up with azimuth increasing to the right (the condition under which the device recovers `u` in alt-azimuth mode). The zero direction and the absence of a fixed cardinal meaning are settled in [R20a](mosaic/grid-and-movement.md#orientation).
+- Which way a positive sky-map rotation `u` turns the drawn mosaic frame on screen, and whether the
+  map is drawn zenith-up with azimuth increasing to the right (the condition under which the device
+  recovers `u` in alt-azimuth mode). The zero direction and the absence of a fixed cardinal meaning
+  are settled in [R20a](mosaic/grid-and-movement.md#orientation).
 - The imported rotation, star matching, coordinate and refraction routines' exact behaviour.
-- Firmware 9.75: how the maximum step of the new planner is derived from the frame footprint, the visiting order after the first node, and whether the movement and star-matching code ([R15 to R17](mosaic/grid-and-movement.md#movement)) is unchanged. The per-frame image-data function grew from 1832 to 2132 instructions and no `scope_fine_move` string was found in the 9.75 imager, so R16 is not re-verified for 9.75 (unresolved). The wire effect of the mosaic goto source (R8c in stacking.md) and of the stitch-error text is unresolved.
-- Firmware 9.31: which runtime camera takes the wide pitch branch; which request selects the starry/wide stack
-  type that enables the wide-mosaic branch, and how its 207 status reaches the client.
+- Firmware 9.75: how the maximum step of the new planner is derived from the frame footprint, the
+  visiting order after the first node, and whether the movement and star-matching code ([R15 to
+  R17](mosaic/grid-and-movement.md#movement)) is unchanged. The per-frame image-data function grew
+  from 1832 to 2132 instructions and no `scope_fine_move` string was found in the 9.75 imager, so
+  R16 in firmware 9.75 is unresolved. The wire effect of the mosaic goto source (R8c in stacking.md)
+  and of the stitch-error text is unresolved.
+- Firmware 9.31: which runtime camera takes the wide pitch branch; which request selects the
+  starry/wide stack type that enables the wide-mosaic branch, and how its 207 status reaches the
+  client.
 - Allocation failure for large or invalid canvases; mapping of container exceptions.
 - Source units of the exposure settings behind R13 and R26.
 - Physical sky span of an observed grid; hardware dimensions and pixel scale per model.

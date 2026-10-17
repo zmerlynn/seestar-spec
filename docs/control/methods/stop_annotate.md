@@ -16,7 +16,7 @@ Stop the annotation worker, waiting for it to finish.
 
 Synchronously stops and joins the annotation thread, then reports success unconditionally. The call can block until the worker has stopped. No params are read. Whether the stop emits events is not established.
 
-Side effects: Stops and joins the annotation worker thread (CMyThread stop); the stop may block with no timeout established in the handler.
+Side effects: Stops and joins the annotation worker thread (thread stop); the stop may block with no timeout established in the handler.
 
 ## Request params
 

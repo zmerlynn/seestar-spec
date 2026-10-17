@@ -14,9 +14,9 @@ Replace the filter-wheel slot names with an array of strings.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xd1e20, SetSlotName @0x300e20 (64-bit build) |
 
-Params are an array of strings in zero-based slot order. The handler reads the first child without checking that params exists or is a container, so absent, null or scalar params are unsafe and unresolved; object children are also traversed with keys ignored. Each non-string child appends error 105 but processing continues. The valid children form a map that SetSlotName accepts only when a wheel is open and the map has exactly as many entries as the current slot-name map; it then replaces the global map and persists the names. An empty array is therefore a size-dependent update or error, not a no-op. A malformed array can append several error fragments, and even later success fields, into one outer reply, so duplicate error and code members are possible; no canonical malformed-reply JSON is established.
+Params are an array of strings in zero-based slot order. The handler reads the first child without checking that params exists or is a container, so absent, null or scalar params are unsafe and unresolved; object children are also traversed with keys ignored. Each non-string child appends error 105 but processing continues. The valid children form a map that the slot-name setter accepts only when a wheel is open and the map has exactly as many entries as the current slot-name map; it then replaces the global map and persists the names. An empty array is therefore a size-dependent update or error, not a no-op. A malformed array can append several error fragments, and even later success fields, into one outer reply, so duplicate error and code members are possible; no canonical malformed-reply JSON is established.
 
-Side effects: Replaces the in-memory slot-name map and writes it to persistent storage (SaveEFWName). No rollback and no timeout.
+Side effects: Replaces the in-memory slot-name map and writes it to persistent storage. No rollback and no timeout.
 
 ## Request params
 

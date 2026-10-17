@@ -1,17 +1,20 @@
 kind: event
 name: BalanceSensor
 summary: Tilt/accelerometer sample with a validity code, sent from the 100 ms sensor timer when it changes.
-description: 'Broadcast on TCP 4700 (channel I) from the sensor sampling timer, which is initialized with
-  a 100 ms initial and repeat interval. A try-lock and processing guards can skip ticks, and only selected
-  changed or valid balance branches send, so 100 ms is not a guarantee of 10 events per second. The stream
-  is not client-controlled: a background housekeeping thread of the imager enables the g-sensor and arms the
-  timer when it starts, and deletes the timer when it exits (READ; that it runs for the life of the imager is
-  INFERRED). No method starts or stops it. code is 0 for a valid reading and 1 when the sensor could not be
-  read, in which case x, y, z and angle are zero. On the 64-bit build the first valid sample is sent; later samples are sent only when angle (tilt from vertical, degrees) differs from the last sent value by more than 0.26 and the 2-degree level lies between the two; a failed read is sent once (READ; 32-bit not checked). The packer is the same as for
-  the balance_sensor member of get_device_state. code is an embedded status, not an RPC error code; there
-  is no state member. Family: custom. APK consumers: DeviceEventPart (balance sensor DTO) and DeviceService
-  sensor consumers. The APK compass-sensor DTO is a separate consumer type, not something this packer
-  emits.'
+description: 'Broadcast on TCP 4700 (channel I) from the sensor sampling timer, which is initialized
+  with a 100 ms initial and repeat interval. A try-lock and processing guards can skip ticks, and
+  only selected changed or valid balance branches send, so 100 ms is not a guarantee of 10 events
+  per second. The stream is not client-controlled: a background housekeeping thread of the imager
+  enables the g-sensor and arms the timer when it starts, and deletes the timer when it exits (READ;
+  that it runs for the life of the imager is INFERRED). No method starts or stops it. code is 0 for
+  a valid reading and 1 when the sensor could not be read, in which case x, y, z and angle are zero.
+  On the 64-bit build the first valid sample is sent; later samples are sent only when angle (tilt
+  from vertical, degrees) differs from the last sent value by more than 0.26 and the 2-degree level
+  lies between the two; a failed read is sent once (READ; 32-bit not checked). The packer is the
+  same as for the balance_sensor member of get_device_state. code is an embedded status, not an RPC
+  error code; there is no state member. Family: custom. APK consumers: the app event dispatcher
+  (balance sensor DTO) and the app device service sensor consumers. The APK compass-sensor DTO is a
+  separate consumer type, not something this packer emits.'
 grade: PURE GETTER
 side_effect_tier: B
 confidence: READ

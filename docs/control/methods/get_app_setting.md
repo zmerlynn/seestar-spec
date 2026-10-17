@@ -45,7 +45,7 @@ Side effects: Opens the settings XML, which takes a file lock created on demand 
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-OpenKey or Read failures propagate the configuration layer's own error code; the transitive errno-to-code mapping is not established. No result on error.
+Configuration-key open or read failures propagate the configuration layer's own error code; the transitive errno-to-code mapping is not established. No result on error.
 
 ## Example
 

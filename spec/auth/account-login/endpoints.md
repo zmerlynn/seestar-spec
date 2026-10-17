@@ -43,7 +43,7 @@ Telescope ownership, sharing and the remote online-link request are not account 
 Note the spelling difference: lowercase `unionid`/`openid` in register and verify, camel case
 `unionId`/`openId` in bind. READ.
 
-R28. `category` values (`ActionCategory`): LOGIN=1, FORGET=2, REGISTER=3, BIND=4, UNBIND=5,
+R28. `category` values: LOGIN=1, FORGET=2, REGISTER=3, BIND=4, UNBIND=5,
 AFK=6, sent as integers. READ. `authType` values: `mobile`, `email`, `facebook`, `wechat`. READ.
 
 R29. `sign` on `/v1/user/oauth/verify` is HMAC-MD5 over the UTF-8 bytes of the `unionid` value

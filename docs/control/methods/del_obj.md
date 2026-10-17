@@ -47,13 +47,13 @@ Side effects: Removes an object entry from the persistent XML configuration, syn
 |---|---|---|
 | 105 | list or obj missing, null or not a string (or wrong params container) | `expected string param` |
 | 236 | The configuration root, the list or the object is not found | `xml item is not found` |
-| 234 | Lower RemoveChild step: configuration file name storage is empty | `xml file name is empty` |
-| 229 | Lower RemoveChild step: the XML key could not be opened | `fail to open xml key` |
-| 230 | Lower RemoveChild step: the XML item could not be deleted | `fail to delete xml item` |
+| 234 | Lower XML child-removal step: configuration file name storage is empty | `xml file name is empty` |
+| 229 | Lower XML child-removal step: the XML key could not be opened | `fail to open xml key` |
+| 230 | Lower XML child-removal step: the XML item could not be deleted | `fail to delete xml item` |
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-Lower-level codes are established for the 64-bit RemoveChild only; 32-bit equivalence is not asserted. Other lower failures are unresolved.
+Lower-level codes are established for the 64-bit XML child-removal only; 32-bit equivalence is not asserted. Other lower failures are unresolved.
 
 ## Example
 

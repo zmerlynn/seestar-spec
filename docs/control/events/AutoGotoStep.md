@@ -14,7 +14,7 @@ Mount-error notification raised during an auto-goto step.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifyMountErr @0x16ede0 (64-bit build) |
 
-Custom producer NotifyMountErr, called when the mount reports an error during auto-goto. state is the literal fail and the event carries tag, page, func, count, error and code; presence conditions for the individual members are not detailed in the evidence, so only state is marked required. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 defines the name as a constant only; no consumer branch is established.
+Custom producer mount-error notifier, called when the mount reports an error during auto-goto. state is the literal fail and the event carries tag, page, func, count, error and code; presence conditions for the individual members are not detailed in the evidence, so only state is marked required. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 defines the name as a constant only; no consumer branch is established.
 
 Side effects: Observation only for the receiver.
 

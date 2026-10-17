@@ -48,13 +48,13 @@ errors:
   trigger: The configuration root or the named list is not found
   label: xml item is not found
 - code: 234
-  trigger: 'Lower RemoveChild step: configuration file name storage is empty'
+  trigger: 'Lower XML child-removal step: configuration file name storage is empty'
   label: xml file name is empty
 - code: 229
-  trigger: 'Lower RemoveChild step: the XML key could not be opened'
+  trigger: 'Lower XML child-removal step: the XML key could not be opened'
   label: fail to open xml key
 - code: 230
-  trigger: 'Lower RemoveChild step: the XML item could not be deleted'
+  trigger: 'Lower XML child-removal step: the XML item could not be deleted'
   label: fail to delete xml item
 - code: 200
   trigger: 'Dispatcher: request has no id'
@@ -62,9 +62,9 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: Lower-level codes 234, 229 and 230 are established for the 64-bit RemoveChild only; 32-bit
-  equivalence is not asserted. Close and save outcomes are not returned as RPC errors; other lower failures
-  are unresolved.
+errors_note: 'Lower-level codes 234, 229 and 230 are established for the 64-bit XML child-removal
+  only; 32-bit equivalence is not asserted. Close and save outcomes are not returned as RPC errors;
+  other lower failures are unresolved.'
 examples:
 - name: delete
   of: request

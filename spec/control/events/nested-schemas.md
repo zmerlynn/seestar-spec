@@ -212,10 +212,9 @@ types and conditions READ):
 | `exp_ms.more_exposure` | boolean, between `stack_l` and `continuous` | full path only |
 | `stack.startrails_duration_min`, `stack.startrail_mode` | integers (minutes, -1 or 0 no limit; mode 0 to 2) | full path only; wide camera only; see [stacking.md R8b to R8f](../stacking.md#sky-replay-and-star-trail-decay-firmware-975) |
 
-The earlier flat top-level names for `milkyway_*`, `stargazing_*`, `more_exposure`, `raw_bin2`,
-`startrail_mode` and `startrails_duration_min` were wrong. See
-[device state and settings](../device-state-and-settings.md) R8b. The password rule of R64 is
-unchanged.
+The `milkyway_*`, `stargazing_*`, `more_exposure`, `raw_bin2`, `startrail_mode` and
+`startrails_duration_min` members are nested as shown. See [device state and
+settings](../device-state-and-settings.md) R8b. The password rule of R64 is unchanged.
 
 ### Either process
 

@@ -1,17 +1,17 @@
 kind: method
 name: guide_pulse
 summary: Issue a manual guide pulse in one direction for a duration in milliseconds.
-description: Parses direction (string, case-insensitive compass or up/down/left/right names) and amount
-  (integer milliseconds) and performs a native manual Move on the mount or the optional AO device. It
-  refuses while calibrating or guiding. A success reply (result 0) is returned after the Move call; whether
-  the move has physically finished depends on the selected device subtype. Completion and guide events
-  are unresolved.
+description: 'Parses direction (string, case-insensitive compass or up/down/left/right names) and
+  amount (integer milliseconds) and performs a native manual Move on the mount or the optional AO
+  device. It refuses while calibrating or guiding. A success reply (result 0) is returned after the
+  pulse-movement call; whether the move has physically finished depends on the selected device
+  subtype. Completion and guide events are unresolved.'
 grade: MUTATOR / established (native handler, 64-bit build)
 side_effect_tier: C
 confidence: READ
 basis: static analysis of firmware 9.31, handler @0x7f0d0 (64-bit build)
-side_effects: Sends a manual guide pulse to the mount or AO device through the virtual Move call; no duration
-  range check.
+side_effects: 'Sends a manual guide pulse to the mount or AO device through the virtual
+  pulse-movement call; no duration range check.'
 request:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object
@@ -41,7 +41,7 @@ reply_success:
       result:
         type: integer
         const: 0
-        description: Integer 0 after the Move call returns.
+        description: 'Integer 0 after the pulse-movement call returns.'
         x-confidence: READ
         x-basis: static analysis of firmware 9.31, handler 0x7f0d0 (64-bit build)
 reply_error:
@@ -61,7 +61,7 @@ errors:
   trigger: Guider is calibrating or guiding
   label: cannot issue guide pulse while calibrating or guiding
 - code: 320
-  trigger: The native Move call fails
+  trigger: 'The native pulse-movement call fails'
   label: move failed
 - code: 200
   trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'

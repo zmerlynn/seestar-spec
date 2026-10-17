@@ -2,27 +2,30 @@ kind: event
 name: Alert
 summary: Fault notification, in one of two shapes (code/error, or Msg/Type), including the connection-limit
   rejection.
-description: 'Emitted for operational faults, connection-limit rejection and guider/UI alerts; no universal
-  throttle. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400 (channel G); guider
-  event lines are forwarded onto 4700 by the imager main process. Ordinary alerts go to all retained sockets.
-  Two payload forms exist and must not be merged into one mandatory shape: (1) the fault form from the
-  alert sender, code plus error (message from the shared error-code table), optionally wide_cam (imager
-  camera origin) or required_storage_mb (storage-required fault); (2) the Msg/Type form used by the common
-  server rejection and by guider UI alerts, where the guider maps severity to Type info, error, warning or
-  question. The guider also uses the fault form: during a scope_speed_move its movement-limit worker emits
-  code 532 (move upper limit), 533 (move lower limit), 540 or 541 (both rendered fail to operate, because the
-  guider error table has no text for them), after asking the imager to play a warning sound; it repeats
-  about every 3 s while the limit persists. A client SHOULD stop the move on one of these. The imager raises
-  the fault form from a forwarded ScopeTrack off event that is not a manual transition and carries code 270
-  (below horizon) or 527 (alt exceed limit), with wide_cam; this is how a mount dropping below the horizon
-  surfaces as an Alert during a view or live stack. Connection-limit variant (common server): after accepting a socket, the server rejects it
-  when its count of distinct external source addresses exceeds 2 (guest mode off) or 8 (guest mode on);
-  unverified external sockets count, local internal sockets do not, and other servers are not summed.
-  Only the rejected socket receives Event Alert with code 429, Type error and Msg "Exceed the maximum number
-  of connections", then the socket is closed before normal arrival handling (so no Version greeting).
-  Delivery is attempted, not guaranteed; it is an event followed by EOF, not an RPC error.
-  The code list is not closed: a code in the shared table is not proof that Alert emits it. APK consumers:
-  DeviceEventPart (AlertEvent), DeviceService, ConnectService.'
+description: 'Emitted for operational faults, connection-limit rejection and guider/UI alerts; no
+  universal throttle. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400
+  (channel G); guider event lines are forwarded onto 4700 by the imager main process. Ordinary
+  alerts go to all retained sockets. Two payload forms exist and must not be merged into one
+  mandatory shape: (1) the fault form from the alert sender, code plus error (message from the
+  shared error-code table), optionally wide_cam (imager camera origin) or required_storage_mb
+  (storage-required fault); (2) the Msg/Type form used by the common server rejection and by guider
+  UI alerts, where the guider maps severity to Type info, error, warning or question. The guider
+  also uses the fault form: during a scope_speed_move its movement-limit worker emits code 532 (move
+  upper limit), 533 (move lower limit), 540 or 541 (both rendered fail to operate, because the
+  guider error table has no text for them), after asking the imager to play a warning sound; it
+  repeats about every 3 s while the limit persists. A client SHOULD stop the move on one of these.
+  The imager raises the fault form from a forwarded ScopeTrack off event that is not a manual
+  transition and carries code 270 (below horizon) or 527 (alt exceed limit), with wide_cam; this is
+  how a mount dropping below the horizon surfaces as an Alert during a view or live stack.
+  Connection-limit variant (common server): after accepting a socket, the server rejects it when its
+  count of distinct external source addresses exceeds 2 (guest mode off) or 8 (guest mode on);
+  unverified external sockets count, local internal sockets do not, and other servers are not
+  summed. Only the rejected socket receives Event Alert with code 429, Type error and Msg "Exceed
+  the maximum number of connections", then the socket is closed before normal arrival handling (so
+  no Version greeting). Delivery is attempted, not guaranteed; it is an event followed by EOF, not
+  an RPC error. The code list is not closed: a code in the shared table is not proof that Alert
+  emits it. APK consumers: the app event dispatcher (alert payload), the app device service, the app
+  connection service.'
 grade: PURE GETTER
 side_effect_tier: B
 confidence: READ

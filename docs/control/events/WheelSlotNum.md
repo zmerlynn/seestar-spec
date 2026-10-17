@@ -14,7 +14,7 @@ Discovered filter-wheel slot names.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifyWheelNum @0xb19f0 (64-bit build) |
 
-Sent once the slot-count step (GetSlotsNum, reached from open_wheel) has built the slot map. Custom producer; no state, code or error. Recipients: all retained 4700 sockets. No APK consumer is established. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
+Sent once the slot-count step (slot-count reader, reached from open_wheel) has built the slot map. Custom producer; no state, code or error. Recipients: all retained 4700 sockets. No APK consumer is established. No reply-before-event order is established: the RPC reply that starts the worker and the worker's events can arrive in either order. No fixed cadence.
 
 Side effects: Observation only for the receiver.
 

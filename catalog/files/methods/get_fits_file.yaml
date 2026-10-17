@@ -51,8 +51,7 @@ errors:
   trigger: name missing or not a string
   label: expected string param
 - code: 258
-  trigger: File cannot be opened or read (condition INFERRED from the code's text; an earlier reading
-    as an allocation failure is not confirmed)
+  trigger: 'File cannot be opened or read (condition INFERRED from the code''s text)'
   label: open file failed
 examples:
 - name: object-form

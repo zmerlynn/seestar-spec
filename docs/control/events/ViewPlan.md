@@ -28,7 +28,7 @@ None. Events are sent by the device without a request; the payload is below.
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
 | `state` | string | yes | - | The complete state table. idle is an initial/restored state and is not automatically sent as an event. One of: `idle`, `working`, `complete`, `fail`, `cancel`. [READ] |
 | `stage` | string | no | - | Only when a non-empty stage string is held; no ViewPlan stage literal is established. [READ] |
-| `code` | integer | no | - | Present when state is fail. 207 when the worker aborts on a second schedule overlap (see the scheduling chapter). 536 when a start is requested while a ViewPlan/demonstrate sequence is already running (a thread-local error code set by `StartDemonstrate`, guarded by `IsViewPlanRunning`). [READ] |
+| `code` | integer | no | - | Present when state is fail. 207 when the worker aborts on a second schedule overlap (see the scheduling chapter). 536 when a start is requested while a ViewPlan/demonstrate sequence is already running (a thread-local error code set by the demonstration starter, guarded by the view-plan running check). [READ] |
 | `error` | string | no | - | Message for code; present with code when state is fail. [READ] |
 | `lapse_ms` | integer | yes | - | Elapsed milliseconds, signed 32-bit low bits. Running state uses current monotonic minus start; terminal states use end minus start. [READ] |
 | `route` | array<string> | no | - | Function-parent path when included; may be absent. [READ] |

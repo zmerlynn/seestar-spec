@@ -41,14 +41,14 @@ Side effects: Writes the selected-star data, clears guiding statistics and sets 
 
 | Code | Trigger | Label |
 |---|---|---|
-| 300 | Guider device or guider object absent (pDev) | `internal error` |
+| 300 | Guider device or guider object absent | `internal error` |
 | 316 | No stored image ("No Current Image"), auto-selection failed, or no valid lock flag is set afterwards | `could not find star` |
 | 200 | Dispatcher: request is not an object, is an empty object, or has no id | `invalid id` |
 | 100 | Dispatcher: no method of type string (a non-string method counts as missing) | `invalid request` |
 | 101 | Dispatcher: text fails to parse | `invalid JSON request: <reason> on line <n> ...` |
 | 103 | Dispatcher: unregistered method | `method not found` |
 
-Auto-select is refused while calibrating ("cannot auto-select star while calibrating"); the code of that refusal is not stated. Complete failed-selection events and ordering are unresolved. Star::Find thresholds are unresolved.
+Auto-select is refused while calibrating ("cannot auto-select star while calibrating"); the code of that refusal is not stated. Complete failed-selection events and ordering are unresolved. Star-selection thresholds are unresolved.
 
 ## Example
 

@@ -1,14 +1,15 @@
 kind: method
 name: scope_abort_slew
 summary: Send a stop command to the connected mount to abort a slew.
-description: 'Needs a connected mount (315). Calls the driver AbortSlew with direction NONE, which sends
-  the controller''s general stop command, ignores the driver result and always replies 0, even if the
-  write fails. It does not stop the guider''s own movement workers (the goto, home and horizon watcher,
-  the speed-move repeat worker, the move-by-angle worker), so a running worker may command motion again
-  or report its own terminal event. Which motions the controller halts, and the final mechanical stop,
-  are unresolved (needs a device test). To end a watcher-driven goto, home or horizon move a client SHOULD
-  also send scope_move ["none"]. Params are not consumed. Mount serial (firmware 9.31, READ): :Q (all),
-  :Qe (east/west), :Qn (north/south); no reply is read.'
+description: 'Needs a connected mount (315). Calls the driver''s stop-motion helper with no
+  direction selected, which sends the controller''s general stop command, ignores the driver result
+  and always replies 0, even if the write fails. It does not stop the guider''s own movement workers
+  (the goto, home and horizon watcher, the speed-move repeat worker, the move-by-angle worker), so a
+  running worker may command motion again or report its own terminal event. Which motions the
+  controller halts, and the final mechanical stop, are unresolved (needs a device test). To end a
+  watcher-driven goto, home or horizon move a client SHOULD also send scope_move ["none"]. Params
+  are not consumed. Mount serial (firmware 9.31, READ): :Q (all), :Qe (east/west), :Qn
+  (north/south); no reply is read.'
 grade: MUTATOR / established (native handler, 64-bit build)
 side_effect_tier: C
 confidence: READ

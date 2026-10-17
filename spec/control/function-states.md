@@ -7,6 +7,11 @@ and motion detection, smart follow, and sky replay. The function-event envelope 
 tracking, which smart follow builds on, is in [special-modes.md](special-modes.md#object-tracking).
 Settings themselves are in [device-state-and-settings.md](device-state-and-settings.md).
 
+App names (iOS app 3.4.0, English; all INFERRED: the strings match but no app call site was read):
+“Reset to Default” is the settings reset, “Stacking Playback” is sky replay, “Motion Monitoring”
+with “Auto Capture” or “Auto Tracking” is the motion monitor, and the smart-tracking screens (“Auto
+Select”, “Manual Select”, “Stop Smart Tracking?”) are smart follow.
+
 Basis for the whole chapter: static analysis of firmware 9.75 (64-bit build; 32-bit build where a
 line says so) and app 3.4.0. Nothing here exists in firmware 9.31 unless a line says so.
 
@@ -31,7 +36,7 @@ the rollback itself fails). A second reset while one is pending gives 524. Items
 `exp_ms.` are refused while Stack is active (259) or a view plan runs (536); that association of
 the two codes is INFERRED. Whether items outside `exp_ms.` check busy state is unresolved. READ.
 
-R4. The resettable items differ by build. READ.
+R4. Firmware 9.75: the resettable items differ by build. READ.
 
 | Group | Items (64-bit build, 18) |
 |---|---|
@@ -40,7 +45,7 @@ R4. The resettable items differ by build. READ.
 | Stack | `stack.drizzle2x`, `stack.save_discrete_ok_frame`, `stack.save_meteor_frame`, `stack.save_video`, `stack.startrail_mode`, `stack.auto_lenhance`, `stack.scene_separate`, `stack.scene_shooting_duration_min` |
 | Exposure | `exp_ms.stack_l`, `exp_ms.stack_l_auto` |
 
-The handler's table has 18 descriptors, all decoded (an earlier count of 20 was wrong).
+The handler's table has 18 descriptors.
 
 The 32-bit build resets 10 of these. It reports `hdr`, `preview.rtsp_quality`,
 `stack.save_meteor_frame`, `stack.save_video`, `stack.startrail_mode`, `stack.scene_separate`,

@@ -14,7 +14,7 @@ Star-detection worker notification: start, complete with the detected stars, or 
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, FindStarFunc @0x269780 (stop-code substitution @0x269e78-0x269ea0, fail notify @0x269bdc) (64-bit build); NotifyState @0xb0430, NotifyValueState @0xadc90 |
 
-State/value family (S + V), not F: FindStarFunc sends start, then complete with result, or fail. The state helper adds error and code only when the supplied code is > 0 (unlike F); there is no lapse_ms or route. The complete event's result is the same object the getter caches (get_find_star_result), embedded as JSON, not a string. stop_find_star adds no event of its own, but after a stop a run that had not completed ends with fail, code 253 when the stop coincided with a capture abort and 514 otherwise; a run that had already completed sends complete. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 defines the name as a constant only.
+State/value family (S + V), not F: the star-detection worker sends start, then complete with result, or fail. The state helper adds error and code only when the supplied code is > 0 (unlike F); there is no lapse_ms or route. The complete event's result is the same object the getter caches (get_find_star_result), embedded as JSON, not a string. stop_find_star adds no event of its own, but after a stop a run that had not completed ends with fail, code 253 when the stop coincided with a capture abort and 514 otherwise; a run that had already completed sends complete. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 defines the name as a constant only.
 
 Side effects: Observation only for the receiver.
 
@@ -38,7 +38,7 @@ None. Events are sent by the device without a request; the payload is below.
 | `result.stars[].pixely` | number | yes | - | Y position. INFERRED image pixels; origin and orientation unresolved. [READ] |
 | `result.stars[].radius` | number | yes | - | Star radius. INFERRED pixels. [READ] |
 | `result.stars[].hfd` | number | yes | - | Half-flux diameter. INFERRED pixels; convention unresolved. [READ] |
-| `result.pixelscale_arcsec` | number | if omitted if GetPixelScale fails | - | Plate scale, INFERRED arcseconds per pixel. Omitted when the pixel-scale query fails. [READ] |
+| `result.pixelscale_arcsec` | number | if omitted if the pixel-scale query fails | - | Plate scale, INFERRED arcseconds per pixel. Omitted when the pixel-scale query fails. [READ] |
 
 ## Errors
 

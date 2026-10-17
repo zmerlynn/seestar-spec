@@ -39,7 +39,7 @@ reply_error:
   $ref: ../../common/schemas/ReplyError.yaml
 errors:
 - code: 524
-  trigger: 'StartScanSun: function state is not 1 or view mode is not one of 2, 3, 4'
+  trigger: 'the Sun-scan starter: function state is not 1 or view mode is not one of 2, 3, 4'
   label: function conflict
 - code: 203
   trigger: 'Relay check: the local or second-camera mount is occupied'

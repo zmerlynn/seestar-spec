@@ -70,7 +70,7 @@ equipment, 43x stacking, 5xx device operation. Gaps (for example 287 to 299, 324
 | 204 | `out of limit` | Index, range or limit exceeded. Also an event code for a skipped plan item. Firmware 9.75: the comet batch frame limit of 200 (stored as the thread error at start and in the batch worker; whether it reaches a reply or event is unresolved, see [stacking.md R20c](stacking.md#batch-stack)); `set_setting` motion-monitor and other limits. | [`check_pa_alt`](../../docs/control/methods/check_pa_alt.md), [`clear_plan`](../../docs/control/methods/clear_plan.md), [`delete_image`](../../docs/control/methods/delete_image.md) (+29 more) |
 | 205 | `fail to disconnect` |  | none catalogued |
 | 206 | `capture is active` | Refused while an exposure or capture runs. | [`delete_image`](../../docs/control/methods/delete_image.md), [`reset_sequence_progress`](../../docs/control/methods/reset_sequence_progress.md), [`start_create_dark`](../../docs/control/methods/start_create_dark.md) (+3 more) |
-| 207 | `fail to operate` | Generic failure; also the substitute for a zero `err_code` ([Thread-local `err_code` forwarding](#thread-local-err_code-forwarding)). | [`charge_only`](../../docs/control/methods/charge_only.md), [`check_pa_alt`](../../docs/control/methods/check_pa_alt.md), [`clear_plan`](../../docs/control/methods/clear_plan.md) (+86 more) |
+| 207 | `fail to operate` | Generic failure; also the substitute for a zero thread-local error value ([Thread-local error forwarding](#thread-local-err_code-forwarding)). | [`charge_only`](../../docs/control/methods/charge_only.md), [`check_pa_alt`](../../docs/control/methods/check_pa_alt.md), [`clear_plan`](../../docs/control/methods/clear_plan.md) (+86 more) |
 | 208 | `disk is full` | Storage full. | [`set_plan`](../../docs/control/methods/set_plan.md), [`set_sequence`](../../docs/control/methods/set_sequence.md), [`start_exposure`](../../docs/control/methods/start_exposure.md) (+3 more) |
 | 209 | `invalid value` |  | [`clear_plan`](../../docs/control/methods/clear_plan.md), [`delete_plan`](../../docs/control/methods/delete_plan.md), [`get_calib_frame`](../../docs/control/methods/get_calib_frame.md) (+27 more) |
 | 210 | `not supported` | Not supported by this model, build or process (for example a wide-camera method on the main process). | [`calibrate_wheel`](../../docs/control/methods/calibrate_wheel.md), [`format_emmc`](../../docs/control/methods/format_emmc.md), [`get_camera_16bit`](../../docs/control/methods/get_camera_16bit.md) (+45 more) |
@@ -180,7 +180,7 @@ equipment, 43x stacking, 5xx device operation. Gaps (for example 287 to 299, 324
 | 436 | `detected star insufficient` | Firmware 9.75 only (app 3.4.0, 64-bit build). The photometry worker stores this code in its output result on one of its internal failure branches. READ. | none catalogued |
 | 437 | `reference star unavailable` | Firmware 9.75 only (app 3.4.0, 64-bit build). As 436, a sibling failure branch of the same photometry worker. READ. | none catalogued |
 | 500 | `mount get coord failed` |  | none catalogued |
-| 501 | `mount goto failed` | Substituted when a mount goto reply has no `code` member ([Thread-local `err_code` forwarding](#thread-local-err_code-forwarding)). READ | none catalogued |
+| 501 | `mount goto failed` | Substituted when a mount goto reply has no `code` member ([Thread-local error forwarding](#thread-local-err_code-forwarding)). READ | none catalogued |
 | 502 | `mount sync failed` |  | [`scope_sync_planet`](../../docs/control/methods/scope_sync_planet.md) |
 | 503 | `mount set pierside failed` |  | none catalogued |
 | 504 | `save image failed` |  | none catalogued |
@@ -257,7 +257,7 @@ socket (4801), which uses a different framing ([media](../media/)).
 | 540, 541 | Guider [`Alert`](../../docs/control/events/Alert.md) event at a speed-move axis limit ([R26a](mount-and-motion/goto-and-manual-motion.md#joystick-moves-scope_speed_move)). Not in the table. | `fail to operate` (fallback text) | READ |
 | 101 text | Parse failure. Code is in the table but the text is the parser's message. | dynamic | READ |
 | -1 | Mount command path when the mount controller does not reply. | `fail to operate` | READ |
-| any mount value | Numeric `result` or `code` copied from a mount-controller reply ([Thread-local `err_code` forwarding](#thread-local-err_code-forwarding)). | `fail to operate` unless the number is in the table | READ |
+| any mount value | Numeric `result` or `code` copied from a mount-controller reply ([Thread-local error forwarding](#thread-local-err_code-forwarding)). | `fail to operate` unless the number is in the table | READ |
 | 9004, 9005 | Batch-stack file check; 9004 also in comet stacking. Firmware 9.31: not in the table. Firmware 9.75: in the table (rows 9004 and 9005 of [Code table](#code-table)). | `fail to operate` in 9.31 | READ |
 | 9000 to 9005 | Firmware 9.75: listed in the 64-bit tables with the texts in [Code table](#code-table); absent from the 32-bit tables. | table text | READ |
 
@@ -265,20 +265,21 @@ socket (4801), which uses a different framing ([media](../media/)).
 
 Here "TLS" means the firmware's thread-local error variable, not Transport Layer Security.
 
-R7. Many handlers do not choose a code themselves. They call deeper helpers (equipment drivers,
-file and XML helpers, the stacker) which set a thread-local `err_code`, and the handler then
-replies with that value through the common error formatter. READ. Consequences:
+R7. Many handlers do not choose a code themselves. They call deeper helpers (equipment drivers, file
+and XML helpers, the stacker) which set the thread-local error value, and the handler then replies
+with that value through the common error formatter. READ. Consequences:
 
-- The code a client sees can come from any helper on the call path, so the set of codes per
-  method is wider than the method's own logic. READ.
-- A helper that fails without setting `err_code` leaves 0, which is sent as 207. READ.
-- Vendor camera, focuser and peripheral library return codes are internal. The device collapses
-  each one to success or failure and reports a fixed application code, typically 318, never the
-  library's own value; the library code appears only in device logs. A client therefore never sees
-  a negative or library-specific code. READ (64-bit build, every camera-library call site),
-  INFERRED (32-bit build, same design).
+- The code a client sees can come from any helper on the call path, so the set of codes per method
+  is wider than the method's own logic. READ.
+- A helper that fails without setting the thread-local error value leaves 0, which is sent as 207.
+  READ.
+- Vendor camera, focuser and peripheral library return codes are internal. The device collapses each
+  one to success or failure and reports a fixed application code, typically 318, never the library's
+  own value; the library code appears only in device logs. A client therefore never sees a negative
+  or library-specific code. READ (64-bit build, every camera-library call site), INFERRED (32-bit
+  build, same design).
 
-R7a. Two sources can put codes outside the table into `err_code`. READ.
+R7a. Two sources can put codes outside the table into the thread-local error value. READ.
 
 - Mount-controller replies. The device forwards the mount's numeric result or error code,
   uses 501 when a goto reply has no code, and uses -1 when the mount does not reply. Any value
@@ -286,9 +287,9 @@ R7a. Two sources can put codes outside the table into `err_code`. READ.
 - Imager-internal codes, such as 9004 and 9005 from batch and comet stacking (firmware 9.75: 9005 also from the comet preflight; the comet frame limit stores 204). READ.
 
 Both kinds get the text `fail to operate`. READ. Image-buffer and stacker results are also copied
-into `err_code`. They stay inside the table: image-buffer reallocation sets 248 or 249, and the
-stacked-image results of the live, mosaic, starry, star-trail, batch and comet stackers are 0,
-249, 260, 261 or 267. READ (64-bit build; 32-bit not checked). A lock failure there is not
+into the thread-local error value. They stay inside the table: image-buffer reallocation sets 248 or
+249, and the stacked-image results of the live, mosaic, starry, star-trail, batch and comet stackers
+are 0, 249, 260, 261 or 267. READ (64-bit build; 32-bit not checked). A lock failure there is not
 reported as a code.
 
 R8. A client MUST handle any code on any method, at minimum as a generic failure with the given

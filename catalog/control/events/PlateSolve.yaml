@@ -1,18 +1,20 @@
 kind: event
 name: PlateSolve
 summary: Plate-solve begin/progress/result, from the direct solve sender and the function-state detail.
-description: 'Two producers share the name. Direct SendSolveEvent sends start, solving, complete or fail with page,
-  tag and, depending on the branch, star_number, duration_ms, filename, result, target_ra_dec, and error/code on
-  failure, plus caller extension-map members (keys unresolved; tolerate unknown members). The F detail follows the
-  function-state family: Function-state family (F): SendFuncEvent formats the named function detail. state is always
-  present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail
-  (even when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and error; route
-  is optional function ancestry. The sender does no deduplication and needs no preceding working event. Detail flags
-  can suppress the working or non-working sends while the cached function tree still changes, so a receiver can
-  miss transitions. Duration and cadence are work-dependent. Channel I (TCP 4700). Delivery: ordinary broadcast
-  to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence,
-  delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it (a route containing
-  3PPA is special-cased).'
+description: 'Two producers share the name. Direct solve notifier sends start, solving, complete or
+  fail with page, tag and, depending on the branch, star_number, duration_ms, filename, result,
+  target_ra_dec, and error/code on failure, plus caller extension-map members (keys unresolved;
+  tolerate unknown members). The F detail follows the function-state family: Function-state family
+  (F): the event formatter formats the named function detail. state is always present; stage only
+  when non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even
+  when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and
+  error; route is optional function ancestry. The sender does no deduplication and needs no
+  preceding working event. Detail flags can suppress the working or non-working sends while the
+  cached function tree still changes, so a receiver can miss transitions. Duration and cadence are
+  work-dependent. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the
+  emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering
+  guarantee relative to RPC replies or other events. APK 3.3.2 consumes it (a route containing 3PPA
+  is special-cased).'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -51,8 +53,8 @@ payload:
       - cancel
       - start
       - solving
-      description: 'Union of two producers. F: idle, working, complete, fail, cancel. Direct SendSolveEvent: start,
-        solving, complete, fail.'
+      description: 'Union of two producers. F: idle, working, complete, fail, cancel. Direct solve
+        notifier: start, solving, complete, fail.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, SendSolveEvent @0x200fe0
     stage:

@@ -14,7 +14,7 @@ List filter wheels; the firmware reports one fixed entry.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xd41d0, EnumWheels @0x300bf0 (64-bit build) |
 
-Reads no parameters. EnumWheels unconditionally creates one record with name EFW and id 0, so the reply does not prove a physical wheel is attached. The wheel is not opened or moved. No path member is present.
+Reads no parameters. The wheel enumerator unconditionally creates one record with name EFW and id 0, so the reply does not prove a physical wheel is attached. The wheel is not opened or moved. No path member is present.
 
 Side effects: Formats a request-local list from a fixed descriptor; does not open or move the wheel. No precondition or timeout.
 

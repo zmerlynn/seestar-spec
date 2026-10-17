@@ -1,11 +1,15 @@
 kind: method
 name: stop_auto_focuse
 summary: Cancel autofocus (method name is spelled stop_auto_focuse).
-description: Local branch reads no parameters. It sets a capture error code (253), logs a manual-cancel
-  message and calls StopAutoFocus(true); stopping the worker thread can set a stop flag, signal and join
-  the worker, with no request-supplied wait flag and no bounded short timeout. The reply is always success
-  after that call. On wide-camera models in certain view modes the request is forwarded to the peer processor
-  instead. Firmware 9.75, app 3.4.0 uses the relay-only form of the common relay check (it relays to the peer process when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75) instead of the 9.31 view-mode test, the stop still sets 253 and stops autofocus, the wire effect is INFERRED.
+description: 'Local branch reads no parameters. It sets a capture error code (253), logs a
+  manual-cancel message and calls the autofocus stop helper with cancellation enabled; stopping the
+  worker thread can set a stop flag, signal and join the worker, with no request-supplied wait flag
+  and no bounded short timeout. The reply is always success after that call. On wide-camera models
+  in certain view modes the request is forwarded to the peer processor instead. Firmware 9.75, app
+  3.4.0 uses the relay-only form of the common relay check (it relays to the peer process when
+  needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75)
+  instead of the 9.31 view-mode test, the stop still sets 253 and stops autofocus, the wire effect
+  is INFERRED.'
 grade: MUTATOR / probable (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ

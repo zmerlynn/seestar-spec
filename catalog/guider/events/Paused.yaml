@@ -1,15 +1,15 @@
 kind: event
 name: Paused
 summary: The guider was paused.
-description: 'Sent when the guider is paused (transition notification, no periodic timer). Sent by the
-  guider process (zwoair_guider) on its TCP 4400 event server to every retained connection (G/all). The
-  main imager process, which is a client of 4400, recognises event lines and forwards them unchanged onto
-  TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager process deliberately does not
-  forward 4400 events. The imager''s forwarding test is lexical (the exact text "Event":" in the line).
-  Family N (NotifyEvent): Event and Timestamp only, no state, code or error. No Android app consumer is
-  established for this name. Ordering against RPC replies and other guider events is not guaranteed; no
-  sequence number, replay or fixed cadence exists. Runtime reachability of the retained guiding functionality
-  on every model is unresolved.'
+description: 'Sent when the guider is paused (transition notification, no periodic timer). Sent by
+  the guider process (zwoair_guider) on its TCP 4400 event server to every retained connection
+  (G/all). The main imager process, which is a client of 4400, recognises event lines and forwards
+  them unchanged onto TCP 4700 (I/all), so 4700 clients also receive it; the auxiliary imager
+  process deliberately does not forward 4400 events. The imager''s forwarding test is lexical (the
+  exact text "Event":" in the line). Family N (notification): Event and Timestamp only, no state,
+  code or error. No Android app consumer is established for this name. Ordering against RPC replies
+  and other guider events is not guaranteed; no sequence number, replay or fixed cadence exists.
+  Runtime reachability of the retained guiding functionality on every model is unresolved.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

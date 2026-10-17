@@ -1,13 +1,14 @@
 title: get_setting result
 type: object
-description: 'Settings object. Open: members are conditional on process type, camera, capability and helper
-  success, and a few are D64-only. Unselected or failed members are omitted. Duplicate keys (beep_volume,
-  ae_bri_percent, effect_offset_deg) can occur in the serialized text; consumers must tolerate them. The
-  key rtsp_roi_index appears only in filtered Setting events, never here. Firmware 9.75 adds
-  annotation (object), sky_replay, can_encrypt, comet_max_frame_num, enable_dark_library, motion_monitor
-  (object), preview.raw_bin2, exp_ms.more_exposure, stack.startrails_duration_min and stack.startrail_mode;
-  see the members. Several of them are gated by process type or by the wide camera. The 32-bit build
-  was not compared member by member (it has no motion monitor).'
+description: 'Settings object. Open: members are conditional on process type, camera, capability and
+  helper success, and a few are D64-only. Unselected or failed members are omitted. Duplicate keys
+  (beep_volume, ae_bri_percent, effect_offset_deg) can occur in the serialized text; consumers must
+  tolerate them. The key rtsp_roi_index appears only in filtered Setting events, never here.
+  Firmware 9.75 adds annotation (object), sky_replay, can_encrypt, comet_max_frame_num,
+  enable_dark_library, motion_monitor (object), preview.raw_bin2, exp_ms.more_exposure,
+  stack.startrails_duration_min and stack.startrail_mode; see the members. Several of them are gated
+  by process type or by the wide camera. Member-by-member 32-bit parity is unresolved (it has no
+  motion monitor).'
 properties:
   calib_location:
     type: integer
@@ -725,7 +726,9 @@ properties:
     x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
   comet_max_frame_num:
     type: integer
-    description: 'Firmware 9.75: constant 200. Main process only; full path only. Output only: set_setting has no such key. It is the maximum number of input frames of a comet batch stack (enforced by start_batch_stack and the batch worker with err_code 204).'
+    description: 'Firmware 9.75: constant 200. Main process only; full path only. Output only:
+      set_setting has no such key. It is the maximum number of input frames of a comet batch stack
+      (enforced by start_batch_stack and the batch worker with thread-local error value 204).'
     x-confidence: READ
     x-basis: static analysis of firmware 9.75, resolver reports, GetSetting (64-bit build)
   motion_monitor:

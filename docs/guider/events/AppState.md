@@ -28,7 +28,7 @@ None. Events are sent by the device without a request; the payload is below.
 |---|---|---|---|---|
 | `Event` | string | yes | - | Discriminator. Fixed value `"AppState"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string <seconds>.<nine digits> from clock id 1 (monotonic, INFERRED); not a calendar time. [READ] |
-| `State` | string | yes | - | Application-state name produced by the guider's state-name lookup (GetAppStateStr). Capital S. The set of names is not enumerated in the evidence. [READ] |
+| `State` | string | yes | - | Application-state name produced by the guider's state-name lookup. Capital S. The set of names is not enumerated in the evidence. [READ] |
 
 ## Errors
 

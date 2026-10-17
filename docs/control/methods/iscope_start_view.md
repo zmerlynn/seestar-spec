@@ -25,7 +25,7 @@ Side effects: Saves target and autosave state, changes view/page/control state, 
 | `id` | any | yes | - | Client-chosen request identifier, echoed in the reply as parsed (same JSON type). Required; a request without one is rejected with code 200. The device accepts any JSON value: zero, negative, string, null, boolean and composite ids are all treated as real requests, not notifications. Clients SHOULD use an integer or a string and SHOULD keep ids unique among outstanding requests. On early dispatcher errors (100, 200) the reply carries id null. [READ] |
 | `method` | string | yes | - | Fixed value `"iscope_start_view"`. [READ] |
 | `params` | object | yes | - | Required object. Missing, null, scalar or array params give 107 (checked after the ViewPlan guard). A positional array wrapping the object is not accepted. Unknown members are ignored. [READ] |
-| `params.mode` | string | yes | - | Required string naming the view mode: star, scenery, moon, sun, planet, solar_sys, none (ASCII case-insensitive). Absent, null or wrong type gives 105. An unrecognised string maps to the same internal value as none, which StartView rejects with 204; accepted ids are 0-5. [READ] |
+| `params.mode` | string | yes | - | Required string naming the view mode: star, scenery, moon, sun, planet, solar_sys, none (ASCII case-insensitive). Absent, null or wrong type gives 105. An unrecognised string maps to the same internal value as none, which the view starter rejects with 204; accepted ids are 0-5. [READ] |
 | `params.target_type` | string | no | - | Optional string, read only when mode is solar_sys: moon, sun or planet. Missing or wrong type, or any other name, falls back to sun. Ignored for other modes. [READ] |
 | `params.target_ra_dec` | array<number> | no | [-999, -999] (sentinel, no target) | Optional two-element array: RA in decimal hours, then Dec in decimal degrees (READ: stored unconverted; the goto worker multiplies RA by 15). Coordinates are taken as epoch of date (JNow), not J2000 (INFERRED: the firmware's own plan path precesses J2000 targets to the current date before starting a view; no epoch flag exists), so a client SHOULD precess J2000 positions first. Each element is an integer or float token; extra elements ignored. Missing, non-array, short or malformed arrays generate no error; the first coordinate may be applied even if the second fails (no rollback). No range checks. [READ] |
 | `params.target_name` | string | no | - | Optional string, default empty. Missing or wrong type ignored. A nonempty name is passed through filename sanitising before being saved as target and autosave state; the exact normalisation is not established. No length limit in the parser. [READ] |
@@ -78,7 +78,7 @@ Side effects: Saves target and autosave state, changes view/page/control state, 
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-Downstream StartView, ViewStarSleep and relay failures serialise the thread error code; their code set is not established. One caller branch can append two error fragments (duplicate error/code members).
+Downstream view starter, star-view sleep and relay failures serialise the thread error code; their code set is not established. One caller branch can append two error fragments (duplicate error/code members).
 
 ## Example
 

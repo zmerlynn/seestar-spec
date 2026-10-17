@@ -65,17 +65,16 @@ OBSERVED iOS order on each connect: `get_verify_str`, `verify_client`, `get_devi
 order repeats on reconnect; later connects sometimes added `get_image_save_path`, and once
 `remove_file`. Whether the iOS order also holds in remote mode is unresolved.
 
-OBSERVED (2026-10-17), firmware 9.75, app 3.4.0, one LAN session captured end to end (app
-plaintext on the control leg): the verification pair (`get_verify_str`, `verify_client`) was
-followed by `get_device_state` (keyless), then by one batch sent before any of its replies —
-`set_setting` (`lang`); `pi_set_time` and `set_user_location`; `iscope_get_app_state`;
-`set_setting` (`cli_uuid`, `cli_name`); `pi_get_ap_channel` — all code 0, same order as the
-general case above. `test_connection` with `id` 101 followed, repeated every 5 s with the same
-id each time rather than an incrementing one. A `remove_file` (a fixed temp-upload text file
-name, not image data; reply an integer 0) closed the sequence; it did not repeat on reconnect.
-This is the first observation that the iOS app can have more than one request outstanding at
-once on 4700 (it does not match the Android app's one-at-a-time rule of R44a, which is specific
-to that app).
+OBSERVED (2026-10-17), firmware 9.75, app 3.4.0, one LAN session captured end to end (app plaintext
+on the control leg): the verification pair (`get_verify_str`, `verify_client`) was followed by
+`get_device_state` (keyless), then by one batch sent before any of its replies — `set_setting`
+(`lang`); `pi_set_time` and `set_user_location`; `iscope_get_app_state`; `set_setting` (`cli_uuid`,
+`cli_name`); `pi_get_ap_channel` — all code 0, same order as the general case above.
+`test_connection` with `id` 101 followed, repeated every 5 s with the same id each time rather than
+an incrementing one. A `remove_file` (a fixed temp-upload text file name, not image data; reply an
+integer 0) closed the sequence; it did not repeat on reconnect. The iOS app can have more than one
+request outstanding at once on 4700 (it does not match the Android app's one-at-a-time rule of R44a,
+which is specific to that app).
 
 OBSERVED (2026-10-17), firmware 9.75, same session, reconnect: 30 s before the owner force-closed
 the app, it sent an unprompted `set_user_location` (`force`, `lat`, `lon`), code 0, consistent
@@ -97,16 +96,16 @@ depends on the mode. It does not contain `set_user_location` or `pi_get_ap_chann
 3.3.2). The iOS and Android orders differ, so neither is a protocol requirement beyond verifying an external connection first
 ([verification-and-roles.md R30](verification-and-roles.md#enforcement)). INFERRED.
 
-R44a. Other app requests cannot interleave with the initialization sequence. One socket thread
-runs a priority queue and a normal queue. It takes one queued action at a time, from the
-priority queue first, and runs it to completion. Within an action it sends one request and reads
-lines until that request's reply arrives, handing non-reply lines to the event handler, before
-it sends the next request. The app therefore never has more than one request outstanding on the
-control socket. Requests made before the socket is marked connected fail at once, and actions
-left from an earlier session fail when a new socket opens. The socket is marked connected after
-verification and before the initialization sequence is queued on the normal queue, so a
-priority action, or a normal action queued in that short window, can run before the whole
-sequence. Nothing runs in the middle of it. READ (app 3.3.2).
+R44a. In Android app 3.3.2, other requests cannot interleave with the initialization sequence. One
+socket thread runs a priority queue and a normal queue. It takes one queued action at a time, from
+the priority queue first, and runs it to completion. Within an action it sends one request and reads
+lines until that request's reply arrives, handing non-reply lines to the event handler, before it
+sends the next request. The app therefore never has more than one request outstanding on the control
+socket. Requests made before the socket is marked connected fail at once, and actions left from an
+earlier session fail when a new socket opens. The socket is marked connected after verification and
+before the initialization sequence is queued on the normal queue, so a priority action, or a normal
+action queued in that short window, can run before the whole sequence. Nothing runs in the middle of
+it. READ (app 3.3.2).
 
 The app's initialization (READ) sends time, language and client-name settings and fetches the
 client, settings, app and device state. On a LAN connection it requires a nonblank device serial
@@ -122,7 +121,7 @@ R46. Writes to one socket are serialized, so lines never interleave. READ.
 
 R47. There is **no ordering guarantee between a reply and the events its request causes**. Worker
 threads broadcast events while the dispatcher writes the reply; a start event can arrive before
-the reply, and a completion event can too. READ. OBSERVED once (2026-10-12): after
+the reply, and a completion event can too. READ. Traced end to end for `scope_goto` ([goto-and-manual-motion R15](../mount-and-motion/goto-and-manual-motion.md#raw-slew-scope_goto)). OBSERVED once (2026-10-12): after
 `set_view_plan`, a [`Setting`](../../../docs/control/events/Setting.md) event came about 63 ms before the [`ViewPlan`](../../../docs/control/events/ViewPlan.md) working event;
 reply-versus-event order was not recorded.
 
@@ -139,6 +138,8 @@ OBSERVED (2026-10-15): across 160 serial request/reply pairs of read-only method
 arrived between a request and its reply; the only events seen (`PiStatus`) arrived between
 replies. Requests were mostly one at a time per socket, so this does not show whether a reply can
 be held behind queued events, and it does not weaken R47.
+
+OBSERVED (2026-10-17), firmware 9.75: on one TCP 4700 connection, a request whose root object repeats `method` is dispatched as the last `method` given, in either order (`test_connection` then `get_view_state`, and the reverse), and the reply echoes that last `method`. Within 4700, duplicate members inside `params` probably follow the same last-wins rule, since the same parser likely reads them. INFERRED, not tested. Other services (4400, 4350, 4701, 4702, discovery) were not tested. This does not change [device-state-and-settings.md R9](../device-state-and-settings.md#reading-get_setting), which covers duplicate members in replies.
 
 OBSERVED (2026-10-15): with 3–5 read-only requests pipelined per socket on two sockets (520
 batches, 2,079 replies, all code 0), no reply came back out of send order. A `PiStatus` event
@@ -217,7 +218,7 @@ R53. Both ports are in the verification predicate ([R33](verification-and-roles.
   merely doesn't emit it first is still open (see
   [session-handshake.md R5](../session-handshake.md#connection-lifecycle)).
 - Relay error codes and envelopes on guider timeout or connect failure.
-- End-to-end Unicode handling; duplicate-key handling inside params.
+- End-to-end Unicode handling; duplicate-key handling inside `params` on 4700 (INFERRED last-wins, see [Ordering](#ordering)) and duplicate members on other services.
 - HTTP keep-alive default values (R41a).
 - Why the keyed `client` section was empty on a tunnel session. OBSERVED (2026-10-17), firmware
   9.75: also empty on a plain LAN connection while the app was connected and verified elsewhere,

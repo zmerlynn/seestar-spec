@@ -14,7 +14,7 @@ Sparse notification of changed device settings, with serializer-added companions
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, NotifySettingChange @0xf24e0, GetSetting @0xea600, SetStackSetting @0x19b230, SetImgAdjustParams @0x1955b0, NotifyRemoteChange @0xaeaa0 (64-bit build); NotifySettingChange @0x87140 and Setting name references @0x70b98c (32-bit build) |
 
-Broadcast to all retained sockets when settings change, from set_setting and from several internal producers; no timer, debounce or transmitted list of changed keys. Emitted by the main imager on TCP 4700 (channel I) and by the auxiliary (wide) imager on TCP 4702 (channel W), whose event lines the main process forwards onto 4700; wide_cam tells the camera origin. Not a full get_setting snapshot. Producers and their shapes: (1) NotifySettingChange calls the settings serializer filtered to the one changed key, then appends wide_cam. The filtered serializer also always adds stack with light_duration_min, brightness, contrast, saturation and dbe_enable, so even an unrecognized key does not yield an empty event. Filterable top-level members (rec_res_index, ap_changed, light_brightness, typec_mode, alpaca_enable, password, connect_lock) are subject to the same non-P2 and capability conditions as in get_setting; rtsp_roi_index appears only here, never in get_setting. (2) SetStackSetting writes only the changed members, under stack, exp_ms or top level, plus wide_cam; this can carry members that get_setting lists as full-only. (3) SetImgAdjustParams writes stack.brightness, contrast, saturation, dbe_enable plus wide_cam. (4) CheckStackTime writes exp_ms.stack_l plus wide_cam. (5) NotifyRemoteChange writes remote_joined. (6) The set_setting camera-selection branch adds selected_cam. Direct setters suppress unchanged values or normalize them, so suppression rules differ per producer. The payload is open: other serializer members may appear and the complete per-member inventory is the get_setting result. On the 32-bit build light_brightness, rtsp_roi_scale and hdr are absent and the setter path does not write scene_shooting_duration_min. Both builds have the same six producers and the same filtered-notify keys (ap_changed from the AP change notifier and the AP-setting RPC, mosaic, drizzle2x, wide_denoise, wide_cross_offset_show); wide_cross_offset_show is sent from the camera page setter on the 32-bit build and from the camera streaming function on the 64-bit build. Other differences are serializer members only. The password member is sent in clear when selected. Family: custom; no state or error. APK consumers: DeviceEventPart; DeviceService settings handler.
+Broadcast to all retained sockets when settings change, from set_setting and from several internal producers; no timer, debounce or transmitted list of changed keys. Emitted by the main imager on TCP 4700 (channel I) and by the auxiliary (wide) imager on TCP 4702 (channel W), whose event lines the main process forwards onto 4700; wide_cam tells the camera origin. Not a full get_setting snapshot. Producers and their shapes: (1) filtered settings notifier calls the settings serializer filtered to the one changed key, then appends wide_cam. The filtered serializer also always adds stack with light_duration_min, brightness, contrast, saturation and dbe_enable, so even an unrecognized key does not yield an empty event. Filterable top-level members (rec_res_index, ap_changed, light_brightness, typec_mode, alpaca_enable, password, connect_lock) are subject to the same non-P2 and capability conditions as in get_setting; rtsp_roi_index appears only here, never in get_setting. (2) stack-settings updater writes only the changed members, under stack, exp_ms or top level, plus wide_cam; this can carry members that get_setting lists as full-only. (3) image-adjustment updater writes stack.brightness, contrast, saturation, dbe_enable plus wide_cam. (4) stack-exposure checker writes exp_ms.stack_l plus wide_cam. (5) remote-state notifier writes remote_joined. (6) The set_setting camera-selection branch adds selected_cam. Direct setters suppress unchanged values or normalize them, so suppression rules differ per producer. The payload is open: other serializer members may appear and the complete per-member inventory is the get_setting result. On the 32-bit build light_brightness, rtsp_roi_scale and hdr are absent and the setter path does not write scene_shooting_duration_min. Both builds have the same six producers and the same filtered-notify keys (ap_changed from the AP change notifier and the AP-setting RPC, mosaic, drizzle2x, wide_denoise, wide_cross_offset_show); wide_cross_offset_show is sent from the camera page setter on the 32-bit build and from the camera streaming function on the 64-bit build. Other differences are serializer members only. The password member is sent in clear when selected. Family: custom; no state or error. APK consumers: the app event dispatcher; the app device service settings handler.
 
 Side effects: Observation only.
 
@@ -28,39 +28,39 @@ None. Events are sent by the device without a request; the payload is below.
 |---|---|---|---|---|
 | `Event` | string | yes | - | Discriminator. Fixed value `"Setting"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
-| `wide_cam` | boolean | if appended by NotifySettingChange, SetStackSetting, SetImgAdjustParams and CheckStackTime; not established for NotifyRemoteChange | - | Camera origin (true for the wide camera). [READ] |
-| `stack` | object | if always on the NotifySettingChange filtered path; SetStackSetting or SetImgAdjustParams when they change a stack member | - | Stack settings inside a Setting event. On the filtered (NotifySettingChange) path the serializer always adds light_duration_min, brightness, contrast, saturation and dbe_enable, plus any selected filterable member. Members marked full-only in get_setting appear in an event only when a direct producer writes them: SetStackSetting writes the changed member alone; SetImgAdjustParams writes brightness, contrast, saturation and dbe_enable. [READ] |
-| `stack.light_duration_min` | integer | no | - | Minutes. Unconditional on the filtered path; also a SetStackSetting direct member. [READ; unit INFERRED on the filtered path] |
-| `stack.brightness` | number | no | - | Image adjustment. Unconditional on the filtered path; also written by SetImgAdjustParams. [READ] |
+| `wide_cam` | boolean | if appended by filtered settings notifier, stack-settings updater, image-adjustment updater and stack-exposure checker; not established for remote-state notifier | - | Camera origin (true for the wide camera). [READ] |
+| `stack` | object | if always on the filtered settings-notification path; stack-settings updater or image-adjustment updater when they change a stack member | - | Stack settings inside a Setting event. On the filtered settings-notification path the serializer always adds light_duration_min, brightness, contrast, saturation and dbe_enable, plus any selected filterable member. Members marked full-only in get_setting appear in an event only when a direct producer writes them: stack-settings updater writes the changed member alone; image-adjustment updater writes brightness, contrast, saturation and dbe_enable. [READ] |
+| `stack.light_duration_min` | integer | no | - | Minutes. Unconditional on the filtered path; also a direct member from the stack-settings updater. [READ; unit INFERRED on the filtered path] |
+| `stack.brightness` | number | no | - | Image adjustment. Unconditional on the filtered path; also written by the image-adjustment updater. [READ] |
 | `stack.contrast` | number | no | - | As brightness. [READ] |
 | `stack.saturation` | number | no | - | As brightness. [READ] |
 | `stack.dbe_enable` | boolean | no | - | As brightness. [READ] |
 | `stack.dbe` | boolean | no | - | Filtered path when the dbe key is selected (not when the outer stack key is selected). [READ] |
 | `stack.star_correction` | boolean | no | - | Filtered path when selected. [READ] |
-| `stack.airplane_line_removal` | boolean | no | - | Filtered path when selected; also a SetStackSetting direct member. [READ] |
+| `stack.airplane_line_removal` | boolean | no | - | Filtered path when selected; also a direct member from the stack-settings updater. [READ] |
 | `stack.drizzle2x` | boolean | no | - | Filtered path when selected. [READ] |
 | `stack.wide_denoise` | boolean | no | - | Filtered path when selected. [READ] |
-| `stack.save_discrete_frame` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.save_discrete_ok_frame` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.save_meteor_frame` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.save_video` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.wide_size_index` | integer | no | - | SetStackSetting direct member. [READ] |
-| `stack.scene_separate` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.scene_shooting_duration_min` | integer | no | - | Minutes. SetStackSetting direct member; not written by the 32-bit setter path. [READ] |
-| `stack.auto_lenhance` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.goto` | boolean | no | - | SetStackSetting direct member. [READ] |
-| `stack.move_sleep_sec` | integer | no | - | Seconds. SetStackSetting direct member. [READ] |
-| `stack.capt_num` | integer | no | - | SetStackSetting direct member; frame-count meaning INFERRED. [READ] |
-| `stack.capt_type` | string | no | - | SetStackSetting direct member; capture type name (see set_setting for accepted names). [READ] |
-| `exp_ms` | object | if SetStackSetting exposure change, CheckStackTime | - | Exposure settings. [READ] |
-| `exp_ms.stack_l` | integer | no | - | Stack exposure, milliseconds. Written by SetStackSetting and CheckStackTime. [READ] |
-| `exp_ms.stack_l_auto` | boolean | no | - | Written by SetStackSetting. [READ] |
-| `user_stack_sim` | boolean | if SetStackSetting change | - | [READ] |
-| `stack_after_goto` | boolean | if SetStackSetting change | - | [READ] |
-| `auto_3ppa_calib` | boolean | if SetStackSetting change | - | [READ] |
-| `auto_master_dark` | boolean | if SetStackSetting change | - | [READ] |
-| `expert_mode` | boolean | if SetStackSetting change | - | [READ] |
-| `remote_joined` | boolean | if NotifyRemoteChange | - | [READ] |
+| `stack.save_discrete_frame` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.save_discrete_ok_frame` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.save_meteor_frame` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.save_video` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.wide_size_index` | integer | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.scene_separate` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.scene_shooting_duration_min` | integer | no | - | Minutes. direct member from the stack-settings updater; not written by the 32-bit setter path. [READ] |
+| `stack.auto_lenhance` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.goto` | boolean | no | - | direct member from the stack-settings updater. [READ] |
+| `stack.move_sleep_sec` | integer | no | - | Seconds. direct member from the stack-settings updater. [READ] |
+| `stack.capt_num` | integer | no | - | direct member from the stack-settings updater; frame-count meaning INFERRED. [READ] |
+| `stack.capt_type` | string | no | - | direct member from the stack-settings updater; capture type name (see set_setting for accepted names). [READ] |
+| `exp_ms` | object | if stack-settings updater exposure change, stack-exposure checker | - | Exposure settings. [READ] |
+| `exp_ms.stack_l` | integer | no | - | Stack exposure, milliseconds. Written by stack-settings updater and stack-exposure checker. [READ] |
+| `exp_ms.stack_l_auto` | boolean | no | - | Written by stack-settings updater. [READ] |
+| `user_stack_sim` | boolean | if stack-settings updater change | - | [READ] |
+| `stack_after_goto` | boolean | if stack-settings updater change | - | [READ] |
+| `auto_3ppa_calib` | boolean | if stack-settings updater change | - | [READ] |
+| `auto_master_dark` | boolean | if stack-settings updater change | - | [READ] |
+| `expert_mode` | boolean | if stack-settings updater change | - | [READ] |
+| `remote_joined` | boolean | if remote-state notifier | - | [READ] |
 | `selected_cam` | string | if set_setting changes selected_cam | - | Camera-selection companion from set_setting. One of: `View`, `SecondView`. [READ] |
 | `rec_res_index` | integer | if key selected, non-P2, capability present | - | Recording resolution index; only when the device can set it. Enum unresolved. [READ; enum unresolved] |
 | `ap_changed` | boolean | if key selected, non-P2, NFC present | - | [READ] |
@@ -85,19 +85,19 @@ None. Failures appear in the payload (`code`, `error`) when `state` is `fail`.
 
 ## Example
 
-Event, filtered-hdr - NotifySettingChange path for a selected key (READ shape, not captured; values invented):
+Event, filtered-hdr - filtered settings notifier path for a selected key (READ shape, not captured; values invented):
 
 ```json
 {"Event":"Setting","Timestamp":"1234.123456789","hdr":true,"stack":{"light_duration_min":10,"brightness":0.0,"contrast":0.0,"saturation":0.0,"dbe_enable":false},"wide_cam":false}
 ```
 
-Event, direct-stack-setting - SetStackSetting direct member (READ shape; values invented):
+Event, direct-stack-setting - direct member from the stack-settings updater (READ shape; values invented):
 
 ```json
 {"Event":"Setting","Timestamp":"1234.123456789","stack":{"save_discrete_frame":true},"wide_cam":false}
 ```
 
-Event, remote-joined - NotifyRemoteChange (READ shape; value invented):
+Event, remote-joined - remote-state notifier (READ shape; value invented):
 
 ```json
 {"Event":"Setting","Timestamp":"1234.123456789","remote_joined":true}

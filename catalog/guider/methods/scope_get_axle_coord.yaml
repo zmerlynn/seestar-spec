@@ -1,8 +1,8 @@
 kind: method
 name: scope_get_axle_coord
 summary: Query the connected mount for its two axle coordinates.
-description: 'Performs a live mount query (ScopeAM5::GetAxleCoords) and returns a two-number array. Axis
-  units and frame are unresolved. Params are not consumed. Mount serial (firmware 9.31, READ): :GDd, :GDr.'
+description: 'Performs a live mount query and returns a two-number array. Axis units and frame are
+  unresolved. Params are not consumed. Mount serial (firmware 9.31, READ): :GDd, :GDr.'
 grade: MUTATOR / established (strict; native handler, 64-bit build)
 side_effect_tier: C
 confidence: READ

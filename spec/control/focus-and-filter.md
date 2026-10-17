@@ -6,6 +6,11 @@ autofocus inside goto flows ([solving-and-annotation.md](solving-and-annotation.
 calibration ([calibration-frames.md](calibration-frames.md)). Event framing is in
 [events/families.md](events/families.md). Per-method detail stays in the catalog cards.
 
+App names: “Auto Focus” starts autofocus and “Automated AF” is the `auto_af` setting. “Focus”,
+“Telephoto Focus Position Setting” and “Wide-Angle Focus Position Setting” move the focuser or store
+its position. “LP Filter” is `lp_filter` and “Auto LP Filter” is `stack.auto_lenhance`. Names are
+the English strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 ## Conventions
 
 As in [viewing-and-exposure.md](viewing-and-exposure.md#conventions): RFC 2119 words bind
@@ -125,18 +130,18 @@ stopped and replaced. On wide-camera models the call may first be relayed to the
 READ. The method name is spelled `start_auto_focuse`; the app sends it
 with null params.
 
-R10a. Firmware 9.75 (64-bit): `start_auto_focuse` and `stop_auto_focuse` first test whether the
-wide camera can run autofocus, then call the full relay and occupancy check instead of the 9.31
-test "view mode == 1". The call form is the relay-only one (check type 0, relaying enabled): it relays the call to the peer
-process when needed but runs no occupancy probe, so these two methods gain no 203 or 524 from it
-(READ, 64-bit; an earlier statement that they do is withdrawn). The occupancy probes with
-`is_func_occupy_mount` (203) and `is_func_work` for `AviRecord` and `MotionMonitor` (524) belong
-to the other call forms listed in [special-modes.md R21](special-modes.md#object-tracking). When the check
-refuses it has already replied and the handler returns. READ (call), INFERRED (wire effect). The local
-body and R22d are unchanged: stop still sets 253 and stops autofocus. Motion detection is
-paused while autofocus runs, and the autofocus streaming thread applies the 2x2 binning of `preview.raw_bin2` when that setting is true (media image-sockets R11b). A
-new string, `lp_position`, appears in the autofocus code and is unresolved. The 32-bit build
-was not checked.
+R10a. Firmware 9.75 (64-bit): `start_auto_focuse` and `stop_auto_focuse` first test whether the wide
+camera can run autofocus, then call the full relay and occupancy check instead of the 9.31 test
+"view mode == 1". The call form is the relay-only one (check type 0, relaying enabled): it relays
+the call to the peer process when needed but runs no occupancy probe, so these two methods gain no
+203 or 524 from it (READ, 64-bit). The occupancy probes with `is_func_occupy_mount` (203) and
+`is_func_work` for `AviRecord` and `MotionMonitor` (524) belong to the other call forms listed in
+[special-modes.md R21](special-modes.md#object-tracking). When the check refuses it has already
+replied and the handler returns. READ (call), INFERRED (wire effect). The local body and R22d are
+unchanged: stop still sets 253 and stops autofocus. Motion detection is paused while autofocus runs,
+and the autofocus streaming thread applies the 2x2 binning of `preview.raw_bin2` when that setting
+is true (media image-sockets R11b). A new string, `lp_position`, appears in the autofocus code and
+is unresolved. The 32-bit build was not checked.
 
 R11. Depending on mode, the starter runs a named AF worker or view stage 1. Stage 1 stops the
 current view stage ([viewing-and-exposure.md](viewing-and-exposure.md#view-stages-started-directly)).

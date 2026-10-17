@@ -46,7 +46,7 @@ Side effects: Changes the requested camera gain and camera configuration. When r
 | Code | Trigger | Label |
 |---|---|---|
 | 104 | params is not an integer (or one-element array of integer) | `expected int param` |
-| 207 | The device-level SetGain call reported failure (value not valid downstream) | `fail to operate` |
+| 207 | The device-level gain-setting call reported failure (value not valid downstream) | `fail to operate` |
 | 200 | Dispatcher: request is not an object, is an empty object, or has no id | `invalid id` |
 | 100 | Dispatcher: no method of type string (a non-string method counts as missing) | `invalid request` |
 | 101 | Dispatcher: text fails to parse | `invalid JSON request: <reason> on line <n> ...` |

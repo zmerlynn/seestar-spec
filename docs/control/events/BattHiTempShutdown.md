@@ -14,7 +14,7 @@ Envelope-only warning sent just before the device shuts down for battery over-te
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, CPiStatusChecker::BatteryChange @0x12b3e0 (64-bit build) |
 
-Broadcast on TCP 4700 (channel I) from the high-temperature branch of the battery-change handler, before the event server is stopped and the shutdown action is selected; expect the connection to end shortly after. No timer on the emitter. Family N (Event and Timestamp only). The PiStatus battery members describe the associated condition. APK consumers: DeviceEventPart; ConnectService.
+Broadcast on TCP 4700 (channel I) from the high-temperature branch of the battery-change handler, before the event server is stopped and the shutdown action is selected; expect the connection to end shortly after. No timer on the emitter. Family N (Event and Timestamp only). The PiStatus battery members describe the associated condition. APK consumers: the app event dispatcher; the app connection service.
 
 Side effects: Observation only for the receiver. On the device the same branch stops the event server and starts a shutdown.
 

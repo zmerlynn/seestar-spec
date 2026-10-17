@@ -7,6 +7,13 @@ the imager on TCP 4700. They move the mount through the guider, as described in
 [mount-and-motion.md](mount-and-motion.md). Events reach the client as described in
 [events-overview.md](events-overview.md). Per-method detail is in the linked catalog cards.
 
+App names: “Polar Align” is equatorial-mode alignment. “Level sensor calibration” (on the “Level &
+Compass Calibration” page, with “Adjust Level”) is the G-sensor calibration and balance display.
+“Compass Calibration” with “Manual Calibration” is the compass calibration; its “Auto Calibration”
+is the automatic one (INFERRED). “Horizontal calibration” and “3 Point Calibration” match the
+three-point calibration (INFERRED). Names are the English strings of iOS app 3.4.0; links are READ
+(app call sites) unless marked.
+
 ## Conventions
 
 Keywords and labels are used as in [plan-scheduling.md: Conventions](plan-scheduling.md#conventions).

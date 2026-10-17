@@ -16,13 +16,13 @@ directories; it refuses other paths) and exits with the package script's status.
 not declare it, the script logs that post-cleanup is skipped. A failed unpack now cleans the package
 directory. READ.
 
-R13b. The 64-bit updater gains matching code that takes and releases the lock, writes the
-monitor-done marker and clears the legacy update directories (for the S30 Plus class the directory
-is `/etc/zwo/update`, otherwise `/tmp/zwo/update`). READ. The 32-bit updater has none of the lock,
-marker or path strings (INFERRED from absence); the earlier statement that both builds gain the code
-is corrected. The lock is taken only inside the shared receive preparation and released before it
-returns, so it covers the directory clear and receive reservation, not the receive or install; the
-marker is written on every terminal path of the update status poll, and a failed write ends it with
-code 207 ([index.md R5b2](index.md#legacy-upload-flow-begin_recv)). Who consumes the marker besides the update
-script is unresolved.
+R13b. Firmware 9.75: the 64-bit updater gains matching code that takes and releases the lock, writes
+the monitor-done marker and clears the legacy update directories (for the S30 Plus class the
+directory is `/etc/zwo/update`, otherwise `/tmp/zwo/update`). READ. The 32-bit updater has none of
+the lock, marker or path strings (INFERRED from absence). The lock is taken only inside the shared
+receive preparation and released before it returns, so it covers the directory clear and receive
+reservation, not the receive or install; the marker is written on every terminal path of the update
+status poll, and a failed write ends it with code 207 ([index.md
+R5b2](index.md#legacy-upload-flow-begin_recv)). Who consumes the marker besides the update script is
+unresolved.
 

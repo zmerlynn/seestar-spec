@@ -57,7 +57,7 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: StartSolve and StartSolveImg failures forward the helper's error code unnamed.
+errors_note: 'Solving and image-solving failures forward the helper''s error code unnamed.'
 examples:
 - name: live
   of: request

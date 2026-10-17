@@ -7,6 +7,11 @@ from [focus-and-filter.md](focus-and-filter.md). Mount motion itself (ScopeGoto,
 the mount chapters; event framing is in [events/families.md](events/families.md). Per-method
 detail stays in the catalog cards.
 
+App names: “GoTo” is the solved goto, “Mark” is annotation, “Photometry” (and “Photometry Records”)
+is photometry, and “AI Denoise” is device AI processing. The newer “AI Enhance” runs on the phone
+and is not `start_ai_process`. Names are the English strings of iOS app 3.4.0; links are READ (app
+call sites) unless marked.
+
 ## Conventions
 
 As in [viewing-and-exposure.md](viewing-and-exposure.md#conventions): RFC 2119 words bind

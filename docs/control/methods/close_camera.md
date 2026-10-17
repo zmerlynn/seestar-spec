@@ -16,7 +16,7 @@ Close the open camera, stopping any view and exposure first.
 
 Params are not read. Stops the view and any exposure, releases image buffers, clears delayed configuration writes, closes and deletes the camera object and resets the temperature checker. Closing when no camera is open succeeds. The call can block on locks and worker waits; no short timeout is established. On success the device emits a CameraStateChange event. Reply result is the integer 0.
 
-Side effects: Initialises ViewPlan and stack shutdown, stops the view (StopView) and exposure (StopExposure), releases image buffers, clears delayed config writes, closes the camera, resets the temperature checker. Emits CameraStateChange on success.
+Side effects: Initialises ViewPlan and stack shutdown, stops the view and exposure, releases image buffers, clears delayed config writes, closes the camera, resets the temperature checker. Emits CameraStateChange on success.
 
 ## Request params
 

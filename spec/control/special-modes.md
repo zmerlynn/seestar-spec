@@ -13,6 +13,11 @@ mode are specified in more detail in [stacking.md](stacking.md#planet-stack),
 [maintenance.md](maintenance.md#demonstration-mode-and-sound); those chapters are primary
 where they overlap with this one.
 
+App names: “Solar”, “Lunar” (“Moon Mode”) and “Planetary” are the Sun, Moon and planet modes (the
+Android app uses one “Solar System” mode with a target type). “Sun/Moon Auto-center” is
+`planet_correction`. “Smart Track” is object tracking (`start_track_object`). Names are the English
+strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 Basis for the whole chapter: static analysis of firmware 9.31 (64-bit build; 32-bit build
 probable) and app 3.3.2, unless a line says otherwise.
 
@@ -171,21 +176,31 @@ See [Stacking: Planet stack](stacking.md#planet-stack) for parameters, events an
 
 ## Object tracking
 
-R20. [`start_track_object`](../../docs/control/methods/start_track_object.md) takes
-`{x, y, width, height}`, all integers and all required (104). The values are display
-coordinates and are converted to sensor coordinates. Width or height <= 0 is replaced by the
-camera subframe. READ. Firmware 9.75 (64-bit): an optional boolean `is_manual_selection` is read
-(106 if present and not a boolean; default true), the coordinates are converted with the show-to-sensor
-conversion instead of the 9.31 conversion, and when `is_manual_selection` is false a rectangle-correction step runs first (a change is logged). READ. If smart follow is running, the rectangle is submitted to smart follow: success replies 0, and the error code on failure comes from the thread's error state and is unresolved (an earlier statement listing 209, 268 and 524 is withdrawn). Otherwise object tracking starts and a failure returns the thread's error code. READ (routing). The 32-bit build has no `is_manual_selection` string while the smart-follow submit symbol is present; its handler probably differs (unresolved).
+R20. [`start_track_object`](../../docs/control/methods/start_track_object.md) takes `{x, y, width,
+height}`, all integers and all required (104). The values are display coordinates and are converted
+to sensor coordinates. Width or height <= 0 is replaced by the camera subframe. READ. Firmware 9.75
+(64-bit): an optional boolean `is_manual_selection` is read (106 if present and not a boolean;
+default true), the coordinates are converted with the show-to-sensor conversion instead of the 9.31
+conversion, and when `is_manual_selection` is false a rectangle-correction step runs first (a change
+is logged). READ. If smart follow is running, the rectangle is submitted to smart follow: success
+replies 0, and the error code on failure comes from the thread's error state and is unresolved.
+Otherwise object tracking starts and a failure returns the thread's error code. READ (routing). The
+32-bit build has no `is_manual_selection` string while the smart-follow submit symbol is present;
+its handler probably differs (unresolved).
 
 R21. Preconditions: scenery mode (view mode 1) or the wide camera; the RTSP stream running; a
-tracker available; RTMP not running. Errors: 300, 268, 203, 212. READ (firmware 9.31). Firmware 9.75:
-the RTMP condition is gone; the handler first tests whether smart follow or object tracking
-already runs, then calls the full relay and occupancy check. READ. When the dual-camera main-process flag is set and the "slave" flag is clear, the handler first asks the other process with `is_func_work` whether `SmartFollow` and `ObjectTrack` work (10000 ms timeout each); if both do, the relay is skipped. READ (64-bit firmware 9.75). Shared gating, occupancy checks, caller types and relay-only rules are in [session dispatch R31a](session-handshake/relay-routing.md#second-camera-relay-routing). The relay-only form replaces
+tracker available; RTMP not running. Errors: 300, 268, 203, 212. READ (firmware 9.31). Firmware
+9.75: the RTMP condition is gone; the handler first tests whether smart follow or object tracking
+already runs, then calls the full relay and occupancy check. READ. When the dual-camera main-process
+flag is set and the "slave" flag is clear, the handler first asks the other process with
+`is_func_work` whether `SmartFollow` and `ObjectTrack` work (10000 ms timeout each); if both do, the
+relay is skipped. READ (64-bit firmware 9.75). Shared gating, occupancy checks, caller types and
+relay-only rules are in [session dispatch
+R31a](session-handshake/relay-routing.md#second-camera-relay-routing). The relay-only form replaces
 the old wide-camera, view-mode and relay test in `iscope_match_target_name`,
 `iscope_accept_target_name`, `stop_record_avi`, `start_ai_process`, `check_ai_process` and
-`get_annotate_result`; it runs no occupancy probe, so 203 and 524 are not newly reachable there
-(an earlier statement that they are is withdrawn). READ. Whether `start_auto_goto` and `start_solve` use it is not confirmed. The planet-stack
+`get_annotate_result`; it runs no occupancy probe, so 203 and 524 are not newly reachable there.
+READ. Whether `start_auto_goto` and `start_solve` use it is not confirmed. The planet-stack
 functions and the AVI-record-state formatter differ from 9.31 but were not examined (unresolved).
 
 R22. The tracker reports through [`ObjectTrack`](../../docs/control/events/ObjectTrack.md)

@@ -1,12 +1,16 @@
 kind: method
 name: start_auto_focuse
 summary: Start autofocus (method name is spelled start_auto_focuse).
-description: Local branch reads no parameters. It logs a manual-start message, resets the autofocus result
-  and buffers (BeforeStartAf), in RTMP mode may stop an older autofocus thread, then starts the named
-  autofocus worker thread or the ViewStar stage 1. The reply means the start was accepted, not that focusing
-  finished; progress is reported by AutoFocus events. On wide-camera models in certain view modes the
-  original request is forwarded to the peer processor and that reply is not described here. Needs an open
-  focuser. Firmware 9.75, app 3.4.0 first checks that the wide camera can run autofocus, then uses the relay-only form of the common relay check (it relays to the peer process when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware 9.75) instead of the 9.31 view-mode test, the wire effect is INFERRED and motion detection is paused during autofocus.
+description: 'Local branch reads no parameters. It logs a manual-start message, resets the autofocus
+  result and buffers, in RTMP mode may stop an older autofocus thread, then starts the named
+  autofocus worker thread or the ViewStar stage 1. The reply means the start was accepted, not that
+  focusing finished; progress is reported by AutoFocus events. On wide-camera models in certain view
+  modes the original request is forwarded to the peer processor and that reply is not described
+  here. Needs an open focuser. Firmware 9.75, app 3.4.0 first checks that the wide camera can run
+  autofocus, then uses the relay-only form of the common relay check (it relays to the peer process
+  when needed and runs no occupancy probe, so no 203 or 524 comes from it; READ in 64-bit firmware
+  9.75) instead of the 9.31 view-mode test, the wire effect is INFERRED and motion detection is
+  paused during autofocus.'
 grade: MUTATOR / probable (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ

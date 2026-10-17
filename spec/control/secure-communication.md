@@ -78,15 +78,14 @@ R9. **Challenge.** The challenge is still a 32-character string returned as `res
 the device builds it from 24 random bytes encoded as base64; firmware 9.31 drew 32 characters
 from a C-library pseudo-random generator. A client MUST treat it as opaque. READ.
 
-R10. **Session reset.** `get_verify_str` now resets the socket: the verification state is
+R10. Firmware 9.75: **Session reset.** `get_verify_str` resets the socket: the verification state is
 cleared, the stored challenge is replaced and any earlier crypto session is invalidated and
-detached. A well-typed `verify_client` attempt also resets the verification state and the
-session before it validates the signature, so a failed attempt leaves the socket unverified
-rather than keeping an earlier verified state. A parameter-type rejection (105) happens before
-this reset and is a different path. READ for the 64-bit imager and guider; the 32-bit builds
-contain the same functions, but parity of every failure branch was not established. A client
-that re-authenticates on an open connection MUST therefore expect to lose its session and MUST
-unwrap the new envelope. READ.
+detached. A well-typed `verify_client` attempt also resets the verification state and the session
+before it validates the signature, so a failed attempt leaves the socket unverified rather than
+keeping an earlier verified state. A parameter-type rejection (105) happens before this reset and is
+a different path. READ for the 64-bit imager and guider; the 32-bit builds contain the same
+functions, but parity of every failure branch was not established. A client that re-authenticates on
+an open connection MUST therefore expect to lose its session and MUST unwrap the new envelope. READ.
 
 R11. **Success reply.** A successful `verify_client` replies with code 0 and a `result` object
 that holds a single member `key_envelope`, replacing the numeric `result: 0` of firmware 9.31
@@ -164,13 +163,12 @@ offset  length  content
 ```
 
 R18. The AES-GCM nonce is the 12 bytes at offsets 24 to 35 (prefix then sequence). READ. The
-associated data is the concatenation of: the 16 ASCII bytes `seestar-field-v1` (exactly 16 bytes,
-no terminating NUL; an earlier reading that included a NUL is wrong); one direction byte (0 for
-data the device receives, 1 for data it sends); the 36 header bytes at offsets 0 to 35; and four
-context strings, each as a 2-byte big-endian length followed by the bytes, each at most 256
-bytes. READ (64-bit imager); the 32-bit imager has the same 16-byte prefix boundary, but its
-callers' context strings were not decoded. The four context strings of each Wi-Fi field are, in
-order, READ:
+associated data is the concatenation of: the 16 ASCII bytes `seestar-field-v1` (exactly 16 bytes, no
+terminating NUL); one direction byte (0 for data the device receives, 1 for data it sends); the 36
+header bytes at offsets 0 to 35; and four context strings, each as a 2-byte big-endian length
+followed by the bytes, each at most 256 bytes. READ (64-bit imager); the 32-bit imager has the same
+16-byte prefix boundary, but its callers' context strings were not decoded. The four context strings
+of each Wi-Fi field are, in order, READ:
 
 | Field | Context strings |
 |---|---|
@@ -234,12 +232,10 @@ An inactive session never passes plaintext through. A client MUST NOT assume tha
 accepted for compatibility with firmware 9.31; the decoder contradicts that.
 
 R24. A wrapper failure is returned as the wrapper's own code, 570 to 573, as an ordinary error
-reply: by `pi_get_ap` (570 for a missing or inactive session), by `pi_station_set`, by
-`pi_set_ap` (decode failure; READ on both architectures) and by `get_device_state` (encoding
-failure only). Code 105 remains the separate wrong-type branch of `pi_set_ap`. An earlier reading
-that a decode failure or inactive session gives 105 in `pi_set_ap` is wrong. A text-validation
-failure of the supplied SSID or key (`pi_set_ap`) gives 102, READ in one inspection and not
-re-confirmed. READ.
+reply: by `pi_get_ap` (570 for a missing or inactive session), by `pi_station_set`, by `pi_set_ap`
+(decode failure; READ on both architectures) and by `get_device_state` (encoding failure only). Code
+105 remains the separate wrong-type branch of `pi_set_ap`. A text-validation failure of the supplied
+SSID or key (`pi_set_ap`) gives 102, READ in one inspection and not re-confirmed.
 
 ## Guider
 
@@ -292,14 +288,14 @@ the 64-bit imager, "D32" the 32-bit imager, "G64" and "G32" the guiders. Firmwar
 | Smart follow (`start_smart_follow`) | detection loop, error 254, motion-detection checks, stages `detecting`, `starting_track`, `tracking` | older worker with no 254 and no motion-detection checks, stage strings `waiting_target` and `starting_track`, log "wait for next target" | differs, READ (strings); semantics INFERRED |
 | Sky replay getter and setter | force-disabled | identical in D32 | parity, READ |
 | Temperature dark library | yes, with dark-library refresh during capture, `can_dark_correction` always true, and handling of a misplaced dark directory | library present; keeps the old dark-directory migration script; lacks the refresh during capture, the dark-correction check and the misplaced-directory handling; fit-failure log differs | older behaviour, READ (inventory); constants and `get_dark_files` shape not traced in D32 |
-| `can_*` capability flags | `hasCurrentDeviceCapability` recognises 7 models (S30, S50, S30P, S30Plus, S50P, S50N, S80), each with its own non-zero mask | the same flag names and bit order; `hasCurrentDeviceCapability` recognises only 2 models (S30 and S50, exact board-name match), mask 0x14 (bits 2 and 4: `can_4k_quality`, `can_comet_post_stack`) for either; every other model string (S30P, S30Plus, S50P, S50N, S80) falls through to mask 0x00, losing all six flags | differs, READ: a real functional divergence, not just a documentation gap |
+| `can_*` capability flags | the capability lookup recognises 7 models (S30, S50, S30P, S30Plus, S50P, S50N, S80), each with its own non-zero mask | the same flag names and bit order; the capability lookup recognises only 2 models (S30 and S50, exact board-name match), mask 0x14 (bits 2 and 4: `can_4k_quality`, `can_comet_post_stack`) for either; every other model string (S30P, S30Plus, S50P, S50N, S80) falls through to mask 0x00, losing all six flags | differs, READ: a real functional divergence, not just a documentation gap |
 | Version greeting (`main_version`, `modules` from the local manifest) | yes | same shape in D32 and G32 | parity, READ |
 | `clear_view_plan` failure code 218 | yes, and the power LED view-plan indicator is cleared | code 218 set; the LED call is absent; the file removal is INFERRED | partial parity, READ/INFERRED |
 | Relay-to-slave check (conflict 203 and 524) | five-argument signature | four-argument signature; conditions not traced | partial, READ (signature) |
 | Image send rate limiter | yes | same class and methods; the 32-bit build uses 32-bit sizes; bucket arithmetic not traced | present, READ (inventory) |
 | Updater `ota_*` methods | six methods | same six in the 32-bit updater; no selective temporary-file cleanup | same set, READ; handler bodies and pending-receive timeout not traced |
 | Network script Wi-Fi state check (`COMPLETED`) | yes | same | parity, READ |
-| Source-id busy gate (65 s) | yes | present; constant not re-read (INFERRED) | partial, INFERRED |
+| Source-id busy gate (65 s) | yes | present; constant unverified (INFERRED) | partial, INFERRED |
 | Peer-to-peer rate limit and licence-key change | the rate setter clamps to [65536, 67108864] B/s, bucket capacity to [4096, 65536]; `set_send_rate` rejects values above 2097151 kB/s; `changSdkLicenseKey` must be a JSON string or init fails | identical numeric bounds and error strings traced to the address level; `changSdkLicenseKey` type-gate and fallback-to-embedded-default logic match; no licence value is recorded here | parity, READ |
 | Guider: closing of unauthorised connections | the unauthorised-connection sweep sweeps every ~5s; skips factory mode and already-verified IPs; additionally skips the whole sweep unless the secure-communication gate | same sweep mechanism and skip conditions (factory mode, verified IP); the secure-communication gate does not exist in G32 at all (no symbol) — G32 sweep-closes any unverified, non-factory connection unconditionally | differs, READ: 32-bit guider has no secure-communication gate on this sweep |
 
@@ -310,17 +306,18 @@ the 64-bit imager, "D32" the 32-bit imager, "G64" and "G32" the guiders. Firmwar
   unresolved.
 - Whether the 32-bit imager's Wi-Fi handlers have the same member names and error codes as the
   64-bit ones (R22, R24). `pi_set_ap`, `pi_get_ap` and `pi_station_set` confirmed identical (same
-  member names `key`/`passwd`/`psk`, same cipher-context strings, same 105 wrong-type split).
-  READ. `get_device_state`'s `ap.passwd` member was not independently re-checked at the address
-  level; given the other three match and all four share the same cipher-context machinery, it is
-  INFERRED rather than READ.
-- Whether the matching private key is obtainable by a third-party client, and how an
-  independent client could unwrap the envelope. unresolved; outside this specification.
-- The imager contains an error text suggesting that an old client use a new verify method; no
-  code that returns it was found. unresolved.
-- The 32-bit relay-to-slave conditions and the 32-bit rate-limiter bucket arithmetic ([Firmware 9.75 parity matrix: 32-bit imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)).
+  member names `key`/`passwd`/`psk`, same cipher-context strings, same 105 wrong-type split). READ.
+  `get_device_state`'s `ap.passwd` member is unverified at the address level; given the other three
+  match and all four share the same cipher-context machinery, it is INFERRED rather than READ.
+- Whether the matching private key is obtainable by a third-party client, and how an independent
+  client could unwrap the envelope. unresolved; outside this specification.
+- The imager contains an error text suggesting that an old client use a new verify method; no code
+  that returns it was found. unresolved.
+- The 32-bit relay-to-slave conditions and the 32-bit rate-limiter bucket arithmetic ([Firmware 9.75
+  parity matrix: 32-bit imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)).
   unresolved. The `get_setting`/`set_setting` keys checked, the peer-to-peer rate logic and the
-  guiders' unauthorised-connection closing are now resolved ([Firmware 9.75 parity matrix: 32-bit imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)); `sky_replay`'s own
-  `set_setting` logic in D32 was not independently re-traced (assumed identical per the existing
-  D64 table). unresolved for that one key only.
+  guiders' unauthorised-connection closing are specified ([Firmware 9.75 parity matrix: 32-bit
+  imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)); `sky_replay`'s own
+  `set_setting` logic in D32 is unverified (assumed identical to the D64 table). unresolved for that
+  one key only.
 - Behaviour of the 4700 tunnel path (loopback) with respect to sessions is INFERRED only.

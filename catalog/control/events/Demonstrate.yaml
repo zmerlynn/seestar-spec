@@ -1,19 +1,23 @@
 kind: event
 name: Demonstrate
 summary: Function-state notification of the demonstration mount loop.
-description: 'Sent for the demonstration function started by start_demonstrate (DemonstrateFunc loop) and ended
-  by stop_demonstrate. The function detail is named Demonstrate (READ); that the event carries that name is INFERRED. No formatter is installed, so only F members are established. stop_demonstrate ends the function
-  with a final cancel event (no code or error on the wire; internal code 253, not sent), which can arrive before the
-  stop reply (READ; that the skip-end option is unset on this path is INFERRED). A demonstration that ends by itself
-  ends with fail: code 207 when no user location is stored, 501 when a goto fails or times out (READ). The worker
-  only slews the mount (random altitude 5-79 degrees, any azimuth, 120 s goto wait, 5 s dwell) and changes no view. Function-state family (F): SendFuncEvent formats
-  the named function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or
-  at a terminal state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail to
-  operate''); cancel omits code and error; route is optional function ancestry. The sender does no deduplication
-  and needs no preceding working event. Detail flags can suppress the working or non-working sends while the cached
-  function tree still changes, so a receiver can miss transitions. Channel I (TCP 4700). Delivery: ordinary broadcast
-  to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence,
-  delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 recognises it and does not require
+description: 'Sent for the demonstration function started by start_demonstrate (demonstration worker
+  loop) and ended by stop_demonstrate. The function detail is named Demonstrate (READ); that the
+  event carries that name is INFERRED. No formatter is installed, so only F members are established.
+  stop_demonstrate ends the function with a final cancel event (no code or error on the wire;
+  internal code 253, not sent), which can arrive before the stop reply (READ; that the skip-end
+  option is unset on this path is INFERRED). A demonstration that ends by itself ends with fail:
+  code 207 when no user location is stored, 501 when a goto fails or times out (READ). The worker
+  only slews the mount (random altitude 5-79 degrees, any azimuth, 120 s goto wait, 5 s dwell) and
+  changes no view. Function-state family (F): the event formatter formats the named function detail.
+  state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal
+  state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail to
+  operate''); cancel omits code and error; route is optional function ancestry. The sender does no
+  deduplication and needs no preceding working event. Detail flags can suppress the working or
+  non-working sends while the cached function tree still changes, so a receiver can miss
+  transitions. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the
+  emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering
+  guarantee relative to RPC replies or other events. APK 3.3.2 recognises it and does not require
   route for it.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B

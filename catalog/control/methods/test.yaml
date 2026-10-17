@@ -2,11 +2,12 @@ kind: method
 name: test
 summary: Developer diagnostic that loads a fixed image (64-bit build) or reference file (32-bit build)
   and discards it.
-description: Takes no parameters. The 64-bit build allocates a full-frame buffer, loads a fixed stacked
-  image into it through WideMosaicGetStackImage, frees it and returns the helper result as a JSON boolean;
-  false is still a code 0 success. The 32-bit build instead loads a fixed photometry reference file into
-  a temporary vector and returns integer 0 unconditionally. The two builds implement different tests and
-  the result type differs by build. No app emitter was found.
+description: 'Takes no parameters. The 64-bit build allocates a full-frame buffer, loads a fixed
+  stacked image into it through the wide-mosaic stacked-image reader, frees it and returns the
+  helper result as a JSON boolean; false is still a code 0 success. The 32-bit build instead loads a
+  fixed photometry reference file into a temporary vector and returns integer 0 unconditionally. The
+  two builds implement different tests and the result type differs by build. No app emitter was
+  found.'
 grade: MUTATOR / established (both builds)
 side_effect_tier: B
 confidence: READ

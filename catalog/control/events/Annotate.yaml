@@ -1,20 +1,22 @@
 kind: event
 name: Annotate
 summary: Annotation workflow notification (start, result, failure) from the direct sender or the function detail.
-description: 'Direct SendAnnotateEvent sends start, complete (with result) or fail (error, code) with page and tag;
-  the F detail follows the function-state family: Function-state family (F): SendFuncEvent formats the named function
-  detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state;
-  error and code at fail (even when the stored code is zero; lookup failure gives ''fail to operate''); cancel omits
-  code and error; route is optional function ancestry. The sender does no deduplication and needs no preceding working
-  event. Detail flags can suppress the working or non-working sends while the cached function tree still changes,
-  so a receiver can miss transitions. The annotation result object is open: APK 3.3.2 has consumer DTOs for it,
-  but those are expectations, not firmware members, and are not listed here. Channel I (TCP 4700). Delivery: ordinary
-  broadcast to every retained socket of the emitting server (master, guest and never-verified sockets alike); no
-  cadence, delivery or ordering guarantee relative to RPC replies or other events. Producer scope: only
-  annotation runs (start_annotate, or the automatic annotation after a capture) send it; start_solve resets
-  the solve parameters, which clears the annotate flag, so a solve it starts reports only through PlateSolve.
-  The event carries no request id, and tag is the latest tag set by any solve or annotation, so a client
-  correlates by timing.'
+description: 'Direct annotation notifier sends start, complete (with result) or fail (error, code)
+  with page and tag; the F detail follows the function-state family: Function-state family (F): the
+  event formatter formats the named function detail. state is always present; stage only when
+  non-empty; lapse_ms while the timer runs or at a terminal state; error and code at fail (even when
+  the stored code is zero; lookup failure gives ''fail to operate''); cancel omits code and error;
+  route is optional function ancestry. The sender does no deduplication and needs no preceding
+  working event. Detail flags can suppress the working or non-working sends while the cached
+  function tree still changes, so a receiver can miss transitions. The annotation result object is
+  open: APK 3.3.2 has consumer DTOs for it, but those are expectations, not firmware members, and
+  are not listed here. Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket
+  of the emitting server (master, guest and never-verified sockets alike); no cadence, delivery or
+  ordering guarantee relative to RPC replies or other events. Producer scope: only annotation runs
+  (start_annotate, or the automatic annotation after a capture) send it; start_solve resets the
+  solve parameters, which clears the annotate flag, so a solve it starts reports only through
+  PlateSolve. The event carries no request id, and tag is the latest tag set by any solve or
+  annotation, so a client correlates by timing.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -52,8 +54,8 @@ payload:
       - fail
       - cancel
       - start
-      description: 'Union. F: idle, working, complete, fail, cancel. Direct SendAnnotateEvent: start, complete,
-        fail.'
+      description: 'Union. F: idle, working, complete, fail, cancel. Direct annotation notifier:
+        start, complete, fail.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, SendAnnotateEvent @0x200a90
     stage:

@@ -1,15 +1,15 @@
 kind: event
 name: FindStar
 summary: 'Star-detection worker notification: start, complete with the detected stars, or fail.'
-description: 'State/value family (S + V), not F: FindStarFunc sends start, then complete with result, or fail. The
-  state helper adds error and code only when the supplied code is > 0 (unlike F); there is no lapse_ms or route.
-  The complete event''s result is the same object the getter caches (get_find_star_result), embedded as JSON, not
-  a string. stop_find_star adds no event of its own, but after a stop a run that had not completed ends with fail,
-  code 253 when the stop coincided with a capture abort and 514 otherwise; a run that had already completed sends
-  complete.
-  Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server (master, guest
-  and never-verified sockets alike); no cadence, delivery or ordering guarantee relative to RPC replies or other
-  events. APK 3.3.2 defines the name as a constant only.'
+description: 'State/value family (S + V), not F: the star-detection worker sends start, then
+  complete with result, or fail. The state helper adds error and code only when the supplied code is
+  > 0 (unlike F); there is no lapse_ms or route. The complete event''s result is the same object the
+  getter caches (get_find_star_result), embedded as JSON, not a string. stop_find_star adds no event
+  of its own, but after a stop a run that had not completed ends with fail, code 253 when the stop
+  coincided with a capture abort and 514 otherwise; a run that had already completed sends complete.
+  Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the emitting server
+  (master, guest and never-verified sockets alike); no cadence, delivery or ordering guarantee
+  relative to RPC replies or other events. APK 3.3.2 defines the name as a constant only.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

@@ -19,8 +19,8 @@ oneOf:
   minItems: 1
   items:
     type: string
-    description: First element is the SSID; further elements are ignored (selected by json_array2obj with
-      key ssid).
+    description: 'First element is the SSID; further elements are ignored (selected by the
+      positional-to-named parameter adapter with key ssid).'
     x-confidence: READ
     x-basis: static analysis of firmware 9.31, handler @0xcda90 (64-bit build)
 - type: string

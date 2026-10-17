@@ -14,7 +14,7 @@ Hot-plug notification for storage, serial or camera devices arriving or leaving.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, socket_json_imager_server_event::NotifyDeviceChange @0xad6e0; guider CFdHandler::SerialRefresh @0x27a40 (64-bit builds) |
 
-Broadcast on storage, serial and camera hot-plug transitions. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400 (channel G); guider event lines are forwarded onto 4700 by the imager main process. The imager notifier writes arrival, device and auto_open; the guider serial-refresh producer writes arrival and device directly and omits auto_open, so auto_open is not required on all origins. Family: custom; no state or error. APK consumer: DeviceEventPart (special branch for internal storage).
+Broadcast on storage, serial and camera hot-plug transitions. Emitted by the imager on TCP 4700 (channel I) and by the guider on TCP 4400 (channel G); guider event lines are forwarded onto 4700 by the imager main process. The imager notifier writes arrival, device and auto_open; the guider serial-refresh producer writes arrival and device directly and omits auto_open, so auto_open is not required on all origins. Family: custom; no state or error. APK consumer: the app event dispatcher (special branch for internal storage).
 
 Side effects: Observation only.
 
@@ -30,7 +30,7 @@ None. Events are sent by the device without a request; the payload is below.
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
 | `arrival` | boolean | yes | - | true on arrival, false on removal. [READ] |
 | `device` | string | yes | - | Device identifier or name supplied by the hot-plug source; vocabulary not closed. [READ] |
-| `auto_open` | boolean | if imager NotifyDeviceChange producer; absent on the guider serial-refresh producer | - | Notifier argument on the imager path. [READ] |
+| `auto_open` | boolean | if imager device-change notifier producer; absent on the guider serial-refresh producer | - | Notifier argument on the imager path. [READ] |
 
 ## Errors
 

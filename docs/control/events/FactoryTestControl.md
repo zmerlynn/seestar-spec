@@ -32,7 +32,7 @@ None. Events are sent by the device without a request; the payload is below.
 | `state` | string | yes | - | complete on helper success, fail otherwise. One of: `complete`, `fail`. [READ] |
 | `error` | string | if state is fail | - | Failure message. [READ] |
 | `code` | integer | if state is fail | - | Failure code (TLS error, or 207; 102 for an unsupported operation). [READ] |
-| `record` | any | if some successful operations only | - | Saved metadata records on some successful operations: normally an array (FillRecord); enterShippingMode inserts a single object. Failure paths may lack it. [READ] |
+| `record` | any | if some successful operations only | - | Saved metadata records on some successful operations: normally an array; enterShippingMode inserts a single object. Failure paths may lack it. [READ] |
 
 ## Errors
 

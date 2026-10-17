@@ -79,22 +79,21 @@ event to confirm the arm state. After the move the watcher may change the
 mount mode to the requested one. READ. A client MUST wait for a terminal `ScopeHome` before
 assuming the arm is closed or the mode switched.
 
-R38. [`scope_move_to_horizon`][smh] (MUTATOR / established, tier C) reads no params. It fails
-with 203 when the mount is moving and 210 when the driver cannot do motion. On a missing or
-disconnected mount the reply has neither `result` nor `error` (an envelope with `id` only). READ.
-A client MUST treat such a reply as a failure (no mount). On
-success it stores movement type 5, starts the `MoveOverHoriz` worker and replies 0 (worker
-launched). READ. The worker commands motion, then polls the axle coordinates every 0.5 s with a
-30 s deadline, ending successfully when the first axle coordinate is 0 or above; on that normal
-path it then commands a stop and waits for the mount to stop. READ. Failures (320, 500, 204
-timeout) arrive only as `ScopeMoveToHorizon` F events (`working`, `complete`, `fail`, `cancel`,
-plus `close` (R37) when the axle position can be read). READ. Because motion is commanded before the coordinate test, repeating the
-call with the arm already up can still move the mount briefly. READ. A client SHOULD treat a
-terminal `complete` as "arm open" (INFERRED: the first axle is elevation on alt-azimuth
-hardware). The axle-to-sky relation in equatorial mode and the stopping distance are unresolved
-(needs a device test). The app's arm-cancel control sends [`scope_move`][smv] `["none"]`, which
-stops the horizon move (R38a). [`scope_abort_slew`][sab] (R16) does not stop the guider's
-worker.
+R38. [`scope_move_to_horizon`][smh] (MUTATOR / established, tier C) reads no params. It fails with
+203 when the mount is moving and 210 when the driver cannot do motion. On a missing or disconnected
+mount the reply has neither `result` nor `error` (an envelope with `id` only). READ. A client MUST
+treat such a reply as a failure (no mount). On success it stores movement type 5, starts the
+horizon-movement worker and replies 0 (worker launched). READ. The worker commands motion, then
+polls the axle coordinates every 0.5 s with a 30 s deadline, ending successfully when the first axle
+coordinate is 0 or above; on that normal path it then commands a stop and waits for the mount to
+stop. READ. Failures (320, 500, 204 timeout) arrive only as `ScopeMoveToHorizon` F events
+(`working`, `complete`, `fail`, `cancel`, plus `close` (R37) when the axle position can be read).
+READ. Because motion is commanded before the coordinate test, repeating the call with the arm
+already up can still move the mount briefly. READ. A client SHOULD treat a terminal `complete` as
+"arm open" (INFERRED: the first axle is elevation on alt-azimuth hardware). The axle-to-sky relation
+in equatorial mode and the stopping distance are unresolved (needs a device test). The app's
+arm-cancel control sends [`scope_move`][smv] `["none"]`, which stops the horizon move (R38a).
+[`scope_abort_slew`][sab] (R16) does not stop the guider's worker.
 
 R38a. [`scope_move`][smv] takes `direction` (`north`, `south`, `east`, `west`, `none`) and
 optional `duration_sec` (integer 1..9), positional or keyed. Errors: 315, 210, 105 (direction not

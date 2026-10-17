@@ -1,16 +1,18 @@
 kind: event
 name: AutoCloseMount
 summary: Guider notification that the mount connection was closed automatically.
-description: 'N family (NotifyEvent): Event and Timestamp only. Sent from the guider''s GetRaDec callback when
-  it closes the mount automatically (the closing condition itself is not detailed here). Sent by the guider
-  (zwoair_guider) event server on TCP 4400 to every retained connection, with no verified or master/guest filter.
-  The main imager process, which holds a client connection to 4400, recognizes peer event lines by the exact
-  substring "Event":" and re-broadcasts the original line unchanged to all retained connections on TCP 4700,
-  so ordinary 4700 clients see it too; the auxiliary imager process (4702) deliberately does not forward 4400
-  events, avoiding a duplicate copy. Because the forwarding test is lexical, the forwarded line is byte-identical
-  to the guider''s. No universal order relative to RPC replies or other events, no sequence number, no replay.
-  No APK consumer is established. The connection members of scope_get_state overlap; an identical result is
-  not established. 32-bit build matches (READ); its emitter fills the same members from the same callers.'
+description: 'N family (notification): Event and Timestamp only. Sent from the guider''s
+  coordinate-read callback when it closes the mount automatically (the closing condition itself is
+  not detailed here). Sent by the guider (zwoair_guider) event server on TCP 4400 to every retained
+  connection, with no verified or master/guest filter. The main imager process, which holds a client
+  connection to 4400, recognizes peer event lines by the exact substring "Event":" and re-broadcasts
+  the original line unchanged to all retained connections on TCP 4700, so ordinary 4700 clients see
+  it too; the auxiliary imager process (4702) deliberately does not forward 4400 events, avoiding a
+  duplicate copy. Because the forwarding test is lexical, the forwarded line is byte-identical to
+  the guider''s. No universal order relative to RPC replies or other events, no sequence number, no
+  replay. No APK consumer is established. The connection members of scope_get_state overlap; an
+  identical result is not established. 32-bit build matches (READ); its emitter fills the same
+  members from the same callers.'
 grade: PURE GETTER (shape only; observation for the receiver)
 side_effect_tier: B
 confidence: READ

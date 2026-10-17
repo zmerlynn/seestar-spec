@@ -5,6 +5,12 @@ methods sent on 4700, and the HTTP 80 download path. Overview: [index.md](index.
 sockets 4800/4804: [image-sockets.md](image-sockets.md). Video files and recording:
 [video.md](video.md). Ports and the remote map: [ports.md](../transport/ports.md).
 
+App names: “My Album” and “Seestar Gallery” are the album listing and download. The album categories
+(“Solar System Album”, “Scenery Album”, “Stargazing Album”, “Milky Way Album”, “Star Trail Album”)
+need not equal the wire group names (INFERRED). “Export” and “Export RAW” save to the phone and are
+not the device's `start_export_image` (INFERRED). Names are the English strings of iOS app 3.4.0;
+links are READ (app call sites) unless marked.
+
 ## Conventions
 
 As in [index.md: Conventions](index.md#conventions). READ claims are for the 64-bit imager build of
@@ -190,17 +196,17 @@ directory `{name, thn, count, type: 0}`. READ.
 
 R16. The `get_albums` filter accepts `stack`, `stacked`, `startrail` and `meteor` on the 64-bit
 build. The 32-bit build accepts only `stack` and `stacked`. READ (firmware 9.31). Firmware 9.75: the
-64-bit filter accepts `stack`, `stacked`, `startrail`, `meteor`, `comet` and `video_stack`; any other
-string selects the generic listing, and a filter that is not a string gives 106. READ. `stack` and
-`comet` list the DeepSky group with separate predicates, `stacked` lists the MilkyWay group (with
-`_sub` suffix filtering) and `video_stack` lists video-stack files found through the AVI-to-MP4 name
-mapping (which file the lookup returns is unresolved). The 32-bit filter is listed by an earlier
-analysis as `stack`, `stacked`, `video_stack` and `comet`; that is not verified (unresolved).
-`SolarSystem`, `Starfield`, `Scenery`, `DeepSky`, `MilkyWay`, `MyWorks` and `Startrails` were already
-album groups in firmware 9.31, so `SolarSystem` is not a new category. Whether `PhotoMetry` is an album
-group is unresolved (the string exists in both builds but is not used as a group by the listing).
-INFERRED: an item named like the `Scenery` group plus `_video` is grouped under `SolarSystem`, otherwise
-under `Scenery`. Sky replay (stacking.md) writes `*_stack_replay.mp4`, whose file type code is 13. READ
+64-bit filter accepts `stack`, `stacked`, `startrail`, `meteor`, `comet` and `video_stack`; any
+other string selects the generic listing, and a filter that is not a string gives 106. READ. `stack`
+and `comet` list the DeepSky group with separate predicates, `stacked` lists the MilkyWay group
+(with `_sub` suffix filtering) and `video_stack` lists video-stack files found through the
+AVI-to-MP4 name mapping (which file the lookup returns is unresolved). Whether the 32-bit filter
+accepts `stack`, `stacked`, `video_stack` and `comet` is unresolved. `SolarSystem`, `Starfield`,
+`Scenery`, `DeepSky`, `MilkyWay`, `MyWorks` and `Startrails` were already album groups in firmware
+9.31, so `SolarSystem` is not a new category. Whether `PhotoMetry` is an album group is unresolved
+(the string exists in both builds but is not used as a group by the listing). INFERRED: an item
+named like the `Scenery` group plus `_video` is grouped under `SolarSystem`, otherwise under
+`Scenery`. Sky replay (stacking.md) writes `*_stack_replay.mp4`, whose file type code is 13. READ
 (file names), unresolved (the sky replay event name).
 
 R16a. Motion recording (firmware 9.75, 64-bit; the 32-bit build has no motion-monitor strings other
@@ -210,17 +216,17 @@ timestamp (`YYYY-MM-DD-HHMMSS` pattern) and the extension `-RAW.avi`; an `.mp4` 
 (config key `motion_pre_record_mp4_fps` sets its frame rate). The separator between base name and
 timestamp, and which of the two files is the album entry, are unresolved.
 
-R16b. FITS and JSON header additions (firmware 9.75). READ (64-bit; 32-bit as noted at the end).
-The FITS header gains five keywords: `OB_CU` (integer, "whether the object is user-defined", written
+R16b. FITS and JSON header additions (firmware 9.75). READ (64-bit; 32-bit as noted at the end). The
+FITS header gains five keywords: `OB_CU` (integer, "whether the object is user-defined", written
 when the value is not negative), `W_FM_MD` (integer, wide-field framing mode, when not negative),
 `T_FM_RO`, `T_FM_ZM` and `T_FM_PS` (reals: telephoto framing rotation in degrees, zoom ratio, and
-frame position angle on the star map, written when the value differs from the unset sentinel -999.0).
-The JSON header printed for `get_stack_info` gains `star_type_custom` (from the `OB_CU` value),
-`W_FM_MD` and `mosaic` {`angle`, `scale`, `star_map_angle`} with the same conditions (the quoting of
-`star_type_custom` and the `mosaic` nesting are INFERRED). What populates these values is unresolved.
-Other FITS keywords are unchanged and the creator string is still `ZWO `. A reader MUST treat unknown
-keywords and members as optional. The statement in earlier text that the firmware version in the
-headers comes from the OTA version record was not verified.
+frame position angle on the star map, written when the value differs from the unset sentinel
+-999.0). The JSON header printed for `get_stack_info` gains `star_type_custom` (from the `OB_CU`
+value), `W_FM_MD` and `mosaic` {`angle`, `scale`, `star_map_angle`} with the same conditions (the
+quoting of `star_type_custom` and the `mosaic` nesting are INFERRED). What populates these values is
+unresolved. Other FITS keywords are unchanged and the creator string is still `ZWO `. A reader MUST
+treat unknown keywords and members as optional. Whether the firmware version in the headers comes
+from the OTA version record is unresolved.
 
 In the 32-bit build of firmware 9.75 the FITS writer and reader handle the same five keywords, and
 the JSON header has `W_FM_MD` and `mosaic` {`angle`, `scale`, `star_map_angle`} but no
@@ -319,8 +325,9 @@ R19a. GET resolution (READ). The captured path is appended to `/boot/Image`. The
 5. `Range` and `If-Range` are read; when `If-Range` does not match the current ETag the full
    file is sent.
 
-The body is produced in chunks of at most 4096 bytes (firmware 9.31) or 32768 bytes (firmware 9.75, an earlier note that the chunk was unchanged was wrong). If a read fails, the server stops writing
-and closes the connection, even if fewer than `Content-Length` bytes were sent. READ.
+The body is produced in chunks of at most 4096 bytes (firmware 9.31) or 32768 bytes (firmware 9.75).
+If a read fails, the server stops writing and closes the connection, even if fewer than
+`Content-Length` bytes were sent. READ.
 
 R19b. A request for a directory, including `/`, is not a supported request. A directory passes
 the checks in R19a, so the server sends 200 headers with the directory's size as

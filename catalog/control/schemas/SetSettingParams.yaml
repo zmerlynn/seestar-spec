@@ -1,17 +1,18 @@
 title: set_setting params
 type: object
-description: All members optional; omitted means unchanged. Members are processed in input order (INFERRED);
-  the first checked failure stops later members with no rollback. Unknown top-level keys give 109 (except
-  the wide_cross_offset substring family). An empty object succeeds with 0. Wrong-typed members are either
-  ignored or rejected as listed. Setting names also exist in get_setting output but the getter names heater_enable
-  and expt_heater_enable are not setter aliases. Firmware 9.75, app 3.4.0 adds the top-level keys sky_replay, annotation (object),
-  enable_dark_library, can_encrypt and motion_monitor, the preview member raw_bin2, exp_ms.more_exposure
-  and the stack members startrail_mode and startrails_duration_min (nested, not top-level), and removes
-  expert_mode (it now gives 109 as an unknown key). annotation and sky_replay sent in the same request
-  as wide_cam give 102. An unknown name inside the annotation object gives 109; unknown members inside
-  exp_ms and stack are ignored. The nested preview object's handling of unknown members was not re-read
-  (unresolved). The temperature-dark library notes are in calibration-frames.md;
-  reset_setting resets a subset of the keys.
+description: 'All members optional; omitted means unchanged. Members are processed in input order
+  (INFERRED); the first checked failure stops later members with no rollback. Unknown top-level keys
+  give 109 (except the wide_cross_offset substring family). An empty object succeeds with 0.
+  Wrong-typed members are either ignored or rejected as listed. Setting names also exist in
+  get_setting output but the getter names heater_enable and expt_heater_enable are not setter
+  aliases. Firmware 9.75, app 3.4.0 adds the top-level keys sky_replay, annotation (object),
+  enable_dark_library, can_encrypt and motion_monitor, the preview member raw_bin2,
+  exp_ms.more_exposure and the stack members startrail_mode and startrails_duration_min (nested, not
+  top-level), and removes expert_mode (it now gives 109 as an unknown key). annotation and
+  sky_replay sent in the same request as wide_cam give 102. An unknown name inside the annotation
+  object gives 109; unknown members inside exp_ms and stack are ignored. Handling of unknown members
+  inside the nested preview object is unresolved. The temperature-dark library notes are in
+  calibration-frames.md; reset_setting resets a subset of the keys.'
 properties:
   wide_cam:
     type:

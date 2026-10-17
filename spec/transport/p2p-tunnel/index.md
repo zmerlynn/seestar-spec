@@ -7,6 +7,10 @@ over one authenticated, reliable byte stream between the app and the device. Bel
 services, chiefly the JSON control port 4700 ([session handshake](../../control/session-handshake.md));
 the full port list is in [ports.md](../ports.md).
 
+App names: the tunnel carries the device's ports for the app's “Telescope Network” remote
+connection. Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless
+marked.
+
 | File | Contents |
 |---|---|
 | [framing.md](framing.md) | Frame envelope, message catalogue, login / authentication / versioning, port and service verification (R1-R27) |

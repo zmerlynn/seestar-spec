@@ -8,6 +8,13 @@ sits on top of the JSON-RPC envelope and event framing ([session-handshake.md](s
 [network.md](network.md), [time-and-location.md](time-and-location.md),
 [power-and-storage.md](power-and-storage.md) and [maintenance.md](maintenance.md).
 
+App names for settings in this chapter: “Guest Mode” (`guest_mode`), “Device Lock” (`connect_lock`
+and its password), “Interface mode” with “Ethernet” or “Transfer” (`typec_mode`), “Seestar Alpaca”
+(`alpaca_enable`; only the switch is specified, not the Alpaca protocol), “Telephoto Live HDR”
+(`hdr`) and “Expert mode” (`expert_mode`). “Wide-angle center calibration” sets `wide_cross_offset`
+(INFERRED). Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless
+marked.
+
 ## Conventions
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119 and RFC 8174. They bind
@@ -166,15 +173,15 @@ the wide camera.
 | `exp_ms.more_exposure` | boolean | full path; between `stack_l` and `continuous`; not wide-camera gated on output (the setter is tele-camera only, R16a) |
 | `stack.startrails_duration_min`, `stack.startrail_mode` | integers; minutes (-1 or 0 no limit) and mode 0 to 2 | full path; W only; meanings in [stacking.md R8b to R8f](stacking.md#sky-replay-and-star-trail-decay-firmware-975) |
 
-The flat top-level names `milkyway_background`, `milkyway_lines`, `more_exposure`, `raw_bin2`,
-`stargazing_deepsky`, `stargazing_supernovae`, `startrail_mode` and `startrails_duration_min`
-listed in earlier revisions of this chapter are not top-level members: they are nested as shown.
-`expert_mode` is still emitted by `get_setting` in firmware 9.75 (boolean, full path only) although
-`set_setting` no longer accepts it (R16a). `can_encrypt` is effectively read only (`set_setting` accepts only `true`, as a no-op, R16a); that it relates to the
-secure-communication switch ([secure-communication.md](secure-communication.md)) is INFERRED. The
-32-bit build has no motion monitor; the other additions were not compared member by member on the
-32-bit build, which has the `sky_replay` getter and setter unchanged. The `Setting` event
-serializer uses the same getter, with an exact-key filter.
+The names `milkyway_background`, `milkyway_lines`, `more_exposure`, `raw_bin2`,
+`stargazing_deepsky`, `stargazing_supernovae`, `startrail_mode` and `startrails_duration_min` are
+nested as shown, rather than top-level members. `expert_mode` is still emitted by `get_setting` in
+firmware 9.75 (boolean, full path only) although `set_setting` no longer accepts it (R16a).
+`can_encrypt` is effectively read only (`set_setting` accepts only `true`, as a no-op, R16a); that
+it relates to the secure-communication switch ([secure-communication.md](secure-communication.md))
+is INFERRED. The 32-bit build has no motion monitor; the other additions were not compared member by
+member on the 32-bit build, which has the `sky_replay` getter and setter unchanged. The `Setting`
+event serializer uses the same getter, with an exact-key filter.
 
 R8c. Firmware 9.75: `sky_replay` is force-disabled. `get_setting` reports `sky_replay` false
 whatever was stored, and reading it clears the persisted flag and ends any replay session. READ
@@ -243,47 +250,48 @@ R16a. Firmware 9.75 (64-bit build) key rules. READ unless marked.
 
 - `expert_mode` is no longer in the key table, so `set_setting` gives 109 for it, although
   `get_setting` still emits it. Firmware 9.31 accepted it.
-- `annotation` MUST be an object (107). Its members `stargazing_deepsky`,
-  `stargazing_supernovae`, `milkyway_lines` and `milkyway_background` are each boolean or integer
-  (106 otherwise); an unknown or null member name gives 109; a persistence failure returns the
-  thread's error code. A change adds `annotation` to the `Setting` event in the main process.
+- `annotation` MUST be an object (107). Its members `stargazing_deepsky`, `stargazing_supernovae`,
+  `milkyway_lines` and `milkyway_background` are each boolean or integer (106 otherwise); an unknown
+  or null member name gives 109; a persistence failure returns the thread's error code. A change
+  adds `annotation` to the `Setting` event in the main process.
 - `sky_replay` is boolean or integer (106 otherwise) and its value is ignored (R8c). A `Setting`
   event is raised only if the stored flag was true.
 - `annotation` or `sky_replay` sent in the same request as `wide_cam` gives 102.
-- `preview.raw_bin2` is boolean or integer (106 otherwise). Writing the stored value is a
-  no-op; otherwise it is saved and a persistence failure returns the thread's error code. In the
-  same `preview` branch `rtsp_quality` and `image_transfer_mode` are strings (105 otherwise), an
-  `image_transfer_mode` value above 1 gives 102, and changing `rtsp_quality` while a video
-  recording runs gives 524.
+- `preview.raw_bin2` is boolean or integer (106 otherwise). Writing the stored value is a no-op;
+  otherwise it is saved and a persistence failure returns the thread's error code. In the same
+  `preview` branch `rtsp_quality` and `image_transfer_mode` are strings (105 otherwise), an
+  `image_transfer_mode` value above 1 gives 102, and changing `rtsp_quality` while a video recording
+  runs gives 524.
 - `comet_max_frame_num` is not settable (output only): sending it gives 109.
 - Members are applied in document order; an unknown key reaches the guest-settings fallback and
   gives 109 unless it is one of the guest keys (R15).
 - `can_encrypt` is parsed as boolean or integer (106 otherwise). `true` is accepted as a no-op
   (nothing stored, no event); `false` gives 210, matching the constant-true getter. READ.
 - `enable_dark_library` is parsed as boolean or integer; a wrong type is silently ignored and the
-  call succeeds. Otherwise the stack setting flag is stored and applied; the result of applying
-  is ignored. There is no wide-camera gate and no running-stack check. READ.
+  call succeeds. Otherwise the stack setting flag is stored and applied; the result of applying is
+  ignored. There is no wide-camera gate and no running-stack check. READ.
 - `exp_ms.more_exposure` is boolean or integer (106 otherwise), tele camera only (210 on the wide
   camera; the getter is not gated), and is applied to the stack setting. There is no running-stack
   check for it alone. Its siblings: `exp_ms.stack_l` (integer, 259 while stacking) and
   `exp_ms.stack_l_auto` (boolean, wide camera only else 210, 259 while stacking). READ.
-- `stack.startrail_mode` and `stack.startrails_duration_min` are decoded in
-  [stacking.md R8b and R8d](stacking.md#sky-replay-and-star-trail-decay-firmware-975): integers
-  (104 otherwise), wide camera only (210); mode above 2 gives 209; the duration gives 259 while a stack runs
-  and has no range check. READ.
-- `motion_monitor` (firmware 9.75, 64-bit, either process) must be an object (107). Members are optional
-  and unknown members are ignored. `mode` is a string, `auto_track` (0) or `auto_capture` (1), else 105
-  for a wrong type or 209 for another string; `sensitivity` is a string whose id above 2 gives 209;
-  `return_to_origin` is boolean (106); `waiting_time` and `duration_min` are integers (104). `waiting_time`
-  is read only when `return_to_origin` is true after the update (otherwise ignored even if
-  mistyped). The final check gives 209 for: mode or sensitivity out of range, a sensitivity whose stored
-  threshold does not match its table value, a negative `waiting_time`, or `duration_min` that is neither -1 nor
-  1 to 35791394 (the duration branch giving 209 is INFERRED). If nothing changed the call succeeds without
-  applying or emitting. If something changed and the motion-monitor function is running, the reply is 524;
-  otherwise the configuration is applied and `motion_monitor` is added to the changed keys of the `Setting`
-  event. READ, except as marked.
-- Unknown members inside the nested `exp_ms` and `stack` objects are ignored (members are looked up by name);
-  inside `annotation` they give 109. The nested `preview` object was not re-read. unresolved.
+- `stack.startrail_mode` and `stack.startrails_duration_min` are decoded in [stacking.md R8b and
+  R8d](stacking.md#sky-replay-and-star-trail-decay-firmware-975): integers (104 otherwise), wide
+  camera only (210); mode above 2 gives 209; the duration gives 259 while a stack runs and has no
+  range check. READ.
+- `motion_monitor` (firmware 9.75, 64-bit, either process) must be an object (107). Members are
+  optional and unknown members are ignored. `mode` is a string, `auto_track` (0) or `auto_capture`
+  (1), else 105 for a wrong type or 209 for another string; `sensitivity` is a string whose id above
+  2 gives 209; `return_to_origin` is boolean (106); `waiting_time` and `duration_min` are integers
+  (104). `waiting_time` is read only when `return_to_origin` is true after the update (otherwise
+  ignored even if mistyped). The final check gives 209 for: mode or sensitivity out of range, a
+  sensitivity whose stored threshold does not match its table value, a negative `waiting_time`, or
+  `duration_min` that is neither -1 nor 1 to 35791394 (the duration branch giving 209 is INFERRED).
+  If nothing changed the call succeeds without applying or emitting. If something changed and the
+  motion-monitor function is running, the reply is 524; otherwise the configuration is applied and
+  `motion_monitor` is added to the changed keys of the `Setting` event. READ, except as marked.
+- Unknown members inside the nested `exp_ms` and `stack` objects are ignored (members are looked up
+  by name); inside `annotation` they give 109. Handling of unknown members inside the nested
+  `preview` object is unresolved.
 - Of the `set_setting` keys, the 32-bit build was not traced; the `include_sensitive` string exists
   in both builds, so the parameter is probably present in both (INFERRED).
 

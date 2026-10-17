@@ -128,10 +128,10 @@ properties:
         x-basis: static analysis of firmware 9.31, handler @0xc4d90 (64-bit build)
       progress:
         type: object
-        description: Page 6 only. Same object as the legacy plan progress (PlanEventProgress). Every member
-          is always written. Totals and lapses are counts, not durations. When no current target or sequence
-          exists, both ids are -2147483648 (INT32 minimum), counters are 0, target_name is empty, frame_type
-          is unknown and plan_end is false; clients SHOULD treat -2147483648 as none.
+        description: 'Page 6 only. Same object as the legacy plan progress. Every member is always
+          written. Totals and lapses are counts, not durations. When no current target or sequence
+          exists, both ids are -2147483648 (INT32 minimum), counters are 0, target_name is empty,
+          frame_type is unknown and plan_end is false; clients SHOULD treat -2147483648 as none.'
         properties:
           targets:
             type: object

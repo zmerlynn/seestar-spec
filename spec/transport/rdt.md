@@ -7,6 +7,9 @@ each RDT packet as one unreliable datagram. Above it sits the [P2P tunnel](p2p-t
 travel inside one RDT stream.
 RDT knows nothing about JSON, methods or tunnel messages.
 
+App names: RDT streams carry the app's “Telescope Network” remote connection. Names are the English
+strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 ## Conventions
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119 and RFC 8174. They bind an
@@ -26,8 +29,8 @@ Every claim carries a label (see `CONVENTIONS.md`):
 
 No target code was executed and no device was contacted for this chapter.
 
-Notation. All integers are unsigned unless stated. `LE` is little-endian. Message types are given
-in hex (`02` is DATA). A sequence number is a pair `(low, high)` of 32-bit words. Names such as
+Notation. All integers are unsigned unless stated. `LE` is little-endian. Message types are given in
+hex (`02` is DATA). A sequence number is a pair `(low, high)` of 32-bit words. Names such as
 `ackNext`, `lastContiguous` and `ESTABLISHED` are explanatory; they are not binary symbols.
 
 ## Overview
@@ -96,43 +99,40 @@ inlined (READ, 64-bit imager). Compared and unchanged: the data payload range ch
 bytes, otherwise -10014), the data send routine with its 1388-byte packet buffer, the client and
 server authentication routines (32-byte password limit) and the version-string and channel-count
 functions. The 9.75 send path writes through the secure channel directly when the channel's secure
-pointer is set. A later check found these immediates present in both firmware 9.31 and 9.75, with no drift: 500000 in
-the channel-create routine; 8000000 in the send thread; 6500 and 1000000 in the dynamic-limit routine;
-1000 in the create routine, the send thread and the read routine; 80 in the send thread (and in the
-create routine in 9.75); and 120 in the status checks and the receive thread. How each constant is
-used was not traced, so their roles are unverified. READ (presence), unresolved (roles).
+pointer is set. These immediates are present in both firmware 9.31 and 9.75, with no drift: 500000
+in the channel-create routine; 8000000 in the send thread; 6500 and 1000000 in the dynamic-limit
+routine; 1000 in the create routine, the send thread and the read routine; 80 in the send thread
+(and in the create routine in 9.75); and 120 in the status checks and the receive thread. How each
+constant is used was not traced, so their roles are unverified. READ (presence), unresolved (roles).
 
-A later check traced the role of five of these constants by function: `___CalcRTO` computes the RTO
+The roles of five constants are established: the retransmission-timeout calculator computes the RTO
 from a round-trip sample, clamped between a 100 ms floor and an 8 s cap (the `8000000` immediate);
-the internal RDT creation routine seeds a channel's initial RTO at `500000` µs when the channel is created;
-the receive thread resets a per-channel watchdog counter to `120` (or to `5` when a destroy
+the internal RDT creation routine seeds a channel's initial RTO at `500000` µs when the channel is
+created; the receive thread resets a per-channel watchdog counter to `120` (or to `5` when a destroy
 flag is set) after each qualifying packet; and the dynamic-limit routine ceilings a recomputed
-floating-point send limit at `6500`. All five immediates, the same comparison or
-conditional-select logic around them, and the same destroy-flag short-circuit on the watchdog, are
-present in firmware 9.75 and in the 32-bit build of both firmware versions. READ (presence and
-role, both builds, both firmware versions).
+floating-point send limit at `6500`. All five immediates, the same comparison or conditional-select
+logic around them, and the same destroy-flag short-circuit on the watchdog, are present in firmware
+9.75 and in the 32-bit build of both firmware versions. READ (presence and role, both builds, both
+firmware versions).
 
-A later check traced four more rows the same way. the heartbeat-send predicate and
-the heartbeat-countdown predicate take a connection-state value and an elapsed-time value: the first
-returns elapsed > 99 ms when the state is the "creating" value (zero) and elapsed > 999 ms
-otherwise; the second additionally requires the state to equal the specific "established" value
-before the 999 ms form is allowed to fire. the internal RDT creation routine substitutes a 60000 ms DTLS
-handshake timeout when the caller passes zero. the receive thread’s plain (non-secure)
-read path always passes a 2560-byte buffer and a 200 ms timeout, and its retry path after a
-nonpositive read result calls `usleep(50000)`. the send thread compares an elapsed-microsecond
-figure against 2000 and, when exceeded, refreshes a stored time reference and calls
-the dynamic-limit routine. `RDT_Write` compares a per-channel queued-byte count against 4 MiB
-(`#0x400, lsl #12` on the 64-bit builds; `#4194304` on the 32-bit builds) and, while over it, loops
-on an `IOTC_Check_Session_Status` check and a 100000 µs (`0x186A0`) sleep before re-checking; this
-loop was not found by searching for a `4194304` immediate in the narrower address range checked
-earlier (section header above), only once `RDT_Write`'s own symbol range was disassembled
-directly. All five are present with the same logic in firmware 9.75 and in the 32-bit build of
-both firmware versions. READ (presence and role, both builds, both firmware versions). The
-reliability constants not named above (ACK aggregation, create polling, send-loop sleep,
-unsent-packet age, destroy and de-initialize retry, NEED_DTLS grace), the selective-ACK builder and
-the heartbeat constructor were not re-checked for 9.75 or the 32-bit build, so
-[reliability: Timers summary](rdt/reliability.md#timers-summary) remains verified for firmware 9.31 only for
-those rows. INFERRED (unchanged, probable); unresolved (roles, remaining rows).
+Four further timer rules are established. The heartbeat-send predicate and the heartbeat-countdown
+predicate take a connection-state value and an elapsed-time value: the first returns elapsed > 99 ms
+when the state is the "creating" value (zero) and elapsed > 999 ms otherwise; the second
+additionally requires the state to equal the specific "established" value before the 999 ms form is
+allowed to fire. The internal RDT creation routine substitutes a 60000 ms DTLS handshake timeout
+when the caller passes zero. The receive thread’s plain (non-secure) read path always passes a
+2560-byte buffer and a 200 ms timeout, and its retry path after a nonpositive read result calls
+`usleep(50000)`. The send thread compares an elapsed-microsecond figure against 2000 and, when
+exceeded, refreshes a stored time reference and calls the dynamic-limit routine. `RDT_Write`
+compares a per-channel queued-byte count against 4 MiB (both builds) and, while over it, loops on an
+`IOTC_Check_Session_Status` check and a 100000 µs (`0x186A0`) sleep before re-checking. All five are
+present with the same logic in firmware 9.75 and in the 32-bit build of both firmware versions. READ
+(presence and role, both builds, both firmware versions). The reliability constants not named above
+(ACK aggregation, create polling, send-loop sleep, unsent-packet age, destroy and de-initialize
+retry, NEED_DTLS grace), the selective-ACK builder and the heartbeat constructor were not
+established for firmware 9.75 or the 32-bit build, so [reliability: Timers
+summary](rdt/reliability.md#timers-summary) remains verified for firmware 9.31 only for those rows.
+INFERRED (unchanged, probable); unresolved (roles, remaining rows).
 
 The app package also contains a second, unused RDT library of the same version with the same 15
 handled types; the app loads the other one. READ. The 32-bit firmware's linked TLS internals

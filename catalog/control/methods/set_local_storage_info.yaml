@@ -70,7 +70,7 @@ errors:
 - code: 200
   trigger: 'Dispatcher: request has no id'
   label: invalid id
-errors_note: SetLocalDiskInfo has no tested failure branch.
+errors_note: 'The local-disk information setter has no tested failure branch.'
 examples:
 - name: set
   summary: Invented path and size

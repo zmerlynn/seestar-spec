@@ -100,11 +100,10 @@ The device's Kalay SDK talks to Kalay servers: UDP 10240, and TCP on 80, 443, 21
 [iotc/connect.md](iotc/connect.md). The device's cloud API use is in
 [cloud-auth.md](../auth/cloud-auth.md).
 
-Firmware 9.75 adds no outbound port-80 client. The updater's OTA version-information function
-reads a local manifest file and has no socket or HTTP code (READ); an earlier statement that the
-guider and updater query OTA versions over port 80 is withdrawn. See
-[updater R12f](../updater/ota-package-handling.md#ota-package-handling). The device's cloud
-messaging uses MQTT to the vendor IoT platform ([device-cloud-link.md](../auth/cloud-auth/device-cloud-link.md)).
+Firmware 9.75 adds no outbound port-80 client. The updater's OTA version-information function reads
+a local manifest file and has no socket or HTTP code (READ). See [updater
+R12f](../updater/ota-package-handling.md#ota-package-handling). The device's cloud messaging uses
+MQTT to the vendor IoT platform ([device-cloud-link.md](../auth/cloud-auth/device-cloud-link.md)).
 
 ## Framing per port family
 
@@ -262,7 +261,7 @@ stay firmware 9.31 unless tagged. Summary of what changed in these areas:
 | Area | Result | Where |
 |---|---|---|
 | Listener set | Unchanged on every process; no new port or listener. The updater uses the binary port at a second site (OTA session). READ | [ports.md R3d, R3e](ports.md) |
-| OTA version information | New function reading the local manifest file (no port-80 query; the earlier inference is withdrawn). READ | [OTA package handling R12f](../updater/ota-package-handling.md#ota-package-handling); [outbound traffic](#outbound-device-traffic) |
+| OTA version information | New function reading the local manifest file (no port-80 query). READ | [OTA package handling R12f](../updater/ota-package-handling.md#ota-package-handling); [outbound traffic](#outbound-device-traffic) |
 | Kalay SDK | Same version word and revision strings; logging stripped, handlers inlined (named handlers 24 to 15 is compiler inlining and folding); opcode set identical, no wire message added or removed. READ | [iotc/index.md: Firmware 9.75 build comparison](iotc/index.md#firmware-975-build-comparison) |
 | RDT | Compared parts unchanged; reliability constants not verified for 9.75 | [rdt.md: App / firmware comparison](rdt.md#app--firmware-comparison) |
 | LAN discovery | UDP 4720 handler unchanged in structure; helpers and reply builders not compared | [lan-discovery.md](lan-discovery.md) |
@@ -274,7 +273,7 @@ stay firmware 9.31 unless tagged. Summary of what changed in these areas:
 | Embedded keys | Identical; a third device-side public key is used by client authentication (location and role only) | [embedded-constants.md: Device-side client-authentication public key (location only)](../auth/cloud-auth/embedded-constants.md#device-side-client-authentication-public-key-location-only) |
 | Tunnel wire protocol | Unchanged. READ | [seestar-profile.md R69a](p2p-tunnel/seestar-profile.md) |
 | Secure communication over the tunnel | Tunnel clients are not required to obtain the key envelope; the internal-classification chain is INFERRED | [ports.md R15a](ports.md), [seestar-profile.md R81a](p2p-tunnel/seestar-profile.md) |
-| iOS 3.4.0 | SDK 4.3.6 build 3, login version `0x04030603`, parallel connect (READ; connectInfo composition unresolved); new endpoints `device-p2p/retrieve` and `my-device/remote-unbind` (request/response shapes now READ, no visible caller in unencrypted frameworks); `apple` authType; WeChat login-ticket; plain transform phrase | [endpoints.md R31a](../auth/account-login/endpoints.md), [http-api.md: Optional remote-feature catalogue](../auth/cloud-auth/http-api.md#optional-remote-feature-catalogue) |
+| iOS 3.4.0 | SDK 4.3.6 build 3, login version `0x04030603`, parallel connect (READ; connectInfo composition unresolved); new endpoints `device-p2p/retrieve` and `my-device/remote-unbind` (request/response shapes READ, no visible caller in unencrypted frameworks); `apple` authType; WeChat login-ticket; plain transform phrase | [endpoints.md R31a](../auth/account-login/endpoints.md), [http-api.md: Optional remote-feature catalogue](../auth/cloud-auth/http-api.md#optional-remote-feature-catalogue) |
 | Updater | `ota_abort` result 0 (524 while upgrading); `ota_get_session` member set; `OtaUpdate` is a broadcast | [index.md R11 to R11b](../updater/index.md) |
 
 Still unresolved after the sweep: file-server route and authorization parity ([HTTP download limiting](../media/files-and-album.md#http-download-limiting-firmware-975)), RDT

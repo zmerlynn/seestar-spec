@@ -14,7 +14,7 @@ Update the filter-wheel slot names and/or per-slot exposure times.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xd2130 (64-bit build) |
 
-Params are an object (or an array whose first element is an object). Optional names (string array) and exp_sec (number array, integers or reals); absent members leave the corresponding map unchanged, a member of the wrong container type is silently ignored, unknown keys are ignored and an empty object succeeds. A wrong element type fails with 105 (names) or 108 (exp_sec). Each array is applied through a setter that needs an open wheel and exactly as many entries as the current map. Members are applied in wire order and the first failure stops processing; changes already applied stay, with no rollback. Persists via SaveEFWName and SaveEFWExp.
+Params are an object (or an array whose first element is an object). Optional names (string array) and exp_sec (number array, integers or reals); absent members leave the corresponding map unchanged, a member of the wrong container type is silently ignored, unknown keys are ignored and an empty object succeeds. A wrong element type fails with 105 (names) or 108 (exp_sec). Each array is applied through a setter that needs an open wheel and exactly as many entries as the current map. Members are applied in wire order and the first failure stops processing; changes already applied stay, with no rollback. Persists via the slot-name and exposure-setting writers.
 
 Side effects: Replaces the in-memory name and/or exposure maps and writes them to persistent storage. No rollback, no timeout.
 

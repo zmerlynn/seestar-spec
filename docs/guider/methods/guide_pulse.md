@@ -14,9 +14,9 @@ Issue a manual guide pulse in one direction for a duration in milliseconds.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0x7f0d0 (64-bit build) |
 
-Parses direction (string, case-insensitive compass or up/down/left/right names) and amount (integer milliseconds) and performs a native manual Move on the mount or the optional AO device. It refuses while calibrating or guiding. A success reply (result 0) is returned after the Move call; whether the move has physically finished depends on the selected device subtype. Completion and guide events are unresolved.
+Parses direction (string, case-insensitive compass or up/down/left/right names) and amount (integer milliseconds) and performs a native manual Move on the mount or the optional AO device. It refuses while calibrating or guiding. A success reply (result 0) is returned after the pulse-movement call; whether the move has physically finished depends on the selected device subtype. Completion and guide events are unresolved.
 
-Side effects: Sends a manual guide pulse to the mount or AO device through the virtual Move call; no duration range check.
+Side effects: Sends a manual guide pulse to the mount or AO device through the virtual pulse-movement call; no duration range check.
 
 ## Request params
 
@@ -45,7 +45,7 @@ Side effects: Sends a manual guide pulse to the mount or AO device through the v
 | 105 | direction missing or not a string (two string-type check sites exist; the second, possibly the which selector, is unresolved) | `expected string param` |
 | 318 | Target guide device not connected | `device not connected` |
 | 319 | Guider is calibrating or guiding | `cannot issue guide pulse while calibrating or guiding` |
-| 320 | The native Move call fails | `move failed` |
+| 320 | The native pulse-movement call fails | `move failed` |
 | 200 | Dispatcher: request is not an object, is an empty object, or has no id | `invalid id` |
 | 100 | Dispatcher: no method of type string (a non-string method counts as missing) | `invalid request` |
 | 101 | Dispatcher: text fails to parse | `invalid JSON request: <reason> on line <n> ...` |

@@ -22,9 +22,17 @@ acceptance and starts a movement-watcher worker. The reply follows the acceptanc
 wait for arrival. READ. The watcher may turn tracking on at arrival. READ.
 
 R15. Progress is reported by the [`ScopeGoto`](../../../docs/control/events/ScopeGoto.md) function event (states `working`, then
-`complete`, `fail` or `cancel`) and, through tracking checks, [`ScopeTrack`](../../../docs/guider/events/ScopeTrack.md). Their order relative
-to the reply is not established. READ / unresolved. A client MUST NOT assume the reply arrives
-before the first event.
+`complete`, `fail` or `cancel`) and, through tracking checks, [`ScopeTrack`](../../../docs/guider/events/ScopeTrack.md). Either may
+reach the client before the reply: the order is a race. READ (firmware 9.31 64-bit, 9.75 64-bit and
+32-bit). The watcher is a new thread that emits `ScopeGoto` `working` as its first action, before
+it polls the mount, and nothing makes it wait for the reply. The handler builds and writes the reply
+only after the watcher has started. Events and replies are written straight to the socket under the
+same per-connection write lock, with no shared output queue, so bytes go out in whichever order the
+threads take that lock. At 4700 the imager forwards guider events from its relay-reader thread as
+they arrive, while a different thread writes the relayed reply, so even a guider-side order is not
+preserved. This is a property of the code, not a measured frequency. A client MUST NOT assume the
+reply arrives before the first event, and MUST accept `ScopeGoto` `working` before the reply (see
+[liveness-and-ordering R47](../session-handshake/liveness-and-ordering.md#ordering)).
 
 ```text
 client            imager:4700            guider:4400             mount
@@ -34,7 +42,7 @@ client            imager:4700            guider:4400             mount
   |                   |                       |<-- accepted --------|
   |                   |<-- result 0 ----------|  start watcher      |
   |<-- result 0 ------|                       |                     |
-  |<== ScopeGoto working (forwarded) =========|   (order vs reply not established)
+  |<== ScopeGoto working (forwarded) =========|   (may precede the reply: race)
   |<== ScopeTrack ... ========================|                     |
   |<== ScopeGoto complete | fail | cancel ====|                     |
 ```
@@ -190,7 +198,7 @@ Firmware 9.75 (64-bit): the imager-side sync also calls a compass-position-synce
 compass auto-calibration ([polar-alignment.md](../polar-alignment.md)). READ (call), unresolved
 (effect). The guider's mount handlers (goto, park, speed move, sync, move, tracking, position,
 state, equatorial mode, abort, fine move) are identical to 9.31 apart from compiler noise. READ.
-The move-round helpers (`scopeMoveRound`, `startScopeMoveRound`) have new signatures with extra
+The move-round helpers have new signatures with extra
 boolean parameters; the wire effect is unresolved.
 
 R32. [`scope_sync_planet`][ssp] takes no params. It works only in view mode 2 (Moon) or 3 (Sun),

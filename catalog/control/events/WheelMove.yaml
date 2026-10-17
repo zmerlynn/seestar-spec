@@ -1,12 +1,12 @@
 kind: event
 name: WheelMove
 summary: Filter-wheel movement start, completion with position, or failure.
-description: 'Sent by the wheel movement worker and by slot-count initialisation (open_wheel), after the
-  actual movement and position read. State family (NotifyState): caller-supplied state literal; error
-  and code only when the supplied code is greater than 0. The complete event uses the value overload and
-  carries position. No lapse_ms or route. Recipients: all retained 4700 sockets. No reply-before-event
-  order is established: the RPC reply that starts the worker and the worker''s events can arrive in either
-  order. No fixed cadence.'
+description: 'Sent by the wheel movement worker and by slot-count initialisation (open_wheel), after
+  the actual movement and position read. State family (S): caller-supplied state literal; error and
+  code only when the supplied code is greater than 0. The complete event uses the value overload and
+  carries position. No lapse_ms or route. Recipients: all retained 4700 sockets. No
+  reply-before-event order is established: the RPC reply that starts the worker and the worker''s
+  events can arrive in either order. No fixed cadence.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ

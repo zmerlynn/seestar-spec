@@ -112,8 +112,8 @@ payload:
           properties: *id001
         x-confidence: READ
         x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)
-      description: 'Saved metadata records on some successful operations: normally an array (FillRecord); enterShippingMode
-        inserts a single object. Failure paths may lack it.'
+      description: 'Saved metadata records on some successful operations: normally an array;
+        enterShippingMode inserts a single object. Failure paths may lack it.'
       x-required-when: some successful operations only
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FillRecord @0x1413d0, FillRecordItem @0x13fe50 (64-bit build)

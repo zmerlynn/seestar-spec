@@ -8,6 +8,11 @@ It sits on the JSON-RPC envelope and event framing ([session-handshake.md](sessi
 [device-state-and-settings.md](device-state-and-settings.md); firmware-level maintenance is in
 [maintenance.md](maintenance.md).
 
+App names: “Anti-Dew” is the `heater` output; “Auto Shut Down” is `auto_power_off` (the app says it
+has no effect after the device joins “Telescope Network”); “Indicator Brightness” and “Volume” are
+`light_brightness` and `beep_volume`; “Battery” and “Storage” are the status and storage sections.
+Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 ## Conventions
 
 RFC 2119 / RFC 8174 key words bind clients. Labels **READ**, **OBSERVED**, **INFERRED** and

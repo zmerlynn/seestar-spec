@@ -14,7 +14,7 @@ Stop the wheel movement thread and deselect the wheel.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xce7a0, CloseWheel @0x301930 (64-bit build) |
 
-Reads no parameters. If a wheel is selected, stops the movement thread (the stop can join the worker with no bounded timeout) and sets the selected id to -1. An already closed wheel succeeds. The 64-bit CloseWheel returns true on every ordinary branch, so no local error reply is established.
+Reads no parameters. If a wheel is selected, stops the movement thread (the stop can join the worker with no bounded timeout) and sets the selected id to -1. An already closed wheel succeeds. The 64-bit wheel-close helper returns true on every ordinary branch, so no local error reply is established.
 
 Side effects: Stops the wheel movement thread and clears the selected-wheel id; an in-flight move is abandoned.
 
@@ -48,7 +48,7 @@ Side effects: Stops the wheel movement thread and clears the selected-wheel id; 
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-The handler has a forwarded-error branch, but CloseWheel never fails in the inspected build.
+The handler has a forwarded-error branch, but the wheel-close helper never fails in the inspected build.
 
 ## Example
 

@@ -14,7 +14,7 @@ Start moving the filter wheel to slot 0, 1 or 2.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xce9c0, SetWheelPosition @0x3015c0 (64-bit build) |
 
-Requires an integer position as a bare scalar or the first array element; absent, empty, null or non-integer gives 107 (the message does not match the integer type). SetWheelPosition accepts exactly 0, 1 or 2; the range is checked first, then the wheel must be selected and not already moving. On success it writes the cached position and starts the movement thread without waiting, so the reply means the move was started, not completed. Thread-start failure forwards the thread-local code. The physical filter mapping is unresolved.
+Requires an integer position as a bare scalar or the first array element; absent, empty, null or non-integer gives 107 (the message does not match the integer type). The wheel-position setter accepts exactly 0, 1 or 2; the range is checked first, then the wheel must be selected and not already moving. On success it writes the cached position and starts the movement thread without waiting, so the reply means the move was started, not completed. Thread-start failure forwards the thread-local code. The physical filter mapping is unresolved.
 
 Side effects: Writes the cached wheel position and starts the wheel movement thread (physical motion), non-blocking. No elapsed-movement timeout in the handler.
 

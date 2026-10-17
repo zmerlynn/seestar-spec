@@ -8,9 +8,10 @@ grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
 side_effect_tier: C
 confidence: READ
 basis: static analysis of firmware 9.31, guider handler @0x73010 (64-bit build) (store @0x730dc)
-side_effects: Writes the guider SearchRegion field (an operational star-search setting). When reached
-  through an imager relay on the main table the same request can additionally trigger the reconnect callback
-  described in the guider service notes (relay eligibility is a separate outer gate).
+side_effects: 'Writes the guider search-region field (an operational star-search setting). When
+  reached through an imager relay on the main table the same request can additionally trigger the
+  reconnect callback described in the guider service notes (relay eligibility is a separate outer
+  gate).'
 request:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object

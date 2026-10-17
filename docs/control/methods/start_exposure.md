@@ -58,7 +58,7 @@ Side effects: Changes the frame selection and reconnect state and starts capture
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-Plan-size, video-start and thread-creation failures below StartExposure are propagated with their own codes and are not enumerated by the source.
+Plan-size, video-start and thread-creation failures below the exposure starter are propagated with their own codes and are not enumerated by the source.
 
 ## Example
 

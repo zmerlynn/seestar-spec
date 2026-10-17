@@ -1,25 +1,26 @@
 kind: method
 name: ota_get_session
 summary: 'Updater (firmware 9.75): read the state of the current OTA session.'
-description: Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both the 64-bit
-  and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had four). The handler
-  clears the thread error code and calls the updater's single OTA manager. The OTA methods do not use
-  the imager/guider secure-session layer (no such code in the updater); whether the JSON on 4350 is wrapped
-  is not established. Firmware update is a high-risk operation; do not send this to a real device to test
-  it. Replies with the session stage and the modules received so far
-  (firmware 9.75, 64-bit build, READ). The members are stage, target_main_version for a non-idle session, received_modules,
-  receiving_module (an array of entries with name, version and sha256, populated conditionally), missing_modules
-  and, after a failure, a failure object with stage, an optional module, an integer code and error text. Members
-  by stage (firmware 9.75, 64-bit build, READ). idle gives stage and received_modules. pending and receiving
-  give stage, target_main_version, received_modules, receiving_module and missing_modules. upgrading gives
-  stage, target_main_version and received_modules. complete gives stage and target_main_version only. fail
-  gives stage and target_main_version, then failure when the failure flag is set, then received_modules,
-  receiving_module and missing_modules. So one schema with every member always present is wrong. The
-  receiving_module array holds one object with name, version and sha256 when a receiving module is set
-  and found, otherwise it is empty (at most one element is INFERRED). The 32-bit build was not compared
-  member by member. When module is present inside failure, and the entry shape of missing_modules, are
-  unresolved. The app continues a new upgrade only when the
-  stage is blank, idle, fail or complete. The stage after each received module is INFERRED to be receiving.
+description: 'Firmware 9.75 (app 3.4.0) registers this method in the updater on TCP 4350, in both
+  the 64-bit and 32-bit builds; firmware 9.31 registered none of the OTA methods (its updater had
+  four). The handler clears the thread error code and calls the updater''s single OTA manager. The
+  OTA methods do not use the imager/guider secure-session layer (no such code in the updater);
+  whether the JSON on 4350 is wrapped is not established. Firmware update is a high-risk operation;
+  do not send this to a real device to test it. Replies with the session stage and the modules
+  received so far (firmware 9.75, 64-bit build, READ). The members are stage, target_main_version
+  for a non-idle session, received_modules, receiving_module (an array of entries with name, version
+  and sha256, populated conditionally), missing_modules and, after a failure, a failure object with
+  stage, an optional module, an integer code and error text. Members by stage (firmware 9.75, 64-bit
+  build, READ). idle gives stage and received_modules. pending and receiving give stage,
+  target_main_version, received_modules, receiving_module and missing_modules. upgrading gives
+  stage, target_main_version and received_modules. complete gives stage and target_main_version
+  only. fail gives stage and target_main_version, then failure when the failure flag is set, then
+  received_modules, receiving_module and missing_modules. So one schema with every member always
+  present is wrong. The receiving_module array holds one object with name, version and sha256 when a
+  receiving module is set and found, otherwise it is empty (at most one element is INFERRED).
+  Member-by-member 32-bit parity is unresolved. When module is present inside failure, and the entry
+  shape of missing_modules, are unresolved. The app continues a new upgrade only when the stage is
+  blank, idle, fail or complete. The stage after each received module is INFERRED to be receiving.'
 grade: PURE GETTER / probable
 side_effect_tier: B
 confidence: READ (firmware 9.75)

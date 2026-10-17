@@ -14,7 +14,7 @@ Start continuous guide-camera looping exposures.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0x74010 (64-bit build); MyDev::StartLooping @0x95360 |
 
-Calls MyDev::StartLooping, which schedules continuous capture on the guide camera. A success reply (result 0) means the start was accepted; frames and looping/exposure notifications arrive asynchronously with payloads and ordering unresolved. Params are not consumed.
+Schedules continuous capture on the guide camera. A success reply (result 0) means the start was accepted; frames and looping/exposure notifications arrive asynchronously with payloads and ordering unresolved. Params are not consumed.
 
 Side effects: Schedules continuous guide-camera capture.
 
@@ -45,7 +45,7 @@ Side effects: Schedules continuous guide-camera capture.
 
 | Code | Trigger | Label |
 |---|---|---|
-| 303 | StartLooping fails | `could not start looping` |
+| 303 | Starting guide-camera looping fails | `could not start looping` |
 | 200 | Dispatcher: request is not an object, is an empty object, or has no id | `invalid id` |
 | 100 | Dispatcher: no method of type string (a non-string method counts as missing) | `invalid request` |
 | 101 | Dispatcher: text fails to parse | `invalid JSON request: <reason> on line <n> ...` |

@@ -9,9 +9,9 @@ grade: MUTATOR / probable (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ
 basis: static analysis of firmware 9.31, handler @0xd09b0, CloseCamera @0x11cfc0 (64-bit build)
-side_effects: Initialises ViewPlan and stack shutdown, stops the view (StopView) and exposure (StopExposure),
-  releases image buffers, clears delayed config writes, closes the camera, resets the temperature checker.
-  Emits CameraStateChange on success.
+side_effects: 'Initialises ViewPlan and stack shutdown, stops the view and exposure, releases image
+  buffers, clears delayed config writes, closes the camera, resets the temperature checker. Emits
+  CameraStateChange on success.'
 request:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object

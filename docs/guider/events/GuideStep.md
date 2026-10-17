@@ -31,9 +31,9 @@ None. Events are sent by the device without a request; the payload is below.
 | `Frame` | integer | yes | - | Guide frame number. [READ] |
 | `Time` | number | yes | - | Seconds since guiding started, three decimals. Not the Timestamp. [READ (format); INFERRED (origin and unit)] |
 | `Mount` | string | yes | - | Mount name. The member is Mount, not GuideStep. [READ] |
-| `dx` | number | yes | - | Raw x displacement in camera pixels (GuideStepInfo+0x20), read and serialized with no scaling applied in this function. Unscaled, not arcseconds. [READ] |
-| `dy` | number | yes | - | Raw y displacement in camera pixels (GuideStepInfo+0x28), read and serialized with no scaling applied in this function. Unscaled, not arcseconds. [READ] |
-| `RADistanceRaw` | number | no | - | RA distance in arcseconds, despite the "Raw" name. The raw pixel pair at GuideStepInfo+0x38/+0x40 is multiplied by MyDev::GetCameraPixelScale() once at the top of the function, and this member is the first (RA) lane of that product. [READ] |
+| `dx` | number | yes | - | Raw x displacement in camera pixels, read and serialized with no scaling applied in this function. Unscaled, not arcseconds. [READ] |
+| `dy` | number | yes | - | Raw y displacement in camera pixels, read and serialized with no scaling applied in this function. Unscaled, not arcseconds. [READ] |
+| `RADistanceRaw` | number | no | - | RA distance in arcseconds, despite the "Raw" name. The stored raw RA/Dec displacement pair is multiplied by the camera pixel scale once at the top of the function, and this member is the first (RA) lane of that product. [READ] |
 | `DECDistanceRaw` | number | no | - | Dec distance in arcseconds, despite the "Raw" name. The second (Dec) lane of the same pixel-scale product as RADistanceRaw. [READ] |
 | `RADistanceGuide` | number | no | - | Guide RA distance; read and serialized with no scaling applied in this function (unlike RADistanceRaw). Probably pixels (INFERRED); not traced to its origin. [READ (no conversion in this function); INFERRED (scale)] |
 | `DECDistanceGuide` | number | no | - | Guide Dec distance; read and serialized with no scaling applied in this function (unlike DECDistanceRaw). Probably pixels (INFERRED); not traced to its origin. [READ (no conversion in this function); INFERRED (scale)] |

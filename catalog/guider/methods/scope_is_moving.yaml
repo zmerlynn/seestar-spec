@@ -1,14 +1,15 @@
 kind: method
 name: scope_is_moving
 summary: Read the mount motion status as a string.
-description: 'Needs a connected mount (315). While the guider movement watcher runs, returns the name
-  of the watcher''s stored move type (type 0 reported as move); otherwise the name of the type the driver''s
-  IsMoving reports. The value is one of none, ScopeGoto, ScopeHome, ScopeMoveToHorizon, move_home_horizon,
-  clear_backlash or move; manual and angle moves, and any unlisted type, report move. A client MUST treat
-  any value other than none as moving. Served by the guider process (TCP 4400); a client on the main command
-  port reaches it through the imager unknown-method relay, which is unavailable to guest-table clients.
-  The native-handler grade below does not describe the relay. Mount serial (firmware 9.31, READ): :GU,
-  last digit mapped to a movement type.'
+description: 'Needs a connected mount (315). While the guider movement watcher runs, returns the
+  name of the watcher''s stored move type (type 0 reported as move); otherwise the name of the type
+  the driver''s motion poll reports. The value is one of none, ScopeGoto, ScopeHome,
+  ScopeMoveToHorizon, move_home_horizon, clear_backlash or move; manual and angle moves, and any
+  unlisted type, report move. A client MUST treat any value other than none as moving. Served by the
+  guider process (TCP 4400); a client on the main command port reaches it through the imager
+  unknown-method relay, which is unavailable to guest-table clients. The native-handler grade below
+  does not describe the relay. Mount serial (firmware 9.31, READ): :GU, last digit mapped to a
+  movement type.'
 grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
 side_effect_tier: C
 confidence: READ

@@ -110,25 +110,38 @@ properties:
           @0x195420 (64-bit build)
       can_motion_monitor:
         type: boolean
-        description: 'Firmware 9.75, app 3.4.0: capability flag for motion monitor and motion detection. Reported from bit 0 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        description: 'Firmware 9.75, app 3.4.0: capability flag for motion monitor and motion
+          detection. Reported from bit 0 of a per-model capability mask (the bit assignment and the
+          flag names are INFERRED). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P
+          and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware;
+          INFERRED).'
         x-confidence: READ; meaning INFERRED
         x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
           build)
       can_dual_capture:
         type: boolean
-        description: 'Firmware 9.75, app 3.4.0: capability flag for dual capture. Reported from bit 1 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        description: 'Firmware 9.75, app 3.4.0: capability flag for dual capture. Reported from bit
+          1 of a per-model capability mask (the bit assignment and the flag names are INFERRED).
+          Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21,
+          S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
         x-confidence: READ; meaning INFERRED
         x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
           build)
       can_4k_quality:
         type: boolean
-        description: 'Firmware 9.75, app 3.4.0: capability flag for 4K quality. Reported from bit 2 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        description: 'Firmware 9.75, app 3.4.0: capability flag for 4K quality. Reported from bit 2
+          of a per-model capability mask (the bit assignment and the flag names are INFERRED). Mask
+          values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N
+          0x20 (model identifiers as named in the firmware; INFERRED).'
         x-confidence: READ; meaning INFERRED
         x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
           build)
       can_wide_mosaic_8k:
         type: boolean
-        description: 'Firmware 9.75, app 3.4.0: capability flag for 8K wide-camera mosaic. Reported from bit 3 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        description: 'Firmware 9.75, app 3.4.0: capability flag for 8K wide-camera mosaic. Reported
+          from bit 3 of a per-model capability mask (the bit assignment and the flag names are
+          INFERRED). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b,
+          S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
         x-confidence: READ; meaning INFERRED
         x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
           build)
@@ -140,7 +153,10 @@ properties:
           build)
       can_roi_smart_follow:
         type: boolean
-        description: 'Firmware 9.75, app 3.4.0: capability flag for region-of-interest smart follow. Reported from bit 5 of a per-model capability mask (the bit assignment and the flag names are INFERRED from earlier reports and were not re-traced). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b, S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
+        description: 'Firmware 9.75, app 3.4.0: capability flag for region-of-interest smart follow.
+          Reported from bit 5 of a per-model capability mask (the bit assignment and the flag names
+          are INFERRED). Mask values: unknown model 0x00, S30 and S50 0x14, S30P, S50P and S80 0x3b,
+          S30Plus 0x21, S50N 0x20 (model identifiers as named in the firmware; INFERRED).'
         x-confidence: READ; meaning INFERRED
         x-basis: static analysis of firmware 9.75, app 3.4.0 reports, handler get_device_state (64-bit
           build)

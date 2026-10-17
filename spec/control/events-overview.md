@@ -214,24 +214,26 @@ its card is under `control`. READ. `DarkLibrary`, `Client`, `DeviceChange`, `App
 `Alert` can also originate on 4400; their cards are under `control` because their primary channel
 is I. READ.
 
-R2. Names that the app knows but no firmware emits (`Align`, `StackExpLoop`, `ExposureTag`,
-`OtaUpdate`, `Unknown`, and definition-only constants) are not events of this protocol; see
-[variants-and-consumers.md: Names without a proved firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmware-emitter) (non-normative).
+R2. Names that Android app 3.3.2 knows but firmware 9.31 does not emit (`Align`, `StackExpLoop`, the
+local exposure-tag notification, `OtaUpdate`, the unknown-name sentinel, and definition-only
+constants) are not events of this protocol; see [variants-and-consumers.md: Names without a proved
+firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmware-emitter)
+(non-normative).
 
 ## Open questions
 
 1. Runtime reachability, per model, of retained guider functionality, and all guest, auth and
    remote-tunnel admission states. unresolved.
-2. Runtime activation and cadence of `MountUpdate` per model; any other firmware producer of
-   `Align` or `StackExpLoop`. unresolved.
-3. Event attribution in the stripped file server and opaque shared libraries. The 64-bit file
-   server binary (the file server) contains no code that constructs an `"Event":"<name>"`
-   JSON string anywhere; it only consumes the event stream (register/unregister callbacks, a
-   JSON-RPC client) and separately serves a file-browsing HTTP API, consistent with it being an
-   event consumer plus file server rather than an independent emitter. READ (absence of the
-   construction pattern, presence of the consumer pattern); INFERRED (role). Address-level
-   cross-reference of the consumer call sites, and a check of the other opaque shared libraries
-   (the vendor camera/media SDKs) for event-construction code of their own, remain unresolved.
+2. Runtime activation and cadence of `MountUpdate` per model; any other firmware producer of `Align`
+   or `StackExpLoop`. unresolved.
+3. Event attribution in the stripped file server and opaque shared libraries. The 64-bit file server
+   binary (the file server) contains no code that constructs an `"Event":"<name>"` JSON string
+   anywhere; it only consumes the event stream (register/unregister callbacks, a JSON-RPC client)
+   and separately serves a file-browsing HTTP API, consistent with it being an event consumer plus
+   file server rather than an independent emitter. READ (absence of the construction pattern,
+   presence of the consumer pattern); INFERRED (role). Address-level cross-reference of the consumer
+   call sites, and a check of the other opaque shared libraries (the vendor camera/media SDKs) for
+   event-construction code of their own, remain unresolved.
 4. Closed schemas for open extension maps, cached plan-target JSON, annotation objects and every
    `output_file` variant. unresolved.
 5. AutoFocus `result`/curve meaning; star-finder enum closure; polar-align transition conditions;
@@ -240,60 +242,51 @@ R2. Names that the app knows but no firmware emits (`Align`, `StackExpLoop`, `Ex
    displacement, time, star mass and corrections, solver field of view, algorithm status enums.
    Battery temperature and capacity are raw, unscaled integers (degrees Celsius and a raw
    0-to-100-style capacity reading) taken directly from the platform battery-charge/gauge calls,
-   with no device-side scaling; the temperature is compared directly against whole-degree
-   thresholds elsewhere in the same code, supporting plain Celsius. Balance-sensor x/y/z are raw
-   Q30-normalised gravity-vector doubles, likewise unscaled at the point they are packed into
-   `BalanceSensor`. READ.
-6a. Resolved: two static readings of `GuideStep`'s displacement members disagreed on which
-   members carry the arcsecond conversion. The address shift between the readings was just
-   firmware 9.31 vs 9.75, not an error by itself, but the two readings' actual conclusions
-   conflicted, so the catalog's prior claim (`dx`/`dy` = arcseconds, the four
-   `...Distance...` members unconverted) was independently re-verified byte-for-byte against
-   the 9.31 binary it cites as its own basis: the pixel pair multiplied once by the camera
-   pixel scale is serialized under `RADistanceRaw`/`DECDistanceRaw` (confirmed from the literal
-   key strings); `dx`/`dy` and `RADistanceGuide`/`DECDistanceGuide` are serialized with no
-   scaling in this function. The prior catalog claim had the assignment backwards. `GuideStep.yaml`
-   and [guider/index.md: Events](../guider/index.md#events) have been corrected: `dx`/`dy` are raw
-   camera pixels; `RADistanceRaw`/`DECDistanceRaw` are arcseconds despite the "Raw" name;
-   `RADistanceGuide`/`DECDistanceGuide` remain unconverted (probably pixels, INFERRED). READ.
-7. Per-worker F state reachability and flag settings; progress between begin and end on every
-   build; ordering across parent/child transitions and replies. unresolved.
-8. Balance thresholds are settled on the 64-bit build. `angle` is the tilt from vertical in
-   degrees. The first valid sample is sent. After that, a sample is sent only when it differs
-   from the last sent angle by more than 0.26 degrees and the 2-degree level lies between the two
-   values. A failed read is sent once, as code 1. READ (64-bit; 32-bit not checked). There is no
-   periodic compass or heading event: the compass reading is packed only into the `compass_sensor`
-   member of `get_device_state`, and the only compass event is `CompassCalibration`, sent during a
-   calibration run once per newly covered 30-degree sector (at most 12 per run). READ (64-bit and
-   32-bit, firmware 9.31 and 9.75). Throttles inside image-processing libraries: unresolved.
-9. Full D32 parity beyond the listed differences. A bounded comparison of RPC handlers and
-   event senders found no new differences in handlers: the 64-bit build has five extra handlers
+   with no device-side scaling; the temperature is compared directly against whole-degree thresholds
+   elsewhere in the same code, supporting plain Celsius. Balance-sensor x/y/z are raw Q30-normalised
+   gravity-vector doubles, likewise unscaled at the point they are packed into `BalanceSensor`.
+   READ.
+6a. Firmware 9.31: `GuideStep`'s `dx`/`dy` are raw camera pixels. `RADistanceRaw`/`DECDistanceRaw`
+    are multiplied once by the camera pixel scale and are arcseconds despite the "Raw" name.
+    `RADistanceGuide`/`DECDistanceGuide` are serialized without scaling (probably pixels, INFERRED).
+    READ. See [guider/index.md: Events](../guider/index.md#events).
+7. Per-worker F state reachability and flag settings; progress between begin and end on every build;
+   ordering across parent/child transitions and replies. unresolved.
+8. Balance thresholds on the 64-bit build: `angle` is the tilt from vertical in degrees. The first
+   valid sample is sent. After that, a sample is sent only when it differs from the last sent angle
+   by more than 0.26 degrees and the 2-degree level lies between the two values. A failed read is
+   sent once, as code 1. READ (64-bit; 32-bit not checked). There is no periodic compass or heading
+   event: the compass reading is packed only into the `compass_sensor` member of `get_device_state`,
+   and the only compass event is `CompassCalibration`, sent during a calibration run once per newly
+   covered 30-degree sector (at most 12 per run). READ (64-bit and 32-bit, firmware 9.31 and 9.75).
+   Throttles inside image-processing libraries: unresolved.
+9. Full D32 parity beyond the listed differences. A bounded comparison of RPC handlers and event
+   senders found no new differences in handlers: the 64-bit build has five extra handlers
    (`get_view_plan_stack_result`, `restore_view_plan_wide_setting`, `set_power_led_mode`,
-   `set_view_plan_target_name`, `set_view_plan_wide_setting`), all already recorded, and the
-   32-bit build has none of its own. The event senders match, except that only the 64-bit build
-   has the RTSP zoom path that sends `RTSP` with `roi_scale` and `route`. READ. Payload-level
-   parity of every event is still unresolved.
-10. The full set of non-zero `code` values per event. unresolved. The observed `Exposure` code
-    514 is settled: an exposure interrupted by an internal stop (view stop, camera close, stage
-    or mode change). A client stop gives 253 and exhausted retries give 238. READ. All three flow
-    through one shared mechanism (a generic `NotifyState` call, a thread-local error-code
-    variable, and a general per-worker state-detail code field) that is reused by at least two
-    dozen unrelated worker threads across the 64-bit imager, so a given numeric code is not
-    special to `Exposure` and the same code can recur under other event names. READ. Two further
-    codes resolved by the same route: `Stack`'s own `start` state is always sent with `code:0`
-    (matching the existing example); `ViewPlan` can also send 536 when a start is requested while
-    a ViewPlan/demonstrate sequence is already running — distinct from the existing 207 "second
-    schedule overlap" case (see `ViewPlan`'s `code` member). READ. `DeviceState` is not an event
-    name produced anywhere in the spec or found in the binary; a same-named internal routine
-    elsewhere in the binary is unrelated vendor-cloud telemetry, not a local client-facing event. Mount/goto
-    codes 270 and 527 were seen via a shared error-code helper in mount-command handlers but not
-    attributed to a specific event name. unresolved (full enumeration and the mount-code
-    attribution).
+   `set_view_plan_target_name`, `set_view_plan_wide_setting`), all already recorded, and the 32-bit
+   build has none of its own. The event senders match, except that only the 64-bit build has the
+   RTSP zoom path that sends `RTSP` with `roi_scale` and `route`. READ. Payload-level parity of
+   every event is still unresolved.
+10. The full set of non-zero `code` values per event. unresolved. The observed `Exposure` code 514
+    is settled: an exposure interrupted by an internal stop (view stop, camera close, stage or mode
+    change). A client stop gives 253 and exhausted retries give 238. READ. All three flow through
+    one shared mechanism (a generic state notification, a thread-local error-code variable, and a
+    general per-worker state-detail code field) that is reused by at least two dozen unrelated
+    worker threads across the 64-bit imager, so a given numeric code is not special to `Exposure`
+    and the same code can recur under other event names. READ. Two further codes use the same route:
+    `Stack`'s own `start` state is always sent with `code:0` (matching the existing example);
+    `ViewPlan` can also send 536 when a start is requested while a ViewPlan/demonstrate sequence is
+    already running — distinct from the existing 207 "second schedule overlap" case (see
+    `ViewPlan`'s `code` member). READ. `DeviceState` is not an event name produced anywhere in the
+    spec or found in the binary; a same-named internal routine elsewhere in the binary is unrelated
+    vendor-cloud telemetry, not a local client-facing event. Mount/goto codes 270 and 527 were seen
+    via a shared error-code helper in mount-command handlers but not attributed to a specific event
+    name. unresolved (full enumeration and the mount-code attribution).
 10a. Firmware 9.75: `MotionDetection` and `SkyReplay` both send function-state events (READ: the
-    send call is present in each worker), and the cards give the members of their state printers
-    (`width`, `height`, `points`; `camera_id`, `recorded_frame_count`, `video_frame_count`). The
-    shape of `points` and the states visited are unresolved, and because sky replay is
-    force-disabled whether `SkyReplay` appears on a live device is unresolved. `MotionMonitor`,
-    `SmartFollow`, `MotionDetection` and `SkyReplay` use the shared function-state envelope (READ).
+     send call is present in each worker), and the cards give the members of their state printers
+     (`width`, `height`, `points`; `camera_id`, `recorded_frame_count`, `video_frame_count`). The
+     shape of `points` and the states visited are unresolved, and because sky replay is
+     force-disabled whether `SkyReplay` appears on a live device is unresolved. `MotionMonitor`,
+     `SmartFollow`, `MotionDetection` and `SkyReplay` use the shared function-state envelope (READ).
 11. Firmware build and architecture of the observed sessions; complete RTSP and ViewPlan packets;
     reply-relative ordering on the wire. unresolved.

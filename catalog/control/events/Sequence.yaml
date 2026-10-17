@@ -1,15 +1,17 @@
 kind: event
 name: Sequence
 summary: Legacy autosave sequence and frame transitions.
-description: 'Legacy producers (AutoSavePlan, AutoSaveSequences, camera exposure) send one event per sequence/frame
-  transition, through the state family (state, plus error/code when code > 0) or the custom NotifySequence
-  (state plus id, frame, total_lapse_frame, total_frame). Inside a legacy plan run, the plan-progress helper
-  sends frame_start and frame_complete with state and progress only (the same object as get_app_state
-  progress). In a sequence-list run, start and complete carry state only, fail adds error and code
-  (253 is a client stop), and frame_complete alone carries id, frame, total_lapse_frame and total_frame;
-  frame_start is sent only inside a legacy plan run. No lapse_ms or route. Recipients: all retained 4700 sockets. The APK defines the name only;
-  no app event branch is established. No reply-before-event order is established: the RPC reply that starts
-  the worker and the worker''s events can arrive in either order. No fixed cadence.'
+description: 'Legacy producers (legacy-plan capture, sequence-list capture, camera exposure) send
+  one event per sequence/frame transition, through the state family (state, plus error/code when
+  code > 0) or the custom sequence-progress notifier (state plus id, frame, total_lapse_frame,
+  total_frame). Inside a legacy plan run, the plan-progress helper sends frame_start and
+  frame_complete with state and progress only (the same object as get_app_state progress). In a
+  sequence-list run, start and complete carry state only, fail adds error and code (253 is a client
+  stop), and frame_complete alone carries id, frame, total_lapse_frame and total_frame; frame_start
+  is sent only inside a legacy plan run. No lapse_ms or route. Recipients: all retained 4700
+  sockets. The APK defines the name only; no app event branch is established. No reply-before-event
+  order is established: the RPC reply that starts the worker and the worker''s events can arrive in
+  either order. No fixed cadence.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -54,25 +56,29 @@ payload:
     id:
       type: integer
       description: Sequence id.
-      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-required-when: 'state frame_complete in a sequence-list run (sequence-progress notifier
+        producer)'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
     frame:
       type: integer
       description: Started or completed frame index.
-      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-required-when: 'state frame_complete in a sequence-list run (sequence-progress notifier
+        producer)'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
     total_lapse_frame:
       type: integer
       description: Completed frame total across the sequence.
-      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-required-when: 'state frame_complete in a sequence-list run (sequence-progress notifier
+        producer)'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
     total_frame:
       type: integer
       description: Planned frame total.
-      x-required-when: state frame_complete in a sequence-list run (NotifySequence producer)
+      x-required-when: 'state frame_complete in a sequence-list run (sequence-progress notifier
+        producer)'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySequence @0xaf7f0
     progress:

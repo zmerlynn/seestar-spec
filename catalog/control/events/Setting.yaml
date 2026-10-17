@@ -1,28 +1,32 @@
 kind: event
 name: Setting
 summary: Sparse notification of changed device settings, with serializer-added companions.
-description: 'Broadcast to all retained sockets when settings change, from set_setting and from several
-  internal producers; no timer, debounce or transmitted list of changed keys. Emitted by the main imager
-  on TCP 4700 (channel I) and by the auxiliary (wide) imager on TCP 4702 (channel W), whose event lines
-  the main process forwards onto 4700; wide_cam tells the camera origin. Not a full get_setting snapshot.
-  Producers and their shapes: (1) NotifySettingChange calls the settings serializer filtered to the one
-  changed key, then appends wide_cam. The filtered serializer also always adds stack with light_duration_min,
-  brightness, contrast, saturation and dbe_enable, so even an unrecognized key does not yield an empty
-  event. Filterable top-level members (rec_res_index, ap_changed, light_brightness, typec_mode, alpaca_enable,
-  password, connect_lock) are subject to the same non-P2 and capability conditions as in get_setting;
-  rtsp_roi_index appears only here, never in get_setting. (2) SetStackSetting writes only the changed
-  members, under stack, exp_ms or top level, plus wide_cam; this can carry members that get_setting lists
-  as full-only. (3) SetImgAdjustParams writes stack.brightness, contrast, saturation, dbe_enable plus wide_cam.
-  (4) CheckStackTime writes exp_ms.stack_l plus wide_cam. (5) NotifyRemoteChange writes remote_joined.
-  (6) The set_setting camera-selection branch adds selected_cam. Direct setters suppress unchanged values
-  or normalize them, so suppression rules differ per producer. The payload is open: other serializer members
-  may appear and the complete per-member inventory is the get_setting result. On the 32-bit build light_brightness,
-  rtsp_roi_scale and hdr are absent and the setter path does not write scene_shooting_duration_min. Both
-  builds have the same six producers and the same filtered-notify keys (ap_changed from the AP change notifier
-  and the AP-setting RPC, mosaic, drizzle2x, wide_denoise, wide_cross_offset_show); wide_cross_offset_show is
-  sent from the camera page setter on the 32-bit build and from the camera streaming function on the 64-bit
-  build. Other differences are serializer members only. The password member is sent in clear when selected. Family: custom; no
-  state or error. APK consumers: DeviceEventPart; DeviceService settings handler.'
+description: 'Broadcast to all retained sockets when settings change, from set_setting and from
+  several internal producers; no timer, debounce or transmitted list of changed keys. Emitted by the
+  main imager on TCP 4700 (channel I) and by the auxiliary (wide) imager on TCP 4702 (channel W),
+  whose event lines the main process forwards onto 4700; wide_cam tells the camera origin. Not a
+  full get_setting snapshot. Producers and their shapes: (1) filtered settings notifier calls the
+  settings serializer filtered to the one changed key, then appends wide_cam. The filtered
+  serializer also always adds stack with light_duration_min, brightness, contrast, saturation and
+  dbe_enable, so even an unrecognized key does not yield an empty event. Filterable top-level
+  members (rec_res_index, ap_changed, light_brightness, typec_mode, alpaca_enable, password,
+  connect_lock) are subject to the same non-P2 and capability conditions as in get_setting;
+  rtsp_roi_index appears only here, never in get_setting. (2) stack-settings updater writes only the
+  changed members, under stack, exp_ms or top level, plus wide_cam; this can carry members that
+  get_setting lists as full-only. (3) image-adjustment updater writes stack.brightness, contrast,
+  saturation, dbe_enable plus wide_cam. (4) stack-exposure checker writes exp_ms.stack_l plus
+  wide_cam. (5) remote-state notifier writes remote_joined. (6) The set_setting camera-selection
+  branch adds selected_cam. Direct setters suppress unchanged values or normalize them, so
+  suppression rules differ per producer. The payload is open: other serializer members may appear
+  and the complete per-member inventory is the get_setting result. On the 32-bit build
+  light_brightness, rtsp_roi_scale and hdr are absent and the setter path does not write
+  scene_shooting_duration_min. Both builds have the same six producers and the same filtered-notify
+  keys (ap_changed from the AP change notifier and the AP-setting RPC, mosaic, drizzle2x,
+  wide_denoise, wide_cross_offset_show); wide_cross_offset_show is sent from the camera page setter
+  on the 32-bit build and from the camera streaming function on the 64-bit build. Other differences
+  are serializer members only. The password member is sent in clear when selected. Family: custom;
+  no state or error. APK consumers: the app event dispatcher; the app device service settings
+  handler.'
 grade: PURE GETTER
 side_effect_tier: B
 confidence: READ
@@ -53,14 +57,15 @@ payload:
     wide_cam:
       type: boolean
       description: Camera origin (true for the wide camera).
-      x-required-when: appended by NotifySettingChange, SetStackSetting, SetImgAdjustParams and CheckStackTime;
-        not established for NotifyRemoteChange
+      x-required-when: 'appended by filtered settings notifier, stack-settings updater,
+        image-adjustment updater and stack-exposure checker; not established for remote-state
+        notifier'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySettingChange @0xf24e0, SetStackSetting @0x19b230
     stack:
       $ref: ../schemas/SettingEventStack.yaml
-      x-required-when: always on the NotifySettingChange filtered path; SetStackSetting or SetImgAdjustParams
-        when they change a stack member
+      x-required-when: 'always on the filtered settings-notification path; stack-settings updater or
+        image-adjustment updater when they change a stack member'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, GetSetting @0xea600 (filtered path); SetStackSetting @0x19b230, SetImgAdjustParams @0x1955b0
     exp_ms:
@@ -69,45 +74,46 @@ payload:
       properties:
         stack_l:
           type: integer
-          description: Stack exposure, milliseconds. Written by SetStackSetting and CheckStackTime.
+          description: 'Stack exposure, milliseconds. Written by stack-settings updater and
+            stack-exposure checker.'
           x-confidence: READ
           x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230, CheckStackTime
         stack_l_auto:
           type: boolean
-          description: Written by SetStackSetting.
+          description: 'Written by stack-settings updater.'
           x-confidence: READ
           x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
-      x-required-when: SetStackSetting exposure change, CheckStackTime
+      x-required-when: 'stack-settings updater exposure change, stack-exposure checker'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230, CheckStackTime
     user_stack_sim:
       type: boolean
-      x-required-when: SetStackSetting change
+      x-required-when: 'stack-settings updater change'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
     stack_after_goto:
       type: boolean
-      x-required-when: SetStackSetting change
+      x-required-when: 'stack-settings updater change'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
     auto_3ppa_calib:
       type: boolean
-      x-required-when: SetStackSetting change
+      x-required-when: 'stack-settings updater change'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
     auto_master_dark:
       type: boolean
-      x-required-when: SetStackSetting change
+      x-required-when: 'stack-settings updater change'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
     expert_mode:
       type: boolean
-      x-required-when: SetStackSetting change
+      x-required-when: 'stack-settings updater change'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, SetStackSetting @0x19b230
     remote_joined:
       type: boolean
-      x-required-when: NotifyRemoteChange
+      x-required-when: 'remote-state notifier'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifyRemoteChange @0xaeaa0
     selected_cam:
@@ -226,7 +232,8 @@ payload:
   x-basis: static analysis of firmware 9.31, NotifySettingChange @0xf24e0, GetSetting @0xea600
 examples:
 - name: filtered-hdr
-  summary: NotifySettingChange path for a selected key (READ shape, not captured; values invented)
+  summary: 'filtered settings notifier path for a selected key (READ shape, not captured; values
+    invented)'
   of: payload
   payload:
     Event: Setting
@@ -240,7 +247,7 @@ examples:
       dbe_enable: false
     wide_cam: false
 - name: direct-stack-setting
-  summary: SetStackSetting direct member (READ shape; values invented)
+  summary: 'direct member from the stack-settings updater (READ shape; values invented)'
   of: payload
   payload:
     Event: Setting
@@ -249,7 +256,7 @@ examples:
       save_discrete_frame: true
     wide_cam: false
 - name: remote-joined
-  summary: NotifyRemoteChange (READ shape; value invented)
+  summary: 'remote-state notifier (READ shape; value invented)'
   of: payload
   payload:
     Event: Setting

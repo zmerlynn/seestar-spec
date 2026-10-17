@@ -1,25 +1,27 @@
 kind: event
 name: Stack
 summary: 'Stacking progress: per-frame counters from the frame producer and function-state updates.'
-description: 'Two producers share Event Stack; select by members. (1) Frame producer NotifyStackState: always
-  writes state, frame_type, stacked_frame, dropped_frame, total_frame, error, lapse_ms and code (error/code
-  even when code is 0, so they do not signal failure), plus file_name for a non-empty name; on the 64-bit
-  build it is sent only as frame_complete, once per accepted frame, by the live-stack worker (both direct
-  callers pass a null file name); no producer of a custom start or fail was found, and stack failures surface
-  through the function producer (READ for absence; INFERRED for the alternative path). The 32-bit callers were
-  not decoded. Neither the S nor the function fail-only rule applies to it. (2) Function producer
-  (ExtStackState): Function-state family (SendFuncEvent): state is always written; stage only when non-empty;
-  lapse_ms when the timer is started or the state is terminal; code and error at fail even when the stored
-  code is 0 (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
-  notifications can be suppressed while the function cache still changes, so a receiver cannot rely on seeing
-  every transition. Its ordinary branch adds frame_errcode, stacked/dropped counts and annotation/scene flags
-  without frame_type or total_frame; other branches add mosaic, video, photometry and output members. The
-  32-bit build lacks the wide-mosaic, scene_shooting, auto_exp_us and video file_saved branches. Cadence
-  follows frame rate. OBSERVED (2026-10-12, firmware not matched to 9.31): during a stored plan, one Stack
-  pair per exposure cycle about 0.1 ms apart, one of each producer shape. Channels: imager 4700 and auxiliary
-  4702 (forwarded to 4700). No reply-before-event order is established: the RPC reply that starts the worker
-  and the worker''s events can arrive in either order. No fixed cadence. deepstack_finish is an upload-record
-  field, not a Stack member.'
+description: 'Two producers share Event Stack; select by members. (1) Frame producer stack-frame
+  notifier: always writes state, frame_type, stacked_frame, dropped_frame, total_frame, error,
+  lapse_ms and code (error/code even when code is 0, so they do not signal failure), plus file_name
+  for a non-empty name; on the 64-bit build it is sent only as frame_complete, once per accepted
+  frame, by the live-stack worker (both direct callers pass a null file name); no producer of a
+  custom start or fail was found, and stack failures surface through the function producer (READ for
+  absence; INFERRED for the alternative path). The 32-bit callers were not decoded. Neither the S
+  nor the function fail-only rule applies to it. (2) Function producer (stack-state detail):
+  Function-state family (F): state is always written; stage only when non-empty; lapse_ms when the
+  timer is started or the state is terminal; code and error at fail even when the stored code is 0
+  (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely
+  on seeing every transition. Its ordinary branch adds frame_errcode, stacked/dropped counts and
+  annotation/scene flags without frame_type or total_frame; other branches add mosaic, video,
+  photometry and output members. The 32-bit build lacks the wide-mosaic, scene_shooting, auto_exp_us
+  and video file_saved branches. Cadence follows frame rate. OBSERVED (2026-10-12, firmware not
+  matched to 9.31): during a stored plan, one Stack pair per exposure cycle about 0.1 ms apart, one
+  of each producer shape. Channels: imager 4700 and auxiliary 4702 (forwarded to 4700). No
+  reply-before-event order is established: the RPC reply that starts the worker and the worker''s
+  events can arrive in either order. No fixed cadence. deepstack_finish is an upload-record field,
+  not a Stack member.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ; both producer shapes OBSERVED (2026-10-12)
@@ -58,10 +60,10 @@ payload:
       - cancel
       - start
       - frame_complete
-      description: 'Function producer: idle, working, complete, fail, cancel. Frame producer (NotifyStackState):
-        frame_complete only on the 64-bit build, once per accepted frame; it does not end the operation.
-        start is listed by the app but no firmware producer was found (READ, absence); kept so clients
-        accept it. No custom fail producer exists.'
+      description: 'Function producer: idle, working, complete, fail, cancel. Frame producer
+        (stack-frame notifier): frame_complete only on the 64-bit build, once per accepted frame; it
+        does not end the operation. start is listed by the app but no firmware producer was found
+        (READ, absence); kept so clients accept it. No custom fail producer exists.'
       x-confidence: READ; working and frame_complete OBSERVED (2026-10-12)
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0; ExtStackState @0x198840;
         NotifyStackState @0x197be0, callers @0x19cbc0 and @0x19dc6c
@@ -104,7 +106,7 @@ payload:
     frame_type:
       type: string
       description: Frame-type name from the legacy frame-type table.
-      x-required-when: frame producer (NotifyStackState), always
+      x-required-when: 'frame producer (stack-frame notifier), always'
       x-confidence: READ; OBSERVED (2026-10-12)
       x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0
     stacked_frame:
@@ -122,7 +124,7 @@ payload:
     total_frame:
       type: integer
       description: Planned total (legacy).
-      x-required-when: frame producer (NotifyStackState), always
+      x-required-when: 'frame producer (stack-frame notifier), always'
       x-confidence: READ; OBSERVED (2026-10-12)
       x-basis: static analysis of firmware 9.31, NotifyStackState @0x197be0
     file_name:

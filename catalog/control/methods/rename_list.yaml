@@ -43,10 +43,10 @@ errors:
   trigger: A list with the new display name already exists
   label: xml item already exists
 - code: 234
-  trigger: 'Lower SetAttr step: configuration file name storage is empty'
+  trigger: 'Lower XML attribute-setting step: configuration file name storage is empty'
   label: xml file name is empty
 - code: 229
-  trigger: 'Lower SetAttr step: the XML key could not be opened'
+  trigger: 'Lower XML attribute-setting step: the XML key could not be opened'
   label: fail to open xml key
 - code: 200
   trigger: 'Dispatcher: request has no id'
@@ -54,8 +54,8 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: Lower-level codes 234 and 229 are established for the 64-bit SetAttr only; 32-bit equivalence
-  is not asserted.
+errors_note: 'Lower-level codes 234 and 229 are established for the 64-bit XML attribute-setting
+  only; 32-bit equivalence is not asserted.'
 examples:
 - name: rename
   of: request

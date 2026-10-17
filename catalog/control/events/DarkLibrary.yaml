@@ -1,29 +1,32 @@
 kind: event
 name: DarkLibrary
 summary: Progress and state of dark-frame (dark library) creation, from the imager or the guider.
-description: 'Sent while a master dark is captured and built. Imager producer: StartDark/StartBlockDark
-  run a named DarkLibrary function, so the payload follows the function-state family. Function-state family
-  (SendFuncEvent): state is always written; stage only when non-empty; lapse_ms when the timer is started
-  or the state is terminal; code and error at fail even when the stored code is 0 (cancel omits them);
-  route optional. A null or nameless detail sends nothing, and non-working notifications can be suppressed
-  while the function cache still changes, so a receiver cannot rely on seeing every transition. The guider
-  (TCP 4400) has its own dark-library producer with states start, building, complete and fail; the imager
-  forwards guider event lines unchanged onto TCP 4700 (the auxiliary imager process suppresses that forwarding).
-  Recipients: every retained socket of the emitting server (no verified/master filter). No fixed progress
-  rate. No reply-before-event order is established: the RPC reply that starts the worker and the worker''s
-  events can arrive in either order. Working events are sent only when the whole-number percentage changes,
-  so a client must not expect one event per frame. Stack processing can also start this workflow. Imager
-  worker: on the main-camera process it moves the filter wheel to slot 0 (the wide-camera process has no
-  light-blocking step and the mount is not moved), sets the stack exposure and sensor hot-pixel correction
-  on (gain unchanged), captures five raw frames, rejects a frame whose mean exceeds the model''s dark threshold
-  (the first rejection repeats the wheel move once; a second, or any without a wheel, fails with 320), averages
-  the accepted frames into MasterDark_<exposure>_<YYYYMMDD-hhmmss>.fit in the private dark-library directory
-  (named by exposure and local time, not temperature), deletes older masters with the same exposure, and
-  restores the previous filter slot (READ). Failure codes: 238 (exposure), 249 (memory), 300 (frame size),
-  320 (bright frame not cured by one filter retry), 207 (other), or the filter-move error (READ). A stop (stop_create_dark, or stop_func naming DarkLibrary) ends the run with
-  cancel, which carries no code or error on the wire (internal code 253, not sent); INFERRED from the F rules.
-  iscope_stop_view {stage: DarkLibrary} reaches only a dark run nested under View (READ).
-  APK consumer expectation, not a firmware field: an app-state DTO declares has_offset for DarkLibrary;
+description: 'Sent while a master dark is captured and built. Imager producer: the dark-capture
+  starters run a named DarkLibrary function, so the payload follows the function-state family.
+  Function-state family (F): state is always written; stage only when non-empty; lapse_ms when the
+  timer is started or the state is terminal; code and error at fail even when the stored code is 0
+  (cancel omits them); route optional. A null or nameless detail sends nothing, and non-working
+  notifications can be suppressed while the function cache still changes, so a receiver cannot rely
+  on seeing every transition. The guider (TCP 4400) has its own dark-library producer with states
+  start, building, complete and fail; the imager forwards guider event lines unchanged onto TCP 4700
+  (the auxiliary imager process suppresses that forwarding). Recipients: every retained socket of
+  the emitting server (no verified/master filter). No fixed progress rate. No reply-before-event
+  order is established: the RPC reply that starts the worker and the worker''s events can arrive in
+  either order. Working events are sent only when the whole-number percentage changes, so a client
+  must not expect one event per frame. Stack processing can also start this workflow. Imager worker:
+  on the main-camera process it moves the filter wheel to slot 0 (the wide-camera process has no
+  light-blocking step and the mount is not moved), sets the stack exposure and sensor hot-pixel
+  correction on (gain unchanged), captures five raw frames, rejects a frame whose mean exceeds the
+  model''s dark threshold (the first rejection repeats the wheel move once; a second, or any without
+  a wheel, fails with 320), averages the accepted frames into
+  MasterDark_<exposure>_<YYYYMMDD-hhmmss>.fit in the private dark-library directory (named by
+  exposure and local time, not temperature), deletes older masters with the same exposure, and
+  restores the previous filter slot (READ). Failure codes: 238 (exposure), 249 (memory), 300 (frame
+  size), 320 (bright frame not cured by one filter retry), 207 (other), or the filter-move error
+  (READ). A stop (stop_create_dark, or stop_func naming DarkLibrary) ends the run with cancel, which
+  carries no code or error on the wire (internal code 253, not sent); INFERRED from the F rules.
+  iscope_stop_view {stage: DarkLibrary} reaches only a dark run nested under View (READ). APK
+  consumer expectation, not a firmware field: an app-state DTO declares has_offset for DarkLibrary;
   no producer of it is established.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B

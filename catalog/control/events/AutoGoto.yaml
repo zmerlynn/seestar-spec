@@ -1,21 +1,24 @@
 kind: event
 name: AutoGoto
 summary: Auto-goto (slew, solve, re-centre) progress from the function detail and the legacy retry notifier.
-description: 'Sent by AutoGotoFunc named transitions (F) and by the legacy NotifyAutoGotoState retry path (start,
-  working, delay, complete, fail with page, tag, func). Function-state family (F): SendFuncEvent formats the named
-  function detail. state is always present; stage only when non-empty; lapse_ms while the timer runs or at a terminal
-  state; error and code at fail (even when the stored code is zero; lookup failure gives ''fail to operate''); cancel
-  omits code and error; route is optional function ancestry. The sender does no deduplication and needs no preceding
-  working event. Detail flags can suppress the working or non-working sends while the cached function tree still
-  changes, so a receiver can miss transitions. Its formatter adds count and hint. Child ScopeGoto, Exposure, PlateSolve
-  and AutoFocus events can arrive before the AutoGoto completion. Mount errors during goto are sent separately as
-  AutoGotoStep. iscope_stop_view with stage AutoGoto stops it. The legacy direct event always carries page and func,
-  and tag when non-empty; start adds target_ra_dec (only when the RA is not the -999 sentinel) and target_name (only
-  when non-empty); working adds count; any legacy state adds error and code when the worker passes a non-zero code.
-  The F path adds hint, target_name and target_ra_dec to the F set. No further members are known; this union is
-  complete (INFERRED: no third producer was found). Channel I (TCP 4700). Delivery: ordinary broadcast
-  to every retained socket of the emitting server (master, guest and never-verified sockets alike); no cadence,
-  delivery or ordering guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
+description: 'Sent by the auto-goto worker''s named transitions (F) and by the legacy auto-goto
+  state notifier retry path (start, working, delay, complete, fail with page, tag, func).
+  Function-state family (F): the event formatter formats the named function detail. state is always
+  present; stage only when non-empty; lapse_ms while the timer runs or at a terminal state; error
+  and code at fail (even when the stored code is zero; lookup failure gives ''fail to operate'');
+  cancel omits code and error; route is optional function ancestry. The sender does no deduplication
+  and needs no preceding working event. Detail flags can suppress the working or non-working sends
+  while the cached function tree still changes, so a receiver can miss transitions. Its formatter
+  adds count and hint. Child ScopeGoto, Exposure, PlateSolve and AutoFocus events can arrive before
+  the AutoGoto completion. Mount errors during goto are sent separately as AutoGotoStep.
+  iscope_stop_view with stage AutoGoto stops it. The legacy direct event always carries page and
+  func, and tag when non-empty; start adds target_ra_dec (only when the RA is not the -999 sentinel)
+  and target_name (only when non-empty); working adds count; any legacy state adds error and code
+  when the worker passes a non-zero code. The F path adds hint, target_name and target_ra_dec to the
+  F set. No further members are known; this union is complete (INFERRED: no third producer was
+  found). Channel I (TCP 4700). Delivery: ordinary broadcast to every retained socket of the
+  emitting server (master, guest and never-verified sockets alike); no cadence, delivery or ordering
+  guarantee relative to RPC replies or other events. APK 3.3.2 consumes it.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -55,8 +58,8 @@ payload:
       - cancel
       - start
       - delay
-      description: 'Union. F: idle, working, complete, fail, cancel. Legacy NotifyAutoGotoState: start, working,
-        delay, complete, fail.'
+      description: 'Union. F: idle, working, complete, fail, cancel. Legacy auto-goto state
+        notifier: start, working, delay, complete, fail.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0, NotifyAutoGotoState @0x170500
     stage:

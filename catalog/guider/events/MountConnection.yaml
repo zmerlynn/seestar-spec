@@ -1,18 +1,19 @@
 kind: event
 name: MountConnection
 summary: Guider notification that the mount serial device was removed or reconnected.
-description: Custom emitter (not one of the N/S/F helper families). Sent when the guider's serial refresh detects
-  that the mount serial device disconnected or reconnected. No state, code or error members. Sent by the guider
-  (zwoair_guider) event server on TCP 4400 to every retained connection, with no verified or master/guest filter.
-  The main imager process, which holds a client connection to 4400, recognizes peer event lines by the exact
-  substring "Event":" and re-broadcasts the original line unchanged to all retained connections on TCP 4700,
-  so ordinary 4700 clients see it too; the auxiliary imager process (4702) deliberately does not forward 4400
-  events, avoiding a duplicate copy. Because the forwarding test is lexical, the forwarded line is byte-identical
-  to the guider's. No universal order relative to RPC replies or other events, no sequence number, no replay.
-  The imager installs a local callback for MountConnection (its handleMountConnection path); that local handling
-  does not establish a different wire shape. No direct APK consumer is established. The connection members
-  of scope_get_state overlap, but an identical result is not established. 32-bit payload parity beyond the
-  counterpart emitter is unresolved.
+description: 'Custom emitter (not one of the N/S/F helper families). Sent when the guider''s serial
+  refresh detects that the mount serial device disconnected or reconnected. No state, code or error
+  members. Sent by the guider (zwoair_guider) event server on TCP 4400 to every retained connection,
+  with no verified or master/guest filter. The main imager process, which holds a client connection
+  to 4400, recognizes peer event lines by the exact substring "Event":" and re-broadcasts the
+  original line unchanged to all retained connections on TCP 4700, so ordinary 4700 clients see it
+  too; the auxiliary imager process (4702) deliberately does not forward 4400 events, avoiding a
+  duplicate copy. Because the forwarding test is lexical, the forwarded line is byte-identical to
+  the guider''s. No universal order relative to RPC replies or other events, no sequence number, no
+  replay. The imager installs a local callback for MountConnection (its mount-connection handler);
+  that local handling does not establish a different wire shape. No direct APK consumer is
+  established. The connection members of scope_get_state overlap, but an identical result is not
+  established. 32-bit payload parity beyond the counterpart emitter is unresolved.'
 grade: PURE GETTER (shape only; observation for the receiver)
 side_effect_tier: B
 confidence: READ

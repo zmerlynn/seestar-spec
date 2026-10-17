@@ -14,7 +14,7 @@ Query the connected mount for its beep-volume choices and current selection.
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0x808a0 (64-bit build); mount-controller volume query (ScopeAM5) @0xf0d50 |
 
-Performs a live device query (ScopeAM5::GetBeepVolume) and formats the choice list plus the current index. Params are not consumed. Mount serial (firmware 9.31, READ): :GBu.
+Performs a live device query and formats the choice list plus the current index. Params are not consumed. Mount serial (firmware 9.31, READ): :GBu.
 
 Side effects: Live sound-volume query to the mount controller; no setting is changed.
 

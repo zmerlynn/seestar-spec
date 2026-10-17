@@ -1,15 +1,15 @@
 kind: event
 name: ScopeGoto
 summary: Mount slew worker state (guider slew, or the imager's nested goto parent).
-description: 'F family, two producers. (1) The guider (TCP 4400) names its slew worker ScopeGoto when
-  scope_goto starts an asynchronous slew; its callback may add close. The imager forwards guider event
-  lines unchanged to TCP 4700 (the auxiliary imager process does not forward guider events). (2) The imager
-  itself creates a nested ScopeGoto function under AutoGoto and wide-mosaic operations; its callbacks
-  add cur_ra_dec and dist_deg. These additions are not on every event. Both reach every retained 4700
-  socket; the guider copy also goes to 4400 clients. CheckMoveFunc handles the terminal state and may
-  switch tracking on, so a ScopeTrack event can follow. Order relative to the scope_goto reply is not
-  established. F errors describe the slew, not a guide frame. APK consumers: the legacy scope-goto handler
-  and the app-state goto handler.'
+description: 'F family, two producers. (1) The guider (TCP 4400) names its slew worker ScopeGoto
+  when scope_goto starts an asynchronous slew; its callback may add close. The imager forwards
+  guider event lines unchanged to TCP 4700 (the auxiliary imager process does not forward guider
+  events). (2) The imager itself creates a nested ScopeGoto function under AutoGoto and wide-mosaic
+  operations; its callbacks add cur_ra_dec and dist_deg. These additions are not on every event.
+  Both reach every retained 4700 socket; the guider copy also goes to 4400 clients. The movement
+  watcher handles the terminal state and may switch tracking on, so a ScopeTrack event can follow.
+  Order relative to the scope_goto reply is not established. F errors describe the slew, not a guide
+  frame. APK consumers: the legacy scope-goto handler and the app-state goto handler.'
 grade: PURE GETTER (observation only; receiving the event changes nothing)
 side_effect_tier: B
 confidence: READ

@@ -49,7 +49,7 @@ Side effects: 64-bit build: overwrites the shared focal-length setting in memory
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-SetFocalLen itself never fails.
+The focal-length setter itself never fails.
 
 ## Example
 

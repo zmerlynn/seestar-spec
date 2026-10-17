@@ -48,7 +48,7 @@ reply_error:
   $ref: ../../common/schemas/ReplyError.yaml
 errors:
 - code: 300
-  trigger: Guider device or guider object absent (pDev)
+  trigger: Guider device or guider object absent
   label: internal error
 - code: 316
   trigger: No stored image ("No Current Image"), auto-selection failed, or no valid lock flag is set afterwards
@@ -65,8 +65,9 @@ errors:
 - code: 103
   trigger: 'Dispatcher: unregistered method'
   label: method not found
-errors_note: Auto-select is refused while calibrating ("cannot auto-select star while calibrating"); the
-  code of that refusal is not stated. Complete failed-selection events and ordering are unresolved. Star::Find thresholds are unresolved.
+errors_note: 'Auto-select is refused while calibrating ("cannot auto-select star while
+  calibrating"); the code of that refusal is not stated. Complete failed-selection events and
+  ordering are unresolved. Star-selection thresholds are unresolved.'
 examples:
 - name: request
   of: request

@@ -2,19 +2,20 @@ kind: event
 name: Version
 summary: Connection greeting sent to a newly accepted socket, naming the server and (imager only) its
   firmware version.
-description: 'Sent once to the arriving socket only (single-socket send from the socket-arrival callback),
-  not broadcast. No repeating timer and no application request is needed. Emitted by three servers: the
-  imager on TCP 4700 (channel I), the guider zwoair_guider on TCP 4400 (channel G) and the legacy updater
-  on TCP 4350 (channel U). Each server greets its own sockets; the imager does not forward a guider greeting
-  as its own (the guider socket held by the imager is internal). The guider and updater greetings carry
-  name but not the imager version members. The imager runs its version printer before serializing, so
-  its greeting carries the firmware version and verification flag; the downgrade members appear only on
-  Plus-class and Mini-class hardware when a staged update package with a parsable version is present
-  (READ); other models omit them, and clients MUST treat both as optional. Firmware 9.75 adds main_version
-  and modules (name and version pairs) from the update manifest; their presence condition is INFERRED. The greeting does not establish
-  handshake order relative to other traffic or any authentication gate. Family: custom (not N/S/F); no
-  state or error members. APK consumers: DeviceEventPart, ConnectService, and the legacy firmware-update
-  fragment on 4350.'
+description: 'Sent once to the arriving socket only (single-socket send from the socket-arrival
+  callback), not broadcast. No repeating timer and no application request is needed. Emitted by
+  three servers: the imager on TCP 4700 (channel I), the guider zwoair_guider on TCP 4400 (channel
+  G) and the legacy updater on TCP 4350 (channel U). Each server greets its own sockets; the imager
+  does not forward a guider greeting as its own (the guider socket held by the imager is internal).
+  The guider and updater greetings carry name but not the imager version members. The imager runs
+  its version printer before serializing, so its greeting carries the firmware version and
+  verification flag; the downgrade members appear only on Plus-class and Mini-class hardware when a
+  staged update package with a parsable version is present (READ); other models omit them, and
+  clients MUST treat both as optional. Firmware 9.75 adds main_version and modules (name and version
+  pairs) from the update manifest; their presence condition is INFERRED. The greeting does not
+  establish handshake order relative to other traffic or any authentication gate. Family: custom
+  (not N/S/F); no state or error members. APK consumers: the app event dispatcher, the app
+  connection service, and the legacy firmware-update fragment on 4350.'
 grade: PURE GETTER
 side_effect_tier: B
 confidence: READ

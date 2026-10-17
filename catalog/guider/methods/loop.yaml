@@ -1,9 +1,9 @@
 kind: method
 name: loop
 summary: Start continuous guide-camera looping exposures.
-description: Calls MyDev::StartLooping, which schedules continuous capture on the guide camera. A success
-  reply (result 0) means the start was accepted; frames and looping/exposure notifications arrive asynchronously
-  with payloads and ordering unresolved. Params are not consumed.
+description: 'Schedules continuous capture on the guide camera. A success reply (result 0) means the
+  start was accepted; frames and looping/exposure notifications arrive asynchronously with payloads
+  and ordering unresolved. Params are not consumed.'
 grade: MUTATOR / established (native handler, 64-bit build)
 side_effect_tier: C
 confidence: READ
@@ -35,7 +35,7 @@ reply_error:
   $ref: ../../common/schemas/ReplyError.yaml
 errors:
 - code: 303
-  trigger: StartLooping fails
+  trigger: 'Starting guide-camera looping fails'
   label: could not start looping
 - code: 200
   trigger: 'Dispatcher: request is not an object, is an empty object, or has no id'

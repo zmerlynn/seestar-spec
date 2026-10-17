@@ -8,8 +8,8 @@ grade: MUTATOR / probable (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ
 basis: static analysis of firmware 9.31, handler @0xca5d0, StopAnnotate @0x1fce50 (64-bit build)
-side_effects: Stops and joins the annotation worker thread (CMyThread stop); the stop may block with no
-  timeout established in the handler.
+side_effects: 'Stops and joins the annotation worker thread (thread stop); the stop may block with
+  no timeout established in the handler.'
 request:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object

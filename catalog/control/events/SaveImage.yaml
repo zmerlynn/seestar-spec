@@ -1,16 +1,17 @@
 kind: event
 name: SaveImage
 summary: State of saving the current image, with the saved name on success.
-description: 'Producers: the save worker, the block save and the RTSP image save. Direct events: start,
-  complete with filename and fullname on success, and save fail. Function-state family (SendFuncEvent):
-  state is always written; stage only when non-empty; lapse_ms when the timer is started or the state
-  is terminal; code and error at fail even when the stored code is 0 (cancel omits them); route optional.
-  A null or nameless detail sends nothing, and non-working notifications can be suppressed while the function
-  cache still changes, so a receiver cannot rely on seeing every transition. State family (NotifyState):
-  caller-supplied state literal; error and code only when the supplied code is greater than 0. The terminal
-  event can arrive after the save_image reply. Channels: imager 4700 and auxiliary 4702 (forwarded to
-  4700). No reply-before-event order is established: the RPC reply that starts the worker and the worker''s
-  events can arrive in either order. No fixed cadence.'
+description: 'Producers: the save worker, the block save and the RTSP image save. Direct events:
+  start, complete with filename and fullname on success, and save fail. Function-state family (F):
+  state is always written; stage only when non-empty; lapse_ms when the timer is started or the
+  state is terminal; code and error at fail even when the stored code is 0 (cancel omits them);
+  route optional. A null or nameless detail sends nothing, and non-working notifications can be
+  suppressed while the function cache still changes, so a receiver cannot rely on seeing every
+  transition. State family (S): caller-supplied state literal; error and code only when the supplied
+  code is greater than 0. The terminal event can arrive after the save_image reply. Channels: imager
+  4700 and auxiliary 4702 (forwarded to 4700). No reply-before-event order is established: the RPC
+  reply that starts the worker and the worker''s events can arrive in either order. No fixed
+  cadence.'
 grade: PURE GETTER (observation only)
 side_effect_tier: B
 confidence: READ
@@ -94,13 +95,13 @@ payload:
     filename:
       type: string
       description: Saved file base name.
-      x-required-when: successful save (NotifySaveImgOk)
+      x-required-when: 'successful save (save-success notifier)'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySaveImgOk @0x11a070
     fullname:
       type: string
       description: Saved file full name/path.
-      x-required-when: successful save (NotifySaveImgOk)
+      x-required-when: 'successful save (save-success notifier)'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, NotifySaveImgOk @0x11a070
   x-confidence: READ

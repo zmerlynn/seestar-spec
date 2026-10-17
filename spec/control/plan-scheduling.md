@@ -3,6 +3,13 @@
 Scope: `set_view_plan`, `clear_view_plan`, the [`ViewPlan`](../../docs/control/events/ViewPlan.md) event. Machine-readable detail:
 `catalog/control/`; generated cards: `docs/control/`.
 
+App names: a “Plan” (with “Plan Settings”) is a ViewPlan, not a legacy plan. Its target types “Wide
+Photo”, “Wide Star Trails”, “Wide Time-lapse” and “Wide Photo Framing” set the second camera's
+capture type, and “Dual-camera Capture for Telephoto Target” uses both cameras. “AF on Target
+Switch” is `plan_target_af` and “Close Arm on Completion” is `view_plan_go_home`. The app's “Auto
+Plan” builds a plan on the phone; no device method generates one. Names are the English strings of
+iOS app 3.4.0; links are READ (app call sites) unless marked.
+
 ## Conventions
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119 and RFC 8174. They bind

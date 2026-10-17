@@ -42,9 +42,10 @@ request:
         refData:
           type: array
           items: {}
-          description: Reference-star records. Elements are not parsed or validated; the whole array is
-            serialised unchanged to the device's reference-star file. Empty array allowed; no size bound.
-            The app sends NearbyStarData records (app-side shape INFERRED, not enforced by the device).
+          description: 'Reference-star records. Elements are not parsed or validated; the whole
+            array is serialised unchanged to the device''s reference-star file. Empty array allowed;
+            no size bound. The app sends nearby-star records (app-side shape INFERRED, not enforced
+            by the device).'
           x-confidence: READ
           x-basis: static analysis of firmware 9.31, handler @0xe2f40 (64-bit build), key @0x730190
         'refData:':

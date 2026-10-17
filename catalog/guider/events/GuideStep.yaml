@@ -73,25 +73,25 @@ payload:
         (64-bit guider build); 32-bit counterpart present
     dx:
       type: number
-      description: Raw x displacement in camera pixels (GuideStepInfo+0x20), read and serialized with
-        no scaling applied in this function. Unscaled, not arcseconds.
+      description: 'Raw x displacement in camera pixels, read and serialized with no scaling applied
+        in this function. Unscaled, not arcseconds.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
         instruction @0x6f3bc (`ldr d0, [x28,#32]`, no multiply before the "dx" NV construction at
         @0x6f3ac) (64-bit guider build); 32-bit counterpart present, not independently re-verified
     dy:
       type: number
-      description: Raw y displacement in camera pixels (GuideStepInfo+0x28), read and serialized with
-        no scaling applied in this function. Unscaled, not arcseconds.
+      description: 'Raw y displacement in camera pixels, read and serialized with no scaling applied
+        in this function. Unscaled, not arcseconds.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0,
         instruction @0x6f3fc (`ldr d0, [x28,#40]`, no multiply before the "dy" NV construction at
         @0x6f3ec) (64-bit guider build); 32-bit counterpart present, not independently re-verified
     RADistanceRaw:
       type: number
-      description: RA distance in arcseconds, despite the "Raw" name. The raw pixel pair at
-        GuideStepInfo+0x38/+0x40 is multiplied by MyDev::GetCameraPixelScale() once at the top of the
-        function, and this member is the first (RA) lane of that product.
+      description: 'RA distance in arcseconds, despite the "Raw" name. The stored raw RA/Dec
+        displacement pair is multiplied by the camera pixel scale once at the top of the function,
+        and this member is the first (RA) lane of that product.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, socket_json_guider_server_event::NotifyGuideStep @0x6f1f0;
         GetCameraPixelScale call @0x6f240, pixel pair loaded from [x28,#56] @0x6f29c, multiplied by the

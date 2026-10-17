@@ -1,10 +1,11 @@
 kind: event
 name: BattHiTempShutdown
 summary: Envelope-only warning sent just before the device shuts down for battery over-temperature.
-description: 'Broadcast on TCP 4700 (channel I) from the high-temperature branch of the battery-change
-  handler, before the event server is stopped and the shutdown action is selected; expect the connection
-  to end shortly after. No timer on the emitter. Family N (Event and Timestamp only). The PiStatus battery
-  members describe the associated condition. APK consumers: DeviceEventPart; ConnectService.'
+description: 'Broadcast on TCP 4700 (channel I) from the high-temperature branch of the
+  battery-change handler, before the event server is stopped and the shutdown action is selected;
+  expect the connection to end shortly after. No timer on the emitter. Family N (Event and Timestamp
+  only). The PiStatus battery members describe the associated condition. APK consumers: the app
+  event dispatcher; the app connection service.'
 grade: PURE GETTER
 side_effect_tier: B
 confidence: READ

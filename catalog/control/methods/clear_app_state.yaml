@@ -77,7 +77,7 @@ errors:
 - code: 100
   trigger: 'Dispatcher: method missing or not a string'
   label: invalid request
-errors_note: IgnoreFunc errors are ignored. Slave relay failures are unresolved.
+errors_note: 'Function-ignore errors are ignored. Slave relay failures are unresolved.'
 examples:
 - name: clear
   summary: Keyed form, invented function name
