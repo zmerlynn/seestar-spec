@@ -112,6 +112,8 @@ flat, with no `wifi` object (the word is only a cipher context). The encoding ap
 and that is not an error; only a real encoding failure returns an error reply (571 to 573).
 Firmware 9.31 returns the password in clear as stated above. READ.
 
+R4b. iOS app 3.4.0 and iOS app 3.4.1 decode `ap.passwd` with the device-to-client context `wifi`, `get_device_state`, `ap.passwd` and the AP SSID. A missing password stays absent, an unprefixed string is used unchanged, and a prefixed one needs a ready session and a successful decode; a decode failure is logged. READ (iOS app 3.4.0, iOS app 3.4.1).
+
 R5. `mount.close` is true when the reported altitude is at or below -85 degrees. READ.
 
 R6. The full call can open and close the focuser to read it, so it is not observation-safe
@@ -168,7 +170,7 @@ the wide camera.
 | `can_encrypt` | boolean, constant true | main process; full path |
 | `comet_max_frame_num` | integer, constant 200 | main process; full path; output only; the batch comet frame limit, see [stacking.md R20c](stacking.md#batch-stack) |
 | `enable_dark_library` | boolean | main process; full path |
-| `motion_monitor` | object: `mode` (`auto_track`, `auto_capture` or `unknown`), `return_to_origin` (boolean), `sensitivity` (`low`, `middle`, `high` or `unknown`), `waiting_time` (integer, seconds), `duration_min` (integer, minutes, -1 unlimited); all five always present | either process; 64-bit build only |
+| `motion_monitor` | object: `mode` (`auto_track`, `auto_capture` or `unknown`), `return_to_origin` (boolean), `sensitivity` (`low`, `middle`, `high` or `unknown`), `waiting_time` (integer, seconds), `duration_min` (integer, minutes, -1 unlimited); all five always present. App label for `sensitivity`: “Motion Detection Sensitivity” in iOS app 3.4.0, “Motion Monitoring Sensitivity” in iOS app 3.4.1, same values and request (READ) | either process; 64-bit build only |
 | `preview.raw_bin2` | boolean | whenever `preview` is emitted, either process; after `image_transfer_mode` |
 | `exp_ms.more_exposure` | boolean | full path; between `stack_l` and `continuous`; not wide-camera gated on output (the setter is tele-camera only, R16a) |
 | `stack.startrails_duration_min`, `stack.startrail_mode` | integers; minutes (-1 or 0 no limit) and mode 0 to 2 | full path; W only; meanings in [stacking.md R8b to R8f](stacking.md#sky-replay-and-star-trail-decay-firmware-975) |
@@ -177,9 +179,7 @@ The names `milkyway_background`, `milkyway_lines`, `more_exposure`, `raw_bin2`,
 `stargazing_deepsky`, `stargazing_supernovae`, `startrail_mode` and `startrails_duration_min` are
 nested as shown, rather than top-level members. `expert_mode` is still emitted by `get_setting` in
 firmware 9.75 (boolean, full path only) although `set_setting` no longer accepts it (R16a).
-`can_encrypt` is effectively read only (`set_setting` accepts only `true`, as a no-op, R16a); that
-it relates to the secure-communication switch ([secure-communication.md](secure-communication.md))
-is INFERRED. The 32-bit build has no motion monitor; the other additions were not compared member by
+`can_encrypt` is effectively read only (`set_setting` accepts only `true`, as a no-op, R16a). iOS app 3.4.0 and iOS app 3.4.1 use it as their password-encryption switch ([secure-communication.md](secure-communication.md)): a numeric `can_encrypt` in the `setting` object of a `get_device_state` reply sets the app's encryption flag by its truth value, and a missing or differently typed value leaves the flag unchanged. Receiving an `ap.passwd` with the encrypted-string prefix also sets the flag, before the app checks its session or decodes the value. The flag is separate from session readiness: a reset clears both, and installing a session makes it ready without setting the flag. AP-password updates in both versions and station-password updates in iOS app 3.4.1 follow the flag; iOS app 3.4.0's station request ignores it. READ (iOS app 3.4.0, iOS app 3.4.1). The 32-bit build has no motion monitor; the other additions were not compared member by
 member on the 32-bit build, which has the `sky_replay` getter and setter unchanged. The `Setting`
 event serializer uses the same getter, with an exact-key filter.
 

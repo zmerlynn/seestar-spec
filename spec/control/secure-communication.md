@@ -210,6 +210,8 @@ A client MUST NOT send these passwords in plaintext to a device that has a sessi
 rejected as invalid encrypted data (R23). Plaintext values do not survive beside the tokens: the
 members hold only tokens.
 
+Client side. iOS app 3.4.0 has no encryption step for the station password: it sends `psk` in plaintext ([network R17g](network.md)). iOS app 3.4.1 adds one, used only while the app's encryption flag is set (see [device state](device-state-and-settings.md)), with the client-to-device context `wifi`, `pi_station_set`, `psk` and the SSID of the same request, as in the table above. If input validation, the session state or the encryption fails, the app does not send `pi_station_set` and reports a local error, code 2004, to the caller; the hidden-network screen displays its description, while the plain join path only logs it. This local code is not one of the device's reply codes. Both versions encrypt the `pi_set_ap` `key` under the same flag, and decode `get_device_state` `ap.passwd` with the device-to-client context `wifi`, `get_device_state`, `ap.passwd` and the AP SSID, passing an unprefixed password through unchanged. Neither version has a recovered `pi_get_ap` caller; dynamically built callers remain unresolved. READ (iOS app 3.4.0, iOS app 3.4.1); presentation through other entry points remains unresolved.
+
 
 ### Statuses and errors
 

@@ -112,6 +112,8 @@ unrelated prior operation — there is no closed, input-independent set of codes
 READ. Clients MUST NOT treat a `pi_set_ap` error code as proof of which validation step failed
 unless it is one of 105, 102, 570 to 573, or 214.
 
+R6f. Client construction. iOS app 3.4.0 and iOS app 3.4.1 send `pi_set_ap` with `ssid` and `key`, taking `key` from their AP-password encryption step. While the app's encryption flag is false the password is sent unchanged; while it is true the app needs a ready crypto session and withholds the request if encryption fails. With no password at all the app sends nothing (it does not omit `key`); an empty string is sent, subject to the same checks. READ (iOS app 3.4.0, iOS app 3.4.1). Successful AP reconfiguration remains unresolved.
+
 R7. After writing, the device stops the AP daemon, waits about 1 s and starts it again. Clients
 connected through the AP will lose the link. READ (restart); INFERRED (link loss).
 
@@ -216,6 +218,8 @@ builds).
 R17f. Because the request is ordinary JSON, an embedded NUL byte in `ssid` truncates the value at
 the NUL for a JSON parser that represents strings as C strings internally; a client MUST NOT rely
 on bytes after an embedded NUL being preserved. READ.
+
+R17g. Client construction. iOS app 3.4.0 sends `pi_station_set` with a flat `params` object holding `ssid`, `timeout_sec` set to 25 and `hidden` as a boolean, with no `para` wrapper. It inserts the password it is given unchanged as `psk` (plaintext), without consulting its encryption flag or its crypto session, and omits `psk` when it has no password. iOS app 3.4.1 keeps that request shape and the omission, but passes a password through its station-password encryption step: while the app's encryption flag is false the password is still sent unchanged; while it is true the app needs a ready crypto session and withholds the request if encryption fails (details in [secure communication](secure-communication.md#encrypted-wi-fi-strings)). READ (iOS app 3.4.0, iOS app 3.4.1). By R17a a firmware 9.75 device with an active session rejects a plaintext `psk` as invalid encrypted data, so iOS app 3.4.0's station join would fail there (INFERRED; not observed). Device acceptance and successful joining with either app version remain unresolved.
 
 R18. `pi_station_set` writes the configuration first and then validates `timeout_sec`. A value
 <= 0 gives 209 after the configuration has already changed. Nothing is rolled back. Clients
