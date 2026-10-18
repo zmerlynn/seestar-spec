@@ -5,11 +5,11 @@ description: Synchronously enumerates the filesystem under the requested album p
   finds thumbnails, checks stacked-result folders, reads the favourites database and may probe movie durations.
   Despite the name it only reads. The reply is built entirely by the listing helper; the schema reflects
   the emitted shape. Folder-scan failures are logged and do not become errors, so no concrete handler
-  error other than 105 is established. Firmware 9.75 (app 3.4.0), the filter accepts stack, stacked, startrail, meteor, comet and video_stack on the 64-bit build (the 32-bit list is stack, stacked, video_stack and comet, not verified); a filter that is not a string gives 106. SolarSystem is not a new category (it existed in 9.31); whether PhotoMetry is an album group is unresolved. Motion recordings are saved in a Scenery_motion folder.
+  error other than 105 is established. Firmware 9.75 (app 3.4.0), the filter accepts stack, stacked, startrail, meteor, comet and video_stack on the 64-bit build (the 32-bit list is stack, stacked, video_stack and comet); a filter that is not a string gives 105 on both builds. video_stack eligibility maps an MP4 to its -RAW.avi sibling; the MP4 is the listed file. SolarSystem is not a new category (it existed in 9.31); whether PhotoMetry is an album group is unresolved. Motion recordings are saved in a Scenery_motion folder.
 grade: MUTATOR / established (64-bit and 32-bit builds)
 side_effect_tier: B
 confidence: READ
-basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build)
+basis: static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build); firmware 9.75 handler @0xfe480 (64-bit), @0x5efe4 (32-bit), MP4/AVI mapping @0x755280 (64-bit)
 side_effects: No file or favourite changes; logging state and first-use favourites query state are updated.
 request:
   $schema: https://json-schema.org/draft/2020-12/schema
@@ -43,9 +43,6 @@ errors:
 - code: 105
   trigger: name or filter present with a type other than string, including null
   label: expected string param
-- code: 106
-  trigger: 'Firmware 9.75, 64-bit: filter present with a type other than string'
-  label: expected bool param
 - code: 200
   trigger: 'Dispatcher: request has no id'
   label: invalid id

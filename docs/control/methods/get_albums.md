@@ -12,9 +12,9 @@ List album folders and their images, optionally filtered by stack kind.
 | Grade | MUTATOR / established (64-bit and 32-bit builds) |
 | Side-effect tier | B |
 | Confidence | READ |
-| Basis | static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build) |
+| Basis | static analysis of firmware 9.31, handler @0xe6990, PrintImgList @0x137d60 (64-bit build); firmware 9.75 handler @0xfe480 (64-bit), @0x5efe4 (32-bit), MP4/AVI mapping @0x755280 (64-bit) |
 
-Synchronously enumerates the filesystem under the requested album path, groups the files, finds thumbnails, checks stacked-result folders, reads the favourites database and may probe movie durations. Despite the name it only reads. The reply is built entirely by the listing helper; the schema reflects the emitted shape. Folder-scan failures are logged and do not become errors, so no concrete handler error other than 105 is established. Firmware 9.75 (app 3.4.0), the filter accepts stack, stacked, startrail, meteor, comet and video_stack on the 64-bit build (the 32-bit list is stack, stacked, video_stack and comet, not verified); a filter that is not a string gives 106. SolarSystem is not a new category (it existed in 9.31); whether PhotoMetry is an album group is unresolved. Motion recordings are saved in a Scenery_motion folder.
+Synchronously enumerates the filesystem under the requested album path, groups the files, finds thumbnails, checks stacked-result folders, reads the favourites database and may probe movie durations. Despite the name it only reads. The reply is built entirely by the listing helper; the schema reflects the emitted shape. Folder-scan failures are logged and do not become errors, so no concrete handler error other than 105 is established. Firmware 9.75 (app 3.4.0), the filter accepts stack, stacked, startrail, meteor, comet and video_stack on the 64-bit build (the 32-bit list is stack, stacked, video_stack and comet); a filter that is not a string gives 105 on both builds. video_stack eligibility maps an MP4 to its -RAW.avi sibling; the MP4 is the listed file. SolarSystem is not a new category (it existed in 9.31); whether PhotoMetry is an album group is unresolved. Motion recordings are saved in a Scenery_motion folder.
 
 Side effects: No file or favourite changes; logging state and first-use favourites query state are updated.
 
@@ -26,7 +26,7 @@ Side effects: No file or favourite changes; logging state and first-use favourit
 | `method` | string | yes | - | Fixed value `"get_albums"`. [READ] |
 | `params` | object | no | - | Object form. The handler also accepts a bare string (taken as name) and a positional array [name, filter] (first two items only); an empty array, absent params, null or a non-string scalar mean empty name and no filter. Clients SHOULD send the object form. [READ] |
 | `params.name` | string | no | empty string | Album directory to list, default empty. The path is normalised; an empty or unmatched name selects the default works folder. No length or range validation. A present non-string member (including null) is rejected with 105. [READ] |
-| `params.filter` | string | no | no filter | Result filter. 64-bit build: "stack" selects 1, "stacked" 2, "startrail" 3, "meteor" 4; firmware 9.75 (64-bit) adds "comet" 5 and "video_stack" 6 and gives 106 for a non-string filter; any other string (including empty) selects 0 (no filter), not an error. 32-bit build recognises only "stack" and "stacked"; startrail, meteor and everything else mean no filter. With an empty name and "startrail" the 64-bit build lists a startrail sub-folder of the works folder; this is not established on the 32-bit build. A present non-string member is rejected with 105 (firmware 9.75, 64-bit: 106 for the filter). [READ] |
+| `params.filter` | string | no | no filter | Result filter. 64-bit build: "stack" selects 1, "stacked" 2, "startrail" 3, "meteor" 4; firmware 9.75 (64-bit) adds "comet" 5 and "video_stack" 6; any other string (including empty) selects 0 (no filter), not an error. 32-bit build (firmware 9.31) recognises only "stack" and "stacked"; startrail, meteor and everything else mean no filter. Firmware 9.75, 32-bit build recognises "stack" 1, "stacked" 2, "video_stack" 3 and "comet" 4; startrail, meteor and other strings mean no filter. With an empty name and "startrail" the 64-bit build lists a startrail sub-folder of the works folder; this is not established on the 32-bit build. A present non-string member is rejected with 105, in firmware 9.75 on both builds as well. [READ] |
 
 ## Reply
 
@@ -44,7 +44,6 @@ Side effects: No file or favourite changes; logging state and first-use favourit
 | Code | Trigger | Label |
 |---|---|---|
 | 105 | name or filter present with a type other than string, including null | `expected string param` |
-| 106 | Firmware 9.75, 64-bit: filter present with a type other than string | `expected bool param` |
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 

@@ -228,12 +228,8 @@ firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmwa
    or `StackExpLoop`. unresolved.
 3. Event attribution in the stripped file server and opaque shared libraries. The 64-bit file server
    binary (the file server) contains no code that constructs an `"Event":"<name>"` JSON string
-   anywhere; it only consumes the event stream (register/unregister callbacks, a JSON-RPC client)
-   and separately serves a file-browsing HTTP API, consistent with it being an event consumer plus
-   file server rather than an independent emitter. READ (absence of the construction pattern,
-   presence of the consumer pattern); INFERRED (role). Address-level cross-reference of the consumer
-   call sites, and a check of the other opaque shared libraries (the vendor camera/media SDKs) for
-   event-construction code of their own, remain unresolved.
+   anywhere, and separately serves a file-browsing HTTP API. READ (absence of the construction
+   pattern). Firmware 9.31 and 9.75, 64-bit builds, contain file-server code that recognizes an Event name, appends the message to a matching registered record, invokes an optional callback and signals a waiter. READ. Attribution to the common request-waiter implementation is INFERRED from matching code and record layouts. No file-server subscription or application callback using this code has been established; an active file-server event-consumer role remains unresolved. For firmware 9.75, 64-bit build, the inspected camera/media SDK token, import and callback-registration checks do not establish another Event-envelope producer. Broader SDK attribution and 32-bit consumer reachability remain unresolved by these checks.
 4. Closed schemas for open extension maps, cached plan-target JSON, annotation objects and every
    `output_file` variant. unresolved.
 5. AutoFocus `result`/curve meaning; star-finder enum closure; polar-align transition conditions;

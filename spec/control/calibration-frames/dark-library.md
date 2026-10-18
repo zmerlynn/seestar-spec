@@ -231,9 +231,8 @@ writer.
 - An SMB listing of a firmware 9.75 device's image store after a real shoot
   ([smb.md R9](../../media/smb.md#shares)) found each master dark stored as three files sharing the
   base name above: the `.fit` master, a full-size JPEG preview, and a thumbnail JPEG with a `_thn`
-  suffix. `get_dark_files` (R6l) exposes only the `thn` field, not the preview; whether the device
-  itself ever reads the preview or thumbnail file back is unresolved. OBSERVED (file set), READ
-  (naming, R6h1).
+  suffix. `get_dark_files` (R6l) exposes only the `thn` field, not the preview. OBSERVED (file set), READ
+  (naming, R6h1). Firmware 9.75, 64-bit and 32-bit builds, derives the dark catalogue's thumbnail name and checks that the file exists; this catalogue operation does not load the JPEG. The generic stored-thumbnail and stored-file services read encoded JPEG data on request when the supplied name resolves to an accepted file path. This establishes request-driven retrieval, not autonomous use of a dark preview or thumbnail as calibration input. Whether a client actually requests these dark JPEGs, and whether the catalogue's virtual names can be supplied unchanged to those services, remain unresolved. Firmware 9.31, 64-bit build, already contains the generic retrieval services. READ for the inspected catalogue and retrieval paths.
 - Firmware 9.31: saving a master in this layout did not
   delete older files. Firmware 9.75 (64-bit): saving a temperature master deletes other masters of
   the same exposure whose temperature is within 0.05 degree C of the new one; masters at other
