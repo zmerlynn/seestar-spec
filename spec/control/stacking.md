@@ -297,7 +297,7 @@ gain the 203 and 524 occupancy outcomes; the same holds for `save_image`, `is_st
 `iscope_match_target_name`, `iscope_accept_target_name` and others; the occupancy probes are used
 only by `start_track_object`, `start_smart_follow`, `start_func`, `start_motion_monitor`,
 `start_record_avi` and `start_scan_planet` (see [special-modes.md](special-modes.md)). READ (64-bit
-firmware 9.75). The 32-bit behaviour is unresolved.
+firmware 9.75). Firmware 9.75, 32-bit build, uses relay-only checks for stack start, image saving and stacked-state queries, and for autofocus start/stop when wide-camera autofocus is supported. These checks retain the existing process, view and camera-selection gates, with relaying enabled and no common occupancy probes; image saving inlines the checks. Forwarded requests skip local handling, including local autofocus cancellation. The 32-bit stack-info handler instead reads local information without that relay check. The 32-bit forwarding path has no option adding the main stack exposure; the 64-bit stack-start caller selects that option, while its other five callers examined here use ordinary forwarding. READ. Backend-origin failures and broader firmware 9.31 caller parity remain unresolved here.
 
 ## Saving
 

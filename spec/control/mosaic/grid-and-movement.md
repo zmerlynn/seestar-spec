@@ -294,8 +294,7 @@ On the device side, both branches recover `u`. In equatorial mode,
 R18's difference from the solved angle leaves `u`. In the other mode, if the map is drawn with
 the zenith up and azimuth increasing to the right, `phi` = 180 − `beta` and R19's `m` reduces
 to `u` modulo 360. INFERRED. `star_map_angle` therefore has no fixed cardinal meaning of its
-own: it carries the on-screen rotation of the sky at the moment it was read. Which way a
-positive `u` turns the drawn frame on screen is not established here.
+own: it carries the on-screen rotation of the sky at the moment it was read. For Android app 3.3.2, the screen direction of positive UI rotation is described below; its physical sky-rotation meaning remains unresolved.
 
 R21. `star_map_angle` is in degrees. READ (app 3.3.2 native library: the renderer converts
 radians with 180/pi and wraps with 360; device arithmetic is modulo 360). A client MUST NOT
@@ -304,4 +303,4 @@ counterclockwise sky rotation for a positive angle. See [R20a](#orientation).
 
 The device-side angle logic of R18-R21 is confirmed unchanged in firmware 9.75, both the 64-bit
 and 32-bit builds: identical instruction counts, only relocation differences, and the same pool
-constants (0.001, 3.14, 57.29577951308232) as in firmware 9.31. READ. The app-side construction in R20a fixes the zero direction and the sign relative to the screen. Which way a positive `u` turns the drawn frame on screen, and its physical sky-rotation meaning, remain unresolved, and a client MUST NOT assume a direction beyond what R20/R20a establish.
+constants (0.001, 3.14, 57.29577951308232) as in firmware 9.31. READ. The app-side construction in R20a fixes the zero direction and the sign relative to the screen. Android app 3.3.2 clamps the UI mosaic rotation to −90..90 degrees and includes it with a positive sign in the frame's window-coordinate drawing angle. READ. With view and base orientation held fixed, increasing the effective angle rotates the drawn frame clockwise; further input changes at the clamp boundary need not rotate it. INFERRED from the corner transform and downward-positive window y. Physical sky-rotation meaning, mirrored-image interpretation and iOS drawing parity remain unresolved. A client MUST NOT assume a direction beyond what R20/R20a establish.

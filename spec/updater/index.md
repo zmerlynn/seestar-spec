@@ -218,13 +218,7 @@ or `fail`. `desc` carries a stage marker, not a percentage. READ. Markers in the
 
 The app also handles `retry mount FW update`. READ (app). No 9.31 firmware binary emits it.
 READ (exhaustive search for absence).
-R8a. Failing `Update` codes (firmware 9.75, 64-bit build, READ for the codes; the same constants
-exist in 9.31). The status poll ends a failed update with a failure notification whose numeric code
-is 204 for a 900 s timeout, 529 for an "update error" status, and 207 when the update output file is
-not found, the poll is aborted before it appears, or the done marker cannot be written (R5b2). The
-notification carries the strings "fail" and "error" and the code; that these are the `state` and
-`desc` or `error` members of the wire event is INFERRED, because the member names were not traced.
-In 9.75 the failure path also clears the legacy update directory and writes the done marker.
+R8a. Firmware 9.75, both builds: the legacy status monitor invokes failure notification with `state:"fail"`, `desc:"error"` and code 204 for its configured 900-second timeout or 529 for its monitored update-error match. The legacy formatter includes string `state` and `desc`; when the supplied code is nonzero it also includes integer `code` and string `error` from the error lookup. With zero code it omits both `code` and `error`. Missing output after cancellation passes result 207 for persistence without invoking fail notification on that terminal branch in either build. The 32-bit monitor also passes 207 when stopped before all monitored steps complete and 0 when all steps complete. READ. Firmware 9.75's separately reviewed 64-bit directory cleanup, monitor-marker writes and marker-related result rule remain described in R5b2; these are not established for the 32-bit build. The same code constants exist in firmware 9.31. A result passed for persistence does not by itself establish an emitted event, durable storage or successful installation; those runtime outcomes remain unresolved.
 
 The updater produces these events by polling the update script's status with short sleeps
 (50 to 200 ms); there is no fixed cadence. READ.
@@ -345,11 +339,11 @@ most one element is INFERRED). `failure` has `stage`, an optional `module`, an i
 
 | Question | State | Where |
 |---|---|---|
-| Wire member names of the failing legacy `Update` event (R8a) | INFERRED; the codes are read, the member names are not traced | [Events](#events) |
+| Wire member names of the failing legacy `Update` event (R8a) | Firmware 9.75, both builds: `state` and `desc` come from the supplied strings; nonzero code additionally includes integer `code` and mapped string `error`. READ. Actual delivery remains unresolved. | [Events](#events) |
 | Delayed-reboot helper prefix; other legacy marker consumers | Firmware 9.75 helper prefix and 2-second delay read on both builds. The 64-bit local wrapper consumer is read; consumers outside the searched package files remain unresolved. | [changes R12c](ota-package-handling.md#ota-package-handling), R5b2 |
 | `begin_recv` "binary port is not connected" error code (stale or 0) | INFERRED | R5b1 |
 | `ota_get_session` failure-module condition and missing-module entry shape | Resolved for firmware 9.75: conditional stored module name on 64-bit; no `failure` on 32-bit; three-string missing-module objects on both builds. READ. | R11b |
-| Firmware 9.75, 32-bit legacy `Update` codes | unresolved here; the OTA reboot delay is read as 2 seconds | R8a, [changes R12c](ota-package-handling.md#ota-package-handling) |
+| Firmware 9.75, 32-bit legacy `Update` codes | READ: the status monitor invokes failure notification with `state:"fail"`, `desc:"error"` and code 204 for its configured 900-second timeout or 529 for its monitored update-error match. The formatter includes integer `code` and a mapped `error` string only when the supplied code is nonzero. Missing output after cancellation and stopping before all monitored steps complete pass result 207 for persistence without a fail-notification call on those terminal branches; completion of all monitored steps passes result 0. Actual delivery, durable persistence and successful installation remain unresolved. The separately reviewed OTA reboot scheduling delay remains 2 seconds. | R8a, [changes R12c](ota-package-handling.md#ota-package-handling) |
 
 ## Appendix: Validating on a live device (non-normative)
 

@@ -63,7 +63,7 @@ OBSERVED iOS order on each connect: `get_verify_str`, `verify_client`, `get_devi
 [`set_user_location`](../../../docs/guider/methods/set_user_location.md),
 `iscope_get_app_state`, `set_setting` (`cli_uuid`, `cli_name`), `pi_get_ap_channel`. The
 order repeats on reconnect; later connects sometimes added `get_image_save_path`, and once
-`remove_file`. Whether the iOS order also holds in remote mode is unresolved.
+`remove_file`. iOS app 3.4.0 uses the same nominal control initialization path after remote tunnel connection and local connection: `get_verify_str`, then `verify_client` unless the challenge returns 103, then an unfiltered `get_device_state`. If the control connection still reports connected when the device-state completion runs, it submits language, time and location writes when no cached `Client` event exists or that event identifies this client as master; a cached non-master skips those three writes. It then submits application state, client identity and the AP-channel query, marking the socket initialized before that query. These later submissions do not await each preceding reply. READ. This construction does not establish successful verification as an unconditional prerequisite. Actual remote wire order, failure/reconnect interleavings and the occasional image-path or removal requests remain unresolved.
 
 OBSERVED (2026-10-17), firmware 9.75, app 3.4.0, one LAN session captured end to end (app plaintext
 on the control leg): the verification pair (`get_verify_str`, `verify_client`) was followed by
