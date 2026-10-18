@@ -376,10 +376,7 @@ running". The message is misleading; clients MUST rely on the code. A wrong `tim
 gives 104; a join failure gives 207. READ.
 
 R33. On success the device stores the request for later reuse and sends a `Setting` event with
-`remote_joined:true`. READ. Firmware 9.75: the join also reports the OTA version information
-(the manifest-aware main version and module list of [maintenance.md](maintenance.md)) instead of
-the legacy firmware version alone; whether this changes anything on the wire is unresolved. READ
-(the call).
+`remote_joined:true`. READ. Firmware 9.75 (64-bit build): after the cloud join, the OTA version report uses the main-version string read from the local manifest (see [maintenance.md](maintenance.md)), falling back to the legacy firmware-version string when that read fails. The selected string is sent as `fw_version` in the cloud OTA version report; the manifest's module list is not included by this path. READ. Whether the backend receives or uses it is not established.
 
 R34. [`remote_disjoin`](../../docs/control/methods/remote_disjoin.md) removes the stored join
 and sends `Setting` with `remote_joined:false` on both success and failure. Error 207. READ.

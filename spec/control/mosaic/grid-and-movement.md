@@ -306,6 +306,4 @@ counterclockwise sky rotation for a positive angle. See [R20a](#orientation).
 
 The device-side angle logic of R18-R21 is confirmed unchanged in firmware 9.75, both the 64-bit
 and 32-bit builds: identical instruction counts, only relocation differences, and the same pool
-constants (0.001, 3.14, 57.29577951308232) as in firmware 9.31. READ. The sign and zero-direction
-of the angle remain unresolved; this resolver pass found nothing that settles them, and a client
-MUST NOT assume a direction beyond what R20/R20a already establish.
+constants (0.001, 3.14, 57.29577951308232) as in firmware 9.31. READ. The app-side construction in R20a fixes the zero direction and the sign relative to the screen. Which way a positive `u` turns the drawn frame on screen, and its physical sky-rotation meaning, remain unresolved, and a client MUST NOT assume a direction beyond what R20/R20a establish.

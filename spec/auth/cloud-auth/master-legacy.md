@@ -60,13 +60,10 @@ ever forms the login context's address at all, fixed or computed. READ (both bui
 No licence member, region value or public API that selects p2pod was found. A Seestar client MAY
 ignore `p2pod-master` and SHOULD build `c-master` names. INFERRED.
 
-Confirmed unchanged in firmware 9.75, on both the 64-bit and 32-bit builds: the device still never
-writes the p2pod flag field anywhere, so it still always resolves `c-master` names, matching
-firmware 9.31 exactly. READ. The same two worker routines were re-checked on firmware 9.75 (32-bit):
+Confirmed in firmware 9.75, on both the 64-bit and 32-bit builds: session set-up still zeroes the p2pod flag field, the resolver still reads it without the flag check, and no store by offset or fixed-offset block copy reaches it, so the device resolves `c-master` names as in firmware 9.31. READ. The same two worker routines were re-checked on firmware 9.75 (32-bit):
 same result, one variable-length copy each, into a freshly allocated heap buffer, with no reference
 anywhere in either routine to the login context's (relocated) address. READ (32-bit, firmware 9.75).
-No remaining unresolved write path to this field was found on either architecture or firmware
-version.
+No nonzero writer was found on either architecture or firmware version. Writes through computed addresses or bulk copies outside the routines named above were not excluded exhaustively, so the absence of any writer is INFERRED (bounded search), not READ.
 
 R60. A client MUST build master names from the licence realm and MUST honour `standalone`
 overrides. READ (behaviour), INFERRED (obligation).

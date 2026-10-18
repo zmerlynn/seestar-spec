@@ -79,7 +79,7 @@ The same 12 members are used for plan sequences and for the stand-alone sequence
 | `id` | integer | required | READ |
 | `type` | string | `light` | Frame type: `light`, `dark`, `bias`, `flat`; unknown strings map to `unknown`. READ |
 | `filter` | integer | 0 | Filter-wheel slot index. Before every frame of the entry, when a wheel is fitted and the value is 0 or more and below the slot count, the run moves the wheel there if it is elsewhere, waits for the move to finish, and does not restore it; a value out of range leaves the wheel alone. A slot named `dark` makes the entry a non-light frame ([focus-and-filter R22c](../focus-and-filter.md#factory-names-the-dark-slot-and-automatic-moves), R20a). READ |
-| `suffix` | string | empty | Stored and returned only. Neither capture run's frame routine reads it, and it is not part of the saved file name (R20b), whatever its name suggests. READ (both builds). Its intended meaning is unresolved |
+| `suffix` | string | empty | Stored and returned only. Neither capture run's frame routine reads it, and it is not part of the saved file name (R20b), whatever its name suggests. READ (both builds). A client should treat it as stored metadata only |
 | `exp` | number | 0 | Exposure in seconds. READ |
 | `gain` | integer | -1 | Set before every frame when 0 or more; a failure is only logged. A negative value keeps the camera's current gain. READ |
 | `bin`, `repeat`, `capture_index` | integer | 0 | `repeat` is the planned frame count: a run shoots an enabled entry only while its `lapsed` is less than `repeat`, one frame per pass, and stops it once `repeat` passes are reached. READ (both builds) |

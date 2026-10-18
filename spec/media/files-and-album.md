@@ -207,7 +207,7 @@ accepts `stack`, `stacked`, `video_stack` and `comet` is unresolved. `SolarSyste
 (the string exists in both builds but is not used as a group by the listing). INFERRED: an item
 named like the `Scenery` group plus `_video` is grouped under `SolarSystem`, otherwise under
 `Scenery`. Sky replay (stacking.md) writes `*_stack_replay.mp4`, whose file type code is 13. READ
-(file names), unresolved (the sky replay event name).
+(file names). Firmware 9.75 (64-bit build): the sky-replay state event is named `SkyReplay`. READ (registration and event construction); with the feature force-disabled, whether it occurs in ordinary sessions is not established.
 
 R16a. Motion recording (firmware 9.75, 64-bit; the 32-bit build has no motion-monitor strings other
 than `can_motion_monitor`). READ. The AVI writer saves under `MyWorks/Scenery_motion/` with a base name

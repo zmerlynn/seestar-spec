@@ -283,7 +283,7 @@ the 64-bit imager, "D32" the 32-bit imager, "G64" and "G32" the guiders. Firmwar
 | Wi-Fi password field encryption (`enc1:`) and 570 to 573 | D64 | D32 same behaviour; guiders encrypt nothing | parity, READ |
 | Error-code table | full | identical except 545, 549 and 9000 to 9005, which are 64-bit only; D32 has 546 to 565, 570 to 573, 436 and 437 | subset, READ |
 | `reset_setting` | 18 resettable descriptors, busy gating (259, 536) | D32 10 keys, no busy gating; transaction structure the same | partial parity, READ |
-| `get_setting`/`set_setting` new keys | see [device-state-and-settings.md](device-state-and-settings.md) | `include_sensitive`, `sky_replay`, `can_encrypt`, `enable_dark_library` and `preview.raw_bin2` present with logic identical to D64 (traced to the address level); `annotation` (and its four sub-members), `comet_max_frame_num`, `motion_monitor`, `exp_ms.more_exposure` and `stack.startrail_mode`/`startrails_duration_min` confirmed absent (no matching string anywhere in the binary) | parity for the traced keys, READ |
+| `get_setting`/`set_setting` new keys | see [device-state-and-settings.md](device-state-and-settings.md) | `include_sensitive`, `sky_replay`, `can_encrypt`, `enable_dark_library` and `preview.raw_bin2` present with logic identical to D64 (traced to the address level); `comet_max_frame_num`, `motion_monitor`, `exp_ms.more_exposure` and `stack.startrail_mode`/`startrails_duration_min` confirmed absent (no matching string anywhere in the binary); the `annotation` string exists in the binary, but no setting branch for it (or its four sub-members) was found | parity for the traced keys, READ |
 | Motion monitor, motion detection | yes | absent in D32 | 64-bit only, READ |
 | Smart follow (`start_smart_follow`) | detection loop, error 254, motion-detection checks, stages `detecting`, `starting_track`, `tracking` | older worker with no 254 and no motion-detection checks, stage strings `waiting_target` and `starting_track`, log "wait for next target" | differs, READ (strings); semantics INFERRED |
 | Sky replay getter and setter | force-disabled | identical in D32 | parity, READ |
@@ -317,7 +317,5 @@ the 64-bit imager, "D32" the 32-bit imager, "G64" and "G32" the guiders. Firmwar
   parity matrix: 32-bit imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)).
   unresolved. The `get_setting`/`set_setting` keys checked, the peer-to-peer rate logic and the
   guiders' unauthorised-connection closing are specified ([Firmware 9.75 parity matrix: 32-bit
-  imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)); `sky_replay`'s own
-  `set_setting` logic in D32 is unverified (assumed identical to the D64 table). unresolved for that
-  one key only.
+  imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)); `sky_replay` in D32 is now traced: as in D64 (firmware 9.75), its getter returns false, and its boolean setter ignores the requested value, attempts to clear any stored enabled value and ends the replay session when the clear succeeds or is unnecessary; a failed clear makes the setter fail. READ.
 - Behaviour of the 4700 tunnel path (loopback) with respect to sessions is INFERRED only.

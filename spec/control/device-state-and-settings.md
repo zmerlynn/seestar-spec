@@ -459,8 +459,7 @@ each card's side-effect tier first). Hot-plug arrival and removal are reported s
   the 32-bit build lacks `exp_auto`, `save_meteor_frame`, `save_video`, `scene_separate`,
   `scene_shooting_duration_min`, `stack_l_auto` and `wide_size_index`; the 32-bit build has no
   such setting names at all except `scene_separate`. READ (member names; nesting not compared).
-- Firmware 9.75 `get_setting`/`set_setting` on the 32-bit build: the key handling was not traced
-  (R16a); `reset_setting` is traced (10 keys, no busy gating). unresolved.
+- Firmware 9.75 `get_setting`/`set_setting` on the 32-bit build: the `sky_replay` getter and setter are traced and match the 64-bit build (force-disabled; READ). The other new keys were checked by name and partly by logic (see the [32-bit parity matrix](secure-communication.md#firmware-975-parity-matrix-32-bit-imager-and-guider)); complete parity is not established. Handling of the remaining legacy keys, filtering, and notification and error branches is unresolved. `reset_setting` is traced (10 keys, no busy gating).
 - Lifetime of the thread-local suppression of the `Setting` notification used by `reset_setting`,
   and the default value of each resettable key. unresolved.
 - Per-flag conditions of the `can_*` capability booleans and the fallback of `main_version`.

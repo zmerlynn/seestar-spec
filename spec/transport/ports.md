@@ -72,8 +72,7 @@ configuration switch `secure_communication` (shipped enabled); the 32-bit builds
 it, as firmware 9.31 did on all builds. The port set itself is unchanged, the image/file sockets
 (4800, 4801, 4804, 4500) are still outside it, and the streams stay plaintext JSON: the
 secure-communication layer encrypts selected Wi-Fi password fields only. READ. See
-[secure communication](../control/secure-communication.md). Whether the HTTP server on 80 changed
-its authorization in firmware 9.75 was not established; R2 describes firmware 9.31. unresolved.
+[secure communication](../control/secure-communication.md). Firmware 9.75, both file-server builds: HTTP port 80 keeps the firmware 9.31 routes and checks no client authorization on those serving paths. READ (routes and handlers), INFERRED (no authorization anywhere in the initialized serving graph). The JSON-port verification layer does not protect HTTP access.
 
 R3d. Firmware 9.75 listener set (READ, imager, guider, updater, file server and BLE daemon; the
 64-bit imager was compared most closely): the `bind` and `listen` sites match firmware 9.31 and no
@@ -82,8 +81,7 @@ new TCP or UDP listener exists. The imager still sets up 4700, 4701, 4702, 4720,
 The UDP 4720 discovery path is identical in structure. The BLE daemon has no `bind` or `listen`
 call. The 9.75 imager contains an HTTP library with server classes, but no listener is created
 from them (a client or dormant code; READ). The 32-bit builds and the guider were checked less
-closely. The file server has the same listener count and symbols, but its route table and
-authorization were not compared, so R2 is firmware 9.31 only (R3c). unresolved.
+closely. The file server has the same listener count and symbols. Its route table and authorization were compared: R2 applies to firmware 9.75, both builds (READ for routes, INFERRED for the absence of added authorization; R3c). The 64-bit file server adds a 16-thread pool, and both builds add a local download limiter and file-read chunks of up to 32768 bytes; neither is access control. Whether the 32-bit server's threading matches is unresolved.
 
 R3e. Firmware 9.75 updater (READ for the call sites, INFERRED for their meaning): the updater
 main routine starts the control server on 4350 and the binary server on 4361, and also records
@@ -269,7 +267,7 @@ stay firmware 9.31 unless tagged. Summary of what changed in these areas:
 | Busy gate | Different-`srcId` gate 70 s (9.31) to 65 s (9.75). READ | [http-api.md: `srcId` stability and the busy window](../auth/cloud-auth/http-api.md#srcid-stability-and-the-busy-window) |
 | Tunnel server start | Retry once on -30007. READ | [sdk-licence.md: Device-side SDK start](../auth/cloud-auth/sdk-licence.md#device-side-sdk-start) |
 | Send-rate and relay mode | `p2p_init` optional `rate` (KiB/s, shifted left by 10) and `rateLimit`; relay mode cleared on disconnect. READ | [sdk-licence.md R46b, R46c](../auth/cloud-auth/sdk-licence.md) |
-| P2P status upload | Shape changed; wire effect unresolved | [cloud-auth.md: Open questions](../auth/cloud-auth.md#open-questions) |
+| P2P status upload | Firmware 9.75 (64-bit build): the attribute report carries `conId` and `p2pStatus` strings, `natMode` only when nonempty, and an integer `code` only when present. State 3 maps to `occupied`; it is not code 3. The failure path adds the P2P start return code with `initFailed`. Identical reports are suppressed. READ. Backend acceptance is not established | [cloud-auth.md: Open questions](../auth/cloud-auth.md#open-questions) |
 | Embedded keys | Identical; a third device-side public key is used by client authentication (location and role only) | [embedded-constants.md: Device-side client-authentication public key (location only)](../auth/cloud-auth/embedded-constants.md#device-side-client-authentication-public-key-location-only) |
 | Tunnel wire protocol | Unchanged. READ | [seestar-profile.md R69a](p2p-tunnel/seestar-profile.md) |
 | Secure communication over the tunnel | Tunnel clients are not required to obtain the key envelope; the internal-classification chain is INFERRED | [ports.md R15a](ports.md), [seestar-profile.md R81a](p2p-tunnel/seestar-profile.md) |
@@ -285,7 +283,7 @@ questions of the chapters named above and in [index.md: Open questions](../updat
 
 ## Open questions
 
-- Firmware 9.75: file-server route table, authorization and 32-bit parity with R2. unresolved.
+- Firmware 9.75: the file-server route table and authorization match R2 on both builds (R3c, R3d); whether the 32-bit server's threading matches the 64-bit 16-thread pool is unresolved.
 - Firmware 9.75: the RDT reliability constants are present unchanged in both versions but their
   roles were not traced (see [rdt.md: App / firmware comparison](rdt.md#app--firmware-comparison)). unresolved.
 - Firmware 9.75: the app requesting a loopback destination for tunnel-forwarded connections, and the
