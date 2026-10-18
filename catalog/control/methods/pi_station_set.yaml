@@ -11,9 +11,13 @@ description: Writes the station network configuration for the given SSID and key
   the credentials to retry. A newer pi_station_set stops the previous check without any event for it.
   If timeout_sec is not positive the error is returned
   after the configuration was already changed; nothing is rolled back on any error.
-  Firmware 9.75 (64-bit build, app 3.4.0) the psk member (under params.para, no wifi object) is an enc1 token and needs
+  Firmware 9.75 (64-bit build) the psk member (in the effective parameter object, under params.para when
+  that wrapper is present; no wifi object) is an enc1 token and needs
   the crypto session of the connection (secure-communication chapter); a missing session returns 570 and a
   bad token 571 to 573. Error 104 has an unresolved trigger in the 9.75 handler.
+  iOS app 3.4.0 sends a flat params object with the station password unchanged (plaintext) as psk; iOS app
+  3.4.1 encrypts it while its encryption flag (from can_encrypt) is set, and otherwise still sends it
+  unchanged. Both omit psk when there is no password (READ, network chapter R17g).
 grade: MUTATOR / probable (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ

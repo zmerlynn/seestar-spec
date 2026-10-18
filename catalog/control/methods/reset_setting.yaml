@@ -5,7 +5,7 @@ description: New in firmware 9.75, app 3.4.0. Resets the named settings (exact n
   such as stack) to defaults by applying each through the set_setting path, and rolls back on any failure.
   Keys addressed to the second camera carry the prefix second_camera. and are relayed to it. Keys that
   cannot be reset are returned in unsupported_keys and are not an error. The resettable key list differs
-  between builds (18 descriptors in the 64-bit build, not 20; 10 keys in the 32-bit build). The 64-bit build refuses exp_ms. items at preparation while Stack is active (259) or a view plan runs (536); the 32-bit planner has no such gate, but exp_ms.stack_l still meets the set_setting Stack busy check. Applying preview.rtsp_quality can meet 524 (AVI recording) and stack.startrail_mode can meet 259 (64-bit). Descriptor defaults are listed in the spec (function-states R4; READ, firmware 9.75). A Setting event follows success.
+  between builds (18 descriptors in the 64-bit build, not 20; 10 keys in the 32-bit build). The 64-bit build refuses exp_ms. items at preparation while Stack is active (259) or a view plan runs (536); the 32-bit planner has no such gate, but exp_ms.stack_l still meets the set_setting Stack busy check. Applying preview.rtsp_quality can meet 524 (AVI recording) and stack.startrail_mode can meet 259 (64-bit). Descriptor defaults are listed in the spec (function-states R4; READ, firmware 9.75). A Setting event follows success. iOS app 3.4.1 adds stack.airplane_line_removal, not a firmware 9.75 descriptor, to its stargazing reset list (READ for the app; the device reply is INFERRED to list it as unsupported).
 grade: MUTATOR / READ
 side_effect_tier: C
 confidence: READ

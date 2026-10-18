@@ -22,6 +22,8 @@ Stacking” (batch `comet`, INFERRED), “Video Stacking” of a “Planet” or
 processing. Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless
 marked.
 
+iOS app 3.4.1 changes. Besides its existing control in the experimental settings, “Trail Rejection” (`stack.airplane_line_removal`, through the existing `set_setting` request) also appears in the telephoto advanced settings when expert mode is on, the second camera is not selected and metering and continuous capture are off; the switch is disabled while the app sees stacking on either camera or a running view plan. The English fallback warning before phone-side enhancement no longer speaks of low processing power: it says performance depends on the phone's processing capability and that processing can take longer or fail to complete, and the longer variant still suggests binning when cropping. READ (iOS app 3.4.0, iOS app 3.4.1). These are app-side changes; the device setting and its request are unchanged.
+
 ## Conventions
 
 As in [viewing-and-exposure.md](viewing-and-exposure.md#conventions): RFC 2119 words bind

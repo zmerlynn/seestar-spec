@@ -50,6 +50,8 @@ The 32-bit build resets 10 of these. It reports `hdr`, `preview.rtsp_quality`,
 
 Firmware 9.75 reset descriptor defaults on the 64-bit build are `true` for `auto_af`, `stack_after_goto`, `auto_3ppa_calib`, `auto_master_dark` and `stack.auto_lenhance`; `false` for `hdr`, `preview.raw_bin2`, `stack.drizzle2x`, `stack.save_discrete_ok_frame`, `stack.save_meteor_frame`, `stack.save_video` and `exp_ms.stack_l_auto`; `"HighQuality"` for `preview.rtsp_quality`; `"Raw"` for `preview.image_transfer_mode`; `0` for `stack.startrail_mode`; `1` for `stack.scene_separate` and `stack.scene_shooting_duration_min`; and `10000` for `exp_ms.stack_l`. The 32-bit build has the same descriptor defaults for its ten supported items. These are descriptor values, not a guarantee that an apply succeeds in every state. READ (firmware 9.75, both builds).
 
+App selection. The app's Reset to Default sends a fixed per-mode key list from a bundled resource through `reset_setting` `items`. iOS app 3.4.1 adds `stack.airplane_line_removal` to the stargazing list; the other mode lists are unchanged from iOS app 3.4.0. READ (iOS app 3.4.0, iOS app 3.4.1). That key is not among the firmware 9.75 descriptors above, so the device presumably returns it in `unsupported_keys` (INFERRED; not observed).
+
 R4a. Two-phase form. The primary process drives the second-camera process through
 [`reset_setting_prepare`](../../docs/control/methods/reset_setting_prepare.md) (`{transaction_id, keys}`),
 then [`reset_setting_commit`](../../docs/control/methods/reset_setting_commit.md) or
