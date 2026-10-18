@@ -2,7 +2,7 @@
 
 Part of [Cloud authentication and relay authorization](../cloud-auth.md). This file reproduces
 the fixed constants compiled into the ThroughTek SDKs (the two public keys, the legacy transform phrase and the master host-name
-suffixes) and into the vendor app (the third-party login `sign` key, described but withheld, and the activation request key) that a compatible client or device needs for interoperability. They are compiled into
+suffixes) and into the vendor app (the third-party login `sign` key and the activation request key) that a compatible client or device needs for interoperability. They are compiled into
 the libraries and app inspected and are not specific to any account, device or licence. Per-account values (licences, the licence `keyMask`, tunnel
 credentials, tokens) are not reproduced and MUST NOT be published.
 
@@ -100,9 +100,13 @@ A licence `standalone` entry for the region overrides the constructed name
 ## Third-party login `sign` key (app)
 
 The fixed HMAC-MD5 key for `sign` on `/v1/user/oauth/verify` ([endpoints.md
-R29](../account-login/endpoints.md)) is a 7-byte UTF-8 string. Its value is deliberately not given
-here: only the app's WeChat login verification uses it. It is the app's default key for its signing
-helper and is the same in every installation. READ (app 3.3.2). It is a shared constant, not an
+R29](../account-login/endpoints.md)) is the 7-byte UTF-8 string:
+
+```text
+seestar
+```
+
+It is the same string as the app's `x-service-platform` header value ([Application headers](../account-login.md#application-headers)). Android app 3.3.2: it is the default key of the app's signing helper, used by WeChat login verification, and is the same in every installation. READ. iOS app 3.4.0, main application: the same literal is the key of the HMAC-MD5 `sign` on third-party verification and on the main Apple registration request ([endpoints.md R31a](../account-login/endpoints.md#additions-seen-in-ios-app-340)). READ. The separate bundled account framework's HMAC-SHA256 registration key is a different, project-selected key and is not reproduced here. It is a shared constant, not an
 account secret; it does not authenticate a user. INFERRED.
 
 ## Activation request public key (app)

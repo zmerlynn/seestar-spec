@@ -149,12 +149,8 @@ licence source and the srcId gate changed ([sdk-licence.md R46a](cloud-auth/sdk-
 [http-api.md: `srcId` stability and the busy window](cloud-auth/http-api.md#srcid-stability-and-the-busy-window)).
 
 The iOS app 3.4.0 network framework embeds SDK 4.3.6 build 3 (the Android 3.3.2 value above is
-Android-specific, not evidence of an iOS change), reports login version `0x04030603` and connects
-the tunnel with one connect per `connectInfo` entry, all started at once, first success winning, with a
-wait of no limit (READ; [seestar-profile.md R72a](../transport/p2p-tunnel/seestar-profile.md#port-mapping-profile));
-the device accepts either client version, so the login
-version is not a client gate (READ). The iOS main
-executable is encrypted, so iOS request headers and signing could not be checked.
+Android-specific, not evidence of an iOS change), reports login version `0x04030603`; the device accepts either client version, so the login
+version is not a client gate (READ). iOS app 3.4.0 installs two tunnel mapping groups. One contains remote ports 4800, 4801, 4804, 4554, 4555, 4361 and 80; the other contains 4350 and 4700. Local ports match remote ports except remote 80 maps to local 40080. The client creates one connection per group and dispatches the connection attempts asynchronously. It signals success after all results are nonnegative, or failure on a negative result; its group wait has no time limit. READ for client configuration and control flow ([seestar-profile.md R72a](../transport/p2p-tunnel/seestar-profile.md#port-mapping-profile)). The examined main account headers, metadata and third-party signing builders are readable and are described in [boundaries item 9](account-login/boundaries.md). READ. Actual scheduling, complete cleanup, backend requirements and interoperability remain unresolved.
 
 A targeted comparison of the 32-bit build against the 64-bit build (not a full packet-handler
 comparison) found, READ:
@@ -193,12 +189,7 @@ length is not fixed across builds. READ (two builds), INFERRED (rule).
 - iOS 3.4.0: the endpoint mapping (`device-p2p/retrieve`, `device-p2p/stop`,
   `my-device/remote-unbind` with `deviceSn` and `deviceModel`), the response shapes and the
   remote-unbind error-code mapper are READ ([http-api.md: Optional remote-feature
-  catalogue](cloud-auth/http-api.md#optional-remote-feature-catalogue)). Neither disconnect-device
-  nor remote-unbind has a visible caller in any unencrypted iOS framework; the call site is inferred
-  to be in the encrypted main executable, out of reach. Open: the wire keys of the WeChat login
-  ticket and the `apple` authType value (INFERRED), the composition of the connect list
-  ([endpoints.md](account-login/endpoints.md)), and the meaning of the remote-unbind error codes
-  400002/400020/400021. iOS headers and signing: unresolved (encrypted executable).
+  catalogue](cloud-auth/http-api.md#optional-remote-feature-catalogue)). iOS app 3.4.0: the confirmed device-details removal action invokes remote-unbind; the traced ordinary disconnect uses the stop operation after its status/identifier checks. A main caller of retrieve remains unresolved. The ticket parser accepts ticket, accessToken and expiresIn. Main Apple registration uses platform=apple and authType=email. The examined main third-party verification/registration builders use HMAC-MD5, while the separate bundled account-framework registration builder uses HMAC-SHA256. The installed tunnel profile has two mapping groups and signals success only after all connection results are nonnegative. The removal UI associates 400020 with a remotely connected device and 400021 with an offline device. READ for these client paths and messages. Server effects, the server meaning of 400002 and the other conditions, actual ticket responses/expiry, backend header/signature requirements and alternative framework entry paths remain unresolved. Android app 3.3.2 has the separate source paths described in the account-login and remote-operation chapters; parity remains unresolved.
 - Server meaning of relay timeout 60000 versus 60: unresolved (server-side); see [relay.md
   R100](cloud-auth/relay.md#legacy-relay-messages-device-sdk).
 - Server issuance, lifetime and revocation of allocations; cooldowns; meaning of unhandled cloud

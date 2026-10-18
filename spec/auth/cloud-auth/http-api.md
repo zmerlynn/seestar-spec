@@ -361,13 +361,8 @@ The iOS app 3.4.0 network framework adds three remote endpoints, mapped from its
 the URL table (READ). The disconnect-device API posts to `/v1/device-p2p/retrieve` , the
 stop-connect API uses `/v1/device-p2p/stop` (the stop call of [Reports and
 stop](#reports-and-stop)), and the remote-unbind API posts to `/v1/my-device/remote-unbind`. Both
-new APIs report POST as their method (the literal method value is READ; that it means POST is
-INFERRED by analogy to other write-action APIs in the same table, no literal "POST" name was found
-bound to it) and send a body of exactly `deviceSn` and `deviceModel` (both strings; READ from the
-two APIs' property lists in the iOS network framework). Neither API has a visible caller anywhere in
-the app's unencrypted frameworks; the call site is presumably in the app's main executable, which is
-copy-protected and out of reach of static analysis. Confirmed-present-but-not-visibly-called.
-INFERRED (reachability).
+new APIs send a body of exactly `deviceSn` and `deviceModel` (both strings; READ from the
+two APIs' property lists in the iOS network framework). iOS app 3.4.0 contains POST request builders for the retrieve and remote-unbind operations, each populating deviceSn and deviceModel. READ. The remote device-details remove action invokes remote-unbind after destructive confirmation, using the selected device's serial and model. READ. A main-app caller of retrieve remains unresolved. After passing its manager-status check, the traced ordinary remote-disconnect path instead calls the stop operation when a nonempty connection identifier exists and calls the local tunnel-stop operation. READ for client control flow; server effects and authorization rules remain unresolved.
 
 Response handling differs between the two (READ, from the iOS network framework):
 - Disconnect-device: the success path reads `data.result` from the envelope (so the full shape
@@ -379,11 +374,9 @@ Response handling differs between the two (READ, from the iOS network framework)
   posts a local notification named for "remote unbind succeeded". Failures funnel through an
   endpoint-specific mapper that recognizes exactly three codes in the inclusive range
   400002-400021: 400002, 400020 and 400021 are flagged/wrapped (kept as the same numeric value,
-  not remapped); every other code in or outside that range is forwarded unchanged. The meaning of
-  400002/400020/400021 is unresolved: no string table in the framework ties them to text.
+  not remapped); every other code in or outside that range is forwarded unchanged. No string table in the framework ties them to text; the main application's removal UI does (below).
 
-The server effect of either call and whether the Android app has equivalents remain unresolved
-(server-side).
+iOS app 3.4.0 reports successful remote-unbind completion through a local notification and the removal view. For telescope-network errors, its removal UI associates 400020 with a remotely connected device and a disconnect-first message, and 400021 with an offline device that cannot currently be removed; other such errors use a generic removal-failed message. READ for client presentation. The server definition of these conditions and the meaning of 400002 remain unresolved. Android app 3.3.2 declares the stop operation in its examined remote-service interface; that interface declares neither retrieve nor remote-unbind. Its examined device-management removal helper uses a separate local remote-disjoin request. READ. Equivalence between these operations and their server effects remains unresolved.
 
 Member types (READ): share times and the body `transferId` are 64-bit integers, while the
 detail query `transferId` is a nullable 32-bit integer; coordinates are nullable doubles;

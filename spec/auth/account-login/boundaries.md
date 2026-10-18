@@ -61,10 +61,7 @@ token is limited:
    See [login R39a](lifecycle.md#storage-startup-and-source-identifier) (READ (app
    3.3.2); restore effects INFERRED from platform defaults).
 8. Interoperability as a whole: no live login was performed. unresolved.
-9. iOS app 3.4.0: the WeChat login-ticket response keys and request method (INFERRED), whether
-   `apple` is the wire `authType` (INFERRED) and its `sign` computation
-   ([endpoints R31a](endpoints.md#additions-seen-in-ios-app-340)), and the iOS
-   headers, `x-params` and signing (encrypted main executable). unresolved.
+9. iOS app 3.4.0: the examined account header builder adds X-Lang, a nonempty stored metadata string as x-params, a nonempty configured `x-service-platform` value, and a nonempty account token as Authorization without adding a scheme. The account subclass can override the service-platform value for its H5 entry. Its metadata builder serializes JSON, populating platform, channel, model, os_version, app_version and country_code from application/device information; platform is iOS and channel is appstore. READ. The ticket parser and the two examined main third-party signing builders are described in [endpoints R31a](endpoints.md#additions-seen-in-ios-app-340). Actual ticket responses, expiry semantics and backend header/signature requirements remain unresolved. Android app 3.3.2 uses the separately described account interceptor and Android metadata. READ for that separate implementation; cross-version parity remains unresolved.
 10. Whether a remote-API 401 ends the whole account session or only the older of two concurrent
     tokens ([lifecycle R47](lifecycle.md#token-renewal-expiry-and-logout)). unresolved
     (server-side).
