@@ -283,11 +283,11 @@ questions of the chapters named above and in [index.md: Open questions](../updat
 
 ## Open questions
 
-- Firmware 9.75: the file-server route table and authorization match R2 on both builds (R3c, R3d); whether the 32-bit server's threading matches the 64-bit 16-thread pool is unresolved.
+- Firmware 9.75: the file-server route table and authorization match R2 on both builds (R3c, R3d). Firmware 9.75, both 32-bit and 64-bit file-server builds: each installs an HTTP task-queue factory that constructs a thread pool with a worker count of 16. READ for factory construction and count; INFERRED for 16 workers after successful allocation and thread creation. Actual concurrency, scheduling and broader runtime threading equivalence remain unresolved. The separately reviewed route and authorization behavior remains described in R2; this pool comparison does not establish a firmware 9.31 worker count.
 - Firmware 9.75: the RDT reliability constants are present unchanged in both versions but their
   roles were not traced (see [rdt.md: App / firmware comparison](rdt.md#app--firmware-comparison)). unresolved.
 - Firmware 9.75: the app requesting a loopback destination for tunnel-forwarded connections, and the
   32-bit parity of the classification chain (R15, R15a). INFERRED.
 
-- Whether any feature on iOS uses 445 or other extra ports. unresolved.
+- iOS app 3.4.0's traced device socket callers configure control on 4700, image transfer on 4800 and 4804, file transfer on 4801, and updater control/binary transfer on 4350 and 4361. Its OTA module-transfer path also converts the binary_port returned by module preparation to an unsigned 16-bit value and uses it for the TCP connection. The installed tunnel profile separately maps remote HTTP 80 to local 40080. READ for client construction; configured sockets and mappings do not establish actual traffic or additional device listeners. No port-445 feature caller was identified in the examined socket factories and mapping consumers; this is a bounded negative result. Actual use of 445 or other ports outside these paths remains unresolved.
 - Idle rules on 80: library defaults, see [files-and-album.md R19](../media/files-and-album.md#http-80); the library version is unresolved.
