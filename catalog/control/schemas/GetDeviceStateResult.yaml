@@ -464,6 +464,15 @@ properties:
             description: Degrees (INFERRED).
             x-confidence: READ; unit INFERRED
             x-basis: static analysis of firmware 9.31, handler @0xf2b80 (64-bit build)
+          direction_true:
+            type: number
+            description: 'Firmware 9.75 (64-bit and 32-bit builds): serialized from the same stored heading
+              field as direction; on the 64-bit build that heading is the filtered magnetic heading plus
+              declination, normalized modulo 360 degrees. Physical accuracy and atomic sampling with direction
+              are unresolved.'
+            x-confidence: READ
+            x-basis: static analysis of firmware 9.75, device-state compass serializer and heading producer
+              (64-bit and 32-bit builds), re-read 2026-10-18
           cali:
             type: integer
             description: Raw compass-sensor calibration status byte, forwarded verbatim from the sensor

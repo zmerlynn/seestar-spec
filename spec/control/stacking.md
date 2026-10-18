@@ -267,8 +267,7 @@ gives 209. There is no running-stack check: a change instead clears the stack (t
 logs a restart and resets its decay state). The setting is also reset by
 [`reset_setting`](../../docs/control/methods/reset_setting.md) (see
 [function-states.md](function-states.md#settings-reset)). READ. Firmware 9.31 has no such
-setting and no decay output. The 32-bit build shows no `startrail_mode`, decay or duration
-strings; that is string-level only and was not checked in the code (unresolved).
+setting and no decay output. Firmware 9.75 (32-bit build) does not read or return `startrail_mode` or `startrails_duration_min` in the reviewed setting handlers. Its live-stack worker lacks the configurable duration-stop path and the mode-selected dual-video finalization found in firmware 9.75 (64-bit build). The 32-bit live accumulator initializes its internal selector to 0, and the zero-selector per-frame branch uses maximum-image accumulation. READ. Decay accumulation, a decay getter and nonzero-selector decay branches are nevertheless compiled into the 32-bit binary. Exhaustive reachability of those internal paths through indirect callers remains unresolved; missing settings do not establish absence of decay processing. Firmware 9.31 (64-bit build) lacks these new setting keys and decay symbols. READ for that baseline comparison.
 
 R8c0. Firmware 9.75, app 3.4.0: the video of a star-trail session is written only when the
 stack setting `save_video` is true; the FITS (and image) save is always the maximum output,
@@ -279,8 +278,7 @@ limits a star-trail session, in minutes. A non-integer gives 104; the wide camer
 a running stack gives 259; there is no range check. The default is -1; -1 or 0 means no limit.
 The value is copied when the session starts, so a later change does not affect a running
 session. When elapsed time reaches the limit the stack worker takes its normal end-of-stack
-path. READ. Which final `Stack` state or code announces a session ended this way is unresolved.
-The 32-bit build shows no such string (string-level only).
+path. READ. In firmware 9.75 (64-bit build), reaching the configured star-trail duration takes the normal cleanup and final-save path without raising a duration-specific error. If the session and final work succeed and no stop selects cancellation, the final `Stack` function event has `state:"complete"` and omits `code` and `error`. A final-save failure can instead produce ordinary failure; a stop can select cancellation. READ. The reviewed firmware 9.31 64-bit and firmware 9.75 32-bit live-stack paths do not implement this configurable duration stop. READ for those builds; this does not establish firmware 9.31 32-bit behavior.
 
 R8e. Firmware 9.75: the decay video uses a fixed factor of 0.987 per accepted frame: the
 accumulated image and its brightness map are multiplied by it, and any pixel where the new
@@ -352,9 +350,7 @@ the file name", failing with 102. Errors: 102 (params), 268 (running), 524 (batc
 or continuous exposure conflict), 536 (ViewPlan running), 208 (free space at most 199 MiB),
 212. READ. If the free-space query itself fails the disk check is skipped. READ.
 
-R16a. Firmware 9.75, app 3.4.0: the planet-stack parameters (and the compass sensor data used by compass
-calibration) gain a member `direction_true`. Only its existence is established; its type and meaning
-are unresolved. READ (existence).
+R16a. Firmware 9.75 (64-bit and 32-bit builds) adds numeric `direction_true` to the compass sensor object returned by `get_device_state`. Both `direction_true` and `direction` are serialized from the same stored heading field; declination is a separate member. READ. In the 64-bit build, the producer converts and filters the magnetic-vector heading, adds declination, and normalizes finite headings modulo 360 degrees. The serializer adds no separate correction for the new member. READ. The reviewed firmware 9.75 64-bit `start_planet_stack` parser and starter add no `direction_true` parameter: their request members remain `file`, optional `mode` and optional `rect`. Firmware 9.31 (64-bit build) has `direction` without `direction_true`. READ. Physical heading accuracy, atomic sampling across the two member loads and full 32-bit producer-formula parity remain unresolved here.
 
 R17. Progress is reported by [`PlanetStack`](../../docs/control/events/PlanetStack.md): F plus
 `percent` (capped at 99 while working), `procedure_code`, `procedure`, `output_file`,
@@ -445,9 +441,7 @@ R20c. Firmware 9.75, app 3.4.0: a comet batch is limited to 200 input frames, th
 `comet_max_frame_num` reported by `get_setting` (not settable). The count is checked in three
 places: at `start_batch_stack` (input list above 200), in the worker on the input list, and again
 after the list is expanded. Each raises thread-local error value 204 `out of limit`. READ for the
-places and the code. The `start_batch_stack` reply code 204 for the first place is INFERRED from the
-stored thread-local error value; whether the worker-side failures reach the `BatchStack` event with
-204 is unresolved. A new preflight scans the list for the first frame that contains a comet and
+places and the code. Firmware 9.75 (64-bit build) returns `start_batch_stack` error 204 (`out of limit`) when a comet input list exceeds 200 entries before worker start. That rejection does not start a new worker. If the worker's input-list or expanded-list check instead finds more than 200 entries, ordinary unstopped completion produces a `BatchStack` function event with `state:"fail"`, `code:204`, `error:"out of limit"` and integer `max_frame_num:200`. A stop can select cancellation instead. An accepted start replies 0 independently of these worker failures; reply/event ordering is not established here. READ for the reply and event paths. Firmware 9.31 (64-bit build) has no corresponding 200-frame checks in the compared starter and worker. Complete firmware 9.75 32-bit request/event parity for this limit remains unresolved. A new preflight scans the list for the first frame that contains a comet and
 skips frames that are not valid FITS, cannot be loaded or show no comet; if none is found it fails
 with 9005 (`comet not found`), and a detector initialisation failure gives 9002 (details in
 [errors.md](errors.md)). With too few usable candidates the worker raises 9004. An empty non-comet

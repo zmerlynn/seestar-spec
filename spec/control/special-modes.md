@@ -178,15 +178,7 @@ See [Stacking: Planet stack](stacking.md#planet-stack) for parameters, events an
 
 R20. [`start_track_object`](../../docs/control/methods/start_track_object.md) takes `{x, y, width,
 height}`, all integers and all required (104). The values are display coordinates and are converted
-to sensor coordinates. Width or height <= 0 is replaced by the camera subframe. READ. Firmware 9.75
-(64-bit): an optional boolean `is_manual_selection` is read (106 if present and not a boolean;
-default true), the coordinates are converted with the show-to-sensor conversion instead of the 9.31
-conversion, and when `is_manual_selection` is false a rectangle-correction step runs first (a change
-is logged). READ. If smart follow is running, the rectangle is submitted to smart follow: success
-replies 0, and the error code on failure comes from the thread's error state and is unresolved.
-Otherwise object tracking starts and a failure returns the thread's error code. READ (routing). The
-32-bit build has no `is_manual_selection` string while the smart-follow submit symbol is present;
-its handler probably differs (unresolved).
+to sensor coordinates. In firmware 9.31 (64-bit build), ordinary object tracking replaces a converted rectangle with nonpositive width or height by the camera subframe when that query succeeds. READ. In firmware 9.75 (64-bit and 32-bit builds), a running smart-follow worker receives the final converted rectangle through target submission. Submission success replies 0. A nonpositive submitted width or height returns error 209; a stopped worker returns 524; a pending target or a state that does not accept a new target returns 268. These errors reach the `start_track_object` reply. The ordinary-tracking subframe fallback does not apply to smart-follow submission. If smart follow is not running, the handler starts ordinary object tracking and returns 0 on success or its current error on failure. READ for firmware 9.75, both builds. Firmware 9.75 (32-bit build) reads the four required integer coordinates `x`, `y`, `width` and `height`, returning 104 when one is missing or has the wrong type. It uses the older horizontal/vertical display-to-sensor conversions. It does not read `is_manual_selection` or apply a correction based on that member. After conversion, running smart follow selects target submission; otherwise ordinary object tracking starts. READ. Firmware 9.31 (64-bit build) uses the older conversions and starts ordinary tracking directly. Firmware 9.75 (64-bit build) instead uses the newer conversion and reads optional `is_manual_selection`, default true: JSON booleans and integers are accepted; other types give 106. Integer conversion tests the low 32 bits for nonzero. A false value selects rectangle correction before submission or ordinary tracking. READ. These baseline statements do not establish firmware 9.31 32-bit behavior, which remains unresolved here.
 
 R21. Preconditions: scenery mode (view mode 1) or the wide camera; the RTSP stream running; a
 tracker available; RTMP not running. Errors: 300, 268, 203, 212. READ (firmware 9.31). Firmware
@@ -200,8 +192,7 @@ R31a](session-handshake/relay-routing.md#second-camera-relay-routing). The relay
 the old wide-camera, view-mode and relay test in `iscope_match_target_name`,
 `iscope_accept_target_name`, `stop_record_avi`, `start_ai_process`, `check_ai_process` and
 `get_annotate_result`; it runs no occupancy probe, so 203 and 524 are not newly reachable there.
-READ. Whether `start_auto_goto` and `start_solve` use it is not confirmed. The planet-stack
-functions and the AVI-record-state formatter differ from 9.31 but were not examined (unresolved).
+READ. In firmware 9.31 and 9.75 (64-bit builds), the local `start_auto_goto` and `start_solve` handlers do not call the common relay check described here. The former retains its view-mode check; the latter retains its polar-alignment check and live/stored-image solving routes. Firmware 9.75 (32-bit build) also omits that direct relay check in these two handlers. READ. In the compared 64-bit builds, the local planet/surface processing and RGB-alignment paths retain their control flow and numeric literals, and the planet worker retains its processing-failure notification, cancellation, save and saved-result packaging routes. AVI state retains `saved_frames`, `raw`, the `timelapse` object, and `file_saved`. Its file-saved predicate requires recorded duration greater than 0.01 seconds, a nonempty stored filename and a recording error other than 284. `duration_sec` appears when that predicate is true; `name` additionally requires successful relative-path conversion. READ for these local comparisons. Equality of processed images, imported implementations and complete downstream event/metadata behavior remains unresolved. Full firmware 9.75 32-bit planet-processing parity remains unresolved.
 
 R22. The tracker reports through [`ObjectTrack`](../../docs/control/events/ObjectTrack.md)
 function events with the tracked rectangle `x`, `y`, `width`, `height` (pixels, INFERRED). READ.

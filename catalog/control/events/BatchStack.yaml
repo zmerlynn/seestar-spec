@@ -72,7 +72,7 @@ payload:
     code:
       type: integer
       description: 'Function producer: present when state is fail, even if the stored code is 0. cancel
-        omits it. Firmware 9.75, comet task: the worker stores 204 when the input or expanded list exceeds 200 frames, 9004 when too few candidates remain and 9005 or 9002 from the preflight; that these reach this member is unresolved.'
+        omits it. Firmware 9.75, comet task: the worker stores 204 when the input or expanded list exceeds 200 frames (READ: the fail event carries code 204, error out of limit and max_frame_num 200), 9004 when too few candidates remain and 9005 or 9002 from the preflight; that the last three reach this member is unresolved.'
       x-required-when: state is fail (function producer)
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
@@ -82,6 +82,11 @@ payload:
       x-required-when: state is fail (function producer)
       x-confidence: READ
       x-basis: static analysis of firmware 9.31, FormatFuncDetail @0x6e1ce0
+    max_frame_num:
+      type: integer
+      description: 'Firmware 9.75 (64-bit build), comet task: 200, sent with code 204 when the worker finds more than 200 input or expanded frames.'
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, batch-stack comet worker failure path (64-bit build), re-read 2026-10-18
     route:
       type: array
       items:
