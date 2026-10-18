@@ -15,6 +15,10 @@ description: With no params (or an empty array) returns the currently open camer
   later no-params call on an idle device returned code 0 with the telescope camera record (chip [2160,3840],
   pixel 2.9 um, GR, colour, bins [1,2]), and ordinals 0 and 1 stayed all-zero before and after it
   (OBSERVED 2026-10-16), so the no-params refresh does not fill the ordinal cache.
+  During active imaging (View, Stack and Exposure all working), ordinals 0 and 1 returned the same default
+  records in 11 rounds 60 s apart, while get_device_state in the same session returned filled camera and
+  second_camera snapshots, so imaging does not fill the per-ordinal cache either (OBSERVED 2026-10-18; the
+  session did not record the firmware version, and the device has run 9.75 since 2026-10-16).
 grade: MUTATOR / established (64-bit build; 32-bit build PURE GETTER, probable)
 side_effect_tier: B
 confidence: READ

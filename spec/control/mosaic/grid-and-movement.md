@@ -44,7 +44,7 @@ all-zero default records, so the runtime identifiers were not tied to either cam
 idle device with a camera open, `get_camera_info` without params returned code 0 and the telescope
 camera record (chip `[2160,3840]` as reported, 2.9 µm, GR, colour, bins 1 and 2), matching the keyed `camera`;
 integers 0 and 1 still returned the same default records afterwards (2026-10-16). OBSERVED. The
-refresh therefore does not fill the per-ordinal cache, and the ordinal mapping stays unresolved. The planner is called
+refresh therefore does not fill the per-ordinal cache. During active imaging (View, Stack and Exposure all `working`), ordinals 0 and 1 returned the same default records in 11 rounds 60 s apart, while `get_device_state` in the same session returned filled `camera` and `second_camera` snapshots, so imaging does not fill the per-ordinal cache either (OBSERVED 2026-10-18; the session did not record the firmware version, and the device has run 9.75 since 2026-10-16). The ordinal mapping stays unresolved. The planner is called
 with the constants 220 (pitch base) and 3 (repetition base) at every call site used for
 capture, estimation and regeneration. READ (firmware 9.31). Firmware 9.75 (READ): the pitch
 argument is no longer used by the planner and the wide-camera branch is gone from it ([R10a](#the-firmware-975-planner)).
