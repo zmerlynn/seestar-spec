@@ -293,11 +293,7 @@ R8f. Output names, firmware 9.75, app 3.4.0: mode 0 writes `startrails_video_<ts
 `STS_startrails_video_decay_`. The FITS header keys written by the batch star-trail header update
 are unresolved. READ for the names.
 
-R8c. Firmware 9.75, app 3.4.0: when a mosaic goto is the source of a stack start, the device logs
-that it starts a normal stack, resets the mosaic parameters and clears the stack before stacking
-(called from [`iscope_start_stack`](../../docs/control/methods/iscope_start_stack.md) and the
-view-start path; the start-view side is in [mosaic.md](mosaic.md)). The wire effect, and whether
-`iscope_start_stack` replies differently, is INFERRED and unresolved. Firmware 9.75 also routes
+R8c. Firmware 9.75, 64-bit build marks a main-camera star request outside ViewPlan as a mosaic-goto source when its target coordinates pass the sentinel tests and its requested scale or rotation exceeds the source thresholds. This marker does not prove that a mosaic was applied or that the goto completed. When stack-start preparation is reached, it converts a marked source only if the current main-camera stack contains frames: it resets mosaic parameters to scale 1, angle 0 and star-map angle 361, clears the stack, selects the ordinary stacker and consumes the marker. An already-running identical stage can return before stage preparation. Successful local `iscope_start_stack` still returns integer 0; the marker adds no reply member or distinct success value. Firmware 9.75, 32-bit preparation has the same flag/frame-count/reset/clear/ordinary-stacker sequence with camera ID 0. READ. Firmware 9.31, 64-bit path has no corresponding source conversion; broader relay/build parity remains unresolved here. Firmware 9.75 also routes
 `iscope_start_stack` through a relay-only reduced clone of the common relay check, so it does not
 gain the 203 and 524 occupancy outcomes; the same holds for `save_image`, `is_stacked` and
 `get_stack_info`. The same relay-only form is used by `start_auto_focuse`, `stop_auto_focuse`,

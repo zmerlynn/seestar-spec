@@ -14,7 +14,7 @@ Return the cached annotation result for one image (default: the latest).
 | Confidence | READ (handler); unresolved (result members) |
 | Basis | static analysis of firmware 9.31, handler @0xb74f0, GetAnnotateResult @0x1fce80 (64-bit build); 32-bit handler compared statically; the 32-bit relay condition lacks the S30Plus/S80 board checks but reaches the same relay helpers; firmware 9.75 member from the 9.75 reports |
 
-Looks up the cached annotation object for the requested image id and returns it unchanged; it starts no computation. Under some secondary-camera and view-mode conditions the original request is first forwarded to the secondary process (relay failure behaviour is unresolved). Although it is a read, every call writes log state, so the strict grade is MUTATOR; the observer tier is B. The members of the cached object are not enumerated by the evidence. Whether a matching annotation event exists is unresolved; current activity is reported by the annotate member of the app state. Firmware 9.75, app 3.4.0: the keyed form accepts file_path, so a stored file can be annotated; the call goes through the relay-only form of the relay check (no 203 or 524), with errors 102 and 105 on the new member.
+Looks up the cached annotation object for the requested image id and returns it unchanged; it starts no computation. Under some secondary-camera and view-mode conditions the original request is first forwarded to the secondary process (relay failure behaviour is unresolved). Although it is a read, every call writes log state, so the strict grade is MUTATOR; the observer tier is B. The members of the cached object are not enumerated by the evidence. Whether a matching annotation event exists is unresolved; current activity is reported by the annotate member of the app state. Firmware 9.75, app 3.4.0 (64-bit, READ): a file-name string, directly or as the sole file_path member of an object, annotates a stored image synchronously from its FITS/WCS data (no solve, no annotation worker); the result has image_size, annotations and boolean wide_cam, without image_id, and for non-wide images each annotation item gains ra_dec_j2000 (degrees, from the stored WCS). An object selects exactly one of file_path and img_id. The call goes through the relay-only form of the relay check (no 203 or 524). Stored-file errors: 220 header/WCS, 209 unsupported stored camera, 218 temporary WCS write, 207 output or enrichment failure, 255 producer missing-file diagnostic. The 32-bit build also has the stored-file path; its full result parity is unresolved.
 
 Side effects: Reads the cached annotation map; the helper logs default-id selection and the success, empty and not-found branches (shared log state). May forward the request to the secondary process. No hardware or setting change.
 
@@ -44,8 +44,8 @@ Side effects: Reads the cached annotation map; the helper logs default-id select
 | 104 | img_id present but not an integer | `expected int param` |
 | 204 | img_id outside 0..65534 | `out of limit` |
 | 207 | No cached annotation data, or the cached object is flagged empty | `fail to operate` |
-| 102 | Firmware 9.75: file_path invalid | `invalid argument` |
-| 105 | Firmware 9.75: file_path is not a string | `expected string` |
+| 102 | Firmware 9.75: object selects neither or both of file_path and img_id, or has extra members | `invalid argument` |
+| 105 | Firmware 9.75: file name not a string, or empty | `expected string` |
 | 200 | Requested (or default) image id not found in the cache; also the dispatcher case where the request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 

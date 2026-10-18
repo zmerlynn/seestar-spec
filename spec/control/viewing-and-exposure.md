@@ -134,14 +134,11 @@ R4. `params` MUST be an object with a string `mode`. Optional members: `target_n
 `target_ra_dec` (two numbers: RA in decimal hours, then Dec in degrees; coordinates of date,
 INFERRED, so a client SHOULD precess J2000 positions first), `lp_filter`, `target_type` (solar_sys
 only), `mosaic`, `selected_cam` (View or SecondView). READ. The `mosaic` members and their effect at
-capture are in [mosaic.md](mosaic.md); firmware 9.75 (app 3.4.0) adds three optional members,
-`goto_capt_type`, `goto_capture_settings` and `stack_exp_ms`, and the codes 104 and 209 on them.
-READ (members and codes); their types are INFERRED and their meaning is unresolved. In 9.75 the view
-starter and star-stage starter set the capture type and settings, update the stack exposure, save
-the star filter position and call the mosaic goto source setup (a mosaic goto source starts a normal
-stack after the goto; see [stacking.md](stacking.md)); the view stop also differs. A client SHOULD
-NOT send the new members until their semantics are decoded; a mosaic view has no completion of its
-own and runs until stopped. `lp_filter` is passed to the target's goto; it moves the wheel to the LP
+capture are in [mosaic.md](mosaic.md). In firmware 9.75 the view starter also saves the star filter position, and the view stop differs. READ.
+
+Firmware 9.75, 64-bit and 32-bit builds add optional `goto_capt_type` and `goto_capture_settings`. `goto_capt_type` is a string (105 otherwise) selecting only stack capture here; its name comparison is ASCII case-insensitive, and other capture types or unknown names give 209. `goto_capture_settings` is an object (107 otherwise) containing integer `stack_exp_ms` (104 when missing or non-integer). The decoded signed 32-bit exposure is accepted only when positive and accompanied by explicit stack capture selection, otherwise 209. `stack_exp_ms` is nested inside that object. READ. No additional exposure upper-bound comparison occurs in the inspected handler; this is not an arbitrary-precision wire-integer guarantee.
+
+On the main-camera goto stage outside ViewPlan, with view parameters available, these fields can switch capture to stack and update its exposure through ordinary stack-setting application before goto. READ. Exposure normalization can change the effective value; parser acceptance alone does not establish the final exposure. Firmware 9.31's inspected builds do not read these fields. Full exposure-normalization and other build-specific lifecycle behavior remain outside this finding. A mosaic view has no completion of its own and runs until stopped. `lp_filter` is passed to the target's goto; it moves the wheel to the LP
 slot only inside a ViewPlan or with `stack.auto_lenhance` on, and the view start itself never moves
 the wheel ([focus-and-filter
 R22d](focus-and-filter.md#factory-names-the-dark-slot-and-automatic-moves)). READ.

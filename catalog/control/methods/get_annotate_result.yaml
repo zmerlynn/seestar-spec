@@ -7,8 +7,14 @@ description: 'Looks up the cached annotation object for the requested image id a
   a read, every call writes log state, so the strict grade is MUTATOR; the observer tier is B. The members
   of the cached object are not enumerated by the evidence. Whether a matching annotation event exists
   is unresolved; current activity is reported by the annotate member of the app state. Firmware 9.75,
-  app 3.4.0: the keyed form accepts file_path, so a stored file can be annotated; the call goes through
-  the relay-only form of the relay check (no 203 or 524), with errors 102 and 105 on the new member.'
+  app 3.4.0 (64-bit, READ): a file-name string, directly or as the sole file_path member of an object,
+  annotates a stored image synchronously from its FITS/WCS data (no solve, no annotation worker); the
+  result has image_size, annotations and boolean wide_cam, without image_id, and for non-wide images
+  each annotation item gains ra_dec_j2000 (degrees, from the stored WCS). An object selects exactly one
+  of file_path and img_id. The call goes through the relay-only form of the relay check (no 203 or 524).
+  Stored-file errors: 220 header/WCS, 209 unsupported stored camera, 218 temporary WCS write, 207 output
+  or enrichment failure, 255 producer missing-file diagnostic. The 32-bit build also has the stored-file
+  path; its full result parity is unresolved.'
 grade: MUTATOR / established (64-bit build; 32-bit build matches (READ) except that its relay condition
   omits the two newest model checks)
 side_effect_tier: B
@@ -64,9 +70,10 @@ request:
             x-basis: static analysis of firmware 9.31, handler @0xb74f0 (64-bit build), key table @0x72e5c8
           file_path:
             type: string
-            description: 'Firmware 9.75, app 3.4.0: path of a stored image to annotate instead of a cached
-              one. Wrong type 105; invalid value 102 (exact validation unresolved).'
-            x-confidence: READ; validation unresolved
+            description: 'Firmware 9.75, app 3.4.0: file name of a stored image to annotate instead of a
+              cached one, appended to the image-directory prefix without normalization. Must be the only
+              member (with img_id, or with extra members: 102). Non-string or empty 105.'
+            x-confidence: READ
             x-basis: static analysis of firmware 9.75, app 3.4.0 reports, get_annotate_result handler
               (64-bit build)
         additionalProperties: true
@@ -107,10 +114,10 @@ errors:
   trigger: No cached annotation data, or the cached object is flagged empty
   label: fail to operate
 - code: 102
-  trigger: 'Firmware 9.75: file_path invalid'
+  trigger: 'Firmware 9.75: object selects neither or both of file_path and img_id, or has extra members'
   label: invalid argument
 - code: 105
-  trigger: 'Firmware 9.75: file_path is not a string'
+  trigger: 'Firmware 9.75: file name not a string, or empty'
   label: expected string
 - code: 200
   trigger: Requested (or default) image id not found in the cache; also the dispatcher case where the

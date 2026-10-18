@@ -217,11 +217,13 @@ annotation for `img_id` (0..65534; default the most recent). 104 malformed, 204 
 is also the dispatcher's "invalid id" for a request without `id`; a client MUST disambiguate by
 whether it sent an `id`.
 
-R15a. Firmware 9.75, app 3.4.0: `get_annotate_result` also accepts a `file_path` member in the keyed
-form, so a stored file can be annotated; an invalid value gives 102 and a non-string 105. The call
-now goes through the relay-only form of the common relay check, which relays when needed but runs
-no occupancy probe, so it gains no 203 or 524. Firmware 9.31 relayed through a different test. READ for the member,
-unresolved for the exact path validation and the result shape for a stored file.
+R15a. Firmware 9.75, app 3.4.0: the `get_annotate_result` call now goes through the relay-only form of the common relay check, which relays when needed but runs no occupancy probe, so it gains no 203 or 524. Firmware 9.31 relayed through a different test. READ.
+
+Firmware 9.75, 64-bit build: after relay and positional normalization, `get_annotate_result` accepts a file-name string directly or as the sole `file_path` member of an object. An object selects exactly one of `file_path` and `img_id`, without additional members; invalid selection gives 102. A keyed non-string file name, or a file name with an empty C-string prefix, gives 105. The file name is appended to the image-directory prefix using C-string operations, without component normalization in this handler. The cached-ID form remains available; its decoded integer ID is checked against 0..65534, with 104 for a keyed non-integer and 204 for a decoded out-of-range value. READ.
+
+The stored-file path reads FITS/WCS data, writes temporary WCS data and invokes an annotation producer synchronously. It does not start a solve or the asynchronous annotation worker. A successful result supplies `image_size`, the producer's `annotations` fragment and boolean `wide_cam`, without `image_id`. For stored non-wide images, the imager reparses the result and, for nonempty annotation arrays, requires object items with numeric `pixelx`/`pixely` and adds `ra_dec_j2000` from stored-WCS conversion in degrees. READ. Stored wide images bypass that reparse/enrichment loop; equivalent added fields and item validation are not established for them. The field name does not independently validate the epoch of arbitrary stored WCS data.
+
+Header/WCS failure gives 220, unsupported stored camera selector 209, and temporary WCS write failure 218. Missing annotation output/fragment and failures of the non-wide JSON/enrichment path give 207. The producer's missing-file diagnostic gives 255; producer execution failure can propagate its existing error, with 207 as fallback. READ. Firmware 9.31, 64-bit getter has no stored-file branch; its separate file-annotation starter remains distinct. Firmware 9.75, 32-bit getter also supports stored-file FITS/WCS retrieval and lacks the 64-bit helper's stored-camera-selector rejection; full result/enrichment parity remains unresolved.
 
 R16. [`stop_annotate`](../../docs/control/methods/stop_annotate.md) joins the worker and
 always returns 0. [`is_img_file_annotated`](../../docs/control/methods/is_img_file_annotated.md)
@@ -371,8 +373,7 @@ process. The local stop is not undone if the relay fails. A missing or non-strin
 105; a relay context failure gives 300 in a reply without `jsonrpc`, `Timestamp`, `method` or
 `result`. READ.
 
-Firmware 9.75: `get_solve_result` differs from 9.31 in code that looks like library noise plus one
-constant; it was not read in full (unresolved).
+Firmware 9.31 and firmware 9.75, 64-bit builds: `get_solve_result` ignores params and reports current solve data without starting a solve. If both coordinate components satisfy `abs(value+999)>0.1`, it formats `state:"complete"`, `ra_dec`, `fov`, `focal_len`, `angle` and `image_id`; this is a sentinel test, not general coordinate validation. Otherwise it formats `state:"solving"` while the solve worker runs and `state:"fail"` when it does not. `star_number` is included when its stored value differs from -1, and `duration_ms` is always formatted. The RPC returns that object when the coordinate test passes or a star count is available; otherwise it returns 215. READ. The changed firmware 9.75 internal layout does not establish a changed wire contract. Full 32-bit formatter parity remains unresolved.
 
 R27. [`upload_refstar_info`](../../docs/control/methods/upload_refstar_info.md) requires an
 object (107; positional arrays are refused) with `refData`, an array; the literal key

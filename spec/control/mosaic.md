@@ -103,13 +103,7 @@ stored values. They do not prove that a capture used them. READ (stored values) 
 R5. When applied, the parameters are compared with the stored ones: a value within 0.1 of -999
 is not stored, and a change smaller than 1e-6 is ignored. The canvas size is recomputed on
 every application. The angle is truncated to an integer, not rounded; `star_map_angle` is kept
-as a float. READ (firmware 9.31). Firmware 9.75 (READ): the truncation holds on the parameter-initialization
-path; the per-frame path that regenerates the list rounds the angle to the nearest integer
-instead, and the path that reports the estimate uses the stored integer. Which path a given
-client request reaches first is unresolved.
-
-The direct `iscope_start_view` path and the plan path share the parser. READ. That both reach
-the same apply-at-setup step is INFERRED from the shared star-view setup.
+as a float. READ (firmware 9.31). Firmware 9.75, 64-bit build: direct view and plan targets share mosaic parsing, followed by later application during star-view setup. Application truncates the requested angle to a stored signed integer. If the setters report a change and setting notifications are not suppressed, building the notification synchronously computes an estimate using that stored integer. Frame initialization stores actual frame dimensions and builds the live list, passing the angle through integer-to-float-to-integer conversion. Later list regeneration uses half-away-from-zero rounding of the recovered angle. Unchanged parameters need not produce that notification; the parser therefore establishes no unconditional first planner call. Firmware 9.31, 64-bit build retains the parser/application distinction and uses the older planner. READ. Firmware 9.75, 32-bit initialization also round-trips its stored angle through float; full request-order parity across builds remains unresolved.
 
 App practice (READ, app 3.3.2; not a device rule): the app's slider steps are consistent with a
 scale of 1.0 to 2.0 in steps of 0.1 and an angle of -90 to 90 degrees (INFERRED from the

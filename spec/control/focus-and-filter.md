@@ -140,8 +140,7 @@ the call to the peer process when needed but runs no occupancy probe, so these t
 replied and the handler returns. READ (call), INFERRED (wire effect). The local body and R22d are
 unchanged: stop still sets 253 and stops autofocus. Motion detection is paused while autofocus runs,
 and the autofocus streaming thread applies the 2x2 binning of `preview.raw_bin2` when that setting
-is true (media image-sockets R11b). A new string, `lp_position`, appears in the autofocus code and
-is unresolved. The 32-bit build was not checked.
+is true (media image-sockets R11b). Firmware 9.75, 64-bit build: `lp_position` is an optional stored-image information member. A stored filter name matching `dark`, `IRCUT` or `LP` case-insensitively produces integer 0, 1 or 2 respectively; an unmatched name or failed header read omits this member. The literal is absent from the inspected firmware 9.31 builds and firmware 9.75 32-bit build. READ. This finding does not establish complete autofocus parity between builds.
 
 R11. Depending on mode, the starter runs a named AF worker or view stage 1. Stage 1 stops the
 current view stage ([viewing-and-exposure.md](viewing-and-exposure.md#view-stages-started-directly)).
