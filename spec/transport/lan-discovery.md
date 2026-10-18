@@ -56,10 +56,8 @@ Two different discovery mechanisms exist and MUST NOT be confused:
   [lan-discovery/kalay-search.md: Kalay LAN search: opcodes 0601 to 0604](lan-discovery/kalay-search.md#kalay-lan-search-opcodes-0601-to-0604).
   The Kalay reply construction is traced in firmware 9.75, both builds. Before the send transformation, the extended `0x0602` reply is 200 bytes with a 184-byte body: identity at 16–35, zeros at 36–51, 129 bytes of configured device information at 52–180, three zero bytes at 181–183, LE32 SDK version `0x04030603` at 184, RID8 or zeros at 188, and LE32 status at 196. The legacy reply is 184 bytes with body length 168, logged-in identity at 16–35, requester IPv4 sockaddr at 36–51, device information at 52–180 and zero padding at 181–183; it has no extended suffix. READ. Runtime identity/information values, actual reply delivery and server-side meanings remain unresolved.
 
-- iOS: the request form differs and is answered like the Android form
-  ([app-scan.md: Request](lan-discovery/app-scan.md#request)); source-address rule, retries, lock
-  UI, scanning in remote mode and manual address entry are unresolved. No native reply to the
-  iOS form has been captured. unresolved.
+- iOS: the request form differs and is answered like the Android form ([app-scan.md: Request](lan-discovery/app-scan.md#request)). No native reply to the iOS form has been captured.
+- iOS app 3.4.0: the scan builder sends `id` 201, `method` `scan_iscope`, `name` `iphone` and the phone's current Wi-Fi IP to the Wi-Fi broadcast address on UDP 4720. Scanning installs a repeating timer with a default interval of five seconds and sends once immediately; stopping clears the scan cache and invalidates the timer. READ for construction and scheduling, not measured packet cadence. The receive handler uses the datagram source IP as the discovered device IP; it does not require equality with a payload IP in the traced receive path. READ. Lock UI, scanning gates while remote mode is selected, manual address-entry behavior, lower socket filtering and actual reply delivery remain unresolved here. These are app-side findings; firmware 9.31/9.75 responder behavior is a separate result.
 - Exact serialized reply bytes: see [app-scan.md: Example](lan-discovery/app-scan.md#example).
   Optional members and model strings for each model are also unresolved.
 - The full value set of `serc`, the access point's key-management mode
@@ -71,7 +69,7 @@ Two different discovery mechanisms exist and MUST NOT be confused:
 - Reply delivery across routers and AP isolation: see
   [app-scan.md R6](lan-discovery/app-scan.md#choosing-the-broadcast-address). Delivery over
   VPN overlays is also unresolved.
-- Which record wins when two hosts advertise one `sn` on iOS. unresolved.
+- iOS app 3.4.0 inserts scan results into a mutable set whose model equality and hash use the serial number. The receive path inserts without replacing or merging an equal record and supplies the set's contents to the scan callback. READ. For equal nonnull serial strings, the first inserted record is retained until cache clearing, including its source-derived IP (INFERRED from the set insertion and equality rules). Host arrival order, array ordering and downstream UI selection remain unresolved. This app cache policy is separate from firmware 9.31/9.75 responder behavior.
 - LAN-direct bypass success and fallback at runtime, and iOS mapping choices. Unresolved; see Q29
   in [00-overview.md: Open-question register](../00-overview.md#open-question-register).
 

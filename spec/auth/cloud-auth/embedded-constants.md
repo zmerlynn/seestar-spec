@@ -76,8 +76,7 @@ technique the client SDK uses. READ (both device builds and the client SDK). The
 network framework embeds the phrase as a plain literal: a NUL-terminated 36-byte string whose first
 32 bytes are exactly the phrase above, followed by four more printable ASCII bytes, which are not
 repeated here. READ (iOS app 3.4.0, byte comparison). That 36-byte string does not occur in either
-64-bit imager. Whether the iOS code reads the four extra bytes is unresolved; the transform below, as
-read in the Android client SDK and the device SDK, uses only the first 16.
+64-bit imager. iOS app 3.4.0: initialization copies exactly the 32-byte prefix into state; the four adjacent bytes are separately referenced by SDK logging and are not copied as transform material. Complete transform blocks use only state bytes 0–15; a tail uses at most bytes 0–14. READ. The copied second half and four-byte suffix do not extend the transform key. The first-16-byte consumer width also holds in the inspected Android app 3.3.2 SDK and firmware 9.31/9.75 D64 and D32 transform functions; this bounded agreement does not establish equivalence of every SDK routine.
 
 Only the first 16 bytes (`Charlie is the d`) are used. XORed byte-wise with the licence's
 16-byte `keyMask` (all zero when the licence has none), they form the scrambling key `K` of

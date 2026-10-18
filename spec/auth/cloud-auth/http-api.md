@@ -9,7 +9,7 @@ consumed by the SDK ([sdk-licence.md](sdk-licence.md)).
 App names: these are the HTTP calls behind the app's “Telescope Network” screens: “Remote location”
 and “Change remote location”, “Device Sharing” (“Share with friends”), “Device transfer” (moving
 remote management rights) and “Remote Restart”. The app's separate “Device ownership transfer” and
-account binding screens use other endpoints that this specification does not cover (unresolved).
+account binding screens use the account-side calls in [Account-side device binding and ownership transfer](#account-side-device-binding-and-ownership-transfer).
 Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
 
 Basis: static analysis of app 3.3.2 (Java layer); observations from 2026-10-10 to 2026-10-12.
@@ -391,3 +391,32 @@ detail query `transferId` is a nullable 32-bit integer; coordinates are nullable
 null encoding follow R10: `type` is `email` or `mobile`, and null members (the app's add-device
 call leaves `status` null) are omitted. READ (app 3.3.2). Server-side units and how the server
 treats omitted members are unresolved (server-side).
+
+## Account-side device binding and ownership transfer
+
+Android app 3.3.2 uses separate account-side device-binding and ownership-transfer calls in addition to remote-management calls. Its scene routing selects different services and body models for ownership transfer and remote-management transfer even when URL paths have the same spelling. The account-side client declarations are listed below. READ. These are app HTTP contracts, not firmware 9.31/9.75 RPCs; iOS app 3.4.0 request parity remains unresolved.
+
+Calls use the configured Seestar account service, the common app headers and the nonempty account authorization token when present. JSON body names follow the members below, with nullable values omitted by the default serializer. Responses use the shared code/data/msg envelope. READ for client construction and parsing, not server requirements. Required below means a nonnull client-constructor argument; optional means nullable in that constructor, not established server permission to omit it.
+
+| HTTP call | Client request members | Declared data model |
+|---|---|---|
+| POST `/v1/device-bind` | Required strings deviceModel, deviceSn; optional strings subModel, cpuId, ssid | Binding record |
+| GET `/v1/device-bind/check` | String queries deviceModel, deviceSn | Nullable boolean canBind |
+| GET `/v1/device-bind/owner-check` | String queries deviceModel, deviceSn | Nullable boolean isOwner |
+| GET `/v1/device-bind/my` | Nullable integer queries current, pageSize | Shared page wrapper of binding records |
+| POST `/v1/device-transfer/send-code` | Required type enum email/mobile and strings deviceSn, deviceModel; optional string ssid | Unspecified object |
+| POST `/v1/device-transfer/verify-code` | Required strings code, deviceSn, deviceModel | Nullable boolean success |
+| POST `/v1/device-transfer/request` | Required strings code, toUser, deviceSn, deviceModel | Unspecified object |
+| GET `/v1/device-transfer/list` | Nullable integer queries current, pageSize | Shared page wrapper of transfer-list records |
+| GET `/v1/device-transfer/detail` | Nullable integer query transferId; nullable string queries deviceSn, deviceModel | Transfer-detail record |
+| POST `/v1/device-transfer/approve` | Required 64-bit integer transferId | Unspecified object |
+| POST `/v1/device-transfer/reject` | Required 64-bit integer transferId | Unspecified object |
+| POST `/v1/device-transfer/cancel` | Required strings deviceSn, deviceModel | Unspecified object |
+
+Binding records declare nullable strings userId, deviceModel, deviceSn, subModel, cpuId, ssid and transferStatus; nullable integer device; and nullable 64-bit integers id, createTime, updateTime, bindTime and activationTime. Transfer-detail records declare nullable strings deviceModel, deviceSn, fromUserId, fromUserNickname, toUserId, toUserNickname, toUserAccount, ssid and status; nullable integer device; and nullable 64-bit integers id and endTime. Transfer-list records add nullable string address, nullable integers deviceId/deviceStatus and nullable 64-bit integer createTime. READ.
+
+The shared page wrapper declares an items array, attributes/data objects of the record type, string type/id, nullable integer current and integer total/unReadCount. A separate record-typed member is named list on the wire; it is not established as an interchangeable alias for the items array. Transfer-list helpers default to page 1 and size 20; the device-binding page requests size 50. READ.
+
+The local binding builder requires current device information and nonblank model/trimmed serial. It trims the CPU identifier and converts blank to null, and falls back from blank SSID to trimmed device name, again converting blank to null. READ. These checks do not establish ownership. The owner-check declaration does not prove a mandatory owner-check-before-bind sequence.
+
+A successful HTTP status with a nonnull parsed envelope is classified as success by the shared adapter without requiring a particular envelope code. READ. Server authorization/ownership checks, code expiry/rate limits, actual response population and iOS app 3.4.0 parity remain unresolved.

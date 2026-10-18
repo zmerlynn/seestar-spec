@@ -71,14 +71,9 @@ the first session, then the secondary list on the second. The mapping runner sto
 first failure or cancellation. Stale-attempt checks before session validation, before mapping
 and after mapping route to cleanup, which removes created mappings and valid sessions.
 
-R72a. iOS app 3.4.0 connect ordering (READ). The app's tunnel client builds one connect object per
-`connectInfo` entry it holds, dispatches every one at once on a global queue and waits for the group with
-a timeout of "forever". Each block calls the tunnel agent's single-target connect (not its parallel
-connect entry point). The first success wins; later completions are logged and ignored. How the
-`connectInfo` list is composed (how many entries, and whether they are the two Seestar tunnels or
-alternative paths to one tunnel) was not decoded, so whether this changes the ordering of the primary
-and secondary sessions of R72 is unresolved. A client written against this chapter MAY still use the
-sequential order of R72. Android app 3.3.2 is unchanged.
+R72a. iOS app 3.4.0 creates one session per configured mapping group, sharing the allocated device identity and tunnel credentials. Its supplied profile has two groups. Group 0 maps remote ports 4800, 4801, 4804, 4554, 4555, 4361 and 80, in that order; group 1 maps 4350 and 4700. Local ports equal remote ports except remote 80 uses local 40080. READ.
+
+The framework dispatches the two single-target connection calls concurrently. The connection phase completes when all requested sessions succeed or the first negative result arrives; its group wait has no timeout. A successful completion arriving after a terminal result is scheduled for disconnect. After successful connection, mapping attempts proceed in group order and then item order, subject to cancellation or failure. READ. Actual completion timing and cleanup outcomes remain unresolved. Android app 3.3.2 uses the sequential order in R72. These are app-version differences, independent of the firmware 9.31/9.75 comparison. A client written against this chapter MAY still use the sequential order of R72.
 
 ## Readiness and reconnect
 

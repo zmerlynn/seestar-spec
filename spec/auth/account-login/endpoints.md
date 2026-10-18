@@ -119,11 +119,9 @@ Android 3.3.2 only) add a WeChat QR login-ticket step and an `apple` platform:
   (R29a) with `platform`, `sign`, `unionid`, `openid`, `nickname`, `avatar`, `authType`, `authKey`,
   `code` and `language`, and to `/v1/user/oauth/verify` (`platform`, `sign`, `unionid`, `airId`; R29)
   as before. READ (member names).
-- Apple. The Apple login manager builds a user-information model with platform string `apple` from the
-  identity `userId`, `name` and `email`, falling back to an address of the form `<id>` at an Apple-ID domain
-  when no email is returned. The password login endpoint `/v1/user/login` takes `authType`, `authKey` and
-  `password`; only `email` and `mobile` were seen as `authType` values there. That `apple` is sent on the wire as
-  `authType` is INFERRED, and the `sign` computation for Apple was not decoded. unresolved.
+- Apple, iOS app 3.4.0 account framework: the third-party registration request to `/v1/user/oauth/login-register` uses `platform` = `apple` and `authType` = `email`. It supplies the Apple user identifier as `unionid`, the assembled name as `nickname`, and returned, synthesized or cached email as `authKey`; `openid`, `avatar` and `code` are empty strings. The request also includes the common `language` member. If Apple supplies no email, the fallback address uses the MD5 representation of the user identifier as its local part at the Apple-ID domain; cached profile values for that user can replace the assembled name/email. READ.
+
+  The `sign` is HMAC-SHA256 with `unionid` as the message and the account-registration signing key selected by project configuration as the key. Both inputs are converted to ASCII C strings and measured with C-string lengths; the digest is encoded as 64 lowercase hexadecimal characters. READ. No signing-key value is specified here. The main application's installed project configuration, alternative entry paths and backend acceptance remain unresolved in this trace. This is iOS app 3.4.0 account-client behavior, separate from Android app 3.3.2 and firmware 9.31/9.75.
 - The new remote endpoints are in [http-api.md: Optional remote-feature catalogue](../cloud-auth/http-api.md#optional-remote-feature-catalogue).
 
 ### Side flows
