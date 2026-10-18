@@ -26,13 +26,14 @@ acting. It returns "proceed locally" or "handled or relayed". The conditions, RE
 Callers and their request types: `start_track_object` (type 1, and a second call whose type is true
 only when object tracking is not already running), `start_smart_follow` and the generic function
 start (type 1), `start_scan_planet` (type 1, relay flag false), `start_motion_monitor` (type 3),
-`start_record_avi` (type 2), and `set_setting` (type 0, relay flag unresolved). Handlers that use
+`start_record_avi` (type 2), and `set_setting` (type 0; see the settings qualifications below). Handlers that use
 the type-0 form include `is_stacked`, `iscope_match_target_name`, `iscope_accept_target_name`,
 `clear_app_state`, `stop_motion_monitor`, `stop_record_avi`, `start_auto_focuse`,
 `stop_auto_focuse`, `save_image`, `check_ai_process`, `start_ai_process`, `iscope_start_stack`,
-`iscope_stop_view`, `get_annotate_result`, `get_stack_info` and `move_focuser`, and `set_setting`
-at five sites; for these the relay variant was not always checked. The 9.31 behaviour of the check
+`iscope_stop_view`, `get_annotate_result`, `get_stack_info` and `move_focuser`; for these the relay variant was not always checked. The 9.31 behaviour of the check
 was not diffed; the 32-bit build has an older four-argument form whose conditions were not traced.
+
+Firmware 9.31 D64 and firmware 9.75 D64: the `set_setting` branches for `ae_bri_percent`, `isp_exp_ms`, `manual_exp`, `isp_gain`, `rtsp_roi_index` and `rtsp_roi_scale` use five type-0 call sites and select ordinary relay when the existing relay gates permit forwarding. Their variant flag is false, so these calls do not select the variant carrying the main stack exposure. The `planet_correction` branch disables relaying and passes type 1 when enabling correction or type 0 when disabling it; its variant flag is also false. Firmware 9.31 D32 and firmware 9.75 D32 have no relay-variant argument: the five reduced calls select ordinary relay, and the planet-correction caller likewise disables relaying and supplies the boolean-derived request type. READ. These caller findings do not resolve every other caller's variant, broader D32 limiter arithmetic or all relay-condition version differences.
 
 ## Open questions
 

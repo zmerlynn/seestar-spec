@@ -311,8 +311,7 @@ HTTP(S) request from the device to a vendor catalogue service when photometry is
 response must be a JSON object with `code` and `msg` members and a `data` object holding an
 `items` array; an invalid query (RA, Dec, magnitude or offset), an oversized response, an HTTP
 error or a nonzero `code` aborts the download. The result is written to the reference-star file
-through a temporary file and a rename (9.31 saved the same file directly). The service address and
-query construction are deliberately not recorded here; they are unresolved. READ for the structure.
+through a temporary file and a rename (9.31 saved the same file directly). Firmware 9.75 D64 and D32: on the download branch, the device constructs an HTTPS GET to a fixed reference-star catalogue-service route. Its numeric query fields are `decDeg`, `magV`, `offsetDeg` and `raDeg`, in that order. The solved center supplies Dec and RA in degrees, with solved RA multiplied by 15; the photometry query supplies the magnitude and angular-offset parameters, defaulting to 13 and 2.5. Both builders use the classic locale and precision 17, with a 5-second connection timeout, 30-second read/write timeouts and a 2-MiB response cap. They reject nonfinite query values, RA outside `[0,360)`, Dec outside `[-90,90]` and nonpositive offset; no additional magnitude interval is checked here. This caller supplies no custom headers or account/remote-join credential. Firmware 9.31 D64 and D32 lack this fetch in the corresponding photometry worker. READ. The operational service address is omitted. Exact cross-library formatting for every value, successful delivery, server acceptance, authorization policy and catalogue semantics remain unresolved. READ for the structure.
 A client takes no part in the fetch, and the device needs internet access for it.
 
 R22. [`CheckPhotoMetry`](../../docs/control/events/CheckPhotoMetry.md) is F; `ra_dec_deg_j2000`
