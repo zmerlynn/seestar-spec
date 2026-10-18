@@ -48,7 +48,8 @@ payload:
       - detecting
       - starting_track
       - tracking
-      description: 'Worker stage, a string. Internal 1 gives detecting, 2 starting_track, 3 tracking, anything else idle.'
+      - waiting_target
+      description: 'Worker stage, a string. Internal 1 gives detecting on the 64-bit build and waiting_target on the 32-bit build (firmware 9.75), 2 starting_track, 3 tracking, anything else idle.'
       x-confidence: READ
       x-basis: static analysis of firmware 9.75, app 3.4.0 reports, StartSmartFollow @0x470f20 (64-bit
         build)

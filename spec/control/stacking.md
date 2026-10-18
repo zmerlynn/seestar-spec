@@ -267,8 +267,7 @@ gives 209. There is no running-stack check: a change instead clears the stack (t
 logs a restart and resets its decay state). The setting is also reset by
 [`reset_setting`](../../docs/control/methods/reset_setting.md) (see
 [function-states.md](function-states.md#settings-reset)). READ. Firmware 9.31 has no such
-setting and no decay output. The 32-bit build shows no `startrail_mode`, decay or duration
-strings; that is string-level only and was not checked in the code (unresolved).
+setting and no decay output. Firmware 9.75 (32-bit build) does not read or return `startrail_mode` or `startrails_duration_min` in the reviewed setting handlers. Its live-stack worker lacks the configurable duration-stop path and the mode-selected dual-video finalization found in firmware 9.75 (64-bit build). The 32-bit live accumulator initializes its internal selector to 0, and the zero-selector per-frame branch uses maximum-image accumulation. READ. Decay accumulation, a decay getter and nonzero-selector decay branches are nevertheless compiled into the 32-bit binary. Exhaustive reachability of those internal paths through indirect callers remains unresolved; missing settings do not establish absence of decay processing. Firmware 9.31 (64-bit build) lacks these new setting keys and decay symbols. READ for that baseline comparison.
 
 R8c0. Firmware 9.75, app 3.4.0: the video of a star-trail session is written only when the
 stack setting `save_video` is true; the FITS (and image) save is always the maximum output,
@@ -279,8 +278,7 @@ limits a star-trail session, in minutes. A non-integer gives 104; the wide camer
 a running stack gives 259; there is no range check. The default is -1; -1 or 0 means no limit.
 The value is copied when the session starts, so a later change does not affect a running
 session. When elapsed time reaches the limit the stack worker takes its normal end-of-stack
-path. READ. Which final `Stack` state or code announces a session ended this way is unresolved.
-The 32-bit build shows no such string (string-level only).
+path. READ. In firmware 9.75 (64-bit build), reaching the configured star-trail duration takes the normal cleanup and final-save path without raising a duration-specific error. If the session and final work succeed and no stop selects cancellation, the final `Stack` function event has `state:"complete"` and omits `code` and `error`. A final-save failure can instead produce ordinary failure; a stop can select cancellation. READ. The reviewed firmware 9.31 64-bit and firmware 9.75 32-bit live-stack paths do not implement this configurable duration stop. READ for those builds; this does not establish firmware 9.31 32-bit behavior.
 
 R8e. Firmware 9.75: the decay video uses a fixed factor of 0.987 per accepted frame: the
 accumulated image and its brightness map are multiplied by it, and any pixel where the new
@@ -290,21 +288,16 @@ wire member; it affects only the decay output. READ.
 R8f. Output names, firmware 9.75, app 3.4.0: mode 0 writes `startrails_video_<ts>.mp4`, mode 1
 `startrails_video_decay_<ts>.mp4`, mode 2 both. Batch star-trail tasks use the prefixes
 `STS_startrails_` (image), `STS_startrails_video_` (maximum video) and, new in 9.75,
-`STS_startrails_video_decay_`. The FITS header keys written by the batch star-trail header update
-are unresolved. READ for the names.
+`STS_startrails_video_decay_`. READ for the names. In firmware 9.31 and 9.75, 64-bit builds, the batch star-trail input-header refresh opens the input read-only and copies its FITS header into memory. Output construction inherits that header, sets `STACKCNT` to the stacked-frame count, `OBJCTTYP` to `startrail` and `TOTALEXP` to the accumulated input exposure, and supplies the current focal length and f-number to the normal `FOCALLEN` and `APERTURE` writers. The normal writer rounds focal length to the nearest integral value, with ties away from zero. The helper does not replace the inherited `OBJECT` value. These are ordinary output-header fields; the input refresh does not modify the input file or introduce separate star-trail keywords. READ. The corresponding 32-bit batch behavior remains unresolved.
 
-R8c. Firmware 9.75, app 3.4.0: when a mosaic goto is the source of a stack start, the device logs
-that it starts a normal stack, resets the mosaic parameters and clears the stack before stacking
-(called from [`iscope_start_stack`](../../docs/control/methods/iscope_start_stack.md) and the
-view-start path; the start-view side is in [mosaic.md](mosaic.md)). The wire effect, and whether
-`iscope_start_stack` replies differently, is INFERRED and unresolved. Firmware 9.75 also routes
+R8c. Firmware 9.75, 64-bit build marks a main-camera star request outside ViewPlan as a mosaic-goto source when its target coordinates pass the sentinel tests and its requested scale or rotation exceeds the source thresholds. This marker does not prove that a mosaic was applied or that the goto completed. When stack-start preparation is reached, it converts a marked source only if the current main-camera stack contains frames: it resets mosaic parameters to scale 1, angle 0 and star-map angle 361, clears the stack, selects the ordinary stacker and consumes the marker. An already-running identical stage can return before stage preparation. Successful local `iscope_start_stack` still returns integer 0; the marker adds no reply member or distinct success value. Firmware 9.75, 32-bit preparation has the same flag/frame-count/reset/clear/ordinary-stacker sequence with camera ID 0. READ. Firmware 9.31, 64-bit path has no corresponding source conversion; broader relay/build parity remains unresolved here. Firmware 9.75 also routes
 `iscope_start_stack` through a relay-only reduced clone of the common relay check, so it does not
 gain the 203 and 524 occupancy outcomes; the same holds for `save_image`, `is_stacked` and
 `get_stack_info`. The same relay-only form is used by `start_auto_focuse`, `stop_auto_focuse`,
 `iscope_match_target_name`, `iscope_accept_target_name` and others; the occupancy probes are used
 only by `start_track_object`, `start_smart_follow`, `start_func`, `start_motion_monitor`,
 `start_record_avi` and `start_scan_planet` (see [special-modes.md](special-modes.md)). READ (64-bit
-firmware 9.75). The 32-bit behaviour is unresolved.
+firmware 9.75). Firmware 9.75, 32-bit build, uses relay-only checks for stack start, image saving and stacked-state queries, and for autofocus start/stop when wide-camera autofocus is supported. These checks retain the existing process, view and camera-selection gates, with relaying enabled and no common occupancy probes; image saving inlines the checks. Forwarded requests skip local handling, including local autofocus cancellation. The 32-bit stack-info handler instead reads local information without that relay check. The 32-bit forwarding path has no option adding the main stack exposure; the 64-bit stack-start caller selects that option, while its other five callers examined here use ordinary forwarding. READ. Backend-origin failures and broader firmware 9.31 caller parity remain unresolved here.
 
 ## Saving
 
@@ -356,9 +349,7 @@ the file name", failing with 102. Errors: 102 (params), 268 (running), 524 (batc
 or continuous exposure conflict), 536 (ViewPlan running), 208 (free space at most 199 MiB),
 212. READ. If the free-space query itself fails the disk check is skipped. READ.
 
-R16a. Firmware 9.75, app 3.4.0: the planet-stack parameters (and the compass sensor data used by compass
-calibration) gain a member `direction_true`. Only its existence is established; its type and meaning
-are unresolved. READ (existence).
+R16a. Firmware 9.75 (64-bit and 32-bit builds) adds numeric `direction_true` to the compass sensor object returned by `get_device_state`. Both `direction_true` and `direction` are serialized from the same stored heading field; declination is a separate member. READ. In the 64-bit build, the producer converts and filters the magnetic-vector heading, adds declination, and normalizes finite headings modulo 360 degrees. The serializer adds no separate correction for the new member. READ. The reviewed firmware 9.75 64-bit `start_planet_stack` parser and starter add no `direction_true` parameter: their request members remain `file`, optional `mode` and optional `rect`. Firmware 9.31 (64-bit build) has `direction` without `direction_true`. READ. Physical heading accuracy, atomic sampling across the two member loads and full 32-bit producer-formula parity remain unresolved here.
 
 R17. Progress is reported by [`PlanetStack`](../../docs/control/events/PlanetStack.md): F plus
 `percent` (capped at 99 while working), `procedure_code`, `procedure`, `output_file`,
@@ -449,9 +440,7 @@ R20c. Firmware 9.75, app 3.4.0: a comet batch is limited to 200 input frames, th
 `comet_max_frame_num` reported by `get_setting` (not settable). The count is checked in three
 places: at `start_batch_stack` (input list above 200), in the worker on the input list, and again
 after the list is expanded. Each raises thread-local error value 204 `out of limit`. READ for the
-places and the code. The `start_batch_stack` reply code 204 for the first place is INFERRED from the
-stored thread-local error value; whether the worker-side failures reach the `BatchStack` event with
-204 is unresolved. A new preflight scans the list for the first frame that contains a comet and
+places and the code. Firmware 9.75 (64-bit build) returns `start_batch_stack` error 204 (`out of limit`) when a comet input list exceeds 200 entries before worker start. That rejection does not start a new worker. If the worker's input-list or expanded-list check instead finds more than 200 entries, ordinary unstopped completion produces a `BatchStack` function event with `state:"fail"`, `code:204`, `error:"out of limit"` and integer `max_frame_num:200`. A stop can select cancellation instead. An accepted start replies 0 independently of these worker failures; reply/event ordering is not established here. READ for the reply and event paths. Firmware 9.31 (64-bit build) has no corresponding 200-frame checks in the compared starter and worker. Complete firmware 9.75 32-bit request/event parity for this limit remains unresolved. A new preflight scans the list for the first frame that contains a comet and
 skips frames that are not valid FITS, cannot be loaded or show no comet; if none is found it fails
 with 9005 (`comet not found`), and a detector initialisation failure gives 9002 (details in
 [errors.md](errors.md)). With too few usable candidates the worker raises 9004. An empty non-comet
@@ -502,8 +491,14 @@ Chapter codes: 102, 105, 106, 107, 109, 204, 207, 208, 209, 212, 213, 218, 258, 
 - Which code path emits the `Stack` failure for the below-horizon stop (R6c). The 270 case is
   OBSERVED, the 527 case is not, and neither is READ.
 - Firmware 9.75: the wire effect of the mosaic goto source (R8c), and the frame cap of sky replay.
-- Firmware 9.75: the final event or state when `stack.startrails_duration_min` ends a session (R8d); the FITS header keys of the batch star-trail header update (R8f); how the comet limit and the worker failures 204, 9004 are reported in `BatchStack` events (R20c); comet-specific FITS or JSON header keys (none found). The 32-bit build for star-trail modes and the comet limit is string-level only.
-- Firmware 9.75 imager additions seen only as new symbols and not decoded, wire effect unresolved: a circle/disk realtime stabiliser with a selector; stack-exposure reconciliation for the mount mode and stack exposure notification; track-state restore; annotate waiting; Wi-Fi station check; device-model query; batch progress and stack header helpers; compass residual failure code and automatic compass calibration start; motion-record MP4 result; H.264 packet and colour-metadata helpers and RTMP ROI scaling; further IMU drivers and sampling-frequency setters; album helpers for scenery and video-stack names. Guider and updater symbol differences were not diffed.
+- Firmware 9.75: the final event or state when `stack.startrails_duration_min` ends a session (R8d); how the comet limit and the worker failures 204, 9004 are reported in `BatchStack` events (R20c); comet-specific FITS or JSON header keys (none found). The 32-bit build for star-trail modes and the comet limit is string-level only.
+- Firmware 9.75 new-symbol inventory. Firmware 9.75, both builds: mount-mode handling and stack initialization can reconcile stack exposure and report changes through `Setting`, with boolean `wide_cam` and integer `exp_ms.stack_l`. The 64-bit notification also carries boolean `exp_ms.more_exposure` in the main-camera case. Stack saving waits for an active annotation worker when the image identifier matches; reply/save-event order remains unresolved here. Stack image construction and saving conditionally update header fields, with a separate wide-camera assignment in the 64-bit build. Comet preparation updates progress through the existing `BatchStack` event path. READ.
+
+  Firmware 9.75, 64-bit build: motion and smart-follow start/cleanup paths can attempt to restore remembered tracking, retry once on failure and clear the remembered flag even if both attempts fail. The motion-recording result is an internal integer status used by motion workers; successful recordings can supply MP4 entries to the existing Scenery album flow. Packet/colour processing and streaming crop handling are media paths, and a logged crop failure in the inspected streaming caller continues that worker. READ. Equivalent 32-bit motion/media behavior is unresolved.
+
+  Firmware 9.75, both builds: solar/lunar stabilization uses the internal selector family, but no selector RPC was established. Housekeeping invokes station-profile removal/save commands after the inspected failure-log condition. Device-state packaging uses cached capability checks, automatic compass calibration uses the existing start/failure flow, and album enumeration uses the scenery/video-stack predicates. Guider manifest reads feed the inspected FITS/JPEG software-version metadata paths; updater additions include the OTA session/pending-receive paths, with additional legacy directory/lock handling in the 64-bit build. READ. These caller attributions do not establish identical capability sets, calibration thresholds, album filters or network outcomes across builds.
+
+  Complete IMU virtual-call/RPC/event attribution and numerical equivalence of stabilization, mosaic, sensor, interpolation, codec and unrelated library code remain unresolved across firmware 9.31/9.75 and 32-bit/64-bit builds. Some older IMU-driver frequency setters already exist in firmware 9.31, both builds. Symbol additions or renamed types alone establish neither a new wire control nor absence of equivalent older behavior. READ for the named inventory; numerical and behavioral equivalence remain unresolved.
 - Lens-shading correction (R6d): when the stacker object, and so the cached map, is reset; how
   the process's camera id is set; the 32-bit build beyond its call sites.
 

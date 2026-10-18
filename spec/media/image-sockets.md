@@ -231,8 +231,7 @@ channel but through the cloud remote-command channel, which sets a rate (65536 t
 second) and an on/off flag; the setting is written to a shared flag file that the file server also
 reads. Both readers fall back to 1 MiB per second when the file is missing or invalid, and the
 effective limit depends on the relay mode. Firmware 9.31 has none of this. READ. The 32-bit build has
-the flag file and handler. Whether the 4800/4804 sockets are limited in direct (non-relay) use is
-unresolved.
+the flag file and handler. Firmware 9.75, 64-bit build: live-image headers and payloads go through the limited writer, while stored-image file-socket responses use the ordinary writer, and the imager's token bucket is separate from the file server's (they share the rate and on/off policy, not a token budget; see [files-and-album.md](files-and-album.md)). The 32-bit build has the same writer split. READ. Direct clients are covered while the global enable decision applies; INFERRED, because the writer path does not classify the peer as direct or relayed.
 
 R11a. Firmware 9.75 limiter details (64-bit). READ. The range is 65536 to 67108864 bytes per
 second, the default 1 MiB per second, and the bucket holds rate/20 bytes clamped to 4096..65536.

@@ -217,11 +217,13 @@ annotation for `img_id` (0..65534; default the most recent). 104 malformed, 204 
 is also the dispatcher's "invalid id" for a request without `id`; a client MUST disambiguate by
 whether it sent an `id`.
 
-R15a. Firmware 9.75, app 3.4.0: `get_annotate_result` also accepts a `file_path` member in the keyed
-form, so a stored file can be annotated; an invalid value gives 102 and a non-string 105. The call
-now goes through the relay-only form of the common relay check, which relays when needed but runs
-no occupancy probe, so it gains no 203 or 524. Firmware 9.31 relayed through a different test. READ for the member,
-unresolved for the exact path validation and the result shape for a stored file.
+R15a. Firmware 9.75, app 3.4.0: the `get_annotate_result` call now goes through the relay-only form of the common relay check, which relays when needed but runs no occupancy probe, so it gains no 203 or 524. Firmware 9.31 relayed through a different test. READ.
+
+Firmware 9.75, 64-bit build: after relay and positional normalization, `get_annotate_result` accepts a file-name string directly or as the sole `file_path` member of an object. An object selects exactly one of `file_path` and `img_id`, without additional members; invalid selection gives 102. A keyed non-string file name, or a file name with an empty C-string prefix, gives 105. The file name is appended to the image-directory prefix using C-string operations, without component normalization in this handler. The cached-ID form remains available; its decoded integer ID is checked against 0..65534, with 104 for a keyed non-integer and 204 for a decoded out-of-range value. READ.
+
+The stored-file path reads FITS/WCS data, writes temporary WCS data and invokes an annotation producer synchronously. It does not start a solve or the asynchronous annotation worker. A successful result supplies `image_size`, the producer's `annotations` fragment and boolean `wide_cam`, without `image_id`. For stored non-wide images, the imager reparses the result and, for nonempty annotation arrays, requires object items with numeric `pixelx`/`pixely` and adds `ra_dec_j2000` from stored-WCS conversion in degrees. READ. Stored wide images bypass that reparse/enrichment loop; equivalent added fields and item validation are not established for them. The field name does not independently validate the epoch of arbitrary stored WCS data.
+
+Header/WCS failure gives 220, unsupported stored camera selector 209, and temporary WCS write failure 218. Missing annotation output/fragment and failures of the non-wide JSON/enrichment path give 207. The producer's missing-file diagnostic gives 255; producer execution failure can propagate its existing error, with 207 as fallback. READ. Firmware 9.31, 64-bit getter has no stored-file branch; its separate file-annotation starter remains distinct. Firmware 9.75, 32-bit getter also supports stored-file FITS/WCS retrieval and lacks the 64-bit helper's stored-camera-selector rejection; full result/enrichment parity remains unresolved.
 
 R16. [`stop_annotate`](../../docs/control/methods/stop_annotate.md) joins the worker and
 always returns 0. [`is_img_file_annotated`](../../docs/control/methods/is_img_file_annotated.md)
@@ -311,8 +313,7 @@ HTTP(S) request from the device to a vendor catalogue service when photometry is
 response must be a JSON object with `code` and `msg` members and a `data` object holding an
 `items` array; an invalid query (RA, Dec, magnitude or offset), an oversized response, an HTTP
 error or a nonzero `code` aborts the download. The result is written to the reference-star file
-through a temporary file and a rename (9.31 saved the same file directly). The service address and
-query construction are deliberately not recorded here; they are unresolved. READ for the structure.
+through a temporary file and a rename (9.31 saved the same file directly). Firmware 9.75 D64 and D32: on the download branch, the device constructs an HTTPS GET to a fixed reference-star catalogue-service route. Its numeric query fields are `decDeg`, `magV`, `offsetDeg` and `raDeg`, in that order. The solved center supplies Dec and RA in degrees, with solved RA multiplied by 15; the photometry query supplies the magnitude and angular-offset parameters, defaulting to 13 and 2.5. Both builders use the classic locale and precision 17, with a 5-second connection timeout, 30-second read/write timeouts and a 2-MiB response cap. They reject nonfinite query values, RA outside `[0,360)`, Dec outside `[-90,90]` and nonpositive offset; no additional magnitude interval is checked here. This caller supplies no custom headers or account/remote-join credential. Firmware 9.31 D64 and D32 lack this fetch in the corresponding photometry worker. READ. The operational service address is omitted. Exact cross-library formatting for every value, successful delivery, server acceptance, authorization policy and catalogue semantics remain unresolved. READ for the structure.
 A client takes no part in the fetch, and the device needs internet access for it.
 
 R22. [`CheckPhotoMetry`](../../docs/control/events/CheckPhotoMetry.md) is F; `ra_dec_deg_j2000`
@@ -329,13 +330,7 @@ returns `{PhometryStars:[...]}` (the misspelling is on the wire);
 [`set_photometry`](../../docs/control/methods/set_photometry.md) `{id, save, name?}` (104, 106,
 105, 207 for an unknown id); it changes only cached plot state and does not
 write a file. [`get_photometry_result`](../../docs/control/methods/get_photometry_result.md)
-returns a relative folder and file list. READ. Firmware 9.75, app 3.4.0: each entry also
-carries a boolean `is_variable` read from the file's variable-star column
-(the same member is added to `get_saved_photometry_stars`); the placement among the existing file
-members is unresolved. READ. Firmware 9.75, app 3.4.0: each photometry star record also carries a
-boolean `is_overexposure`, a per-star flag set by the star-JSON producer; its exact criterion was
-not traced (meaning INFERRED from the name, possibly saturation). The member is absent in firmware
-9.31.
+returns a relative folder and file list. READ. Firmware 9.75, 64-bit build (READ): each object in `get_photometry_result`'s `result.files` array carries boolean `is_variable` beside `star_name` and `has_ra_dec_deg_j2000`. It is derived through the saved CSV's named `Is Variable` column and the file-summary parser, and is false when the selected summary lacks valid coordinates. Each `get_saved_photometry_stars` entry in `PhometryStars` also carries `is_variable`, from cached plot state. The per-star objects carried by `get_photometry_stars` and `get_photometry_plot` include boolean `is_variable` and `is_overexposure`. In the traced Bayer-image measurement path, `is_overexposure` is set when a tested aperture sample in the half-size, 16-bit green image is greater than 65000; equality alone does not set it. An overexposed star's `measure_mag` is null, and other measurement-validity checks can also produce null. Firmware 9.75, 32-bit build (READ): the per-star serializer emits the same two boolean keys, and a local detector comparison also uses a strict 65000 threshold. Complete 32-bit detector-to-result parity and mixed/malformed CSV summary selection remain unresolved. The three corresponding key/column strings are absent from the supplied firmware 9.31 binaries on both builds (READ).
 
 R23a. Firmware 9.75, app 3.4.0: [`get_photometry_result_json`](../../docs/control/methods/get_photometry_result_json.md)
 `{name}` returns the rows of one saved photometry CSV (`name` must start with `Magnitude_`, end with
@@ -372,8 +367,7 @@ process. The local stop is not undone if the relay fails. A missing or non-strin
 105; a relay context failure gives 300 in a reply without `jsonrpc`, `Timestamp`, `method` or
 `result`. READ.
 
-Firmware 9.75: `get_solve_result` differs from 9.31 in code that looks like library noise plus one
-constant; it was not read in full (unresolved).
+Firmware 9.31 and firmware 9.75, 64-bit builds: `get_solve_result` ignores params and reports current solve data without starting a solve. If both coordinate components satisfy `abs(value+999)>0.1`, it formats `state:"complete"`, `ra_dec`, `fov`, `focal_len`, `angle` and `image_id`; this is a sentinel test, not general coordinate validation. Otherwise it formats `state:"solving"` while the solve worker runs and `state:"fail"` when it does not. `star_number` is included when its stored value differs from -1, and `duration_ms` is always formatted. The RPC returns that object when the coordinate test passes or a star count is available; otherwise it returns 215. READ. The changed firmware 9.75 internal layout does not establish a changed wire contract. Full 32-bit formatter parity remains unresolved.
 
 R27. [`upload_refstar_info`](../../docs/control/methods/upload_refstar_info.md) requires an
 object (107; positional arrays are refused) with `refData`, an array; the literal key

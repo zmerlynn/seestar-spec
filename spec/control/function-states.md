@@ -26,15 +26,12 @@ Any member of `params` other than `items` gives 109. READ.
 
 R2. The reply is `result` 0 and, when some items cannot be reset on this build, an
 `unsupported_keys` array of strings. An unsupported key is not an error. A `Setting` event
-follows a successful reset. A thread-local suppression check exists in the `Setting` notification
-path; its trigger and lifetime are unresolved. `Setting.wide_cam` is true when the reporting
+follows a successful reset. Firmware 9.75 on both builds suppresses intermediate `Setting` notifications on the calling thread during each internal reset apply or rollback invocation of `set_setting`. On ordinary return, including an ordinary error return, it restores that thread's previous suppression value before interpreting the reply. This suppression does not span the wait between prepare and commit or rollback. The 64-bit top-level reset sends its final notification after successful application unless suppression was already active. READ (firmware 9.75; normal-return paths). Exception-path restoration and notification behavior of other threads are not established by these paths. `Setting.wide_cam` is true when the reporting
 camera is the wide camera. READ.
 
 R3. The reset is applied through the same path as [`set_setting`](../../docs/control/methods/set_setting.md)
 and is all or nothing: the first failure rolls the whole call back (207 for a failed apply, 300 when
-the rollback itself fails). A second reset while one is pending gives 524. Items starting with
-`exp_ms.` are refused while Stack is active (259) or a view plan runs (536); that association of
-the two codes is INFERRED. Whether items outside `exp_ms.` check busy state is unresolved. READ.
+the rollback itself fails). A second reset while one is pending gives 524. READ. Firmware 9.75 on the 64-bit build rejects exposure reset items during preparation while Stack is active (259) or a view plan runs (536). Other descriptors have no single blanket Stack/ViewPlan preparation check. During application, resetting `preview.rtsp_quality` can encounter AVI-recording busy error 524 before the equality check; changing `stack.startrail_mode` can encounter 259 when Stack runs and the existing engine reports star trails. READ (firmware 9.75, 64-bit build). The 32-bit planner lacks those exposure preparation checks, but application of `exp_ms.stack_l` still passes through the setter's Stack busy check. READ (firmware 9.75, 32-bit build). Complete outer-reply and rollback outcomes for these application failures remain unresolved here.
 
 R4. Firmware 9.75: the resettable items differ by build. READ.
 
@@ -49,10 +46,9 @@ The handler's table has 18 descriptors.
 
 The 32-bit build resets 10 of these. It reports `hdr`, `preview.rtsp_quality`,
 `stack.save_meteor_frame`, `stack.save_video`, `stack.startrail_mode`, `stack.scene_separate`,
-`stack.scene_shooting_duration_min` and `exp_ms.stack_l_auto` as unsupported. The 32-bit build has no
-busy gating in `reset_setting`, so the 259 and 536 replies exist only in the 64-bit build; the
-prepare, commit and rollback transaction is present in both. The default value of each item is
-unresolved. READ (firmware 9.75).
+`stack.scene_shooting_duration_min` and `exp_ms.stack_l_auto` as unsupported. The 32-bit reset planner has no Stack/ViewPlan preparation gate. Its supported items still use their application paths; in particular, `exp_ms.stack_l` can fail the setter's Stack busy check. The prepare, commit and rollback transaction is present in both builds. READ (firmware 9.75). A complete enumeration of busy failures and their outer reset replies remains unresolved.
+
+Firmware 9.75 reset descriptor defaults on the 64-bit build are `true` for `auto_af`, `stack_after_goto`, `auto_3ppa_calib`, `auto_master_dark` and `stack.auto_lenhance`; `false` for `hdr`, `preview.raw_bin2`, `stack.drizzle2x`, `stack.save_discrete_ok_frame`, `stack.save_meteor_frame`, `stack.save_video` and `exp_ms.stack_l_auto`; `"HighQuality"` for `preview.rtsp_quality`; `"Raw"` for `preview.image_transfer_mode`; `0` for `stack.startrail_mode`; `1` for `stack.scene_separate` and `stack.scene_shooting_duration_min`; and `10000` for `exp_ms.stack_l`. The 32-bit build has the same descriptor defaults for its ten supported items. These are descriptor values, not a guarantee that an apply succeeds in every state. READ (firmware 9.75, both builds).
 
 R4a. Two-phase form. The primary process drives the second-camera process through
 [`reset_setting_prepare`](../../docs/control/methods/reset_setting_prepare.md) (`{transaction_id, keys}`),
@@ -130,21 +126,20 @@ and the worker returns to detection. The tracker's results are: 4 when the image
 5 when an image cannot be fetched, 6 when a mount command fails, 3 when the target is lost (also on
 a tracking timeout) and 2 on a stop request or when the target stays static for over 5 minutes.
 If the tracker cannot be started at all, 4 is stored in `track_result` before detection resumes.
-Start errors of the smart-follow start path are 268, 300, 524, 209 and 254. When `start_track_object`'s
+Firmware 9.75 on the 64-bit build writes caller-thread error 209 for a submitted target rectangle with nonpositive width or height, 524 when SmartFollow is not running, and 268 when a target is pending or the current stage cannot accept one. The internal SmartFollow start path writes 268 for an already running worker, 300 when its required preview function is absent, 210 for an unsupported view mode, 524 for an occupied mount or running detector, and 254 when stopping tracking fails. Shared named-thread creation can write 212; failed start restores tracking before returning, so a fixed post-cleanup caller error is not established. READ (firmware 9.75, 64-bit build). When `start_track_object`'s
 call into the smart-follow worker (a resume call if already running, else a start call)
 fails, the RPC reply's error code is not a literal chosen by `start_track_object` itself: the handler
 reads the shared thread-local error-code variable ([events overview: Open questions](events-overview.md#open-questions))
 and relays whatever is already in it. READ (64-bit imager). This is the same generic mechanism
 documented there for `Exposure`, `Stack` and `ViewPlan` codes, reused across unrelated worker
-threads; which value the worker's start or resume call leaves there on its own
-internal failure paths was not independently traced. unresolved. A receiver MUST NOT depend on
+threads.
+
+On the firmware 9.75 64-bit build, the SmartFollow worker preserves a detector-start failure or selects 300 for unexpected detector termination. After cleanup it assigns the saved function error only if it is nonzero and its run flag remains set. Failed tracker start instead updates `track_result` and resumes detection. MotionMonitor preserves errors from the traced failing start calls and has explicit paths selecting 300 for unexpected detector/pre-recorder termination, 208 for recording result 4, 218 for recording results 5 or 6, and 254 for its mount-return/query failures. Its recording-result-6 recovery path selects 218 after more than three qualifying failures. These values use the function-state error path; tracker-result values are a separate field. READ (firmware 9.75, 64-bit build). Complete backend-origin code enumeration, concurrent-stop outcomes and internal failure parity with the 32-bit build remain unresolved. A receiver MUST NOT depend on
 seeing every transition.
 
 R11a. `MotionDetection` is a registered function-state name in firmware 9.75 and its worker
 sends function-state events while the detector runs, alone or under the monitor or smart follow
-(64-bit build only). READ. The [`MotionDetection`](../../docs/control/events/MotionDetection.md)
-state printer reports `width`, `height` and `points`. The element shape of `points` is
-unresolved. The detector start requires its first argument (the area threshold) to be at most
+(64-bit build only). READ. The [`MotionDetection`](../../docs/control/events/MotionDetection.md) state printer adds one top-level member, `points`, an array of objects with integer `x`, `y`, `width` and `height`. Width and height are members of each element. An empty collection is emitted as `points:[]`. The worker converts detector results using the horizontal and vertical preview-size ratios, with signed integer multiplication and division, before storing the four integer components. READ (firmware 9.75, 64-bit build). Physical interpretation, coordinate-origin guarantees and detection accuracy remain unresolved. No corresponding producer exists in the supplied firmware 9.31 inputs on either build or in firmware 9.75 on the 32-bit build. The detector start requires its first argument (the area threshold) to be at most
 1,000,000 (209 otherwise); other start errors are 268, 524 and 300.
 
 ## Sky replay

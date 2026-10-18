@@ -32,6 +32,6 @@ properties:
     x-basis: static analysis of firmware 9.31, start_planet_stack @0xe2120, key literal @0x730188 (64-bit
       build)
 description: 'Object-only: any other params container yields an empty map and 102. Unknown members are
-  unused. Firmware 9.75: the planet-stack start routine also references a member named direction_true; whether the RPC reads it, and its type and meaning, are unresolved (existence only).'
+  unused. Firmware 9.75 (64-bit build): the parser and starter read no direction_true member; the request members remain file, optional mode and optional rect (READ). direction_true is a compass member of get_device_state.'
 x-basis: static analysis of firmware 9.31, handler @0xe2120, Params constructor @0xff780 (64-bit build)
 x-confidence: READ

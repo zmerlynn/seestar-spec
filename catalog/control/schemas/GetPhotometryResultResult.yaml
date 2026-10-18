@@ -59,11 +59,13 @@ properties:
           x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)
         is_variable:
           type: boolean
-          description: 'Firmware 9.75, app 3.4.0: variable-star flag read from the CSV Is Variable
-            column. Reported per entry; placement among the file-list members is unresolved.'
-          x-confidence: READ; placement unresolved
-          x-basis: static analysis of firmware 9.75, app 3.4.0 reports, get_photometry_result handler
-            (64-bit build)
+          description: 'Firmware 9.75, 64-bit build: variable-star flag of this files entry, beside
+            star_name and has_ra_dec_deg_j2000, derived through the CSV Is Variable column and the file-summary
+            parser; false when the selected summary lacks valid coordinates. Selection among mixed or malformed
+            CSV rows is unresolved.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, get_photometry_result handler @0xea690, member writes
+            @0xeb420, coordinate gate @0xeb42c (64-bit build)
     description: One entry per CSV file.
     x-confidence: READ
     x-basis: static analysis of firmware 9.31, handler @0xd7460 (64-bit build)

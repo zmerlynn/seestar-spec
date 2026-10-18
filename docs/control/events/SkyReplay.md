@@ -29,9 +29,11 @@ None. Events are sent by the device without a request; the payload is below.
 | `Event` | string | yes | - | Discriminator. Fixed value `"SkyReplay"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
 | `state` | string | yes | - | Function-state name; INFERRED to follow the shared function-state formatter. One of: `idle`, `working`, `complete`, `fail`, `cancel`. [INFERRED] |
+| `wide_cam` | boolean | no | - | Added with a non-null callback context (firmware 9.75, both builds). [READ] |
 | `camera_id` | integer | no | - | Camera the session records (value meaning INFERRED). [READ; meaning INFERRED] |
 | `recorded_frame_count` | integer | no | - | Frames recorded so far in the session. [READ] |
 | `video_frame_count` | integer | no | - | Frames in the video being built. [READ] |
+| `output_file` | string | no | - | Conditional; present with a non-null callback context unless a filename-suppression flag is set, whose runtime meaning is unresolved (firmware 9.75, both builds). [READ (conditional); flag meaning unresolved] |
 
 ## Errors
 

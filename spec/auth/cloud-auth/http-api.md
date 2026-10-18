@@ -9,7 +9,7 @@ consumed by the SDK ([sdk-licence.md](sdk-licence.md)).
 App names: these are the HTTP calls behind the app's “Telescope Network” screens: “Remote location”
 and “Change remote location”, “Device Sharing” (“Share with friends”), “Device transfer” (moving
 remote management rights) and “Remote Restart”. The app's separate “Device ownership transfer” and
-account binding screens use other endpoints that this specification does not cover (unresolved).
+account binding screens use the account-side calls in [Account-side device binding and ownership transfer](#account-side-device-binding-and-ownership-transfer).
 Names are the English strings of iOS app 3.4.0; links are READ (app call sites) unless marked.
 
 Basis: static analysis of app 3.3.2 (Java layer); observations from 2026-10-10 to 2026-10-12.
@@ -361,13 +361,8 @@ The iOS app 3.4.0 network framework adds three remote endpoints, mapped from its
 the URL table (READ). The disconnect-device API posts to `/v1/device-p2p/retrieve` , the
 stop-connect API uses `/v1/device-p2p/stop` (the stop call of [Reports and
 stop](#reports-and-stop)), and the remote-unbind API posts to `/v1/my-device/remote-unbind`. Both
-new APIs report POST as their method (the literal method value is READ; that it means POST is
-INFERRED by analogy to other write-action APIs in the same table, no literal "POST" name was found
-bound to it) and send a body of exactly `deviceSn` and `deviceModel` (both strings; READ from the
-two APIs' property lists in the iOS network framework). Neither API has a visible caller anywhere in
-the app's unencrypted frameworks; the call site is presumably in the app's main executable, which is
-copy-protected and out of reach of static analysis. Confirmed-present-but-not-visibly-called.
-INFERRED (reachability).
+new APIs send a body of exactly `deviceSn` and `deviceModel` (both strings; READ from the
+two APIs' property lists in the iOS network framework). iOS app 3.4.0 contains POST request builders for the retrieve and remote-unbind operations, each populating deviceSn and deviceModel. READ. The remote device-details remove action invokes remote-unbind after destructive confirmation, using the selected device's serial and model. READ. A main-app caller of retrieve remains unresolved. After passing its manager-status check, the traced ordinary remote-disconnect path instead calls the stop operation when a nonempty connection identifier exists and calls the local tunnel-stop operation. READ for client control flow; server effects and authorization rules remain unresolved.
 
 Response handling differs between the two (READ, from the iOS network framework):
 - Disconnect-device: the success path reads `data.result` from the envelope (so the full shape
@@ -379,11 +374,9 @@ Response handling differs between the two (READ, from the iOS network framework)
   posts a local notification named for "remote unbind succeeded". Failures funnel through an
   endpoint-specific mapper that recognizes exactly three codes in the inclusive range
   400002-400021: 400002, 400020 and 400021 are flagged/wrapped (kept as the same numeric value,
-  not remapped); every other code in or outside that range is forwarded unchanged. The meaning of
-  400002/400020/400021 is unresolved: no string table in the framework ties them to text.
+  not remapped); every other code in or outside that range is forwarded unchanged. No string table in the framework ties them to text; the main application's removal UI does (below).
 
-The server effect of either call and whether the Android app has equivalents remain unresolved
-(server-side).
+iOS app 3.4.0 reports successful remote-unbind completion through a local notification and the removal view. For telescope-network errors, its removal UI associates 400020 with a remotely connected device and a disconnect-first message, and 400021 with an offline device that cannot currently be removed; other such errors use a generic removal-failed message. READ for client presentation. The server definition of these conditions and the meaning of 400002 remain unresolved. Android app 3.3.2 declares the stop operation in its examined remote-service interface; that interface declares neither retrieve nor remote-unbind. Its examined device-management removal helper uses a separate local remote-disjoin request. READ. Equivalence between these operations and their server effects remains unresolved.
 
 Member types (READ): share times and the body `transferId` are 64-bit integers, while the
 detail query `transferId` is a nullable 32-bit integer; coordinates are nullable doubles;
@@ -391,3 +384,36 @@ detail query `transferId` is a nullable 32-bit integer; coordinates are nullable
 null encoding follow R10: `type` is `email` or `mobile`, and null members (the app's add-device
 call leaves `status` null) are omitted. READ (app 3.3.2). Server-side units and how the server
 treats omitted members are unresolved (server-side).
+
+## Account-side device binding and ownership transfer
+
+Android app 3.3.2 and iOS app 3.4.0 provide separate account-side device-binding and ownership-transfer calls in addition to remote-management calls. Their ownership flows select the account service separately from remote-management transfer, even where URL paths have the same spelling. The Android declarations and models are listed below; iOS supplies the same twelve nominal account-side paths with the construction and parsing differences described after the catalogue. READ for these client paths. They are app HTTP contracts, not firmware 9.31/9.75 RPCs. Server authorization, ownership validation and transfer effects remain unresolved.
+
+Calls use the configured Seestar account service, the common app headers and the nonempty account authorization token when present. JSON body names follow the members below, with nullable values omitted by the default serializer. Responses use the shared code/data/msg envelope. READ for client construction and parsing, not server requirements. Required below means a nonnull client-constructor argument; optional means nullable in that constructor, not established server permission to omit it.
+
+| HTTP call | Client request members | Declared data model |
+|---|---|---|
+| POST `/v1/device-bind` | Required strings deviceModel, deviceSn; optional strings subModel, cpuId, ssid | Binding record |
+| GET `/v1/device-bind/check` | String queries deviceModel, deviceSn | Nullable boolean canBind |
+| GET `/v1/device-bind/owner-check` | String queries deviceModel, deviceSn | Nullable boolean isOwner |
+| GET `/v1/device-bind/my` | Nullable integer queries current, pageSize | Shared page wrapper of binding records |
+| POST `/v1/device-transfer/send-code` | Required type enum email/mobile and strings deviceSn, deviceModel; optional string ssid | Unspecified object |
+| POST `/v1/device-transfer/verify-code` | Required strings code, deviceSn, deviceModel | Nullable boolean success |
+| POST `/v1/device-transfer/request` | Required strings code, toUser, deviceSn, deviceModel | Unspecified object |
+| GET `/v1/device-transfer/list` | Nullable integer queries current, pageSize | Shared page wrapper of transfer-list records |
+| GET `/v1/device-transfer/detail` | Nullable integer query transferId; nullable string queries deviceSn, deviceModel | Transfer-detail record |
+| POST `/v1/device-transfer/approve` | Required 64-bit integer transferId | Unspecified object |
+| POST `/v1/device-transfer/reject` | Required 64-bit integer transferId | Unspecified object |
+| POST `/v1/device-transfer/cancel` | Required strings deviceSn, deviceModel | Unspecified object |
+
+Binding records declare nullable strings userId, deviceModel, deviceSn, subModel, cpuId, ssid and transferStatus; nullable integer device; and nullable 64-bit integers id, createTime, updateTime, bindTime and activationTime. Transfer-detail records declare nullable strings deviceModel, deviceSn, fromUserId, fromUserNickname, toUserId, toUserNickname, toUserAccount, ssid and status; nullable integer device; and nullable 64-bit integers id and endTime. Transfer-list records add nullable string address, nullable integers deviceId/deviceStatus and nullable 64-bit integer createTime. READ.
+
+The shared page wrapper declares an items array, attributes/data objects of the record type, string type/id, nullable integer current and integer total/unReadCount. A separate record-typed member is named list on the wire; it is not established as an interchangeable alias for the items array. Transfer-list helpers default to page 1 and size 20; the device-binding page requests size 50. READ.
+
+The local binding builder requires current device information and nonblank model/trimmed serial. It trims the CPU identifier and converts blank to null, and falls back from blank SSID to trimmed device name, again converting blank to null. READ. These checks do not establish ownership. The owner-check declaration does not prove a mandatory owner-check-before-bind sequence.
+
+iOS app 3.4.0 constructs device binding with deviceSn and deviceModel, additionally writing subModel and cpuId when nonnil; its examined builder does not send ssid. Its transfer-code request writes type, deviceSn and deviceModel without ssid; type value 2 selects email and other values select mobile. Transfer verification writes code/deviceSn/deviceModel; transfer request writes code/toUser/deviceSn/deviceModel; cancellation writes deviceSn/deviceModel; approval and rejection write a numeric transferId. Both list builders write numeric current and pageSize. The detail query uses a signed 64-bit transferId alone when it is positive; otherwise it writes deviceSn/deviceModel when those properties are set and omits transferId. Its repository sets those two properties only for nonempty supplied strings. Android app 3.3.2 instead declares a nullable 32-bit detail-query ID; its approval/rejection body IDs are 64-bit. READ for client construction, not accepted omissions or server requirements.
+
+iOS app 3.4.0 check/owner-check/verify-code parsing consumes canBind/isOwner/success from response data with missing/null handling. List parsing consumes data.items and converts its entries to account models; detail parsing returns a transfer model only when its parsed ID is positive. Its send-code completion supplies a local value of 60 rather than reading a server duration. The examined bind/request/cancel/approve/reject reformers use inherited response-data handling without a narrower endpoint schema. READ for client parsing. Actual response population, omitted-member acceptance, server code lifetime and rate limits remain unresolved.
+
+A successful HTTP status with a nonnull parsed envelope is classified as success by the shared adapter without requiring a particular envelope code. READ. For Android app 3.3.2 and iOS app 3.4.0, server authorization/ownership checks, code expiry/rate limits, actual successful response population and transfer effects remain unresolved; the client construction and parsing above do not establish those server behaviors.

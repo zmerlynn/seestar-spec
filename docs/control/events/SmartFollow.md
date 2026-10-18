@@ -29,7 +29,7 @@ None. Events are sent by the device without a request; the payload is below.
 | `Event` | string | yes | - | Discriminator. Fixed value `"SmartFollow"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
 | `state` | string | yes | - | Function-state name; INFERRED to follow the shared function-state formatter. One of: `idle`, `working`, `complete`, `fail`, `cancel`. [INFERRED] |
-| `stage` | string | no | - | Worker stage, a string. Internal 1 gives detecting, 2 starting_track, 3 tracking, anything else idle. One of: `idle`, `detecting`, `starting_track`, `tracking`. [READ] |
+| `stage` | string | no | - | Worker stage, a string. Internal 1 gives detecting on the 64-bit build and waiting_target on the 32-bit build (firmware 9.75), 2 starting_track, 3 tracking, anything else idle. One of: `idle`, `detecting`, `starting_track`, `tracking`, `waiting_target`. [READ] |
 | `track_result` | string | no | - | Outcome of the current track, a string. Internal 1 gives running, 2 stopped, 3 lost, 4 init_failed, 5 image_failed, 6 mount_failed; 0 or any other value gives idle. The tracker returns 4 for a failed image-centre query, 5 for a failed image fetch, 6 for a failed mount command, 3 for a lost target (including a timeout) and 2 for a stop request or a target static for over 5 minutes. When a track start fails, 4 is stored before detection resumes. One of: `running`, `lost`, `init_failed`, `mount_failed`, `image_failed`, `stopped`, `idle`. [READ] |
 
 ## Errors

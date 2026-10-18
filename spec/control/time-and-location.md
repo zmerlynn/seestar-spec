@@ -217,9 +217,7 @@ R22. Clients MUST NOT assume the order of the arrays is the same: `location_lon_
 `set_user_location` and `get_user_location` use `[lon, lat]`, while `scope_set_location`'s
 positional form is `[latitude, longitude]`. READ.
 
-R23. [`cali_user_location`](../../docs/control/methods/cali_user_location.md) takes an optional
-`ra`/`dec` pair (object or `[ra, dec]`). When a device test flag (`calib_location`) is 1 and a
-pair parsed, it replaces the stored calibration offset pair. It always returns
+R23. Firmware 9.31, 64-bit imager: [`cali_user_location`](../../docs/control/methods/cali_user_location.md) takes an optional `ra`/`dec` pair (object or `[ra, dec]`). When the calibration-location test setting (`calib_location`) is 1, a parsed pair enters the offset-computation path; after successfully loading the user location, that path computes and stores calibration offsets from the supplied coordinates. Location-load failure exits without that store. READ. The runtime writer enabling this test setting remains unresolved; the reader gate does not establish that this call enables it. It always returns
 `calib_location` and, when available, `effect_offset_deg` (possibly twice), `offset_deg` and
 `offset_deg_3ppa`, each a two-number array in degrees. A missing or bad pair is not an error.
 READ. `calib_location` is an integer mode: 1 enables goto location calibration (goto and

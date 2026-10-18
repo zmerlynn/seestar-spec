@@ -2,7 +2,7 @@
 
 Part of [Cloud authentication and relay authorization](../cloud-auth.md). This file reproduces
 the fixed constants compiled into the ThroughTek SDKs (the two public keys, the legacy transform phrase and the master host-name
-suffixes) and into the vendor app (the third-party login `sign` key, described but withheld, and the activation request key) that a compatible client or device needs for interoperability. They are compiled into
+suffixes) and into the vendor app (the third-party login `sign` key and the activation request key) that a compatible client or device needs for interoperability. They are compiled into
 the libraries and app inspected and are not specific to any account, device or licence. Per-account values (licences, the licence `keyMask`, tunnel
 credentials, tokens) are not reproduced and MUST NOT be published.
 
@@ -76,8 +76,7 @@ technique the client SDK uses. READ (both device builds and the client SDK). The
 network framework embeds the phrase as a plain literal: a NUL-terminated 36-byte string whose first
 32 bytes are exactly the phrase above, followed by four more printable ASCII bytes, which are not
 repeated here. READ (iOS app 3.4.0, byte comparison). That 36-byte string does not occur in either
-64-bit imager. Whether the iOS code reads the four extra bytes is unresolved; the transform below, as
-read in the Android client SDK and the device SDK, uses only the first 16.
+64-bit imager. iOS app 3.4.0: initialization copies exactly the 32-byte prefix into state; the four adjacent bytes are separately referenced by SDK logging and are not copied as transform material. Complete transform blocks use only state bytes 0–15; a tail uses at most bytes 0–14. READ. The copied second half and four-byte suffix do not extend the transform key. The first-16-byte consumer width also holds in the inspected Android app 3.3.2 SDK and firmware 9.31/9.75 D64 and D32 transform functions; this bounded agreement does not establish equivalence of every SDK routine.
 
 Only the first 16 bytes (`Charlie is the d`) are used. XORed byte-wise with the licence's
 16-byte `keyMask` (all zero when the licence has none), they form the scrambling key `K` of
@@ -101,9 +100,13 @@ A licence `standalone` entry for the region overrides the constructed name
 ## Third-party login `sign` key (app)
 
 The fixed HMAC-MD5 key for `sign` on `/v1/user/oauth/verify` ([endpoints.md
-R29](../account-login/endpoints.md)) is a 7-byte UTF-8 string. Its value is deliberately not given
-here: only the app's WeChat login verification uses it. It is the app's default key for its signing
-helper and is the same in every installation. READ (app 3.3.2). It is a shared constant, not an
+R29](../account-login/endpoints.md)) is the 7-byte UTF-8 string:
+
+```text
+seestar
+```
+
+It is the same string as the app's `x-service-platform` header value ([Application headers](../account-login.md#application-headers)). Android app 3.3.2: it is the default key of the app's signing helper, used by WeChat login verification, and is the same in every installation. READ. iOS app 3.4.0, main application: the same literal is the key of the HMAC-MD5 `sign` on third-party verification and on the main Apple registration request ([endpoints.md R31a](../account-login/endpoints.md#additions-seen-in-ios-app-340)). READ. The separate bundled account framework's HMAC-SHA256 registration key is a different, project-selected key and is not reproduced here. It is a shared constant, not an
 account secret; it does not authenticate a user. INFERRED.
 
 ## Activation request public key (app)
@@ -204,9 +207,4 @@ the production "common" host's `/common/v1/network-available` path. READ (firmwa
 imager). This is one of the three rotating probe targets of
 [`check_internet`](../../control/network.md#internet-check) (R30b); the `edge-api.zwoastro.com`
 host seen alongside it is a separate probe target in the same rotation, reached by ping rather
-than HTTPS, not an alternate host for this path. The check is firmware-initiated, distinct from
-the app-side hosts in the table above, and runs both on demand (the `check_internet` RPC) and on
-the device's own initiative from at least two background workers, independent of any RPC call;
-see [network.md R30e](../../control/network.md#internet-check) for what triggers the
-self-initiated calls and what is still unresolved there (whether either background worker is
-timer-driven, and at what interval).
+than HTTPS, not an alternate host for this path. Firmware 9.31 and firmware 9.75, both imager builds: the firmware invokes the internet check through `check_internet` and in the RK-board housekeeping path while a stored remote join is pending. The RPC supplies selector 2; the inspected housekeeping callers supply selector 1. The housekeeping pass is nominally due when its saved millisecond timestamp is zero, time moves backwards, or current time is greater than saved time plus 60000 ms; equality skips the pass. Only a successful internet test reaches the stored join with timeout argument 1000 ms, and only a zero join result clears pending state. The due pass saves the timestamp sampled before its work. READ. Firmware 9.75, both imager builds: the inspected photometry worker tests internet before the reference-star download; internet-test failure skips that download, leaves its download flag false and clears the function error. The later idle-wait back edges do not invoke this test again. The corresponding firmware 9.31 photometry workers lack this test/download step. READ. These are nominal gates, not exact wall-clock spacing or a guarantee against other network work; clock arithmetic, actual retry cadence and future invocations remain unresolved. See [network.md R30e](../../control/network.md#internet-check).

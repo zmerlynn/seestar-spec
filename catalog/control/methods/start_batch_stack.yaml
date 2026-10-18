@@ -10,8 +10,8 @@ description: 'Stops the AVI reader, resets the global batch status and progress,
   null, array or scalar gives 107; a non-string frame_type gives 105), task_type is ignored and the
   deepsky task is always started; its deeper error codes are unresolved. Firmware 9.75, app 3.4.0
   (64-bit build) limits the comet task to 200 input frames, checked at start (204) and again in the
-  worker on the input list and on the expanded list (thread-local error value 204; how worker
-  failures reach the BatchStack event is unresolved). A new comet preflight finds the first frame
+  worker on the input list and on the expanded list (worker-side: a BatchStack fail event with
+  code 204, error out of limit and max_frame_num 200; READ). A new comet preflight finds the first frame
   with a comet and fails with 9005 if none, 9002 if its detector cannot start; too few candidates
   give 9004. The comet list is separate from the deepsky list, and its key_frame is the reference
   frame. The star-trail task honours the list''s batch_startrails_mode (0 maximum video, 1 decay
@@ -54,9 +54,7 @@ reply_error:
 errors:
 - code: 204
   trigger: 'Firmware 9.75, app 3.4.0, comet task only; the comet input list holds more than 200
-    frames (the comet_max_frame_num constant). The thread-local error value is stored under the
-    batch lock and the start fails; that this code is the reply is INFERRED from the stored
-    thread-local error value'
+    frames (the comet_max_frame_num constant). The start fails before any worker starts (READ)'
   label: out of limit
 - code: 107
   trigger: params supplied but not an object

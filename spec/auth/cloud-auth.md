@@ -149,12 +149,8 @@ licence source and the srcId gate changed ([sdk-licence.md R46a](cloud-auth/sdk-
 [http-api.md: `srcId` stability and the busy window](cloud-auth/http-api.md#srcid-stability-and-the-busy-window)).
 
 The iOS app 3.4.0 network framework embeds SDK 4.3.6 build 3 (the Android 3.3.2 value above is
-Android-specific, not evidence of an iOS change), reports login version `0x04030603` and connects
-the tunnel with one connect per `connectInfo` entry, all started at once, first success winning, with a
-wait of no limit (READ; [seestar-profile.md R72a](../transport/p2p-tunnel/seestar-profile.md#port-mapping-profile));
-the device accepts either client version, so the login
-version is not a client gate (READ). The iOS main
-executable is encrypted, so iOS request headers and signing could not be checked.
+Android-specific, not evidence of an iOS change), reports login version `0x04030603`; the device accepts either client version, so the login
+version is not a client gate (READ). iOS app 3.4.0 installs two tunnel mapping groups. One contains remote ports 4800, 4801, 4804, 4554, 4555, 4361 and 80; the other contains 4350 and 4700. Local ports match remote ports except remote 80 maps to local 40080. The client creates one connection per group and dispatches the connection attempts asynchronously. It signals success after all results are nonnegative, or failure on a negative result; its group wait has no time limit. READ for client configuration and control flow ([seestar-profile.md R72a](../transport/p2p-tunnel/seestar-profile.md#port-mapping-profile)). The examined main account headers, metadata and third-party signing builders are readable and are described in [boundaries item 9](account-login/boundaries.md). READ. Actual scheduling, complete cleanup, backend requirements and interoperability remain unresolved.
 
 A targeted comparison of the 32-bit build against the 64-bit build (not a full packet-handler
 comparison) found, READ:
@@ -174,11 +170,8 @@ length is not fixed across builds. READ (two builds), INFERRED (rule).
 
 ## Open questions
 
-- Several reply fields are opaque: bytes 36–51 and 68–69 of `0x1008`; 18–19, 40–55 and 72–73 of
-  `0x100c`; 48–59 and 70–71 of the precheck record reply; the first form of `0x0229`; parts of hello
-  replies. unresolved (server-side). The `0x0806` telemetry body layout. unresolved.
-- DNS/NAT64 conversion of the 16-byte address entries. unresolved. Ignored address bytes and opaque
-  punch metadata: see [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions).
+- The opaque reply-field questions remain unresolved (server-side): `0x1008` bytes 36–51 and 68–69, legacy hello's first 16 reply-body bytes and remaining hello fields, legacy `0x0212`/`0x0215`/`0x0216` bytes 40–51, and the short `0x0229` form in [master-legacy.md](cloud-auth/master-legacy.md); `0x100c` bytes 18–19, 40–55 and 72–73, and precheck-record reply bytes 18–19, 48–59 and 70–71 in [master-record.md](cloud-auth/master-record.md). Android app 3.3.2 constructs a `0x0806` connection-result record with a four-byte record-session prefix and a 544-byte inner message containing a 528-byte body; see [relay.md](cloud-auth/relay.md#record-relay-messages-client-sdk). READ for local construction and copied sources. Complete meanings of copied opaque blocks, actual transmission and server interpretation remain unresolved. Firmware 9.31, firmware 9.75 and iOS app 3.4.0 telemetry parity is not established.
+- Firmware 9.31 and 9.75, both imager builds: local conversion of a 16-byte address slot reads the port bytes at 2–3 and IPv4 bytes at 4–7. It formats those address bytes as numeric IPv4 text and passes that text to the platform resolver with unspecified family and datagram socket type. On successful resolution, an IPv4 result retains the original IPv4 bytes; the other branch copies sixteen bytes from the returned sockaddr's IPv6-address position. The input port bytes are preserved. The resulting local endpoint has a family tag at byte 0, port at bytes 2–3 and address at bytes 4–19; it is distinct from the wire slot. READ. Resolver failure behavior, deployed NAT64 synthesis and prefix, and server meanings of ignored address bytes and opaque punch metadata remain unresolved; see [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions).
 - How the cloud derives the licence and tunnel account it sends in `p2p_message` (R1a): see
   [sdk-licence.md R46a](cloud-auth/sdk-licence.md#device-side-sdk-start). Firmware 9.75: whether the
   cloud still sends `sdkLicenseKey`, what the embedded default licence is bound to, and the 32-bit
@@ -194,12 +187,7 @@ length is not fixed across builds. READ (two builds), INFERRED (rule).
 - iOS 3.4.0: the endpoint mapping (`device-p2p/retrieve`, `device-p2p/stop`,
   `my-device/remote-unbind` with `deviceSn` and `deviceModel`), the response shapes and the
   remote-unbind error-code mapper are READ ([http-api.md: Optional remote-feature
-  catalogue](cloud-auth/http-api.md#optional-remote-feature-catalogue)). Neither disconnect-device
-  nor remote-unbind has a visible caller in any unencrypted iOS framework; the call site is inferred
-  to be in the encrypted main executable, out of reach. Open: the wire keys of the WeChat login
-  ticket and the `apple` authType value (INFERRED), the composition of the connect list
-  ([endpoints.md](account-login/endpoints.md)), and the meaning of the remote-unbind error codes
-  400002/400020/400021. iOS headers and signing: unresolved (encrypted executable).
+  catalogue](cloud-auth/http-api.md#optional-remote-feature-catalogue)). iOS app 3.4.0: the confirmed device-details removal action invokes remote-unbind; the traced ordinary disconnect uses the stop operation after its status/identifier checks. A main caller of retrieve remains unresolved. The ticket parser accepts ticket, accessToken and expiresIn. Main Apple registration uses platform=apple and authType=email. The examined main third-party verification/registration builders use HMAC-MD5, while the separate bundled account-framework registration builder uses HMAC-SHA256. The installed tunnel profile has two mapping groups and signals success only after all connection results are nonnegative. The removal UI associates 400020 with a remotely connected device and 400021 with an offline device. READ for these client paths and messages. Server effects, the server meaning of 400002 and the other conditions, actual ticket responses/expiry, backend header/signature requirements and alternative framework entry paths remain unresolved. Android app 3.3.2 has the separate source paths described in the account-login and remote-operation chapters; parity remains unresolved.
 - Server meaning of relay timeout 60000 versus 60: unresolved (server-side); see [relay.md
   R100](cloud-auth/relay.md#legacy-relay-messages-device-sdk).
 - Server issuance, lifetime and revocation of allocations; cooldowns; meaning of unhandled cloud

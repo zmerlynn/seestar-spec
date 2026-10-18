@@ -3,13 +3,14 @@ name: scope_get_test_date
 summary: 'Guider: send a raw vendor date query to the mount controller and return its unparsed reply (diagnostic).'
 description: 'Guider diagnostic getter. Registered in the guider dispatcher table; on 4700 it is
   reached through the imager method-not-found relay (mount-and-motion R1, R2). READ: the handler
-  sends a fixed vendor date query to the mount and returns the reply split into several strings in
-  result.list (one per #-terminated segment, INFERRED). Observed reply ["0#", "0#", "#", "#"] on an
+  sends four fixed vendor queries to the mount and returns the replies in
+  result.list, one per query (READ). Observed reply ["0#", "0#", "#", "#"] on an
   S50 Pro, firmware 9.31 (OBSERVED 2026-10-16). What the reply means is unresolved; it is not the
   mount clock in any established format. On a send failure it logs the failure and replies with the
   thread error code. The mount query goes through the shared driver, so the method is graded MUTATOR
   / tier C like the other scope_get_* readers. The app emits it from the azimuth-tracking-speed
-  query. Mount serial (firmware 9.31, READ): :GBZR.'
+  query. Mount serial (firmware 9.31 and 9.75, 64-bit and 32-bit, READ): :GBZR#, :GBZD#, :GFGR#,
+  :GFGD#, in that order, one list element per successful exchange.'
 grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
 side_effect_tier: C
 confidence: READ

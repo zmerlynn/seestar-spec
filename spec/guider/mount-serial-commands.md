@@ -164,9 +164,9 @@ Mapping (64-bit, 9.31). READ:
 | [`scope_get_beep_volume`](../../docs/guider/methods/scope_get_beep_volume.md), [`scope_set_beep_volume`](../../docs/guider/methods/scope_set_beep_volume.md) | `:GBu#` / `:SBu0#` to `:SBu2#` |
 | [`scope_is_moving`](../../docs/guider/methods/scope_is_moving.md) | `:GU#`, last digit |
 | [`scope_send_cmd`](../../docs/guider/methods/scope_send_cmd.md) | raw pass-through of a caller-supplied command |
-| [`scope_get_test_date`](../../docs/guider/methods/scope_get_test_date.md) | `:GBZR#` |
+| [`scope_get_test_date`](../../docs/guider/methods/scope_get_test_date.md) | In the checked 64-bit and 32-bit builds of firmware 9.31 and 9.75: `:GBZR#`, `:GBZD#`, `:GFGR#`, `:GFGD#`, in that order, using terminated replies. All four successful exchanges produce four elements in list; an exchange failure takes the error path. READ. The controller-specific meaning of these returned values remains unresolved. |
 | [`scope_set_slew_rate`](../../docs/guider/methods/scope_set_slew_rate.md), [`scope_get_slew_rate`](../../docs/guider/methods/scope_get_slew_rate.md), [`scope_set_guide_rate`](../../docs/guider/methods/scope_set_guide_rate.md), [`scope_get_guide_rate`](../../docs/guider/methods/scope_get_guide_rate.md) | none. The slew rate (0 to 7) is stored in the driver and goes out as a rate command at the next move |
-| [`scope_fine_move`](../../docs/guider/methods/scope_fine_move.md), [`scope_move_left_by_angle`](../../docs/guider/methods/scope_move_left_by_angle.md), [`scope_move_to_horizon`](../../docs/guider/methods/scope_move_to_horizon.md) | worker threads; their serial output was not traced beyond the axis-coordinate read of `scope_fine_move`. unresolved |
+| [`scope_fine_move`](../../docs/guider/methods/scope_fine_move.md), [`scope_move_left_by_angle`](../../docs/guider/methods/scope_move_left_by_angle.md), [`scope_move_to_horizon`](../../docs/guider/methods/scope_move_to_horizon.md) | In the checked 64-bit and 32-bit builds of firmware 9.31 and 9.75, fine movement runs in the request handler. After its coordinate-dependent calculation, each finite divided rate below magnitude 0.01 requests an axis abort whose return is ignored; rates reaching the movement branch send a per-axis rate followed by an ordinary timed command or the backlash-command family. A stop-wait timeout can still be followed by result 0; the method description gives the parameter and arithmetic qualifications. Horizon movement runs in a worker, sends the selected slew-rate command and north motion, and polls coordinates and movement state. Its common cleanup requests an all-axis stop, but initial motion failure and an unexpected zero movement status return without that cleanup. Left-angle movement reads the other axle coordinate and repeatedly requests the first-axis rate at signed magnitude 1440 with two-second ordinary timed movement. Measured progress controls stop timing. Its movement cleanup requests an all-axis stop; failure of all initial coordinate reads returns before that cleanup. READ. Physical command units, directions, backlash behavior and actual stopping remain unresolved. |
 | `scope_set_connection_mode`, `scope_set_connection_para`, `scope_get_connection_mode`, `scope_get_connection_para` | driver and port configuration (INFERRED), not mount commands |
 
 ## Connect sequence and version gates
@@ -254,11 +254,7 @@ R18. `scope_goto` runs these steps. READ:
 
 Any other `e...` fails without a code.
 
-R19. The watcher (shared by goto and home) polls `:GU#` every 500 ms. READ. On exit it sends
-`:Q#`. After a goto it turns tracking back on if needed. After a home it sees the home flag,
-clears the azimuth state and re-applies the equatorial mode. It also tests the arrival against
-a 0.1 degree tolerance and logs "far from target" otherwise. Its time-out and exit-code
-mapping are unresolved.
+R19. In the checked 64-bit and 32-bit builds of firmware 9.31 and 9.75, the goto/home watcher polls status with a 500 ms pause while its run flag remains set. It has no elapsed-time deadline: failed status reads continue polling, and a successful status containing N ends polling. The run-cleared exit takes the abort path, which sends the all-axis stop command for a connected AM5; the normal N-completion path can return without that command. After a goto coordinate read succeeds, the watcher subtracts an elapsed-time correction from measured RA before comparing with the target. A finite distance at most 0.1 degree clears the stored code; a larger finite distance or coordinate-read failure retains it, initially 207. A home with H clears the code and azimuth flags before optional mode reconciliation. An uncancelled goto checks tracking and requests it on if needed; later mode/tracking failures do not assign a new watcher code here. In the checked 64-bit 9.75 event path, an uncancelled stored code 0 produces complete and a nonzero code produces fail; cancellation produces cancel without a numeric error member from the generic formatter. READ. Non-finite arrival handling, controller-side deadlines and physical completion remain unresolved.
 
 ## Firmware 9.75 deltas (app 3.4.0, 64-bit)
 
@@ -271,15 +267,11 @@ by string references, with two differences. READ:
    check ([Startup motor-current check (S50 Pro, 64-bit only)](#startup-motor-current-check-s50-pro-64-bit-only)). The S50 Pro model test is still there. INFERRED: the check now always
    runs on that model when the temperature read succeeds.
 
-R21. Everything else listed in [The scope_* method to command mapping](#the-scope_-method-to-command-mapping), including time, tracking-mode and test-date handling,
-is identical in firmware 9.75 apart from address shifts and register allocation. Operand-level
-constants were not compared. READ (one function) / unresolved (constants).
+R21. In the checked 64-bit and 32-bit builds of firmware 9.31 and 9.75, the time, tracking-mode, generic serial-exchange and test-date paths retain the compared command formats and scalar operands. The tracking table associates sidereal, solar and lunar with controller numbers 0, 2 and 1. The checked feature-version thresholds are 1.1.0, 1.1.9, 1.2.2 and 1.6.6. The test-date handler sends four queries in order and appends one reply per successful query; all four successful exchanges produce four list elements. Firmware 9.75 adds the preceding connect query described above and discards its return before the version-query loop. READ for these paths. The new query's controller meaning, dependency-level numerical equality and untraced behavior remain unresolved.
 
 ## 32-bit build parity
 
-R22. At string level the 32-bit builds contain the same commands as the 64-bit builds, plus the
-same `:GP#` in firmware 9.75, but not the motor-current block: its strings and code are absent.
-No 32-bit code was traced for this chapter, so instruction-level parity is unresolved. The
+R22. Instruction and referenced-data reads of the checked 32-bit builds of firmware 9.31 and 9.75 confirm the named sender, tracking/time/target builders, motion/timed/abort/sync/goto/status paths and fine/horizon/left-angle routing. They use the corresponding command families, direction selection, reply modes and timeout operands described for the checked 64-bit paths. The 32-bit 9.75 build also sends the added connect query; the startup-current block remains absent in the checked 32-bit builds. READ for these subsets. This does not establish equal linked math implementations, identical decimal-token rounding or bit-identical floating-point results; controller mechanics and untraced paths remain unresolved. The
 seven state-changing paths checked independently are in [index.md: Build differences](index.md#build-differences).
 
 ## Startup motor-current check (S50 Pro, 64-bit only)
@@ -302,8 +294,7 @@ the names only; the unit of the values is unresolved.
   mapped in R15 and R18.
 - The `:GU#` letter legend (R13).
 - The unit of the `:Rv` value, and why both `:MTD...#` and `:MT<dir>...#` exist.
-- Serial output of `scope_fine_move`, `scope_move_left_by_angle` and `scope_move_to_horizon`.
-- The watcher time-out and exit-code mapping (R19), and the reply handling of the track-mode
-  command (an acknowledgement is assumed, not traced).
-- Fragments with no code reference (`:TB`, `:GBZD#`, `:GFGD#`, `:GFGR#`): possibly dead strings.
-- 32-bit instruction-level parity (R22).
+- Physical motion and stop behavior of the fine, left-angle and horizon command sequences remain unresolved; the checked 64-bit and 32-bit firmware 9.31/9.75 command construction and conditional exits are described above.
+- Controller-side movement deadlines and actual arrival remain unresolved. The checked firmware watcher has no elapsed-time deadline. The tracking-mode setter in the checked 64-bit and 32-bit firmware 9.31/9.75 paths writes its command and checks the write result without reading an acknowledgement in that setter; whether the controller emits one remains unresolved.
+- The role of `:TB` remains unresolved. The `:GBZD#`, `:GFGR#` and `:GFGD#` commands are included in the test-date queries in the checked 64-bit and 32-bit firmware 9.31/9.75 builds.
+- Bit-identical numerical behavior, dependency equivalence and parity outside the named 32-bit command/control subsets remain unresolved.

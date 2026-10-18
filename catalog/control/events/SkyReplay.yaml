@@ -39,6 +39,11 @@ payload:
       description: Function-state name; INFERRED to follow the shared function-state formatter.
       x-confidence: INFERRED
       x-basis: static analysis of firmware 9.75, resolver reports, skyReplayFunc @0x1d1bb0, printSkyReplayState @0x1d3700 (64-bit build); state set assumed from the shared function-state formatter
+    wide_cam:
+      type: boolean
+      description: Added with a non-null callback context (firmware 9.75, both builds).
+      x-confidence: READ
+      x-basis: static analysis of firmware 9.75, resolver reports, skyReplayFunc @0x1d1bb0, printSkyReplayState @0x1d3700 (64-bit build); 32-bit build checked 2026-10-18
     camera_id:
       type: integer
       description: Camera the session records (value meaning INFERRED).
@@ -54,6 +59,11 @@ payload:
       description: Frames in the video being built.
       x-confidence: READ
       x-basis: static analysis of firmware 9.75, resolver reports, skyReplayFunc @0x1d1bb0, printSkyReplayState @0x1d3700 (64-bit build)
+    output_file:
+      type: string
+      description: Conditional; present with a non-null callback context unless a filename-suppression flag is set, whose runtime meaning is unresolved (firmware 9.75, both builds).
+      x-confidence: READ (conditional); flag meaning unresolved
+      x-basis: static analysis of firmware 9.75, resolver reports, skyReplayFunc @0x1d1bb0, printSkyReplayState @0x1d3700 (64-bit build); 32-bit build checked 2026-10-18
   x-confidence: READ; envelope INFERRED
   x-basis: static analysis of firmware 9.75, resolver reports, skyReplayFunc @0x1d1bb0, printSkyReplayState @0x1d3700 (64-bit build)
 examples:

@@ -14,7 +14,7 @@ Switch the device into a view mode (star, scenery, moon, sun, planet, solar syst
 | Confidence | READ |
 | Basis | static analysis of firmware 9.31, handler @0xde500 (64-bit build); firmware 9.75 members from the 9.75 reports |
 
-Starts the requested view worker. Changes view, camera, page and control state, can stop the previous worker and exposure, and can move the focuser. On wide-camera-capable models (star mode) the request may be relayed to the other camera process, in which case the reply is the relayed reply rather than a locally built one. A success reply means the request was accepted and the worker launched, not that the view is ready. Downstream device and driver error codes are not limited to the table below. The grade reflects the whole request/reply path, which reaches the shared diagnostic logger; it does not by itself mean the method changes device settings. Firmware 9.75, app 3.4.0 adds the members goto_capt_type, goto_capture_settings and stack_exp_ms and the codes 104 and 209 on them; their types and meaning were not decoded. Mosaic goto now has a source mode that restarts a normal stack after the goto (see stacking.md).
+Starts the requested view worker. Changes view, camera, page and control state, can stop the previous worker and exposure, and can move the focuser. On wide-camera-capable models (star mode) the request may be relayed to the other camera process, in which case the reply is the relayed reply rather than a locally built one. A success reply means the request was accepted and the worker launched, not that the view is ready. Downstream device and driver error codes are not limited to the table below. The grade reflects the whole request/reply path, which reaches the shared diagnostic logger; it does not by itself mean the method changes device settings. Firmware 9.75, app 3.4.0 adds the optional members goto_capt_type (string) and goto_capture_settings (object holding integer stack_exp_ms), which can switch the goto capture to stack with that exposure (READ, 64-bit and 32-bit builds). A main-camera star request outside ViewPlan with a large enough mosaic scale or rotation is marked as a mosaic-goto source; at stack start that marker converts the session to an ordinary stack (see stacking.md R8c).
 
 Side effects: Saves target and autosave state, changes view/page/control state, may stop the prior worker and exposure, may open and move the focuser, sets the working indicator (64-bit build), and may relay requests to the second camera process, each wait up to 10000 ms with no total bound established. Every call also performs shared request/reply diagnostic logging.
 
@@ -38,9 +38,9 @@ Side effects: Saves target and autosave state, changes view/page/control state, 
 | `params.selected_cam` | string | no | - | Optional string: View or SecondView (case-insensitive). Read only on the main-process star path with wide-camera support; there a present non-string gives 105 and an unknown name 209. Ignored on other paths. Missing keeps the current selection. [READ] |
 | `params.wide_mosaic_angle` | number | no | -999 | Optional number; malformed ignored. Read only for the wide-camera process on the star path. Degrees (INFERRED). [READ] |
 | `params.main_stack_exp_us` | integer | no | -1 | 64-bit build only: optional integer exposure override read only for the wide-camera process on the star path. Missing or wrong type sets -1; values <= 0 normalise to -1. Microseconds (INFERRED from the name). Not sent by the app; a main-process relay may inject it. [READ] |
-| `params.goto_capt_type` | any | no | - | Firmware 9.75, app 3.4.0: optional goto setting. Type, range and effect were not decoded; 104 and 209 are the reported codes. [READ; type unresolved] |
-| `params.goto_capture_settings` | any | no | - | Firmware 9.75, app 3.4.0: optional goto setting. Type, range and effect were not decoded; 104 and 209 are the reported codes. [READ; type unresolved] |
-| `params.stack_exp_ms` | any | no | - | Firmware 9.75, app 3.4.0: optional goto setting. Type, range and effect were not decoded; 104 and 209 are the reported codes. [READ; type unresolved] |
+| `params.goto_capt_type` | string | no | - | Firmware 9.75, app 3.4.0: optional. Selects stack capture for the goto (ASCII case-insensitive name comparison); other capture types or unknown names give 209, a non-string 105. On the main-camera goto stage outside ViewPlan it can switch capture to stack before the goto. [READ] |
+| `params.goto_capture_settings` | object | no | - | Firmware 9.75, app 3.4.0: optional object (107 otherwise) holding stack_exp_ms. Applied through the ordinary stack-setting path before the goto. [READ] |
+| `params.goto_capture_settings.stack_exp_ms` | integer | no | - | Stack exposure for the goto capture; required inside goto_capture_settings (104 when missing or non-integer). The decoded signed 32-bit value is accepted only when positive and goto_capt_type explicitly selects stack, otherwise 209. No upper-bound check in the handler; exposure normalization can change the effective value. [READ] |
 
 ## Reply
 
@@ -63,10 +63,10 @@ Side effects: Saves target and autosave state, changes view/page/control state, 
 |---|---|---|
 | 536 | A ViewPlan worker is running (checked before params; also from camera selection if a non-dual plan starts in a race) | `view plan is already running` |
 | 107 | params missing, null or not an object | `expected object param` |
-| 105 | mode missing or not a string; or selected_cam present but not a string on its active branch | `expected string param` |
+| 105 | mode missing or not a string; or selected_cam present but not a string on its active branch; firmware 9.75: goto_capt_type not a string | `expected string param` |
 | 102 | mosaic.star_map_angle or mosaic.scale malformed, or mosaic.angle missing or malformed when scale is present | `invalid params` |
 | 204 | Mode id above 5 (none, or an unrecognised mode string) | `out of limit` |
-| 209 | selected_cam names an unknown camera | `invalid value` |
+| 209 | selected_cam names an unknown camera; firmware 9.75: goto_capt_type names an unsupported or unknown capture type, or stack_exp_ms is not positive or lacks explicit stack selection | `invalid value` |
 | 109 | Camera lookup is negative after a successful camera selection | `unexpected param` |
 | 524 | Wide-camera star path requested while the main view function is running, not asleep, and the stack status query is false | `function conflict` |
 | 318 | No open camera when the star stage is started | `device not connected` |
@@ -74,7 +74,7 @@ Side effects: Saves target and autosave state, changes view/page/control state, 
 | 203 | Guider can_goto response contains result false | `equipment is moving` |
 | 300 | Relay to the other process has no user-data context | `internal error` |
 | 207 | A downstream failure left the error code zero | `fail to operate` |
-| 104 | Firmware 9.75: a new goto member has the wrong type (association INFERRED) | `expected int` |
+| 104 | Firmware 9.75: goto_capture_settings.stack_exp_ms missing or not an integer | `expected int` |
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 

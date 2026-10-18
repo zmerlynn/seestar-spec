@@ -169,7 +169,7 @@ cloud remote-command channel (rate 65536 to 67108864 bytes per second, on/off fl
 flag file read by the file server and the imager; the default on a missing or invalid file is 1 MiB per
 second, and the effective limit depends on the relay mode. See
 [image-sockets.md](image-sockets.md#streaming-start-and-stop). Firmware 9.31 has no such limit. READ.
-Firmware 9.75 details of the file server: the flag file is `/tmp/zwo/http_download_rate_limit`, re-read at most every 20 s; it holds a decimal rate in bytes per second (trailing whitespace allowed) in the range 65536 to 67108864, an invalid value falls back to 1048576, and a missing file, or any other error checking it, disables the limiter. The limiter is a token bucket of capacity rate/20 bytes shared with the imager's send limiter. The server starts a 16-thread worker pool; the route table is unchanged and no authorization was added. READ (64-bit); the 32-bit server matches on routes, absence of authorization, limiter and chunk size, and the thread pool was not checked. Which transfers are throttled in direct (non-relay) use is unresolved.
+Firmware 9.75 details of the file server: the flag file is `/tmp/zwo/http_download_rate_limit`, re-read at most every 20 s; it holds a decimal rate in bytes per second (trailing whitespace allowed) in the range 65536 to 67108864, an invalid value falls back to 1048576, and a missing file, or any other error checking it, disables the limiter. The limiter is a token bucket of capacity rate/20 bytes. The server starts a 16-thread worker pool; the route table is unchanged and no authorization was added. READ (64-bit); the 32-bit server matches on routes, absence of authorization, limiter and chunk size, and the thread pool was not checked. Firmware 9.75, 64-bit build, uses separate process-local token buckets for wildcard HTTP downloads and live-image socket output. They share rate/enable policy, not a combined token budget. The HTTP response provider retains the enabled decision captured when it was constructed; its subsequent calls acquire tokens before reading file data when that decision is enabled. Mounted static-file responses use the ordinary response body, and stored-image file-socket responses use the ordinary writer. Live-image headers and payloads use the image-limited writer. READ for these paths. Direct clients using either limited path are covered while its global enable decision applies; this scope is INFERRED from the verified decision and writer paths, which do not classify the peer as direct or relayed. Firmware 9.75, 32-bit build, also has the HTTP provider's enabled/acquire branch, the limited live-image writer and the ordinary stored-file writer; its mounted-response coverage remains unresolved here. Firmware 9.31, 64-bit build, lacks the corresponding new limiter in the inspected HTTP/image paths. No 9.31 32-bit conclusion is established here.
 
 ## Album methods on 4700
 
@@ -197,24 +197,18 @@ directory `{name, thn, count, type: 0}`. READ.
 R16. The `get_albums` filter accepts `stack`, `stacked`, `startrail` and `meteor` on the 64-bit
 build. The 32-bit build accepts only `stack` and `stacked`. READ (firmware 9.31). Firmware 9.75: the
 64-bit filter accepts `stack`, `stacked`, `startrail`, `meteor`, `comet` and `video_stack`; any
-other string selects the generic listing, and a filter that is not a string gives 106. READ. `stack`
+other string selects the generic listing. READ. `stack`
 and `comet` list the DeepSky group with separate predicates, `stacked` lists the MilkyWay group
-(with `_sub` suffix filtering) and `video_stack` lists video-stack files found through the
-AVI-to-MP4 name mapping (which file the lookup returns is unresolved). Whether the 32-bit filter
-accepts `stack`, `stacked`, `video_stack` and `comet` is unresolved. `SolarSystem`, `Starfield`,
+(with `_sub` suffix filtering) and `video_stack` lists video-stack files. Firmware 9.75, 64-bit and 32-bit builds, tests `video_stack` eligibility by taking an MP4 candidate, replacing its suffix with `-RAW.avi` and looking for that full AVI path in the folder's enumerated AVI set. The MP4 remains the selected album video. In the 64-bit folder-summary path, an existing thumbnail derived from an eligible MP4 is required when selecting its representative. The 32-bit filter recognizes `stack`, `stacked`, `video_stack` and `comet`. Other strings use the generic listing, including `startrail` and `meteor` in the 32-bit build. A non-string filter returns 105 in both builds. READ. `SolarSystem`, `Starfield`,
 `Scenery`, `DeepSky`, `MilkyWay`, `MyWorks` and `Startrails` were already album groups in firmware
 9.31, so `SolarSystem` is not a new category. Whether `PhotoMetry` is an album group is unresolved
 (the string exists in both builds but is not used as a group by the listing). INFERRED: an item
 named like the `Scenery` group plus `_video` is grouped under `SolarSystem`, otherwise under
 `Scenery`. Sky replay (stacking.md) writes `*_stack_replay.mp4`, whose file type code is 13. READ
-(file names), unresolved (the sky replay event name).
+(file names). Firmware 9.75 (64-bit build): the sky-replay state event is named `SkyReplay`. READ (registration and event construction); with the feature force-disabled, whether it occurs in ordinary sessions is not established.
 
 R16a. Motion recording (firmware 9.75, 64-bit; the 32-bit build has no motion-monitor strings other
-than `can_motion_monitor`). READ. The AVI writer saves under `MyWorks/Scenery_motion/` with a base name
-`Scenery_Motion_Capture`, or `Scenery_Motion_Tracking` when the motion-record type is 1, followed by a
-timestamp (`YYYY-MM-DD-HHMMSS` pattern) and the extension `-RAW.avi`; an `.mp4` is also produced
-(config key `motion_pre_record_mp4_fps` sets its frame rate). The separator between base name and
-timestamp, and which of the two files is the album entry, are unresolved.
+than `can_motion_monitor`). READ. Firmware 9.75, 64-bit build, constructs motion-recording names under `MyWorks/Scenery_motion/` with the stem `YYYY-MM-DD-HHMMSS-Scenery_Motion_Capture`, or `YYYY-MM-DD-HHMMSS-Scenery_Motion_Tracking` when the motion-record type is 1. It appends `-RAW.avi` for the raw video and `.mp4` for the MP4. Ordinary Scenery album enumeration selects the MP4 and suppresses the raw AVI; the AVI can supply the separate video-stack eligibility check. READ. The exact motion labels and dedicated MP4 worker were not found in the firmware 9.31 64-bit or firmware 9.75 32-bit inventories; this does not establish absence of every analogous video facility in those builds. The config key `motion_pre_record_mp4_fps` sets the MP4 frame rate. READ.
 
 R16b. FITS and JSON header additions (firmware 9.75). READ (64-bit; 32-bit as noted at the end). The
 FITS header gains five keywords: `OB_CU` (integer, "whether the object is user-defined", written
@@ -223,10 +217,8 @@ when the value is not negative), `W_FM_MD` (integer, wide-field framing mode, wh
 frame position angle on the star map, written when the value differs from the unset sentinel
 -999.0). The JSON header printed for `get_stack_info` gains `star_type_custom` (from the `OB_CU`
 value), `W_FM_MD` and `mosaic` {`angle`, `scale`, `star_map_angle`} with the same conditions (the
-quoting of `star_type_custom` and the `mosaic` nesting are INFERRED). What populates these values is
-unresolved. Other FITS keywords are unchanged and the creator string is still `ZWO `. A reader MUST
-treat unknown keywords and members as optional. Whether the firmware version in the headers comes
-from the OTA version record is unresolved.
+quoting of `star_type_custom` and the `mosaic` nesting are INFERRED). Firmware 9.75, 64-bit build, conditionally derives `OB_CU` from whether the retained view-target classification equals 1, `T_FM_RO` from current mosaic rotation and `T_FM_ZM` from current mosaic scale. It takes `T_FM_PS` from the stored star-map angle only when the angle is outside the unset tolerance around -999 and outside the unknown-angle tolerance around 361: the tests are an absolute difference greater than 0.1 for the former and at least 0.000001 for the latter. The wide-camera update copies the current `wide_size_index` setting to `W_FM_MD`. These updates are conditional; paths that skip them can retain copied header values. The three framing fields are 32-bit floats in memory. Firmware 9.75, 32-bit build, has the same retained-target comparison and mosaic sources in the inspected update path, but the live source for its serialized `W_FM_MD` remains unresolved. Firmware 9.31, 64-bit build, does not serialize these five additions. READ. No other FITS keywords are added and the creator string is still `ZWO `. A reader MUST
+treat unknown keywords and members as optional. Firmware 9.75, 64-bit and 32-bit builds, obtains the main-version string from the local OTA version record for the normal JPEG EXIF software writer and FITS `PROGRAM` writer. These writer sites select the main version, not the module-version list. Firmware 9.75, 64-bit build, supplies an empty software/program string when that lookup fails, with no fallback to the older configured firmware-version getter at these sites. Firmware 9.31, 64-bit build, uses the configured firmware-version source in both writers. The firmware 9.75 stack-header JSON formatters in both builds emit no firmware-version member. READ for these writer and formatter paths. Other JPEG/metadata writers and firmware 9.31 32-bit behavior remain unresolved here.
 
 In the 32-bit build of firmware 9.75 the FITS writer and reader handle the same five keywords, and
 the JSON header has `W_FM_MD` and `mosaic` {`angle`, `scale`, `star_map_angle`} but no

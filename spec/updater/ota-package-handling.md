@@ -28,11 +28,7 @@ values ([index.md R10b](index.md#ota-methods-firmware-975)). A mismatch is error
 
 R12c. When every module succeeded the device writes the local manifest (a temporary file renamed
 over the manifest file in the device user ASIAIR directory), emits `OtaUpdate` with state `complete`, plays a sound and,
-when `need_reboot` is true, schedules a delayed reboot. READ. The delay is 2 s: the device starts a
-detached shell that sleeps 2 s and then runs the device's shutdown helper script with the argument
-`reboot`, with all output discarded; a failure to schedule it is reported as "schedule ota reboot
-failed". READ (64-bit build; in the 32-bit build the command prefix exists but the delay value was
-not verified). Which directory the helper script is taken from is unresolved.
+when `need_reboot` is true, schedules a delayed reboot. READ. In firmware 9.75, both 64-bit and 32-bit builds, the reboot path attempts to start a detached shell that sleeps 2 seconds and then invokes the shutdown helper with argument `reboot`. The compiled script-directory prefix names the helper `auto_shutdown.sh` in the `bin` directory under the device user's ASIAIR directory; the full pathname is shell-escaped and both output streams are discarded. Failure of the scheduling call is logged as “schedule ota reboot failed”. READ. The actual reboot time and the later background helper's success are unresolved by this static read.
 
 Error codes in OTA replies and `OtaUpdate` events (firmware 9.75, 64-bit, READ unless noted):
 
@@ -87,6 +83,5 @@ unchanged ([ports.md](../transport/ports.md)). The imager's counterpart is the s
 [Version](../../docs/control/events/Version.md)), and the imager's cloud enrollment (`remote_join`)
 calls it before it reports the OTA version, where firmware 9.31 reported the legacy firmware version
 directly. READ. The cloud wire effect of that report is the OTA version and status reports named in
-[cloud-auth.md](../auth/cloud-auth.md). The guider's counterpart is unresolved; no HTTP use was
-found for it.
+[cloud-auth.md](../auth/cloud-auth.md). In firmware 9.75, both guider builds read the local manifest for metadata. They require an object root with integer `schema_version` equal to 1, a nonempty string `main_version`, and a `modules` array whose entries are objects with nonempty string `name` and `version` members; an empty array is accepted. The inspected FITS and JPEG metadata writers use the main version when this read succeeds. The FITS writer supplies an empty `PROGRAM` value when it fails. The guider's connection-arrival formatter separately emits a `Version` event with the compiled guider name and no manifest-version members. The inspected manifest reader uses local file/JSON operations and contains no HTTP or socket operation. READ. This does not establish every metadata writer's fallback behavior or wider guider network behavior. Firmware 9.31 guider equivalence remains unresolved; no corresponding named reader was found in either older build.
 

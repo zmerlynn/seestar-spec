@@ -143,7 +143,9 @@ ncols = max(1, ceil((W - 200) / Lmax - 1e-9) + 1)
 nrows = max(1, ceil((H - 200) / Lmax - 1e-9) + 1)
 ```
 
-columns and rows. READ. The 200 is consistent with the 100-pixel margin of R10 on each side (INFERRED). `Lmax` bounds the pitch but is not necessarily the pitch: each axis's pitch is fitted between margins that depend on the footprint and the requested rotation, and is floored. Each coordinate is placed symmetrically about the canvas center and then rounded half away from zero on its own, so the rounded grid need not be exactly symmetric; the middle coordinate of an odd count is the rounded canvas center. READ. Further margin checks, not specified here, can reject the candidate grid. The counts therefore do not guarantee that a grid is returned.
+columns and rows. READ. The 200 is consistent with the 100-pixel margin of R10 on each side (INFERRED). `Lmax` bounds the pitch but is not necessarily the pitch: each axis's pitch is fitted between margins that depend on the footprint and the requested rotation, and is floored. Each coordinate is placed symmetrically about the canvas center and then rounded half away from zero on its own, so the rounded grid need not be exactly symmetric; the middle coordinate of an odd count is the rounded canvas center. READ. Firmware 9.75, 64-bit build, for finite representable calculations: let `c=abs(cos A)`, `t=abs(sin A)` at the requested rotation and `B=(100*Fh)/Fw`. Requested margins are `mx=100*c+B*t` and `my=100*t+B*c`. For an axis of length `Z`, count `n>1` and requested margin `m`, pitch is `floor(min(Lmax,max(0,Z-2*m)/(n-1))+1e-9)`. Coordinates are centered before independent half-away-from-zero rounding; an odd middle coordinate is explicitly the rounded canvas center. READ.
+
+After rounding, let `ex=min(first_x,W-last_x)` and `ey=min(first_y,H-last_y)`. Both pitches are at least 1; `abs(ex-mx)` and `abs(ey-my)` are each at most 8; and `hypot(max(ex,pitch_x/2),max(ey,pitch_y/2))` is at most `min(Fw,Fh)/2+1e-9`. Singleton-axis candidates fail the pitch/admission path. READ. The inspected firmware 9.75 32-bit pitch, margin and diagonal gates follow this policy, with the numerical qualifications of R10f. Counts alone do not guarantee a returned grid.
 
 R10c. Firmware 9.75 (READ): the first position is an anchor at the canvas center, `(round(W/2), round(H/2))` rounded half away from zero. It need not be a grid position. The remaining order is defined on grid indices (column `x`, row `y`):
 
@@ -155,12 +157,11 @@ R10c. Firmware 9.75 (READ): the first position is an anchor at the canvas center
 
 For example (INFERRED from these rules), a 3 by 3 grid gives the anchor `(1,1)` and then `(0,1),(0,2),(1,2),(2,2),(2,1),(2,0),(1,0),(0,0)`. A 5 by 3 grid gives `(2,1)` and then `(3,1),(1,1),(0,1),...`, so successive positions are not always neighbours. The number of unique positions `N` is `ncols*nrows` plus one when no grid position coincides with the anchor; R13a's `F = num*N` counts the anchor. INFERRED.
 
-R10d. Firmware 9.75 (READ): the planner checks the route at the requested rotation (not over the 1801 orientations of R10b) before returning it. The step from the anchor to the first grid position must overlap by strictly more than 0.6. A later position must overlap its predecessor by more than 0.6, or else an earlier position within a search window that is not specified here; once such an earlier reference has been used, later positions are also checked that way. The planner also rasterizes the rotated footprints into a mask at one-sixteenth scale, `max(1, ceil(W/16))` by `max(1, ceil(H/16))`, and requires zero uncovered mask pixels. A raster check does not prove exact continuous coverage (INFERRED). If any check fails, the planner returns an empty list. There is no retry with a larger grid. What a client sees for an empty list (no centers, so no mosaic movement) is INFERRED; no error code is tied to it in the code read.
+R10d. Firmware 9.75 (READ): the planner checks the route at the requested rotation (not over the 1801 orientations of R10b) before returning it. Number its positions from zero, including the center anchor. The first jump requires overlap strictly above 0.6. For each later position `i>=2`, the earlier-reference search covers positions 0 through `i-2`, including the anchor and excluding the immediate predecessor. Before reference mode begins, a transition with grid-index Manhattan distance one uses the consecutive test: exactly one pixel displacement component is zero, its magnitude is at most the integer step bound, and predecessor overlap exceeds 0.6. Other transitions require an earlier reference with overlap above 0.6; once accepted, reference mode persists for later transitions. Failure of the consecutive test rejects the candidate without an automatic reference fallback. The planner also rasterizes the rotated footprints into a mask at one-sixteenth scale, `max(1, ceil(W/16))` by `max(1, ceil(H/16))`, and requires zero uncovered mask pixels. A raster check does not prove exact continuous coverage (INFERRED). If any check fails, the planner returns an empty list. There is no retry with a larger grid. What a client sees for an empty list (no centers, so no mosaic movement) is INFERRED; no error code is tied to it in the code read.
 
 R10e. Firmware 9.75 (READ): the planner is called when the parameters are initialized, when the duration estimate is computed (R26) and when frames are stacked and the list is regenerated. A 9.75 estimate is not always larger than the 9.31 estimate for the same inputs: a canvas with a dimension of 200 or less gives 9.75 an empty list and a zero estimate, while 9.31 always keeps its center. INFERRED (static counterexample).
 
-R10f. Firmware 9.75, 32-bit build: the same planner exists. Parity of the arithmetic is not
-established. READ (existence) / unresolved.
+R10f. Firmware 9.75, 32-bit build has the rectangular planner and the inspected count, route, pitch and margin-validation rules. Its discriminants and several margin/overlap expressions use separate arithmetic roundings where the 64-bit build uses fused operations; upward count rounding also crosses an imported ceiling call. Both builds depend on imported mathematics and image-processing operations. READ. Bit-exact coordinates, acceptance decisions, rasterization and matching parity remain unresolved, including extreme or non-finite inputs.
 
 ## Traversal and per-center repetition
 
@@ -198,7 +199,9 @@ READ. List exhaustion is therefore neither completion nor a deadline. INFERRED.
 
 R15. Firmware 9.31, and firmware 9.75 (READ): for each stacked frame, star matching locates the current image on the canvas. If it is strictly less than 100 pixels from the current node, the device advances to the next node and computes the offset to it in the current frame; otherwise it computes a correction to the current node. Offsets are truncated toward zero to whole pixels. A repeated node at identical coordinates gives a zero offset. READ.
 
-R15a. Firmware 9.75 (READ): on the first frame, if the first queued position is within 1.5 pixels (inclusive) of the canvas center (integer-divided `W/2, H/2`), one list entry is consumed before the first movement target is chosen; if that empties the list, movement is cleared. The 100-pixel test of R15 still governs later arrivals. The matching steps keep the same sequence as 9.31; whether the imported matching library behaves identically is unresolved.
+R15a. Firmware 9.75 (READ): on the first frame, if the first queued position is within 1.5 pixels (inclusive) of the canvas center (integer-divided `W/2, H/2`), one list entry is consumed before the first movement target is chosen; if that empties the list, movement is cleared. The 100-pixel test of R15 still governs later arrivals. The matching steps keep the same sequence as 9.31. READ. Firmware 9.31 and firmware 9.75, 64-bit builds retain the inspected matching-wrapper sequence, but their packaged matching implementations differ, including star-record representation. The implementations also import fitting and matrix operations. READ. Identical detected stars, transforms and numerical results between releases or builds remain unresolved.
+
+Firmware 9.31 and firmware 9.75, both inspected builds: the frame-processing matching wrapper selects transformation type 1 when the current camera differs from the wide-camera selection, and type 3 on the wide-camera equality branch; the 32-bit comparisons use camera ID 1. These selectors are separate from the matching-algorithm retry to 1 and restoration to 0. READ. The later arrival test is strictly below 100 pixels ordinarily, with an additional strict 200-pixel acceptance branch for that wide-camera selection. This does not establish the separate wide-stack path on 32-bit builds. Firmware 9.75's first-frame anchor consumption remains the distinct inclusive 1.5-pixel case. Imported matching-result parity remains unresolved.
 
 R16. For the ordinary mosaic a nonzero offset `(dx, dy)` becomes one guider
 [`scope_fine_move`](../../../docs/guider/methods/scope_fine_move.md) request:
@@ -212,18 +215,15 @@ P = 206.265 * pixel_size * bin / focal_length   (double, then rounded to single)
 READ, firmware 9.31 and 9.75; the request text and its `"limit":0,` and `"backlash_comp":true,` members are byte-identical in both. The products and the division by 15 are single precision. How the guider treats `limit` 0 is in its method page; the imager does not establish the mount-side effect. Axis semantics and signs inside the mount are outside the imager (unresolved). Each
 center is not a full goto with plate solve. READ.
 
+At the guider (firmware 9.31 and 9.75, 64-bit builds; READ): integer `limit` 0 disables the [-16, 16] clamp, and the omitted `dur_sec` defaults to 1. Altitude compensation of x, when the guider's coordinate read succeeds, and the separate per-axis rate cap of 1440 stay in effect. For axes that reach the timed move, `backlash_comp` true selects the `:MTD` command family. With the default duration, the stop-wait budget is seven seconds; a timeout still gives integer result 0. Small divided rates instead request an axis abort whose return is not checked. None of this establishes physical completion or controller-side backlash behaviour. Details are in the method page.
+
 R17. Firmware 9.31 and 9.75: a refused or timed-out fine move (a 10,000 ms request-wait timeout; success means the reply text contains `"result":0`) is logged and
 capture continues; it does not end the mosaic. READ.
 
-A separate wide-mosaic branch moves to absolute centers with an ordinary guider
-[`scope_goto`](../../../docs/guider/methods/scope_goto.md) followed by a wait for the goto (120 s
-watchdog), without a plate solve per center. READ. The wide-mosaic branch is taken only when the
+Firmware 9.31 and firmware 9.75, 64-bit builds retain a separate wide-mosaic stacker path using absolute centers, ordinary `scope_goto` and goto-status waits with a 120-second watchdog, without a plate solve per center. READ. The wide-mosaic branch is taken only when the
 live stacker is the starry (wide) stacker, the session is not star-trails, and the capture type
 is not the excluded one. The starry stacker is installed when the stack settings select a
-starry/wide stack type, and that choice overrides the ordinary mosaic predicate. READ. Which
-request selects that stack type is unresolved. If the first absolute goto fails, the stacking
-worker ends with status 207. A goto or wait failure inside the branch loop records 501 and exits
-the loop. READ. How either outcome reaches the client as a final code is unresolved.
+starry/wide stack type, and that choice overrides the ordinary mosaic predicate. READ. The firmware 9.75 path excludes star trails and timelapse capture. Its goto command uses a 10000-ms request wait; status waits use 1000 ms. Initial goto failure returns stack-worker status 207. A command or wait failure records 501 in the goto detail; a later failure leaves the exposure loop. After a successful later move, firmware 9.75 uses up to ten stop-aware 100-ms waits where firmware 9.31 sleeps one second. READ. These waits do not guarantee physical arrival or settling. Which request selects every wide-stack type, final client failure-code propagation and 32-bit wide-stack support remain unresolved.
 
 ## Orientation
 
@@ -294,8 +294,7 @@ On the device side, both branches recover `u`. In equatorial mode,
 R18's difference from the solved angle leaves `u`. In the other mode, if the map is drawn with
 the zenith up and azimuth increasing to the right, `phi` = 180 − `beta` and R19's `m` reduces
 to `u` modulo 360. INFERRED. `star_map_angle` therefore has no fixed cardinal meaning of its
-own: it carries the on-screen rotation of the sky at the moment it was read. Which way a
-positive `u` turns the drawn frame on screen is not established here.
+own: it carries the on-screen rotation of the sky at the moment it was read. For Android app 3.3.2, the screen direction of positive UI rotation is described below; its physical sky-rotation meaning remains unresolved.
 
 R21. `star_map_angle` is in degrees. READ (app 3.3.2 native library: the renderer converts
 radians with 180/pi and wraps with 360; device arithmetic is modulo 360). A client MUST NOT
@@ -304,6 +303,4 @@ counterclockwise sky rotation for a positive angle. See [R20a](#orientation).
 
 The device-side angle logic of R18-R21 is confirmed unchanged in firmware 9.75, both the 64-bit
 and 32-bit builds: identical instruction counts, only relocation differences, and the same pool
-constants (0.001, 3.14, 57.29577951308232) as in firmware 9.31. READ. The sign and zero-direction
-of the angle remain unresolved; this resolver pass found nothing that settles them, and a client
-MUST NOT assume a direction beyond what R20/R20a already establish.
+constants (0.001, 3.14, 57.29577951308232) as in firmware 9.31. READ. The app-side construction in R20a fixes the zero direction and the sign relative to the screen. Android app 3.3.2 clamps the UI mosaic rotation to −90..90 degrees and includes it with a positive sign in the frame's window-coordinate drawing angle. READ. With view and base orientation held fixed, increasing the effective angle rotates the drawn frame clockwise; further input changes at the clamp boundary need not rotate it. INFERRED from the corner transform and downward-positive window y. Physical sky-rotation meaning, mirrored-image interpretation and iOS drawing parity remain unresolved. A client MUST NOT assume a direction beyond what R20/R20a establish.

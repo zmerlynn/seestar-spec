@@ -344,22 +344,11 @@ R30d. All of R6a to R6e, R17a to R17f and R30a to R30c above hold identically in
 imager build; no 32-bit-specific schema or validation difference was found for `pi_set_ap`,
 `pi_station_set` or `check_internet`. READ.
 
-R30e. Firmware 9.75, 64-bit imager: the same NTP-sync-then-probe mechanism (R29-R30b) also runs
-on the device's own initiative, independent of the `check_internet` RPC, from at least two
-background workers: one that also performs periodic Pi-temperature housekeeping, which gates an
-attempt to re-establish the remote-access enrolment of [Remote-access enrolment](#remote-access-enrolment) behind a
-successful check; and one in the photometry pipeline, which gates a network-dependent step of its
-own processing and reports an error and aborts that step on failure. Both share the same
-rotating probe-target index as the RPC path (R30b), so a self-triggered check can land on any of
-the three probe targets depending on how many times the mechanism has run in total, counting both
-RPC-triggered and self-triggered calls. Unlike the RPC path, neither self-triggered caller gets
-the extra retry-on-failure of R29: each makes exactly one probe per invocation. READ. The
-Pi-temperature-housekeeping worker runs as its own background loop that sleeps 1 s between
-iterations (three separate sleep points in the loop, each 1 s); the self-triggered internet check
-and rejoin attempt are reached from inside that loop, but whether they run on every iteration or
-only on some of them was not established. READ (loop cadence); unresolved (that detail). The
-photometry worker's own loop body has no comparable sleep call, so its trigger condition and any
-periodic interval remain unresolved.
+R30e. Firmware 9.31 D64 and D32 and firmware 9.75 D64 and D32: the stored remote-rejoin check runs in the temperature-housekeeping branch selected by the firmware's RK-board model test. A pass is due when its saved millisecond timestamp is zero, the current timestamp is less than the saved value, or the current timestamp is strictly greater than the saved value plus 60,000, using that build's timestamp arithmetic. Equality with the latter boundary skips the pass. Only a pending stored join causes the internet check; selector 1 performs one probe without the additional RPC retry. A successful check permits a stored join attempt with a 1,000-ms timeout argument, and only join return zero clears pending. The due pass saves the timestamp sampled before its work after either success or failure. The loop requests a one-second sleep; it does not make an unconditional rejoin attempt each iteration. D64 uses a 64-bit timestamp and D32 a 32-bit timestamp. Firmware 9.75 also has a separate station-check gate of 120,000 ms. READ. An exact wall-clock retry interval or minimum delay after completion remains unresolved. Both self-triggered checks share the rotating probe-target index of the RPC path (R30b), so a self-triggered check can land on any of the three probe targets depending on how many times the mechanism has run in total.
+
+Firmware 9.75 D64 and D32: `check_photometry` starts the photometry view stage and carries the reference-star query parameters to its blocking worker. After successful capture, solving and target validation, the worker performs one selector-1 internet check and conditionally downloads reference stars; it does not attempt a remote rejoin. D64 additionally tests the running flag immediately before this check; D32 lacks that final test. After successful worker completion, the view's 100-ms waits restart their 600-count waiting chunk without calling the check again. This wait supplies no periodic internet-check interval. Firmware 9.31 D64 and D32 have no corresponding internet-check/download step in this worker. READ. Later independent stage invocations and their timing are outside this interval finding.
+
+Firmware 9.75 D64 and D32: an unavailable network skips the reference-star download, records `has_download_ref_star:false`, and reaches this worker's normal zero-error completion path. A failed download likewise records a false result and reaches zero-error completion. Earlier capture, solve, target-validation and cancellation paths remain separate. READ.
 
 ## Remote-access enrolment
 
@@ -376,15 +365,11 @@ running". The message is misleading; clients MUST rely on the code. A wrong `tim
 gives 104; a join failure gives 207. READ.
 
 R33. On success the device stores the request for later reuse and sends a `Setting` event with
-`remote_joined:true`. READ. Firmware 9.75: the join also reports the OTA version information
-(the manifest-aware main version and module list of [maintenance.md](maintenance.md)) instead of
-the legacy firmware version alone; whether this changes anything on the wire is unresolved. READ
-(the call).
+`remote_joined:true`. READ. Firmware 9.75 (64-bit build): after the cloud join, the OTA version report uses the main-version string read from the local manifest (see [maintenance.md](maintenance.md)), falling back to the legacy firmware-version string when that read fails. The selected string is sent as `fw_version` in the cloud OTA version report; the manifest's module list is not included by this path. READ. Whether the backend receives or uses it is not established.
 
 R34. [`remote_disjoin`](../../docs/control/methods/remote_disjoin.md) removes the stored join
 and sends `Setting` with `remote_joined:false` on both success and failure. Error 207. READ.
-Firmware 9.75: leaving the remote network also disconnects the device's cloud messaging client; the
-wire effect is unresolved. READ (the call).
+Firmware 9.31 D64 and D32 and firmware 9.75 D64 and D32: when the remote wrapper is joined, leaving stops the P2P server and submits the cloud attribute `iotStatus:"join_remove"`. Firmware 9.75 proceeds only when that submission returns success, waits 200 ms, and then disconnects the cloud client. Firmware 9.31 proceeds through the delay and disconnect without testing the submission result. Firmware 9.75 teardown requests asynchronous MQTT disconnect when its handle is connected, releases SDK resources and destroys the handle; the inspected firmware teardown routines issue no unsubscribe call. READ. Submission and teardown do not prove report receipt, disconnect-packet delivery or ordering at the broker. The D64 MQTT implementation is absent from these inputs; server enrolment changes and account/app notifications remain unresolved for both builds.
 
 R35. [`remote_disconnect`](../../docs/control/methods/remote_disconnect.md) clears auto-connect
 and stops the tunnel server but keeps the stored join. Error 207. READ.

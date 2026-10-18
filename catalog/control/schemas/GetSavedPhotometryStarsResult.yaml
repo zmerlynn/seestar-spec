@@ -56,6 +56,12 @@ properties:
           x-confidence: READ
           x-basis: static analysis of firmware 9.31, handler @0xb6040, GetSavedPhotoMetryStars @0x202a70
             (64-bit build)
+        is_variable:
+          type: boolean
+          description: 'Firmware 9.75, 64-bit build: variable-star flag of the plot, from cached plot state.
+            Optional: absent in firmware 9.31.'
+          x-confidence: READ
+          x-basis: static analysis of firmware 9.75, GetSavedPhotoMetryStars writer @0x22bb50 (64-bit build)
     description: Summaries of saved, non-empty plots. Sorted by startTime descending (lexical), then id
       ascending (lexical). Empty list when nothing is saved.
     x-confidence: READ

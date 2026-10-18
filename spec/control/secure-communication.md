@@ -166,9 +166,7 @@ R18. The AES-GCM nonce is the 12 bytes at offsets 24 to 35 (prefix then sequence
 associated data is the concatenation of: the 16 ASCII bytes `seestar-field-v1` (exactly 16 bytes, no
 terminating NUL); one direction byte (0 for data the device receives, 1 for data it sends); the 36
 header bytes at offsets 0 to 35; and four context strings, each as a 2-byte big-endian length
-followed by the bytes, each at most 256 bytes. READ (64-bit imager); the 32-bit imager has the same
-16-byte prefix boundary, but its callers' context strings were not decoded. The four context strings
-of each Wi-Fi field are, in order, READ:
+followed by exactly that many bytes, with each string at most 256 bytes. READ (firmware 9.75 D64 and D32). The four Wi-Fi context strings have been read in both builds and appear in the following table in serialization order:
 
 | Field | Context strings |
 |---|---|
@@ -177,9 +175,7 @@ of each Wi-Fi field are, in order, READ:
 | `pi_station_set` input | `wifi`, `pi_station_set`, `psk`, the SSID supplied in the same request |
 | `get_device_state` output | `wifi`, `get_device_state`, `ap.passwd`, the AP SSID |
 
-The string `wifi` is therefore a cipher context, not a JSON member (R22). Which exact bytes of an
-SSID are used (for example after any trimming) was not decoded; a client SHOULD use the SSID
-string it sends or received unchanged. INFERRED.
+The string `wifi` is therefore a cipher context, not a JSON member (R22). Firmware 9.75 D64 and D32: `wifi` is a cipher-context label. For `pi_set_ap` and `pi_station_set`, the final context string comes from the parsed request SSID, collected as a C string and therefore ending at the first NUL. For `pi_get_ap` and the AP section of `get_device_state`, it is the AP reader's returned SSID string, copied by stored byte length after that build's status-text conversion. The context copies and AAD serialization add no trimming, case folding, normalization or terminating NUL. READ. The two builds' handling of malformed status escapes differs; this does not establish universal equality with raw radio SSID bytes.
 
 R19. A field is bound to its method and field context by the context strings, so a ciphertext
 from one field is not valid in another even on the same connection. READ.
@@ -283,7 +279,7 @@ the 64-bit imager, "D32" the 32-bit imager, "G64" and "G32" the guiders. Firmwar
 | Wi-Fi password field encryption (`enc1:`) and 570 to 573 | D64 | D32 same behaviour; guiders encrypt nothing | parity, READ |
 | Error-code table | full | identical except 545, 549 and 9000 to 9005, which are 64-bit only; D32 has 546 to 565, 570 to 573, 436 and 437 | subset, READ |
 | `reset_setting` | 18 resettable descriptors, busy gating (259, 536) | D32 10 keys, no busy gating; transaction structure the same | partial parity, READ |
-| `get_setting`/`set_setting` new keys | see [device-state-and-settings.md](device-state-and-settings.md) | `include_sensitive`, `sky_replay`, `can_encrypt`, `enable_dark_library` and `preview.raw_bin2` present with logic identical to D64 (traced to the address level); `annotation` (and its four sub-members), `comet_max_frame_num`, `motion_monitor`, `exp_ms.more_exposure` and `stack.startrail_mode`/`startrails_duration_min` confirmed absent (no matching string anywhere in the binary) | parity for the traced keys, READ |
+| `get_setting`/`set_setting` new keys | see [device-state-and-settings.md](device-state-and-settings.md) | `include_sensitive`, `sky_replay`, `can_encrypt`, `enable_dark_library` and `preview.raw_bin2` present with logic identical to D64 (traced to the address level); `comet_max_frame_num`, `motion_monitor`, `exp_ms.more_exposure` and `stack.startrail_mode`/`startrails_duration_min` confirmed absent (no matching string anywhere in the binary); the `annotation` string exists in the binary, but no setting branch for it (or its four sub-members) was found | parity for the traced keys, READ |
 | Motion monitor, motion detection | yes | absent in D32 | 64-bit only, READ |
 | Smart follow (`start_smart_follow`) | detection loop, error 254, motion-detection checks, stages `detecting`, `starting_track`, `tracking` | older worker with no 254 and no motion-detection checks, stage strings `waiting_target` and `starting_track`, log "wait for next target" | differs, READ (strings); semantics INFERRED |
 | Sky replay getter and setter | force-disabled | identical in D32 | parity, READ |
@@ -301,23 +297,16 @@ the 64-bit imager, "D32" the 32-bit imager, "G64" and "G32" the guiders. Firmwar
 
 ## Open questions
 
-- The exact SSID bytes bound into the associated data (R18), the context strings of the 32-bit
-  callers, and whether a client can therefore build a valid token from this chapter alone.
-  unresolved.
+- Firmware 9.75 D64 and D32: the four Wi-Fi context labels, their SSID sources and their AAD length/copy rules are resolved by R18. Firmware 9.31 D64 and D32 use the earlier plaintext Wi-Fi fields in the corresponding handlers. READ. Independent session establishment, successful token acceptance and interoperability are not demonstrated by this context-byte analysis and remain unresolved here.
 - Whether the 32-bit imager's Wi-Fi handlers have the same member names and error codes as the
   64-bit ones (R22, R24). `pi_set_ap`, `pi_get_ap` and `pi_station_set` confirmed identical (same
   member names `key`/`passwd`/`psk`, same cipher-context strings, same 105 wrong-type split). READ.
   `get_device_state`'s `ap.passwd` member is unverified at the address level; given the other three
   match and all four share the same cipher-context machinery, it is INFERRED rather than READ.
-- Whether the matching private key is obtainable by a third-party client, and how an independent
-  client could unwrap the envelope. unresolved; outside this specification.
+- Firmware 9.75 client-authentication-envelope scope: obtaining the matching private key and independently unwrapping the envelope are outside this specification. READ (scope exclusion). Whether a third-party client can obtain that key remains unresolved; this chapter supplies no acquisition or unwrapping procedure.
 - The imager contains an error text suggesting that an old client use a new verify method; no code
   that returns it was found. unresolved.
-- The 32-bit relay-to-slave conditions and the 32-bit rate-limiter bucket arithmetic ([Firmware 9.75
-  parity matrix: 32-bit imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)).
-  unresolved. The `get_setting`/`set_setting` keys checked, the peer-to-peer rate logic and the
+- Firmware 9.31 and 9.75, 32-bit imager: the common forwarding check runs in process type 1 for view modes 1–5, or view mode 0 when wide-camera viewing is permitted. Occupancy type 1 checks local and slave mount occupancy and returns error 203 on conflict; type 2 checks local and slave `AviRecord` activity and returns error 524 on conflict. Slave queries use a 10000 ms timeout; a remote conflict requires query success and the literal substring `"result":true`. A failed query alone is not a conflict. Otherwise forwarding occurs only when requested and the master-camera selection flag is clear. Firmware 9.75 D64 additionally supports occupancy type 3, combining the two checks, and includes `MotionMonitor` in the recording check. These additions are absent from the inspected D32 routine and 9.31 D64 routine. READ. Firmware 9.75, both builds: for integer bytes-per-second rate R, image-limiter capacity is `min(65536, max(4096, floor(R/20)))` bytes. Enabled acquire refills tokens from elapsed steady-clock time and R, caps tokens at capacity and grants at most `min(requested,capacity)` when enough tokens are available. The stop flag returns zero; otherwise a disabled limiter returns the request unchanged. A nonzero enabled refund adds tokens up to capacity; D32 then wakes one waiter, while D64 only unlocks. READ. Exact behavior under clock changes and scheduling interleavings remains unresolved. The `get_setting`/`set_setting` keys checked, the peer-to-peer rate logic and the
   guiders' unauthorised-connection closing are specified ([Firmware 9.75 parity matrix: 32-bit
-  imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)); `sky_replay`'s own
-  `set_setting` logic in D32 is unverified (assumed identical to the D64 table). unresolved for that
-  one key only.
+  imager and guider](#firmware-975-parity-matrix-32-bit-imager-and-guider)); `sky_replay` in D32 is now traced: as in D64 (firmware 9.75), its getter returns false, and its boolean setter ignores the requested value, attempts to clear any stored enabled value and ends the replay session when the clear succeeds or is unnecessary; a failed clear makes the setter fail. READ.
 - Behaviour of the 4700 tunnel path (loopback) with respect to sessions is INFERRED only.
