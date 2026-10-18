@@ -56,7 +56,7 @@ event without being asked. READ.
 | `is_verified` | boolean | imager only |
 | `downgrade_fw_ver_int` | integer | imager, Plus- and Mini-class hardware only, when a staged update package with a parsable version is present |
 | `downgrade_fw_ver_string` | string | same condition |
-| `main_version` | string | firmware 9.75, imager; from the update manifest. The presence condition is INFERRED |
+| `main_version` | string | firmware 9.75, imager; from the update manifest; present only when the local manifest read succeeds, with no fallback (READ, both builds; see R5b) |
 | `modules` | array of `{name, version}` | firmware 9.75, imager; same source and condition |
 
 READ. OBSERVED(2026-10-12): on the updater port the greeting has exactly `Event`, `Timestamp`
@@ -77,16 +77,14 @@ R5. `get_device_state` with `keys:["device"]` returns `name`, `firmware_ver_int`
 
 R5a. Firmware 9.75 adds to `device` six capability flags, `can_motion_monitor`,
 `can_dual_capture`, `can_4k_quality`, `can_wide_mosaic_8k`, `can_comet_post_stack` and
-`can_roi_smart_follow` (flag names INFERRED from the code that fills them; each model has its own
-mask), plus `main_version` and `modules` as in R3. `can_dark_correction` is now always true. READ.
+`can_roi_smart_follow` (each model has its own mask), plus `main_version` and `modules` as in R3. `can_dark_correction` is now always true. READ.
 Clients MUST treat every capability flag as optional.
 
 R5b. The six flags are bits 0 to 5 of one per-model capability mask, in the order listed in R5a (bit
 0 `can_motion_monitor`, 1 `can_dual_capture`, 2 `can_4k_quality`, 3 `can_wide_mosaic_8k`, 4
-`can_comet_post_stack`, 5 `can_roi_smart_follow`). The flag names and the bit assignment are
-INFERRED; the mask values per model are READ, but their model-name mapping is INFERRED:
+`can_comet_post_stack`, 5 `can_roi_smart_follow`). The six flag names, their listed bit assignments and the listed 64-bit model-mask mapping are READ (firmware 9.75, 64-bit build). The six names and bit assignments are also READ on the firmware 9.75 32-bit build; its model set and masks are stated separately above. The 64-bit masks per model:
 
-| Model identifier | Mask | Bits set (names INFERRED) |
+| Model identifier | Mask | Bits set |
 |---|---|---|
 | unknown | 0x00 | none |
 | S30, S50 | 0x14 | 2, 4 |
@@ -94,14 +92,13 @@ INFERRED; the mask values per model are READ, but their model-name mapping is IN
 | S30Plus | 0x21 | 0, 5 |
 | S50N | 0x20 | 5 |
 
-The 32-bit build carries the same flag names (string comparison); its per-model values were not
-decoded. The exact condition behind each flag beyond the mask, and the fallback of `main_version`,
-are unresolved. Firmware 9.75, app 3.4.0.
+Firmware 9.75 on both builds emits these six booleans directly from bits 0–5 of a cached per-model capability mask, in the listed order. These field-producing paths add no running-state, camera-open, network or module-version condition. The 64-bit model masks are those in the table; the 32-bit masks are 0 for unknown models and 0x14 for S30 and S50. READ (firmware 9.75, both builds). These advertisements do not establish that an operation succeeds in a particular runtime state.
+
+Firmware 9.75 on both builds includes `main_version` and `modules` only after the local manifest read succeeds. The reader checks an object root, integer `schema_version` against 1, a nonempty string `main_version`, and an array `modules`. Every module entry is checked for nonempty string `name` and `version`; a failed entry check fails the whole read. An empty modules array is accepted. On read or required-field failure, this formatter omits both fields and emits no fallback `main_version`. READ (firmware 9.75, both builds). These manifest-derived fields are absent from the supplied firmware 9.31 formatters on both builds. Integer-representation edge cases beyond the observed schema check remain unresolved.
 
 R5c. `can_comet_post_stack` is the only comet-related member of `get_device_state`. It is a boolean
 that is true exactly when bit 4 of the capability mask is set (READ, firmware 9.75 64-bit build): true
-for S30, S50, S30P, S50P and S80, false for S30Plus, S50N and an unknown model (the model mapping is
-INFERRED). It gates nothing on the wire that was found: comet stacking is batch-only (see
+for S30, S50, S30P, S50P and S80, false for S30Plus, S50N and an unknown model (model mapping READ, firmware 9.75 64-bit build). It gates nothing on the wire that was found: comet stacking is batch-only (see
 [stacking.md R20b](stacking.md#batch-stack)) and there is no comet start or stop method.
 
 R6. `sn` and `cpuId` identify the unit. Clients MUST NOT log or transmit them except to the

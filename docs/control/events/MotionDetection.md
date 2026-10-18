@@ -14,7 +14,7 @@ State of the standalone motion detector (firmware 9.75, 64-bit only).
 | Confidence | READ; envelope INFERRED |
 | Basis | static analysis of firmware 9.75, resolver reports, motionDetectionFunc @0x46b190, printMotionDetectionState @0x469e80 (64-bit build) |
 
-New in firmware 9.75, app 3.4.0, 64-bit build only. The function name is MotionDetection, registered when the detector is started alone (set_motion_detection) and by the smart-follow and motion-monitor workers. The detector worker sends function-state events (READ); its state printer reports the image size and the detected points. It is sent through the shared function-state envelope; the envelope details and the shape of points are unresolved. A receiver MUST NOT depend on seeing every transition.
+New in firmware 9.75, app 3.4.0, 64-bit build only. The function name is MotionDetection, registered when the detector is started alone (set_motion_detection) and by the smart-follow and motion-monitor workers. The detector worker sends function-state events (READ); its state printer adds one top-level member, points, an array of objects with integer x, y, width and height, converted from detector results by the preview-size ratios (READ, firmware 9.75 64-bit build); an empty collection is sent as points:[]. It is sent through the shared function-state envelope. Physical interpretation, coordinate origin and detection accuracy are unresolved. A receiver MUST NOT depend on seeing every transition.
 
 Side effects: Observation only for the receiver.
 
@@ -29,9 +29,11 @@ None. Events are sent by the device without a request; the payload is below.
 | `Event` | string | yes | - | Discriminator. Fixed value `"MotionDetection"`. [READ] |
 | `Timestamp` | string | yes | - | Decimal string with nine fractional digits from a monotonic clock; not a calendar time. [READ] |
 | `state` | string | yes | - | Function-state name; INFERRED to follow the shared function-state formatter. One of: `idle`, `working`, `complete`, `fail`, `cancel`. [INFERRED] |
-| `width` | integer | no | - | Detection image width (unit INFERRED pixels). [READ; unit INFERRED] |
-| `height` | integer | no | - | Detection image height (unit INFERRED pixels). [READ; unit INFERRED] |
-| `points` | array<any> | no | - | Detected moving points; the element shape is unresolved. [READ; element shape unresolved] |
+| `points` | array<object> | no | - | Detected regions, each with integer x, y, width and height scaled by the preview-size ratios; empty as []. Physical interpretation and coordinate origin are unresolved. [READ (element shape); meaning unresolved] |
+| `points[].x` | integer | no | - | Integer x of the detected region, scaled by the preview-size ratio. [READ; meaning unresolved] |
+| `points[].y` | integer | no | - | Integer y of the detected region, scaled by the preview-size ratio. [READ; meaning unresolved] |
+| `points[].width` | integer | no | - | Integer width of the detected region, scaled by the preview-size ratio. [READ; meaning unresolved] |
+| `points[].height` | integer | no | - | Integer height of the detected region, scaled by the preview-size ratio. [READ; meaning unresolved] |
 
 ## Errors
 
@@ -42,7 +44,7 @@ None. Failures appear in the payload (`code`, `error`) when `state` is `fail`.
 Event, example - INFERRED envelope, not captured; values invented:
 
 ```json
-{"Event":"MotionDetection","Timestamp":"1234.123456789","state":"working","width":640,"height":360,"points":[]}
+{"Event":"MotionDetection","Timestamp":"1234.123456789","state":"working","points":[]}
 ```
 
 ## See also

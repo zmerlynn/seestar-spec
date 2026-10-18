@@ -265,8 +265,7 @@ firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmwa
    (`get_view_plan_stack_result`, `restore_view_plan_wide_setting`, `set_power_led_mode`,
    `set_view_plan_target_name`, `set_view_plan_wide_setting`), all already recorded, and the 32-bit
    build has none of its own. The event senders match, except that only the 64-bit build has the
-   RTSP zoom path that sends `RTSP` with `roi_scale` and `route`. READ. Payload-level parity of
-   every event is still unresolved.
+   RTSP zoom path that sends `RTSP` with `roi_scale` and `route`. READ. Firmware 9.75 has an additional payload difference: `SmartFollow` emits string `stage` and `track_result` on both builds, but stage 1 is `detecting` on the 64-bit build and `waiting_target` on the 32-bit build. With a non-null callback context, the firmware 9.75 `SkyReplay` printers on both builds add boolean `wide_cam`, integer `camera_id`, `recorded_frame_count` and `video_frame_count`, and a conditional string `output_file`. The runtime meaning of the filename-suppression flag remains unresolved. The firmware 9.75 64-bit `MotionDetection` printer adds `points`, an array of objects with integer `x`, `y`, `width` and `height`; the 32-bit build has no corresponding detector or monitor producer. These new producers are absent in the supplied firmware 9.31 inputs on both builds. READ at these producer scopes. Field-level comparison of every remaining event producer and optional-field branch in firmware 9.31 and 9.75 remains unresolved.
 10. The full set of non-zero `code` values per event. unresolved. The observed `Exposure` code 514
     is settled: an exposure interrupted by an internal stop (view stop, camera close, stage or mode
     change). A client stop gives 253 and exhausted retries give 238. READ. All three flow through
@@ -279,14 +278,9 @@ firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmwa
     already running — distinct from the existing 207 "second schedule overlap" case (see
     `ViewPlan`'s `code` member). READ. `DeviceState` is not an event name produced anywhere in the
     spec or found in the binary; a same-named internal routine elsewhere in the binary is unrelated
-    vendor-cloud telemetry, not a local client-facing event. Mount/goto codes 270 and 527 were seen
-    via a shared error-code helper in mount-command handlers but not attributed to a specific event
-    name. unresolved (full enumeration and the mount-code attribution).
+    vendor-cloud telemetry, not a local client-facing event. Firmware 9.31 and firmware 9.75 on the 64-bit build can propagate off-track mount reply codes 270 and 527 into a `Stack` failure event through the checked track-state path. `AutoGoto` on those builds also has tracking-off failure paths selecting 270. READ (firmware 9.31 and 9.75, 64-bit imager/guider inputs). Firmware 9.75 on the 64-bit build copies a failed mount-goto call's current error into `AutoGoto`'s failure code; a complete backend-to-event path for 527 through that call remains unresolved. The exhaustive nonzero-code set per event, 32-bit parity of these mount routes, and physical controller conditions producing the reasons remain unresolved.
 10a. Firmware 9.75: `MotionDetection` and `SkyReplay` both send function-state events (READ: the
-     send call is present in each worker), and the cards give the members of their state printers
-     (`width`, `height`, `points`; `camera_id`, `recorded_frame_count`, `video_frame_count`). The
-     shape of `points` and the states visited are unresolved, and because sky replay is
-     force-disabled whether `SkyReplay` appears on a live device is unresolved. `MotionMonitor`,
+     send call is present in each worker), and the cards give the members of their state printers. In firmware 9.75, the 64-bit `MotionDetection` printer adds a `points` array whose elements have integer `x`, `y`, `width` and `height`; it emits an empty collection as `points:[]`. With a non-null context, `SkyReplay` printers on both builds add `wide_cam`, `camera_id`, `recorded_frame_count`, `video_frame_count` and conditional `output_file` as described above. READ. Complete state reachability, and live appearance of the disabled replay feature, remain unresolved. `MotionMonitor`,
      `SmartFollow`, `MotionDetection` and `SkyReplay` use the shared function-state envelope (READ).
 11. Firmware build and architecture of the observed sessions; complete RTSP and ViewPlan packets;
     reply-relative ordering on the wire. unresolved.

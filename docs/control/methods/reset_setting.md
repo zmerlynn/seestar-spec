@@ -14,7 +14,7 @@ Reset a list of settings to their defaults in one call (firmware 9.75).
 | Confidence | READ |
 | Basis | static analysis of firmware 9.75, handler @0x108ea0 (64-bit build), @0x90420 (32-bit build) |
 
-New in firmware 9.75, app 3.4.0. Resets the named settings (exact names or group prefixes such as stack) to defaults by applying each through the set_setting path, and rolls back on any failure. Keys addressed to the second camera carry the prefix second_camera. and are relayed to it. Keys that cannot be reset are returned in unsupported_keys and are not an error. The resettable key list differs between builds (18 descriptors in the 64-bit build, not 20; 10 keys in the 32-bit build, which also has no busy gating, so 259 and 536 occur only in the 64-bit build). The default value of each key is unresolved. A Setting event follows success.
+New in firmware 9.75, app 3.4.0. Resets the named settings (exact names or group prefixes such as stack) to defaults by applying each through the set_setting path, and rolls back on any failure. Keys addressed to the second camera carry the prefix second_camera. and are relayed to it. Keys that cannot be reset are returned in unsupported_keys and are not an error. The resettable key list differs between builds (18 descriptors in the 64-bit build, not 20; 10 keys in the 32-bit build). The 64-bit build refuses exp_ms. items at preparation while Stack is active (259) or a view plan runs (536); the 32-bit planner has no such gate, but exp_ms.stack_l still meets the set_setting Stack busy check. Applying preview.rtsp_quality can meet 524 (AVI recording) and stack.startrail_mode can meet 259 (64-bit). Descriptor defaults are listed in the spec (function-states R4; READ, firmware 9.75). A Setting event follows success.
 
 Side effects: Rewrites the persisted settings for the listed keys, then emits a Setting event. Any failure rolls the whole call back.
 
@@ -49,14 +49,14 @@ Side effects: Rewrites the persisted settings for the listed keys, then emits a 
 | 201 | relay to the second camera failed | `relay failed` |
 | 207 | applying a key failed | `apply failed` |
 | 210 | second-camera process cannot take the request | `wrong process` |
-| 259 | Stack is active and an exp_ms.* key is listed (association INFERRED) | `stack active` |
-| 536 | a view plan is running and an exp_ms.* key is listed (association INFERRED) | `plan running` |
+| 259 | Stack is active and an exp_ms.* key is listed (64-bit build, at preparation) | `stack active` |
+| 536 | a view plan is running and an exp_ms.* key is listed (64-bit build, at preparation) | `plan running` |
 | 300 | rollback after a failure itself failed | `rollback failed` |
 | 524 | a reset transaction is already pending | `busy` |
 | 200 | Dispatcher: request has no id | `invalid id` |
 | 100 | Dispatcher: method missing or not a string | `invalid request` |
 
-Whether keys other than exp_ms.* check busy state, and the 107 versus 102 split, are unresolved.
+Busy failures during application, and their outer reply and rollback outcomes, are not fully enumerated; the 107 versus 102 split is unresolved.
 
 ## Example
 

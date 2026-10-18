@@ -290,8 +290,7 @@ R16a. Firmware 9.75 (64-bit build) key rules. READ unless marked.
   motion-monitor function is running, the reply is 524; otherwise the configuration is applied and
   `motion_monitor` is added to the changed keys of the `Setting` event. READ, except as marked.
 - Unknown members inside the nested `exp_ms` and `stack` objects are ignored (members are looked up
-  by name); inside `annotation` they give 109. Handling of unknown members inside the nested
-  `preview` object is unresolved.
+  by name); inside `annotation` they give 109. Unknown members inside `preview` are ignored. Firmware 9.31 on the 64-bit build looks up `rtsp_quality` and `image_transfer_mode`; firmware 9.75 on that build also looks up `raw_bin2`. The 32-bit build looks up only `image_transfer_mode` in firmware 9.31, and `image_transfer_mode` plus `raw_bin2` in firmware 9.75. A name not looked up by that build is ignored even when its value has another type. Recognized members retain their validation and busy checks. READ (firmware 9.31 and 9.75, both builds).
 - Of the `set_setting` keys, the 32-bit build was not traced; the `include_sensitive` string exists
   in both builds, so the parameter is probably present in both (INFERRED).
 
@@ -459,11 +458,9 @@ each card's side-effect tier first). Hot-plug arrival and removal are reported s
   the 32-bit build lacks `exp_auto`, `save_meteor_frame`, `save_video`, `scene_separate`,
   `scene_shooting_duration_min`, `stack_l_auto` and `wide_size_index`; the 32-bit build has no
   such setting names at all except `scene_separate`. READ (member names; nesting not compared).
-- Firmware 9.75 `get_setting`/`set_setting` on the 32-bit build: the `sky_replay` getter and setter are traced and match the 64-bit build (force-disabled; READ). The other new keys were checked by name and partly by logic (see the [32-bit parity matrix](secure-communication.md#firmware-975-parity-matrix-32-bit-imager-and-guider)); complete parity is not established. Handling of the remaining legacy keys, filtering, and notification and error branches is unresolved. `reset_setting` is traced (10 keys, no busy gating).
-- Lifetime of the thread-local suppression of the `Setting` notification used by `reset_setting`,
-  and the default value of each resettable key. unresolved.
-- Per-flag conditions of the `can_*` capability booleans and the fallback of `main_version`.
-  unresolved ([maintenance.md](maintenance.md)).
+- Firmware 9.75 `get_setting`/`set_setting` on the 32-bit build: the `sky_replay` getter and setter are traced and match the 64-bit build (force-disabled; READ). The other new keys were checked by name and partly by logic (see the [32-bit parity matrix](secure-communication.md#firmware-975-parity-matrix-32-bit-imager-and-guider)); complete parity is not established. Handling of the remaining legacy keys, filtering, and notification and error branches is unresolved. `reset_setting` is traced (10 keys); see [function-states.md R4](function-states.md#settings-reset) for its busy checks.
+- Firmware 9.75 `reset_setting`: exception-path restoration of the thread-local `Setting` notification suppression, and notification behavior on other threads. unresolved. The normal-path lifetime and the descriptor defaults are READ ([function-states.md R2 and R4](function-states.md#settings-reset)).
+- Integer-representation edge cases of the firmware 9.75 module-manifest schema check. unresolved ([maintenance.md R5b](maintenance.md)).
 - Unit of the timelapse `src_dura_min` is minutes: the saved integer is used unscaled (no
   multiply or divide) at the one internal debug-log site that names it, which labels the same
   raw value "minutes". READ. How a worker turns the minute count into a stop condition is a
