@@ -398,8 +398,7 @@ reachable through `set_control_value`, which rejects their names with 210 (R17d)
 `Temperature`, `PatternAdjust` and the library's own `AntiDewHeater` (distinct from the device's
 own `AntiDewHeater` entry, which R17b says is passed straight to the peripheral rather than
 through this library control) likewise have no entry in the device's own table and so are equally
-unreachable through `set_control_value`; whether setting any of these four through the library
-itself has an effect is unresolved.
+unreachable through `set_control_value`. Firmware 9.31 and 9.75, 64-bit libraries (READ): the direct MIPI SDK handles library `Offset` by requesting the kernel black-level control, library `Temperature` as a success no-op, `PatternAdjust` by requesting the kernel test-pattern control, and library `AntiDewHeater` through the heater peripheral when the camera has the relevant cooling capability. In the separate camera library, `Offset` dispatches to the selected sensor setter; the S585 Seestar setter clamps black level to 0..200 and requests sensor-register writes. Library `Temperature` is a success no-op, S585 Seestar `PatternAdjust` uses the inherited success no-op, and library `AntiDewHeater` is handled by the cooler class. Firmware 9.75, 64-bit library (READ): the S585 black-level path additionally requests an auxiliary controller command. These are direct library controls, distinct from the device's control-id mapping and its same-named Temperature/heater handling. Kernel/controller acceptance and physical effects remain unresolved.
 
 R17d. Name matching. `get_control_value` and `set_control_value` match the name against the
 imager's name table without regard to case. READ. `set_control_value` accepts `Gain`, `Exposure`,
@@ -408,7 +407,7 @@ imager's name table without regard to case. READ. `set_control_value` accepts `G
 name whose id is in the table. A name that is unknown or whose id is not in the table gives 210;
 a closed or absent camera gives 318 before the name is even looked up. READ. The setter makes
 **no** range check against `min` and `max`; out-of-range handling is left
-to the camera library. READ (no check in the imager), unresolved (library behaviour). Setting
+to the camera backend. READ (no check in the imager). Firmware 9.31 and 9.75, 64-bit and 32-bit builds (READ): the imager does not validate requested values against the min/max reported by `get_controls`. Backend behavior varies. The 64-bit MIPI SDK has no general capability-range clamp; target temperature has a -40..30 °C clamp, and cooler power has separate state-dependent bounds. The separate 64-bit camera library clamps supported controls to their capability min/max before dispatch. The 32-bit compiled gain setters check a stored maximum, and the exposure setter checks an unsigned converted result against 2000000000 before its remaining camera-state/kernel path. These checks do not define one acceptance rule for every control or extreme input. Further driver validation and physical effects remain unresolved. Setting
 `Temperature` returns success and changes nothing. READ. `ISP_Gain` returns success without a
 camera update. READ. This dispatch (no range check; 210 on a name/id miss; 318 on a closed
 camera) is confirmed unchanged in firmware 9.75, both builds.
@@ -430,10 +429,7 @@ READ. These two id spaces are distinct from each other and from the 0..25 imager
 of R17/R17c. `ISP_Exposure` (id 25) scales the value by 1/1,000,000 before the equivalent
 library call (already noted in R17b's unit table); `ISP_Gain` (id 24) only logs the value and
 makes no library call (R17d); `HPC` (id 23) calls the library's hot-pixel-correction control.
-Setting `CoolerOn` to an "on" value additionally sets camera-library control id 22 (fan speed) to
-255 or 127; which of the two is chosen depends on a condition not further resolved. READ (the
-extra call and the two values exist), unresolved (the selecting condition). All of R17e is
-confirmed unchanged in firmware 9.75, both builds.
+Camera-library control id 22 is fan speed. Firmware 9.31 and 9.75, 64-bit build (READ): setting `CoolerOn` to exactly 1 additionally requests fan value 255 when the camera's per-model half-speed preference is false, or 127 when it is true. The preference is read when the camera opens and defaults to false. A different positive value does not make this extra fan request; a nonpositive value additionally requests zero cooler power. The corresponding extra fan request is absent from the 32-bit integer setter in both firmware versions (READ). The saved preference on a particular device and the physical fan-speed effect of these backend values remain unresolved. The rest of R17e is confirmed unchanged in firmware 9.75, both builds. READ.
 
 R18. Multi-field setters (`set_camera_exp_and_bin`, `set_control_value` for TargetTemp) apply
 changes before a later failure and do not roll back. After any error a client SHOULD re-read
@@ -470,11 +466,7 @@ the start of an asynchronous save, reported by
 [`SaveImage`](../../docs/control/events/SaveImage.md) (states `start`, `complete`, and the
 literal `save fail` with a space; some fail paths have no `code`). READ.
 
-Firmware 9.75: the camera library (libASICamera2.so) changed (about 4.0 MB to 4.4 MB). For the
-S585MC the 16-bit output path sends a new command word, the gain setter adds one, and the exposure
-setter reorders a sensor register write and adds a 1000.0 constant, and the cooler code grew. No
-change in the wire units of R17b was found. READ (the diff), unresolved (effect of the
-S585MC-specific changes on other sensors). The device-side control table, ids, names and dispatch
+Firmware 9.75: the camera library (libASICamera2.so) changed (about 4.0 MB to 4.4 MB). Firmware 9.75, separate 64-bit camera library (READ): the S585 gain, black-level, exposure and output-format paths add auxiliary controller requests, and the shared cooler-fan path adds another request. These auxiliary requests have a transport-selection guard. The S585 Seestar gain/black-level clamps and exposure register-write order remain present from firmware 9.31 (READ). The cooler-power path also gains a separate mode-dependent choice between its retained conversion and direct integer-percentage handling (READ). These changes do not establish a change in RPC exposure units or a physical change on every sensor. Firmware 9.31 and 9.75, 64-bit imager (READ): the traced MIPI calls use the camera SDK, with the S80 SDK override selected by the package installer; the 32-bit imager uses compiled camera-control paths (READ). Additional runtime use of the separate library, complete applicability to other sensors, and effects inside the absent kernel/controller implementations remain unresolved. No change in the wire units of R17b was found. READ. The device-side control table, ids, names and dispatch
 logic in R17-R17e (what `get_controls` returns, how `set_control_value`/`get_control_value` resolve
 a name, the absence of a range check, and the 210/318 error paths) are confirmed unchanged in
 firmware 9.75 on both the 64-bit and 32-bit builds (identical instruction counts; only relocation

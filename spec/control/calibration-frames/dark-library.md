@@ -304,8 +304,7 @@ read-only tunnel proxy and a logged event stream; continues the SMB observations
   usable, otherwise a capture runs): the gap from the newest master's temperature to the next
   item's start was about 4.4–4.5 °C (06:30, ran) and 2.5–2.7 °C (08:30, ran), against about
   1.2–1.5 °C (07:30, skipped) and 0.7–0.9 °C (09:30, skipped). This is a first live confirmation
-  of the 2.5 °C figure read in R6i. Which temperature reading is actually compared (one just
-  taken, or a separately held sensor value) is unresolved.
+  of the 2.5 °C figure read in R6i. Firmware 9.75, 64-bit and 32-bit builds (READ): the temperature-library check requests the current camera's Temperature control and rounds the returned reading to 0.1 °C. Initial selection retains a reading obtained this way; the during-capture active-master comparison uses its locally obtained reading and an inclusive 2.5 °C difference test, subject to the existing selection gates. These paths do not obtain their comparison temperature from an ordinary dark frame's FITS header. The exact samples used in the observed session and the age of the conversion inside the sensor/controller remain unresolved.
 - Separately from the dark library, the device saved an ordinary individual FITS/JPEG/thumbnail
   triple for a five-frame set under `Autorun/Dark/` about once an hour, at `:23`–`:28`, shortly
   before each plan item regardless of whether that item's `DarkLibrary` check then fired, and
@@ -313,9 +312,7 @@ read-only tunnel proxy and a logged event stream; continues the SMB observations
   saved-frame header ([R20b](../legacy-plans-and-sequences/sequences.md#capture-run-frames)) with
   `IMAGETYP`/`FILTER` `Dark`, the stack exposure and gain, and `CCD-TEMP`; this matches the
   generic legacy per-frame save path with frame type `dark`, not the dark-library worker (which
-  keeps no per-frame files, above). What schedules these captures, and whether the device reads
-  their temperature for R6i's selection, are both unresolved; the cadence and timing are
-  consistent with that role.
+  keeps no per-frame files, above). Firmware 9.31 and 9.75, 64-bit builds (READ): the legacy sequence and plan capture paths can save ordinary Autorun dark frames using the frame type and capture settings in their sequence records. The ordinary sequence producer is also present on the 32-bit builds in both versions (READ). Firmware 9.75, both builds (READ): the traced temperature-library checks obtain their temperature through the camera-control path; the 64-bit check does not read these ordinary files' temperature headers. The request or saved schedule responsible for the observed hourly and earlier 15-minute groups remains unresolved; the generic producer path does not identify that session's trigger.
 - A read-only read of all three masters' FITS headers found, common to all: `CREATOR` and
   `PRODUCER` naming the model and ZWO, an empty `PROGRAM`, `FILTER=dark`, `GAIN=200`, `EXPTIME`
   and `EXPOSURE` both 60.0, 1x1 binning (`XBINNING`/`YBINNING`/`CCDXBIN`/`CCDYBIN`), a

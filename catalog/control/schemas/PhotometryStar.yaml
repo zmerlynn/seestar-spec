@@ -83,8 +83,13 @@ properties:
     x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)
   is_overexposure:
     type: boolean
-    description: 'Firmware 9.75, app 3.4.0: per-star flag added by the star-JSON producer; the criterion was not traced (possibly saturation, INFERRED from the name). Optional: absent in firmware 9.31 and not part of the eleven always-present members.'
-    x-confidence: READ (existence); meaning INFERRED
-    x-basis: static analysis of firmware 9.75, resolver report E, UpdatePhotoMetryStarJson @0x221db0 (64-bit build)
+    description: 'Firmware 9.75, both builds: per-star flag. 64-bit build: set when a tested aperture sample in the half-size 16-bit green image of a Bayer frame is greater than 65000 (equality does not set it); measure_mag is then null, though other validity checks can also give null. The 32-bit build uses a strict 65000 threshold locally; full parity is unresolved. Optional: absent in firmware 9.31 and not part of the eleven always-present members.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, UpdatePhotoMetryStarJson @0x221db0, threshold @0x461994-0x4619ec, null writer @0x221f24 (64-bit build); 32-bit key @0x1aa4ec, threshold @0x3c698c
+  is_variable:
+    type: boolean
+    description: 'Firmware 9.75, both builds: per-star variable-star flag. Optional: absent in firmware 9.31 and not part of the eleven always-present members.'
+    x-confidence: READ
+    x-basis: static analysis of firmware 9.75, UpdatePhotoMetryStarJson @0x2221dc (64-bit build), @0x1aa490 (32-bit build)
 x-confidence: READ
 x-basis: static analysis of firmware 9.31, UpdatePhotoMetryStarJson @0x1fa940 (64-bit build)

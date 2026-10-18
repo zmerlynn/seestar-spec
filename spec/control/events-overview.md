@@ -255,7 +255,7 @@ firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmwa
    event: the compass reading is packed only into the `compass_sensor` member of `get_device_state`,
    and the only compass event is `CompassCalibration`, sent during a calibration run once per newly
    covered 30-degree sector (at most 12 per run). READ (64-bit and 32-bit, firmware 9.31 and 9.75).
-   Throttles inside image-processing libraries: unresolved.
+   Firmware 9.31 and 9.75, 64-bit default and S80 camera SDKs (READ): the inspected acquisition path discards a marked first frame and can discard an early frame during an exposure longer than one second. Its auxiliary video-transfer worker has configured pacing, and its pull routine has 4 ms and 5 ms polling waits. Firmware 9.75, 64-bit default SDK (READ): raw-frame publication skips a nonempty next buffer slot, and the failed cropped-image fetch waits 30 ms before returning. A complete inventory of image-processing-library throttles, 32-bit acquisition parity, physical sensor/ISP cadence and the resulting notification rates remain unresolved.
 9. Full D32 parity beyond the listed differences. A bounded comparison of RPC handlers and event
    senders found no new differences in handlers: the 64-bit build has five extra handlers
    (`get_view_plan_stack_result`, `restore_view_plan_wide_setting`, `set_power_led_mode`,

@@ -330,13 +330,7 @@ returns `{PhometryStars:[...]}` (the misspelling is on the wire);
 [`set_photometry`](../../docs/control/methods/set_photometry.md) `{id, save, name?}` (104, 106,
 105, 207 for an unknown id); it changes only cached plot state and does not
 write a file. [`get_photometry_result`](../../docs/control/methods/get_photometry_result.md)
-returns a relative folder and file list. READ. Firmware 9.75, app 3.4.0: each entry also
-carries a boolean `is_variable` read from the file's variable-star column
-(the same member is added to `get_saved_photometry_stars`); the placement among the existing file
-members is unresolved. READ. Firmware 9.75, app 3.4.0: each photometry star record also carries a
-boolean `is_overexposure`, a per-star flag set by the star-JSON producer; its exact criterion was
-not traced (meaning INFERRED from the name, possibly saturation). The member is absent in firmware
-9.31.
+returns a relative folder and file list. READ. Firmware 9.75, 64-bit build (READ): each object in `get_photometry_result`'s `result.files` array carries boolean `is_variable` beside `star_name` and `has_ra_dec_deg_j2000`. It is derived through the saved CSV's named `Is Variable` column and the file-summary parser, and is false when the selected summary lacks valid coordinates. Each `get_saved_photometry_stars` entry in `PhometryStars` also carries `is_variable`, from cached plot state. The per-star objects carried by `get_photometry_stars` and `get_photometry_plot` include boolean `is_variable` and `is_overexposure`. In the traced Bayer-image measurement path, `is_overexposure` is set when a tested aperture sample in the half-size, 16-bit green image is greater than 65000; equality alone does not set it. An overexposed star's `measure_mag` is null, and other measurement-validity checks can also produce null. Firmware 9.75, 32-bit build (READ): the per-star serializer emits the same two boolean keys, and a local detector comparison also uses a strict 65000 threshold. Complete 32-bit detector-to-result parity and mixed/malformed CSV summary selection remain unresolved. The three corresponding key/column strings are absent from the supplied firmware 9.31 binaries on both builds (READ).
 
 R23a. Firmware 9.75, app 3.4.0: [`get_photometry_result_json`](../../docs/control/methods/get_photometry_result_json.md)
 `{name}` returns the rows of one saved photometry CSV (`name` must start with `Magnitude_`, end with
