@@ -54,8 +54,7 @@ Two different discovery mechanisms exist and MUST NOT be confused:
   move-construction the 9.31 build calls as a function is inlined in 9.75) (READ). The Kalay
   search reply builder (UDP 32761) is addressed separately; see
   [lan-discovery/kalay-search.md: Kalay LAN search: opcodes 0601 to 0604](lan-discovery/kalay-search.md#kalay-lan-search-opcodes-0601-to-0604).
-  unresolved: that reply builder's packet-field construction is not traced byte for byte on
-  firmware 9.75.
+  The Kalay reply construction is traced in firmware 9.75, both builds. Before the send transformation, the extended `0x0602` reply is 200 bytes with a 184-byte body: identity at 16–35, zeros at 36–51, 129 bytes of configured device information at 52–180, three zero bytes at 181–183, LE32 SDK version `0x04030603` at 184, RID8 or zeros at 188, and LE32 status at 196. The legacy reply is 184 bytes with body length 168, logged-in identity at 16–35, requester IPv4 sockaddr at 36–51, device information at 52–180 and zero padding at 181–183; it has no extended suffix. READ. Runtime identity/information values, actual reply delivery and server-side meanings remain unresolved.
 
 - iOS: the request form differs and is answered like the Android form
   ([app-scan.md: Request](lan-discovery/app-scan.md#request)); source-address rule, retries, lock

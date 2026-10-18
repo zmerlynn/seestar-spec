@@ -127,12 +127,7 @@ exceeded, refreshes a stored time reference and calls the dynamic-limit routine.
 compares a per-channel queued-byte count against 4 MiB (both builds) and, while over it, loops on an
 `IOTC_Check_Session_Status` check and a 100000 µs (`0x186A0`) sleep before re-checking. All five are
 present with the same logic in firmware 9.75 and in the 32-bit build of both firmware versions. READ
-(presence and role, both builds, both firmware versions). The reliability constants not named above
-(ACK aggregation, create polling, send-loop sleep, unsent-packet age, destroy and de-initialize
-retry, NEED_DTLS grace), the selective-ACK builder and the heartbeat constructor were not
-established for firmware 9.75 or the 32-bit build, so [reliability: Timers
-summary](rdt/reliability.md#timers-summary) remains verified for firmware 9.31 only for those rows.
-INFERRED (unchanged, probable); unresolved (roles, remaining rows).
+(presence and role, both builds, both firmware versions). The remaining ACK aggregation, create polling, send-loop sleep, synthetic unsent-age, writer-wait, deinitialize-retry and NEED_DTLS-grace roles, together with the selective-ACK builder and empty HEARTBIT construction, are traced in firmware 9.31 and 9.75, both imager builds. Their nominal constants and emitted field assignments agree across these inputs. READ. D32 uses narrower intermediate arithmetic for some wall-clock timestamps; clock-wrap, clock-jump and scheduling equivalence remain unresolved. See [reliability: Timers summary](rdt/reliability.md#timers-summary).
 
 The app package also contains a second, unused RDT library of the same version with the same 15
 handled types; the app loads the other one. READ. The 32-bit firmware's linked TLS internals
@@ -144,11 +139,9 @@ were not independently reconstructed. READ (coverage note).
    dynamic send-limit ceiling, the HEARTBIT while-creating/established split, the DTLS handshake
    timeout substitution, the plain receive call's buffer/timeout and retry sleep, the slow-write
    threshold, and the write-backpressure wait are now traced to their functions and confirmed
-   unchanged in role across firmware 9.75 and the 32-bit build ([App / firmware comparison](#app--firmware-comparison)). The remaining values
-   listed in [reliability](rdt/reliability.md) ([Timers summary](rdt/reliability.md#timers-summary) timers: ACK aggregation, create polling,
-   send-loop sleep, unsent-packet age, destroy and de-initialize retry, NEED_DTLS grace) were not
-   verified for firmware 9.75 or for the 32-bit build; the immediates are present unchanged in 9.75
-   but their roles were not traced ([App / firmware comparison](#app--firmware-comparison)). unresolved (remaining timers).
+   unchanged in role across firmware 9.75 and the 32-bit build ([App / firmware comparison](#app--firmware-comparison)). The remaining timer roles are traced in firmware 9.31 and 9.75, both builds. Receive-driven selective-ACK aggregation compares an absolute microsecond timestamp difference with 2999 and sends on a difference of at least 3000; other range transitions can also send. The send loop flushes pending cumulative/selective ACK state when its nominal interval accumulator exceeds 99 ms. Creation polling sleeps 5000 µs and accumulates elapsed milliseconds; a nonzero heartbeat-phase timeout fails when exceeded, while zero disables that phase's timeout. The send interval is clamped to 20–100 ms and set to 20 ms while creating; ACK draining sleeps 5 ms after a positive send result and otherwise `min(interval,50)` ms before rechecking elapsed time. A zero seconds component in a packet's last-send timestamp selects synthetic age 16000000 µs before subtraction of the current RTO; this is not a 16-second initial wait. Destroy/abort writer waits use at most fifty 100000 µs sleeps with the lock released between checks. Deinitialize retries the same abort after 50000 µs for results -10011 or -10006, without a retry counter. The NEED_DTLS path attempts type `0x71`, sleeps 500000 µs and then performs channel/RDT cleanup without requiring send success. READ.
+
+   The selective-ACK constructor emits 92 bytes: type `0x45`, version 5, 72-byte payload, learned peer ID, separately sourced last-contiguous header sequence, count 1 at offset 24 and one inclusive range at 28–43. Payload bytes 20–23 and 44–91 are zero. HEARTBIT emits 20 bytes with type `0x01`, version 5, empty payload, zero sequence/transmit count, advertised local ID at byte 17 and zero bytes 18–19. READ. Actual scheduling, packet delivery, full close latency and clock-wrap/jump behavior remain unresolved.
 
 1. **Negotiated DTLS profile.** The compiled defaults predict DTLS 1.2 with an ECDHE-PSK
    ChaCha20-Poly1305 suite (see [session: Secure channel](rdt/session.md#secure-channel)). The runtime

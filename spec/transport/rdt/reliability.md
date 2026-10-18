@@ -8,7 +8,7 @@ window. Packet layouts are in [framing](framing.md); connection setup and close 
 
 Basis: static analysis of the RDT write, read, receive-thread, send-thread, RTO and window
 routines in app 3.3.2 and firmware 9.31 (both builds). The constants are firmware 9.31 values; the
-same immediates are present in firmware 9.75 but their roles were not traced
+nominal constants and roles are traced unchanged in firmware 9.75 and the 32-bit build
 ([rdt.md: App / firmware comparison](../rdt.md#app--firmware-comparison)).
 
 ## Sequence numbers
@@ -158,8 +158,8 @@ So RTO is between 100 ms (plus SRTT) and 8 s. INFERRED.
 R70. Send sweep (each send-loop pass): consider up to `window` queued packets (one
 packet if the window is 0 and the queue is nonempty). A packet is eligible when: READ
 
-- time since its last successful send ≥ RTO (a never-sent packet counts as 16000000 µs
-  elapsed); or
+- time since its last successful send ≥ RTO (a packet whose last-send timestamp has a zero seconds component counts as 16000000 µs
+  elapsed; a never-sent packet is the expected case, INFERRED); or
 - its force-resend flag is 1; or
 - it is urgent DATA.
 
@@ -273,5 +273,5 @@ matching the Slow write row. `RDT_Write` compares a per-channel queued-byte coun
 READ (presence and role, both builds, both firmware versions).
 
 The other rows (send-loop sleep, ACK aggregation, create polling, unsent-packet age, destroy and
-de-initialize retry, NEED_DTLS grace) are not established for firmware 9.75 or the 32-bit build; see
-[rdt.md: Open questions](../rdt.md#open-questions). unresolved (those rows only).
+de-initialize retry, NEED_DTLS grace) are traced in firmware 9.31 and 9.75, both builds, with the same nominal constants and roles; see
+[rdt.md: Open questions](../rdt.md#open-questions). READ. Clock-wrap, clock-jump and scheduling equivalence remain unresolved.

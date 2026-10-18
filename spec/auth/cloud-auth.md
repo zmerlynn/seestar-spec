@@ -177,8 +177,7 @@ length is not fixed across builds. READ (two builds), INFERRED (rule).
 - Several reply fields are opaque: bytes 36–51 and 68–69 of `0x1008`; 18–19, 40–55 and 72–73 of
   `0x100c`; 48–59 and 70–71 of the precheck record reply; the first form of `0x0229`; parts of hello
   replies. unresolved (server-side). The `0x0806` telemetry body layout. unresolved.
-- DNS/NAT64 conversion of the 16-byte address entries. unresolved. Ignored address bytes and opaque
-  punch metadata: see [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions).
+- Firmware 9.31 and 9.75, both imager builds: local conversion of a 16-byte address slot reads the port bytes at 2–3 and IPv4 bytes at 4–7. It formats those address bytes as numeric IPv4 text and passes that text to the platform resolver with unspecified family and datagram socket type. On successful resolution, an IPv4 result retains the original IPv4 bytes; the other branch copies sixteen bytes from the returned sockaddr's IPv6-address position. The input port bytes are preserved. The resulting local endpoint has a family tag at byte 0, port at bytes 2–3 and address at bytes 4–19; it is distinct from the wire slot. READ. Resolver failure behavior, deployed NAT64 synthesis and prefix, and server meanings of ignored address bytes and opaque punch metadata remain unresolved; see [iotc/index.md: Open questions](../transport/iotc/index.md#open-questions).
 - How the cloud derives the licence and tunnel account it sends in `p2p_message` (R1a): see
   [sdk-licence.md R46a](cloud-auth/sdk-licence.md#device-side-sdk-start). Firmware 9.75: whether the
   cloud still sends `sdkLicenseKey`, what the embedded default licence is bound to, and the 32-bit

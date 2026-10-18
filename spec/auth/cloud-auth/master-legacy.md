@@ -235,18 +235,12 @@ READ (device SDK).
 | `0x022e` authorization failed | P2P server → client | ≥ 24 | UID at 16; LE32 reason at 36, stored as an auth status byte |
 | `0x0231` check device status | client → server | 28 | UID at 16; caller's eight bytes at 36; control `0x24` |
 | `0x0232` status reply (TCP) | server → client | ≥ 28 | UID at 16; two LE32 words at 36, 40, saved in swapped order (see below); matching TCP server entry moves to state 24 |
-| `0x0114` or `0x0118` device sleep notify | device → P2P server (built; transmission unresolved) | 24 | UID at 16; four more bytes at 32 from the same fixed source as the UID; LE32 caller value at 36 (only for input type 3, else zero); control `0x14` |
+| `0x0114` or `0x0118` device sleep notify | prepared device-originated packet; transmission unresolved | 24 | Twenty-byte device identity block at 16–35; LE32 caller value at 36, copied unconditionally; `0x0118` for register input type 3, otherwise `0x0114`; control `0x14`. READ (construction, firmware 9.31 and 9.75, both builds). |
 | `0x0124` register sleep | device → P2P server | 32 | UID at 16; auth[8] at 36 or zero; LE32 caller value at 44 (only for input type 3, else zero); control `0x14` |
 | `0x0125` register sleep reply | P2P server → device | ≥ 20 | Matching UID; runs the sleep callback if the sender is IPv4 |
 | `0x0126` notify register | P2P server → device | ≥ 20 | Matching UID; schedules a fresh registration |
 
-`0x0114`/`0x0118` is a second, shorter device-originated message, built by the same routine family
-as `0x0124` and sharing its control constant, its register-input-type-3 test and its caller-value
-field (at a different offset, matching the shorter body). The opcode itself is the only difference:
-`0x0118` when the register input type is 3, `0x0114` otherwise. Identical in both builds and
-unchanged in firmware 9.75. READ (construction). It is built next to a register packet in a device
-wake/retry routine distinct from the plain login path that builds `0x0124`; whether it is actually
-sent on the wire, and to whom, is unresolved (transmission).
+Firmware 9.31 and 9.75, both imager builds: the shorter sleep notification is constructed as a 40-byte packet with a 24-byte body. Register input type 3 selects `0x0118`; other types select `0x0114`. The twenty-byte identity copy and caller word at offset 36 do not depend on that type test. The sleep-packet API prepares encoded notifications and optional register packets, then returns them with responding-server IPv4 addresses and ports through a completion callback. Its collection phase separately sends `0x0124` registration packets to cached server destinations. READ. The returned destination records do not establish subsequent transmission of `0x0114` or `0x0118`; whether either notification is sent in deployment, by whom, and how servers handle it remain unresolved.
 
 The last word of `0x0124` is logged as a sleep serial. The builder copies it from its caller's
 argument only when the register input type is 3, and writes zero otherwise; it is set by the

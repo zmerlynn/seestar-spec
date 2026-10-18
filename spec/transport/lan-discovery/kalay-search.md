@@ -14,10 +14,10 @@ a precheck-failure text are gone). Of the two reply builders, the legacy one (th
 same size in both builds) is a call-for-call match between firmware 9.31 and 9.75, differing only in
 rodata/GOT address computations (READ); the current one (the internal reply builder, smaller in 9.75) has
 its call sequence preserved apart from one removed debug-log call, matching the handler's own
-size shrinkage, but its packet-field construction was not traced byte for byte. The 60000 and 10000
+size shrinkage, and its packet-field construction is now traced: the extended reply's field assignments match 9.31 in both builds (READ; byte map in [lan-discovery.md](../lan-discovery.md)). The 60000 and 10000
 constants are not new timers (the 9.31 recycler held them; see
 [iotc/index.md: Firmware 9.75 build comparison](../iotc/index.md#firmware-975-build-comparison)). The reply field
-layouts in the sections below are verified on firmware 9.31 only.
+layouts in the sections below are verified on firmware 9.31, and the extended reply also on firmware 9.75 (both builds).
 
 This is part of the Kalay IOTC session layer, used during a `REMOTE` connect. It is unrelated to
 the UDP 4720 scan. Framing and scrambling are in [iotc/framing.md](../iotc/framing.md); connection use in

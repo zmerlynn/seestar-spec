@@ -153,10 +153,8 @@ sequence in this chapter and [sdk-licence.md](../../auth/cloud-auth/sdk-licence.
   LAN-direct: see Q29 in [00-overview.md: Open-question register](../../00-overview.md#open-question-register).
 - The legacy 16-byte SETUP and short PASS handling prove compatibility branches, not a
   version-negotiation scheme; other tunnel versions are out of scope. unresolved.
-- Firmware 9.75 and iOS app 3.4.0: the tunnel wire protocol is unchanged (READ), but the iOS
-  client's connect ordering is READ (one connect per entry, first success wins, forever wait; R72a), but
-  how its entry list is composed, its handling of cancellations and the 32-bit device counterparts were not
-  compared; see [seestar-profile.md R69a, R72 and R72a](seestar-profile.md#port-mapping-profile). unresolved.
+- Firmware 9.75 and iOS app 3.4.0: the tunnel wire protocol is unchanged, and the iOS client's connect ordering is READ (one connect per entry, first success wins, forever wait; R72a). Firmware 9.75, both device builds: the numeric IPv4 CONNECT arm uses the request's destination address and port, supplies the IPv4 family and calls connect with a 16-byte sockaddr. The registered numeric-port verifier returns zero. Extended service-name handling has a separate port-selection path. The server uses a 30000 ms RDT-create timeout, followed by one read of at most 1004 bytes with a 90000 ms timeout before inspecting LOGIN command 7 and its declared body length; it has no tunnel-level LOGIN accumulation loop at that point. An empty declared body bypasses the login callbacks after the session check. The normal registered session-information callback path writes a command-8 response with body length 8, total length 12 and result word zero. READ. Complete response padding and actual split-delivery behavior remain unresolved.
+- Firmware 9.75, both builds, and firmware 9.31 D64: an existing accepted application connection is marked local when its peer IPv4 equals the first address returned for `localhost`; that local connection passes the verification predicate. Other connections require explicit verified state 1. READ. Whether an app requests a tunnel destination that produces this classification, complete 9.31 D32 tunnel parity, and iOS app 3.4.0 entry-list composition and cancellation interleavings remain unresolved; see [seestar-profile.md](seestar-profile.md#port-mapping-profile).
 - Cryptography (suites, key derivation, nonces, handshake retransmission) is not in the
   tunnel layer; it belongs to [RDT](../rdt.md).
 
