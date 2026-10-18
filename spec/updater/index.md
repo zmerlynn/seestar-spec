@@ -112,11 +112,7 @@ R5. Request sent by the app, as one LF-terminated line. READ (app):
 `file_len` is the byte length of the image and `md5` its MD5 digest, both of the file the app
 bundles. READ (app). The updater's handling is in R5a to R5c.
 
-R5a. Firmware 9.31. `begin_recv` takes params as an object or a one-element array. It reads `file_name`
-(string), `run_update` (read as an integer; nonzero is true), `file_len` (integer) and `md5`
-(string). READ. The app sends `run_update` as JSON `true` (R5); that the integer read accepts a
-JSON boolean is INFERRED, because its type test was not traced. Missing params give 107 and a
-missing or mistyped member gives 1. A `file_name` that begins with a dot, contains `..`,
+R5a. Firmware 9.31. `begin_recv` takes params as an object or a one-element array. In firmware 9.31, both builds, `begin_recv` reads `file_name` and `md5` from string members, `file_len` from an integer member, and `run_update` from a boolean member. Missing params give 107. A zero file length or empty filename gives error 1; an absent or differently typed `run_update` does not independently cause that error. READ. Duplicate-member interoperability policy remains unspecified. Firmware 9.31, both 64-bit and 32-bit builds, also recognizes `run_update` as a JSON boolean: `true` sets the receive flag and `false` clears it. The flag starts false; numeric and string values are ignored. This same type handling is present in both firmware 9.75 builds. READ. Handling a differently typed occurrence does not reset an earlier boolean assignment. A `file_name` that begins with a dot, contains `..`,
 exceeds 255 bytes or has characters other than letters, digits, `-` and `_` gives 102. The file is created in the updater's private directory under
 the device user's home; failure to create it gives 258. READ.
 
@@ -129,7 +125,7 @@ firmware 9.75). The members are typed strictly by the JSON parser:
 - `file_name` and `md5` MUST be strings.
 - `run_update` is accepted only as a JSON literal: `true` sets it and `false` clears it. A numeric
   `1` is not accepted and the flag stays false. Firmware 9.75 accepts the app's `true` literal.
-  Firmware 9.31's integer read is unresolved; boolean acceptance is INFERRED (R5a).
+  Firmware 9.31 handles `run_update` the same way (R5a).
 - A `file_len` of 0 (a signed-integer test only) or an empty `file_name` gives error 1 with the text
   "expected param". The `file_name` rules (102) are unchanged from 9.31.
 - With `run_update` true the destination path is the legacy update package directory plus
@@ -164,8 +160,7 @@ lock". The failure paths of the update status poll (R8a) clear the legacy direct
 lock and skip the clean-up, with a log line, when it is held. A marker file named for the legacy
 update monitor is written with the text "done" on every terminal path of the status poll; a failed
 write ends the poll with code 207. The marker is the one the update script waits for
-([changes R13a](legacy-update-flow.md#legacy-update-flow-in-64-bit-firmware-975)). Who else
-consumes the marker is unresolved.
+([changes R13a](legacy-update-flow.md#legacy-update-flow-in-64-bit-firmware-975)). In firmware 9.75, 64-bit build, the legacy update launcher removes a stale monitor marker before updating. Its background subshell runs the delivered update script, then waits for the marker only if that script advertises the cleanup protocol. It uses a regular-file test and performs at most 150 sleeps of 0.1 seconds before logging a timeout and attempting cleanup. It removes the marker afterward and exits that background subshell with the delivered script's saved status. It does not read the marker contents. READ. No additional exact-basename consumer was found in the supplied package files; other images, constructed paths and subsequently delivered payloads remain unresolved. INFERRED. The exact basename was not found in either firmware 9.31 package or the firmware 9.75 32-bit package; equivalent behavior under another name is unresolved.
 
 R5c. After the transfer the updater checks the MD5 against `md5`, then verifies a detached
 `update-package.sign` signature over a SHA-1 digest of the package, using the system `openssl`
@@ -331,8 +326,7 @@ R11a. `ota_abort` (firmware 9.75, 64-bit build, READ; the 32-bit build has the s
 result). Success is `result` 0, including when the session is idle, and also stops the binary
 receive for the caller's address. While the stage is upgrading the call is refused with 524.
 
-R11b. `ota_get_session` result members by stage (firmware 9.75, 64-bit build, READ; the 32-bit
-build has the same function and was not traced):
+R11b. `ota_get_session` result members by stage below describe firmware 9.75, 64-bit build. The 32-bit difference is stated after the table. READ.
 
 | Stage | Members present |
 |---|---|
@@ -345,18 +339,17 @@ build has the same function and was not traced):
 `received_modules` entries are `{name, version, sha256}`. `receiving_module` is an array holding one
 `{name, version, sha256}` object when a receiving module is set and found, otherwise empty (at
 most one element is INFERRED). `failure` has `stage`, an optional `module`, an integer `code` and
-`error`. A client MUST NOT expect every member in every stage. Not traced: when `module` is present
-inside `failure`, and the entry shape of `missing_modules`.
+`error`. A client MUST NOT expect every member in every stage. In firmware 9.75, 64-bit build, `failure` is included only in stage `fail` when a stored failure is present. It contains `stage`, integer `code` and string `error`; `module` is included only when the stored module-name string is nonempty. The 32-bit build omits `failure`, including in stage `fail`. In both builds, `missing_modules` is an array of objects with string members `name`, `version` and `sha256`, or `[]` when no entries qualify. READ. Complete session-result parity between the builds is not implied by these details.
 
 ## Open questions
 
 | Question | State | Where |
 |---|---|---|
 | Wire member names of the failing legacy `Update` event (R8a) | INFERRED; the codes are read, the member names are not traced | [Events](#events) |
-| Directory prefix of the helper script used by the delayed reboot, and the consumer of the legacy done marker besides the update script | unresolved | [changes R12c](ota-package-handling.md#ota-package-handling), R5b2 |
+| Delayed-reboot helper prefix; other legacy marker consumers | Firmware 9.75 helper prefix and 2-second delay read on both builds. The 64-bit local wrapper consumer is read; consumers outside the searched package files remain unresolved. | [changes R12c](ota-package-handling.md#ota-package-handling), R5b2 |
 | `begin_recv` "binary port is not connected" error code (stale or 0) | INFERRED | R5b1 |
-| `ota_get_session`: when `module` is present inside `failure`; shape of `missing_modules` entries | unresolved | R11b |
-| 32-bit OTA code: the 2 s reboot delay value, and the legacy `Update` codes | compared by strings and symbols only | [changes R12c](ota-package-handling.md#ota-package-handling), R8a |
+| `ota_get_session` failure-module condition and missing-module entry shape | Resolved for firmware 9.75: conditional stored module name on 64-bit; no `failure` on 32-bit; three-string missing-module objects on both builds. READ. | R11b |
+| Firmware 9.75, 32-bit legacy `Update` codes | unresolved here; the OTA reboot delay is read as 2 seconds | R8a, [changes R12c](ota-package-handling.md#ota-package-handling) |
 
 ## Appendix: Validating on a live device (non-normative)
 
