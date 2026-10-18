@@ -212,13 +212,8 @@ See [dtls.md](dtls.md).
   `030e`. unresolved.
 - A bitfield grammar for the legacy routing word. Only the builder values of [framing
   R1](framing.md#legacy-header) and the refusal high byte `0x02` are established. unresolved.
-- A hello-serial lifetime. The app library does not compare the reply serial ([framing
-  R24](framing.md#receive-catalogue)); any serial-matching window is local policy. unresolved.
-- A wire generation discriminator for attempts. Legacy frames carry no generation field; the only
-  stale-RID rule found is the recent-RID list, which rejects only RIDs refused in a LAN-search
-  precheck, not closed ones ([connect: Attempt and cache
-  lifetimes](connect.md#attempt-and-cache-lifetimes)). Telling an old attempt's frame from a new one
-  with the same visible UID, RID and serial is local policy. unresolved.
+- Android app 3.3.2: the inspected native hello-reply handling does not compare the reply serial to the latest request serial; see [framing R24](framing.md#receive-catalogue). READ. A serial-matching window chosen by another client is local policy. INFERRED. Server-defined reply lifetime and whether servers emit the accepted short reply remain unresolved.
+- Android app 3.3.2's documented legacy IOTC profile: when old and new attempts have identical visible UID, RID and serial, those identifiers alone do not guarantee discrimination; handling is local policy. INFERRED. The documented recent-RID rule and its distinction from closed-attempt handling remain in [connect: Attempt and cache lifetimes](connect.md#attempt-and-cache-lifetimes); unenumerated SDK cache state and actual stale-frame arrival remain unresolved. This policy statement does not establish an additional wire-generation field.
 - Server meaning of modern record types other than 1 to 5 and 14, of `100c` unit types other than 1
   and 9, and of alert codes other than 1 and 2. unresolved.
 - Whether a master ever sends a `100c` with an empty server list (the app library's handling of an

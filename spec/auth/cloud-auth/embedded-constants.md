@@ -207,9 +207,4 @@ the production "common" host's `/common/v1/network-available` path. READ (firmwa
 imager). This is one of the three rotating probe targets of
 [`check_internet`](../../control/network.md#internet-check) (R30b); the `edge-api.zwoastro.com`
 host seen alongside it is a separate probe target in the same rotation, reached by ping rather
-than HTTPS, not an alternate host for this path. The check is firmware-initiated, distinct from
-the app-side hosts in the table above, and runs both on demand (the `check_internet` RPC) and on
-the device's own initiative from at least two background workers, independent of any RPC call;
-see [network.md R30e](../../control/network.md#internet-check) for what triggers the
-self-initiated calls and what is still unresolved there (whether either background worker is
-timer-driven, and at what interval).
+than HTTPS, not an alternate host for this path. Firmware 9.31 and firmware 9.75, both imager builds: the firmware invokes the internet check through `check_internet` and in the RK-board housekeeping path while a stored remote join is pending. The RPC supplies selector 2; the inspected housekeeping callers supply selector 1. The housekeeping pass is nominally due when its saved millisecond timestamp is zero, time moves backwards, or current time is greater than saved time plus 60000 ms; equality skips the pass. Only a successful internet test reaches the stored join with timeout argument 1000 ms, and only a zero join result clears pending state. The due pass saves the timestamp sampled before its work. READ. Firmware 9.75, both imager builds: the inspected photometry worker tests internet before the reference-star download; internet-test failure skips that download, leaves its download flag false and clears the function error. The later idle-wait back edges do not invoke this test again. The corresponding firmware 9.31 photometry workers lack this test/download step. READ. These are nominal gates, not exact wall-clock spacing or a guarantee against other network work; clock arithmetic, actual retry cadence and future invocations remain unresolved. See [network.md R30e](../../control/network.md#internet-check).

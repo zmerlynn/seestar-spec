@@ -102,8 +102,7 @@ functions. The 9.75 send path writes through the secure channel directly when th
 pointer is set. These immediates are present in both firmware 9.31 and 9.75, with no drift: 500000
 in the channel-create routine; 8000000 in the send thread; 6500 and 1000000 in the dynamic-limit
 routine; 1000 in the create routine, the send thread and the read routine; 80 in the send thread
-(and in the create routine in 9.75); and 120 in the status checks and the receive thread. How each
-constant is used was not traced, so their roles are unverified. READ (presence), unresolved (roles).
+(and in the create routine in 9.75); and 120 in the status checks and the receive thread. READ (presence). Firmware 9.31 and firmware 9.75, both imager builds: the remaining documented ACK aggregation, creation polling, send-loop sleep, synthetic unsent-age, active-writer wait, deinitialize-retry and NEED_DTLS-grace roles, together with selective-ACK and empty HEARTBIT construction, are traced and agree in nominal policy and field assignments. READ. The existing RTO, watchdog, dynamic-limit, heartbeat, receive and backpressure descriptions below remain in place. The 32-bit builds use narrower intermediate arithmetic for some wall-clock timestamps; exact clock-wrap, clock-jump and scheduling equivalence, packet delivery and full send/close latency remain unresolved. See [reliability: Timers summary](rdt/reliability.md#timers-summary).
 
 The roles of five constants are established: the retransmission-timeout calculator computes the RTO
 from a round-trip sample, clamped between a 100 ms floor and an 8 s cap (the `8000000` immediate);
