@@ -193,6 +193,7 @@ ids. READ.
 R12. With duplicate members the device uses the last `id`, the last `params`, and the last
 string-valued `method`; a later `"method":null` does not replace an earlier string. A client
 MUST NOT send duplicate members. READ.
+Firmware 9.75, control port 4700: both the last-string-method rule and the null clause were OBSERVED on the wire (2026-10-17, read-only getters). Other ports, a trailing method that is neither a string nor null, and duplicate `id` or `params` were not tested.
 
 R13. Integers are stored as signed 32-bit values and reals with 32-bit float precision. A
 client SHOULD keep numbers within those ranges. READ. The device does not reject out-of-range
