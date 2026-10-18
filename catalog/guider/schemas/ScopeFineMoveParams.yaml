@@ -2,49 +2,64 @@ title: scope_fine_move params
 type: object
 required:
 - speed
-description: Named object only; there is no positional top-level binding. A nested object {x, y} for speed
-  fails the array check. Unknown members are ignored.
+description: Firmware 9.31 and 9.75 (64-bit builds; READ). Parameters bind from a named object; a positional
+  outer array supplies no bindings. Unknown members are ignored. Speed must be an array, not an object
+  with x/y names.
 x-confidence: READ
-x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build)
+x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build); firmware 9.75, handler 0x81030
+  (64-bit build)
 properties:
   speed:
     type: array
-    description: Two numbers [x, y] bound positionally to the two axes. Missing or non-array speed is
-      logged and fails with a thread-local formatter code that is not a fixed 104/108. Native controller
-      rate values (same number space as scope_speed_move speeds), passed without conversion after the
-      dur_sec division and clamps; the physical unit is unresolved.
+    description: The first two elements supply x/y and must be numeric. At least two elements are required;
+      later elements are ignored and may have any JSON type. Integers are read as signed 32-bit values;
+      floating tokens are stored as single-precision values before widening for the calculation. Booleans
+      and numeric strings are rejected. Missing, non-array or short speed, or invalid first-two values,
+      take an error path that uses the thread-local error formatter (not a fixed 104/108). Values are
+      native controller rate values; the physical unit is unresolved.
     minItems: 2
-    maxItems: 2
-    items:
-      type: number
-      x-confidence: READ
-      x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build)
+    prefixItems:
+    - type: number
+    - type: number
     x-confidence: READ
     x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (array check @0x7fa04, binding
-      @0x7fb8c)
+      @0x7fb8c); firmware 9.75, handler 0x81030 (64-bit build) (array check @0x811e0, binding @0x81350)
   limit:
     type:
     - boolean
     - integer
-    description: When true, comparable x/y values are clamped to [-16, 16] after any altitude compensation.
-      Boolean or integer (nonzero is true).
+    description: Enables the comparable-value [-16, 16] clamp after any altitude compensation and before
+      duration division. Boolean false and stored integer zero disable it; Boolean true and stored nonzero
+      integers enable it. Integer storage is 32 bits. Missing or wrong-type values keep true; a floating
+      token such as 0.0 does not disable the clamp. Disabling it does not disable altitude compensation
+      or the separate per-axis rate cap of 1440.
     x-default: 'true'
     x-confidence: READ
-    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (clamp @0x7fc90-0x7fccc)
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (clamp @0x7fc90-0x7fccc);
+      firmware 9.75, handler 0x81030 (64-bit build) (clamp @0x81470-0x814ac)
   dur_sec:
     type: integer
-    description: 'Duration divisor: each axis value is divided by dur_sec (as a double, then narrowed
-      to float) before the axis command, and the handler waits for the scope to stop. A value of the wrong
-      type keeps the default. No positive-duration validator; zero, negative and overflow outcomes are
-      unresolved.'
+    description: Defaults to 1 and accepts only an integer token, stored as a signed 32-bit value. Decimal
+      or exponent tokens (such as 2.0), Booleans, strings, null, arrays and objects keep the default.
+      Each axis value is divided by this duration in double precision, then narrowed to single precision,
+      and the same integer is passed to the timed move. Zero and negative integers are kept without validation.
+      Duration additions and the millisecond multiplication use 32-bit arithmetic. Device behaviour for
+      zero, negative or overflowed durations is unresolved.
     x-default: '1'
     x-confidence: READ
-    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (@0x7fcd0-0x7fd1c)
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build) (@0x7fcd0-0x7fd1c); firmware
+      9.75, handler 0x81030 (64-bit build) (@0x814b0-0x81500)
   backlash_comp:
     type:
     - boolean
     - integer
-    description: Pass a backlash-compensation flag to the axis command. Boolean or integer.
+    description: Defaults to false. Boolean or stored 32-bit integer (zero is false, nonzero true); missing
+      or wrong-type values keep false. For axes that reach the timed move, true selects the :MTD command
+      family after a successful rate command; false selects the normal timed-move path (:MT in the checked
+      AM5 implementation). The flag does not change the rate calculation or the duration. The stop-wait
+      budget is duration plus 6 seconds for true and plus 2 seconds for false; a wait timeout still gives
+      result 0. Physical backlash-compensation behaviour is unresolved.
     x-default: 'false'
     x-confidence: READ
-    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build)
+    x-basis: static analysis of firmware 9.31, handler 0x7f850 (64-bit build); firmware 9.75, handler
+      0x81030 (64-bit build)

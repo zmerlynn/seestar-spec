@@ -212,6 +212,8 @@ P = 206.265 * pixel_size * bin / focal_length   (double, then rounded to single)
 READ, firmware 9.31 and 9.75; the request text and its `"limit":0,` and `"backlash_comp":true,` members are byte-identical in both. The products and the division by 15 are single precision. How the guider treats `limit` 0 is in its method page; the imager does not establish the mount-side effect. Axis semantics and signs inside the mount are outside the imager (unresolved). Each
 center is not a full goto with plate solve. READ.
 
+At the guider (firmware 9.31 and 9.75, 64-bit builds; READ): integer `limit` 0 disables the [-16, 16] clamp, and the omitted `dur_sec` defaults to 1. Altitude compensation of x, when the guider's coordinate read succeeds, and the separate per-axis rate cap of 1440 stay in effect. For axes that reach the timed move, `backlash_comp` true selects the `:MTD` command family. With the default duration, the stop-wait budget is seven seconds; a timeout still gives integer result 0. Small divided rates instead request an axis abort whose return is not checked. None of this establishes physical completion or controller-side backlash behaviour. Details are in the method page.
+
 R17. Firmware 9.31 and 9.75: a refused or timed-out fine move (a 10,000 ms request-wait timeout; success means the reply text contains `"result":0`) is logged and
 capture continues; it does not end the mosaic. READ.
 

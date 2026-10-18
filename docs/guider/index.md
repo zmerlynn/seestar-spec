@@ -43,7 +43,7 @@ zwoair_guider command/event server (TCP 4400), reached directly or by imager rel
 | [`mount_scan_port`](methods/mount_scan_port.md) | List the cached serial ports available for the mount connection, with the current selection. |
 | [`pi_set_time`](methods/pi_set_time.md) | Set the host time zone and calendar time, then update the mount's clock; the reply does not confirm any of it. |
 | [`scope_abort_slew`](methods/scope_abort_slew.md) | Send a stop command to the connected mount to abort a slew. |
-| [`scope_fine_move`](methods/scope_fine_move.md) | Move the mount axes at a small commanded speed for a duration, then wait for it to stop. |
+| [`scope_fine_move`](methods/scope_fine_move.md) | Apply per-axis fine-move values and poll for stop with a timeout. |
 | [`scope_get_axle_coord`](methods/scope_get_axle_coord.md) | Query the connected mount for its two axle coordinates. |
 | [`scope_get_beep_volume`](methods/scope_get_beep_volume.md) | Query the connected mount for its beep-volume choices and current selection. |
 | [`scope_get_cap`](methods/scope_get_cap.md) | List the capabilities reported by the connected mount driver. |
