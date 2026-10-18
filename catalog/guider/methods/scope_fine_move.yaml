@@ -21,7 +21,8 @@ description: Firmware 9.31 and 9.75 (64-bit builds; READ). Requires a connected 
   true, or duration plus 2 seconds otherwise. It then replies with integer result 0, including after a
   stop-wait timeout. The reply does not establish an observed stop, physical completion, or acceptance
   of an abort request. Controller-side backlash behaviour is unresolved. The reviewed handler emits no
-  completion event. Whether the mount's serial work runs on a worker was not re-checked (unresolved).
+  completion event. The mount serial work runs in the request handler, not a worker (firmware 9.31 and 9.75, 64-bit and
+  32-bit, READ).
 grade: MUTATOR / established (native handler, 64-bit build)
 side_effect_tier: C
 confidence: READ

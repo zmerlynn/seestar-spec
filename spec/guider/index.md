@@ -315,7 +315,7 @@ of the two unconverted pairs). `IsSettle` and `IsDither`
 are always present (READ); `IsDither` is a one-shot flag cleared when reported (READ), set by a
 dither (INFERRED). `RADuration` with
 `RADirection`, and `DECDuration` with `DECDirection`, are present only when that axis has a
-positive correction duration. READ. `StarMass` is written unscaled; its scale is unresolved.
+positive correction duration. READ. In the checked 64-bit builds of firmware 9.31 and 9.75, `StarMass` is copied from the current guide-star measurement and serialized without arithmetic scaling along that path. In centroid mode, it sums selected unsigned-16-bit pixel values minus the estimated background within a clipped aperture of radius seven pixels around the detected peak. Samples below the stored rounded background-plus-three-standard-deviations threshold are excluded. The alternative peak mode uses the maximum weighted 3×3 neighborhood value, shifted right by four before conversion to the mass double. There is no exposure-time normalization or calibrated-flux conversion between this measurement and the event member. READ. Upstream image scaling, physical count units, absolute flux calibration and bit-identical 32-bit arithmetic remain unresolved.
 
 R22. Events are sent on transitions or per frame; there is no periodic timer and no rate cap.
 READ. Event delivery, ordering against the command reply and ordering across worker threads

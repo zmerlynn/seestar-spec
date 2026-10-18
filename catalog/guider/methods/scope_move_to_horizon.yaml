@@ -24,8 +24,10 @@ description: 'Registered in the guider dispatcher table; the name is not in the 
   complete event means the arm is open. The axle-to-sky relation in equatorial mode, stopping
   distance and the controller''s own park handling are unresolved. The app sends this method with no
   params for its arm-open control; its arm-cancel control sends scope_move ["none"], which stops
-  this worker (scope_abort_slew does not). Mount serial: runs on a worker; its commands were not
-  traced (unresolved).'
+  this worker (scope_abort_slew does not). Mount serial (firmware 9.31 and 9.75, 64-bit and
+  32-bit, READ): the worker sends the selected slew-rate command and north motion, then polls
+  coordinates and movement state; its common cleanup requests an all-axis stop, but initial motion
+  failure and an unexpected zero movement status return without it.'
 grade: MUTATOR / established (64-bit and 32-bit native handler paths)
 side_effect_tier: C
 confidence: READ

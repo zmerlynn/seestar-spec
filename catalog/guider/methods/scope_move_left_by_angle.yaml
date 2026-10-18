@@ -10,7 +10,10 @@ description: 'With a connected mount, the handler checks the mount is not moving
   manual, in which case it emits MoveByAngle complete at once and replies 0 (INFERRED: a test or simulation
   hook). Served by the guider process (TCP 4400); a client on the main command port reaches it through
   the imager unknown-method relay, which is unavailable to guest-table clients. The native-handler grade
-  below does not describe the relay. Mount serial: runs on a worker; its commands were not traced (unresolved).'
+  below does not describe the relay. Mount serial (firmware 9.31 and 9.75, 64-bit and 32-bit, READ): the worker reads the other axle
+  coordinate and repeatedly requests the first-axis rate at signed magnitude 1440 with two-second timed
+  movement; measured progress controls stop timing, and its cleanup requests an all-axis stop (not
+  reached when all initial coordinate reads fail). Command units and physical stopping are unresolved.'
 grade: MUTATOR / established (64-bit build; 32-bit build matches (READ))
 side_effect_tier: C
 confidence: READ

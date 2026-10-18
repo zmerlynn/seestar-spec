@@ -195,9 +195,7 @@ The full serial command set is in [mount-serial-commands.md](mount-serial-comman
 Firmware 9.75: after the mount link connects, the guider sends the command `:GP#` (command type 3,
 reply ignored), and the start-up motor-current check no longer skips when the charge temperature
 is 10 degrees C or lower. READ (64-bit). The remaining guider mount handlers are identical to
-firmware 9.31. Real guider changes in 9.75 are in authentication, the FITS and image header,
-Wi-Fi and access point, and mount, history and temperature code; these were only diffed coarsely
-and are unresolved.
+firmware 9.31. In the checked 64-bit and 32-bit builds, firmware 9.75 adds conditional custom-object and framing fields to the shared FITS helpers and corresponding custom-object, wide-framing and mosaic fields to the generic JSON header formatter. These helper additions do not change the compared 80-byte guide-image response-header assembly. The compared guide-history arrays and temperature-event payload retain their firmware 9.31 formats. In the 64-bit 9.75 AP getter, successful command output and a fresh parsed access-point name are prerequisites for cache access; optional fields whose fresh parses fail retain previous cached values, with no age check in that getter. The checked 32-bit getter retains the older uncached flow. READ for these paths. Actual metadata population and AP freshness, untraced residual changes, and a universal OTA-derived metadata-version source remain unresolved. Authentication and the separately reviewed mount paths retain their own evidence boundaries.
 
 R35. `shutdown` stops the guider's event server (not the host). The reply is built before the
 server stops but may not be delivered. READ. A client SHOULD NOT send it; the imager depends on

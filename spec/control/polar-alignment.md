@@ -354,21 +354,7 @@ result to the configuration store. The first code stored wins. READ (64-bit firm
 the mount is moving and 560 if the motion-state read fails. The routine reads the registers
 `:GFR5#` and `:GFC1#`.
 
-R18d. Fit and coverage thresholds (firmware 9.75, 64-bit). READ. The expected field magnitude
-is 50.0 and a sample's residual is the absolute difference of its magnitude from 50.0 after the
-fit. The fit fails if the residual standard deviation exceeds 10.0 or the largest residual exceeds
-25.0, if the absolute determinant of the fit matrix is below about 1e-6, if an eigenvalue is below
-about 1e-12, or if the condition number (square root of the largest over the smallest eigenvalue)
-exceeds 10. The circle is divided into 12 sectors of 30 degrees and at least 6 must be covered.
-If coverage fails while the calibration state is 3, the automatic rotation is not running and 65 s
-have not elapsed, sampling resumes with no `fail` event; otherwise the `fail` event carries the
-stored code, else 563. Interference is flagged when three consecutive field readings each differ
-by more than 300.0 from the baseline, or when, over the last 50 samples, the median absolute
-deviation from the midrange exceeds 8.0 (the units of 300.0 and 8.0 are INFERRED to be the raw
-magnetometer unit). The sampling period is 100 ms. A successful result is written to the stored
-sensor calibration (`msensor` valid flag and the x, y, x11, x12, y11, y12 values). Whether
-the 9.31 build used the same thresholds was not diffed (unresolved); the 32-bit build has the
-same failure strings and its parity is INFERRED.
+R18d. In the checked 64-bit and 32-bit builds, firmware 9.31 needs at least 20 fit-input samples and coverage of at least 10 of 12 sectors; firmware 9.75 lowers these gates to 10 samples and 6 sectors. Sectors remain 30 degrees. Both versions use reference radius 50.0, reject a fitted-radius standard deviation above 10.0 or a maximum absolute radius error above 25.0, and retain determinant and smaller-eigenvalue thresholds of approximately 1e-6 and 1e-12 and a square-root eigenvalue-ratio limit of 10. Separate non-finite checks remain. Both retain a 65-second sampling budget and 100 ms timer period. The early full-coverage stop still needs at least 20 samples, all 12 sectors and at least two seconds without new coverage. Firmware 9.75 additionally consumes automatic-round completion; eligible manual sessions can resume sampling after insufficient fitted coverage within the deadline. Firmware 9.75 detects three consecutive successive-vector displacements above 300.0 and also tests whether the median absolute deviation of the last 50 field-strength samples about their median exceeds 8.0. Interference or instability selects 564 on the residual-failure path; otherwise that path returns a stored nonzero code or 565. Coverage failure has its separate stored-code-or-563 path. READ for these operands and branches. Threshold equality does not establish identical fit results across architectures; raw physical units, accuracy and runtime interference behavior remain unresolved. A successful result is written to the stored sensor calibration (`msensor` valid flag and the x, y, x11, x12, y11, y12 values).
 
 A
 client MUST NOT require a particular code and MUST accept any `code` on `fail`. Whether the

@@ -194,12 +194,9 @@ on success, records the pair for recovery. It does not slew. READ. Success is re
 when no mount is connected (only the fallback changed). A client MUST NOT read success as proof
 that the mount model changed. The Android app sends RA already divided by 15 (hours). READ.
 
-Firmware 9.75 (64-bit): the imager-side sync also calls a compass-position-synced marker, tied to
-compass auto-calibration ([polar-alignment.md](../polar-alignment.md)). READ (call), unresolved
-(effect). The guider's mount handlers (goto, park, speed move, sync, move, tracking, position,
+In the checked 64-bit and 32-bit builds of firmware 9.75, the imager suppresses the compass-calibration prompt after a waited sync reply passes its textual success test. Compass state then reports cali as 0 even if the sensor's underlying calibration-needed flag remains set. The suppression marker does not rewrite the stored fit. In the checked 64-bit 9.75 path, calibration processing clears suppression, successful fit/commit sets it again after requesting clear-azimuth, and the detected-movement path clears it again. The checked 64-bit 9.31 packer reports the underlying flag directly. READ. Physical calibration, detection of every movement and full 32-bit movement-detector parity remain unresolved. The guider's mount handlers (goto, park, speed move, sync, move, tracking, position,
 state, equatorial mode, abort, fine move) are identical to 9.31 apart from compiler noise. READ.
-The move-round helpers have new signatures with extra
-boolean parameters; the wire effect is unresolved.
+In the checked 64-bit and 32-bit builds, firmware 9.31 manual round movement uses westward nine-second movement requests and a 180-second budget. Firmware 9.75 uses a 90-second manual budget; its automatic calibration selects a direction from the current axle angle and uses 65 seconds. These paths request slew-rate index 7 and use finite wrapped displacement of at least 15 degrees to arm completion, followed by displacement at most 5 degrees to finish the round. Their movement cleanup requests stop. In firmware 9.75, internal flags select immediate manual failure notification or recording of the first eligible nonzero automatic failure while the calibration session remains active; they add no public request member. Movement-request transport failure and replies lacking the success marker have distinct failure routes, and stop-request failures are logged without a new code assignment there. READ. Stop delivery, physical travel and controller-limit behavior remain unresolved.
 
 R32. [`scope_sync_planet`][ssp] takes no params. It works only in view mode 2 (Moon) or 3 (Sun),
 else 300. The imager computes the body's position (the Moon path can refresh the stored
