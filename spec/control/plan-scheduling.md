@@ -103,6 +103,8 @@ applied. READ.
 R9. `plan_target_af` and `viewplan_gohome` accept boolean or integer (nonzero is true); any
 other type gives 106. When absent, the held values are kept. READ.
 
+Firmware 9.31 and firmware 9.75, 64-bit (READ): in `set_view_plan` the `plan_target_af` member is stored in a local plan object. It does not write the persistent `plan_target_af` setting, which is what the runtime target autofocus step ([focus-and-filter R14d](focus-and-filter.md#autofocus)) and the `ViewPlan` event read; that setting is changed with `set_setting` and read with `get_setting`. A request with `plan_target_af` false therefore does not turn the step off. OBSERVED 2026-10-20 (S50 Pro, firmware 9.75): `set_setting {plan_target_af:true}` returned code 0 and `get_setting` read it back true.
+
 ### Failure leaves partial state
 
 R10. Parsing has no rollback. READ. `plan_name` and `update_time_seestar` are written first;
