@@ -202,12 +202,12 @@ main-camera process, it runs these steps in order, each blocking (READ, both bui
    and preparation, and the order is dark library, bias (wide denoise), polar alignment, then
    autofocus. READ (order); that the old blocking dark capture is the library's fallback is
    INFERRED. The 9.31 wording of this step applies to firmware 9.31.
-3. The main autofocus, the temperature-triggered autofocus and automatic exposure.
+3. The main autofocus, the ViewPlan target autofocus step when it applies, the camera-temperature autofocus check and automatic exposure ([focus-and-filter R14b to R14d](focus-and-filter.md#autofocus)).
 4. The Stack worker, which sends `Stack` `start` and then makes its first tracking check (R6c).
 
 A master dark or bias is skipped when one already exists: the dark when the library holds a
 usable master for the current exposure, the bias after it has once succeeded in this run of the
-imager service. The initial autofocus runs once per imager run. It is skipped after a goto
+imager service. The initial autofocus runs once per imager run (a process-wide completion flag; completion includes the autofocus being skipped and does not mean it succeeded). It is skipped after a goto
 autofocus succeeded, and in `expert_mode` when the stack's automatic autofocus is off. READ. An
 `Initialise` failure is recorded as the plan error and the start continues with step 3. READ
 (64-bit); that this holds for every failure branch is INFERRED. The wide-camera process runs
