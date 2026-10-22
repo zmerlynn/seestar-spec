@@ -222,6 +222,16 @@ counts of attached USB mass-storage devices, from the USB device listing: a devi
 without a lower clamp, so `usb2` can be negative; clients SHOULD clamp it at zero. A failing
 command gives zero counts; it has no errors. READ (device); normative (client).
 
+### Space checks and albums (firmware 9.75)
+
+Firmware 9.75, 64-bit (READ): Ordinary stack admission compares an estimated colour-image payload plus 150 MiB against available space and can fail with 208. A wide mosaic capture (type stack, nonzero size index) instead has a 5120 MiB admission requirement and can fail with 543; `required_storage_mb` reports that requirement in the alert. Ordinary dual uses size index 0. These checks reserve nothing for later plan targets or frames.
+
+Firmware 9.75, 64-bit (READ): While ordinary sub saving is selected, a failed free-space query or fewer than 200 MiB free disables the all-frame and accepted-frame save flags, applies the settings, sends alert 434 and continues the stack loop. It does not clear the meteor-save flag. Continuous-capture mode checks can instead end with 208 below 200 MiB or on query failure; exactly 200 MiB passes. A single FITS save has its own check of image size plus 150 MiB (20 MiB for a temporary path).
+
+Firmware 9.75, 64-bit (READ): `get_image_save_path` also supplies a conditional current-storage summary with `disk_mb`, `diskSizeMB` and `used_percent`. `get_albums` takes `{"name":"MyWorks/MilkyWay_sub"}` and an optional string `filter` (`stack`, `stacked`, `startrail`, `meteor`, `comet`, `video_stack`; an unknown string means unfiltered), enumerates the filesystem freshly and returns `path` and grouped `list` entries with `group_name` and `files`; file entries carry `name`, `thn`, `type`, `date`, `is_favorite`, directories `count`, movies `duration_sec`. It returns no capacity. `get_img_file_page_number` takes `dir`, `page_num`, `size`, `date` and `skip_avi` (defaults: 20 per page, size and date on, skip-AVI off), returns the page count and rebuilds the shared sorted cache; `get_img_file_page_name` reads that cache by integer page and returns `name`, `is_dir` and conditional size, date and movie fields. `get_img_file_info` takes one filename and returns `date`, `size_k`, `type` and conditional image metadata. These are separate queries without an atomic snapshot.
+
+Firmware 9.75, 64-bit (READ): `delete_image` takes `{"name":"MyWorks/MilkyWay_sub/EXAMPLE.fit"}` (name may be an array) and resolves names against the effective image root; it has no per-request storage selector. It deletes media with companion and directory handling, removes deleted items from favourites and re-queries space. It has no Stack or ViewPlan busy gate, and default-folder or current-recording protections do not protect an active-stack FITS. Earlier deletions are not rolled back after a later failure, and deleting externally neither cleans favourites nor refreshes a prepared page cache. Whether deleting subs during a running plan is safe is unresolved.
+
 ### Selecting the save location
 
 R26. [`set_image_save_path`](../../docs/control/methods/set_image_save_path.md) takes a storage

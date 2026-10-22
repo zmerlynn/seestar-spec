@@ -357,6 +357,24 @@ buffers are not restored. READ / INFERRED. Firmware 9.75: after `clear_view_plan
 gone, so no plan is restored at the next start (the restart-code handling was not decoded;
 INFERRED).
 
+## Dual-camera and wide items (firmware 9.75)
+
+Firmware 9.75, 64-bit (READ): `camera_mode` is a required, case-sensitive string accepting `tele`, `wide` or `dual`. Wide and dual items additionally require objects `second_camera.stack` and `mount`, a string `second_camera.stack.capt_type`, an integer `second_camera.stack.wide_size_index` from 0 to 3, and a boolean or integer `mount.tracking`. Capture type accepts `stack`, `startrails` or `timelapse` case-insensitively. Zero integer tracking is false; nonzero is true. Dual validates these members before replacing the wide capture type and size with `stack` and 0.
+
+Firmware 9.75, 64-bit (READ): Missing or malformed required wide/dual members fail initial target parsing through a common failure path. If the thread error is zero, reply construction substitutes error 207. The separate peer wide-settings request has its own validation errors; those codes do not describe initial plan-target parsing. Wide-camera capability is checked during target execution after plan acceptance. Client-side `view-plan-send` validation, augmentation and serialization remain unresolved.
+
+Firmware 9.75, 64-bit (READ): A dual target starts the ordinary tele View worker and waits for stack readiness before starting peer wide capture with movement disabled. Cancellation, the target deadline or tele-worker termination can prevent or end wide capture. On the normal cleanup route after wide capture starts, wide stop/result requests precede restoration of temporary wide settings and tele stop/wait requests. The wide-only worker applies the item's parsed tracking value and restores the sampled earlier state during cleanup; the dual worker does not consume that field.
+
+Firmware 9.75, 64-bit (READ): A dual target sends the wide process a movement-disabled request, so the wide worker bypasses its ordinary mount recenter/dither path even when its process-local dither option is enabled. The tele worker retains its conditional ordinary movement path. Synchronized exposure boundaries and automatic rejection of every wide image overlapping tele movement remain unresolved.
+
+Firmware 9.75, 64-bit (READ): The dual wide-settings operation preserves the peer's existing `exp_ms.stack_l`, `exp_ms.stack_l_auto`, `save_discrete_frame`, `save_discrete_ok_frame` and `save_meteor_frame` values. The inspected target parser does not apply exposure or save-flag overrides from `second_camera`. Dual does not select a fixed wide exposure. When wide automatic exposure is enabled and its existing gates permit it, an internally supplied positive tele runtime exposure can lower the wide automatic-exposure maximum; this does not make the wide exposure equal the tele exposure. Actual exposure values, cadence and simultaneous exposure boundaries remain unresolved.
+
+Firmware 9.75, 64-bit (READ): Initial application snapshots the complete stack-setting structure of the wide process, including exposure, and normal cleanup attempts to reapply it. Restoration can fail. Firmware 9.75, 64-bit (INFERRED): a change accepted after restoration and before the next snapshot can be inherited by the next wide capture, and a change made while a restoration is outstanding can be overwritten in the live settings. A guaranteed external transition window and a queued next-target exposure setter remain unresolved.
+
+Firmware 9.75, 64-bit (READ): An ordinary low-space sub-saving alert or an individual meteor-save failure does not itself take the inspected stack through a fatal return. Admission, export and target failures follow separate paths. During a running dual item the wait checks the tele worker, the target deadline and cancellation; the wide result is obtained during cleanup. The final aggregate plan state for every low-space or peer failure remains unresolved.
+
+Firmware 9.75, 64-bit (OBSERVED 2026-10-21, S50 Pro, build inferred from key set): `set_view_plan` with nine dual items returned code 0. The `ViewPlan` event echoed `second_camera` and `mount` as sent, added `wide_state:"idle"`, and showed `plan.plan_target_af` true. Writing the wide exposure and save flags with `wide_cam:true` before the plan (see [device settings](device-state-and-settings.md#wide-camera-exposure-and-processing-firmware-975)) returned code 0 and a `get_setting` read-back under `second_camera.*` matched.
+
 ## Not covered or unresolved
 
 - Framing, and whether pretty-printed multi-line requests are accepted.
