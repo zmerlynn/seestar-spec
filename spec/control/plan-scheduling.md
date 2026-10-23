@@ -375,6 +375,8 @@ Firmware 9.75, 64-bit (READ): An ordinary low-space sub-saving alert or an indiv
 
 Firmware 9.75, 64-bit (OBSERVED 2026-10-21, S50 Pro, build inferred from key set): `set_view_plan` with nine dual items returned code 0. The `ViewPlan` event echoed `second_camera` and `mount` as sent, added `wide_state:"idle"`, and showed `plan.plan_target_af` true. Writing the wide exposure and save flags with `wide_cam:true` before the plan (see [device settings](device-state-and-settings.md#wide-camera-exposure-and-processing-firmware-975)) returned code 0 and a `get_setting` read-back under `second_camera.*` matched.
 
+Firmware 9.75, 64-bit imager (READ): `set_setting.selected_cam` returns 536 when a ViewPlan is running and its runtime dual-camera state is not active. This test precedes camera-name parsing and the same-camera success test. Active runtime dual-camera state passes this gate; a stored target's `camera_mode:"dual"` alone does not establish that state. `iscope_start_view` has its own plan gate. Plan execution contains explicit main/auxiliary selection operations and camera-specific peer capture requests, and camera selection does not directly rewrite a plan target's camera mode or capture configuration. Firmware 9.75, 64-bit imager (INFERRED): a user selection changes the target of later selection-sensitive commands without directly transferring plan workers between cameras. See [camera selection](device-state-and-settings.md#camera-selection-selected_cam-firmware-975).
+
 ## Not covered or unresolved
 
 - Framing, and whether pretty-printed multi-line requests are accepted.

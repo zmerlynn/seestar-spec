@@ -51,7 +51,15 @@ address the server by any name or address that reaches it. INFERRED.
 ## Protocol and access
 
 R6. SMB1 is disabled. OBSERVED 2026-10-16. The upper protocol limit, signing and encryption
-settings are unresolved.
+settings are unresolved from the packages (no Samba configuration ships).
+
+R6a. OBSERVED 2026-10-23 (firmware 9.75, S50 Pro, negotiate and session setup only, no tree
+connect, no file access): the server negotiated dialect 3.1.1 with SecurityMode 1 (signing
+enabled, not required), capabilities DFS, LARGE_MTU and LEASING, and negotiate contexts for the
+AES-128-GCM cipher, SHA-512 pre-authentication hash and AES-GMAC signing algorithm. A guest NTLM
+session with an empty password succeeded but gave no session key, so that session had no signing
+and no encryption; a client that required signing refused it. INFERRED: a guest session cannot
+obtain an SMB integrity check, and whether any account exists for a signed session is unresolved.
 
 R7. Anonymous share enumeration succeeds, and a guest tree connect to the image share succeeds.
 OBSERVED 2026-10-16. Any client on a network that reaches the server can therefore at least

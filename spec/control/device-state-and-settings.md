@@ -324,6 +324,24 @@ Firmware 9.75, 64-bit (READ): `save_discrete_frame` saves frames whose processin
 
 Firmware 9.75, 64-bit (READ): Wide raw-denoise processing is entered when the option is enabled or when the current camera is wide, so disabling `wide_denoise` alone does not bypass it. Successful processing can modify the pixels of the subsequently saved single frame. The learned airplane-line detector is bypassed for the wide camera, while the independent trail check can reject a frame. The inspected `star_correction` operation applies to post-processed stack output. Pro lens-shading correction operates on the raw buffer before debayering and Pro geometric correction after debayering; neither uses the `star_correction` gate. `auto_lenhance` takes part in start-view and filter-restoration policy. Complete effects of `stack.dbe`, automatic-enhancement startup, and the numerical effect of learned processing on meteor streaks remain unresolved.
 
+### Camera selection: selected_cam (firmware 9.75)
+
+Firmware 9.75, 64-bit imager (READ): In the main imager, `set_setting` accepts string `selected_cam`. `View` selects main command handling and `SecondView` selects auxiliary command handling where the requested method supports selection-based relay. Value matching ignores ASCII letter case; the key is case-sensitive. An unknown string returns 209 after the plan gate below. Selection is process-global runtime state with a compiled initial value of `View`; the selection operation performs no persistence write. The complete reconnect/startup reset and persistence lifecycle remains unresolved.
+
+Firmware 9.75, 64-bit imager (READ): A changed selection broadcasts `SelectCamera` with `Event`, `Timestamp` and the canonical `selected_cam` name. Selecting the current value succeeds without that notification or a guider update, provided the plan gate permits the request. Firmware view/plan operations and main-stack cleanup can subsequently select a camera themselves.
+
+Firmware 9.75, 64-bit imager (READ): A selection change also calls the guider camera-update path. When pixel-scale lookup succeeds, it attempts a `speed_move_ratio` request containing `cam_id`, `pix_scale` and `sel_wide_cam`; the last identifies auxiliary selection. The selection operation does not use that update's result to determine success. Firmware 9.75, 64-bit imager (INFERRED): successful camera selection does not prove that a guider request was sent or accepted. Guider-side use and indirect capture effects remain unresolved.
+
+Firmware 9.75, 32-bit imager (READ): Camera selection returns 536 while a ViewPlan is running, before parsing the requested camera or testing whether it is already selected. The inspected 32-bit selector has no dual-camera exception.
+
+Firmware 9.75, 64-bit imager (READ): Camera selection participates in relay decisions for `save_image`, `check_ai_process`, `start_ai_process`, annotation and stack-status queries, `iscope_start_stack`, and supported auxiliary autofocus/focuser commands. Eligible main-process calls relay when auxiliary is selected; otherwise they continue locally, subject to each method's checks. The common routing paths consider view modes 1 to 5, and star mode when the model supports wide-camera star viewing. This is not a universal rule: `get_setting`, explicit `start_solve`, low-level stage starts and the bespoke `iscope_start_view` path have distinct handling.
+
+Firmware 9.75, 64-bit imager (READ): The selection operation directly changes runtime command selection, emits its notification and calls the conditional guider update; it does not directly start, stop, clear or migrate a stack, autofocus, solver or image buffer. Firmware 9.75, 64-bit imager (INFERRED): subsequent routed commands can act on a different process while previously started processing stays on its existing path. The absence of every indirect effect on ongoing capture, saving or analysis is unresolved.
+
+Firmware 9.75, 64-bit imager (READ): AI check/start parse their own image parameters after any selection-based relay. AI start expands and opens a supplied nonempty image name; its default input uses process-local image state. No special handling of `upload.txt` as an AI manifest, readiness flag or completion signal was identified. Named input still depends on an accessible valid image and the operation's other checks.
+
+Firmware 9.75, 64-bit imager (OBSERVED 2026-10-22, S50 Pro, iOS app, version unknown): during a dual ViewPlan the app sent `set_setting {"selected_cam":"View"}` and then `{"selected_cam":"SecondView"}`, and both live stacks kept working. The app itself refused to open its album during dual capture and sent no album request to the device; whether the firmware would refuse is unknown. The album opened normally after the plan ended.
+
 ## The Setting event
 
 [`Setting`](../../docs/control/events/Setting.md) is a delta of the settings object. READ.

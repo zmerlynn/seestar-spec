@@ -290,6 +290,8 @@ property that is true only for 4040, 4400 and 4700 to 4702, and only when `secur
 on (64-bit; the 32-bit build decides by port only); it is false for 4800, 4801, 4804 and 4500, so
 this rule still holds. See [secure-communication.md](../control/secure-communication.md).
 
+Firmware 9.75, 64-bit imager (READ): Main and auxiliary image servers start on 4800 and 4804, respectively, and the inspected image handlers obtain current and stack images from their own process. Firmware 9.75, 64-bit imager (INFERRED): changing `selected_cam` does not directly remap an established image-socket connection to the other process's buffers. How the iOS app changes its subscriptions or display when it sends that setting is unresolved.
+
 ## Open questions
 
 - Header bytes 20 to 25: settled in [Reply framing](#reply-framing) (hfdX, hfdY, hfd). The meaning of hfdX and hfdY
