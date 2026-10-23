@@ -342,6 +342,20 @@ Firmware 9.75, 64-bit imager (READ): AI check/start parse their own image parame
 
 Firmware 9.75, 64-bit imager (OBSERVED 2026-10-22, S50 Pro, iOS app, version unknown): during a dual ViewPlan the app sent `set_setting {"selected_cam":"View"}` and then `{"selected_cam":"SecondView"}`, and both live stacks kept working. The app itself refused to open its album during dual capture and sent no album request to the device; whether the firmware would refuse is unknown. The album opened normally after the plan ended.
 
+### Meteor detector inputs and limits (firmware 9.75)
+
+Firmware 9.75, 64-bit imager (READ): The detector constructs fixed confidence and overlap-suppression arguments of 0.25 and approximately 0.45 and loads one installed model pathname. The enable-setting path supplies no threshold or model-path override. A supported user control for changing the thresholds or selecting a replacement model is unresolved.
+
+Firmware 9.75, 64-bit imager (READ): In ordinary wide stacking, meteor selection receives the current unsigned-16-bit single-plane image before the stack's own calibration, denoise, star detection and registration. The detector interface supplies no previous image, accumulated stack, exposure duration, gain or star list. Earlier acquisition paths contain conditional orientation, size-reduction and calibration processing; whether those affected a particular input is unresolved.
+
+Firmware 9.75, 64-bit imager (READ): The raw preprocessing computes current-image median and deviation statistics for an automatic midtones stretch, converts the result to 8 bits and expands the gray values into three identical channels. It preserves the aspect ratio while resizing and centres the result with padding value 114. The bundled model header describes a 640 by 640 input, one class-score channel at each of three output scales, and source-channel means of zero and standard deviations of 255. Exact native input conversion and quantization are unresolved.
+
+Firmware 9.75, 64-bit imager (READ): Output decoding uses an auxiliary score gate and class-score selection, without multiplying a separate objectness value into the score. Quantized selection also uses an initialized score baseline, and its exact effective boundary and the reachability of a fallback depend on native quantization attributes that are unresolved. Candidates undergo within-image, within-class overlap suppression above approximately 0.45, and at most one final result is retained. A positive retained count sets the meteor result without a final class-id, minimum streak-length or box-aspect test.
+
+Firmware 9.75, 64-bit imager (READ): The inspected ordinary wide meteor path contains no inter-frame track-persistence or duplicate-track check and no satellite or aircraft veto. The common star-trail rejection can independently reject a frame, and the learned airplane-line detector is bypassed on the wide camera. Firmware 9.75, 64-bit imager (INFERRED): a meteor-selected image is a detector candidate, not confirmation of physical origin, and a recurring track can be selected in successive exposures. Classification accuracy, faint-meteor sensitivity and the cause of particular false positives and misses are unresolved.
+
+Firmware 9.75, 64-bit imager (OBSERVED 2026-10-21, S50 Pro, wide 30 s, `save_meteor_frame` on; owner-side review with a separate line filter): of 40 of 1044 sub frames flagged `_meteor`, 1 was a real meteor, 23 were satellites or aircraft (20 crossing several frames), 2 were faint satellite-like lines, 1 was a diffuse blob and 13 showed nothing visible; at least 3 likely radiant-aligned meteors were not flagged (a lower bound). A track repeating in the next sub was flagged again.
+
 ## The Setting event
 
 [`Setting`](../../docs/control/events/Setting.md) is a delta of the settings object. READ.
