@@ -187,6 +187,10 @@ watchdog, QUIT or the peer's FIN ends the connection. INFERRED.
 R74. A stand-in SHOULD retransmit FIN on RTO and SHOULD give up after the watchdog interval
 without FIN_ACK. INFERRED.
 
+## Duplicate delivery (observed, firmware 9.75)
+
+OBSERVED 2026-10-21 and 2026-10-22 (firmware 9.75, S50 Pro, bulk file copies of about 40 sub files through a local RDT stand-in): the share of received packets that arrived as duplicates (dropped by the receiver as already seen) was 3.4 to 7.4 percent on 2026-10-21 for uncapped reads at about 8 MB/s and 3 to 6 percent for copies overnight while the device was imaging. On 2026-10-22, with the device idle after the plan, eight copies gave 0.00 percent uncapped at 9.7 to 11.3 MB/s and 0.01 to 0.07 percent when read-rate capped at 1 to 3 MB/s. The read-rate cap therefore did not drive duplicates, and the number of parallel transfers did not scale them. INFERRED, unconfirmed: duplicates track device-side activity (imaging or processing), consistent with the sender's timer-driven individual resends described above; the device state during the 2026-10-21 window was not recorded.
+
 ## Window and pacing
 
 R75. The window is local only. Defaults: initial **1000** packets, minimum **80**, ceiling

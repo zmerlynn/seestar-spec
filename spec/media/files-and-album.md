@@ -382,6 +382,20 @@ is 256 (`fit operation failed`). READ. One open-failure path gives 268, which is
 text `fail to operate`; the condition for it is INFERRED. Positional params are not accepted.
 READ.
 
+## Telemetry journal upload.txt and remove_file (firmware 9.75)
+
+Firmware 9.75, 64-bit imager (READ): The telemetry writer appends records to `/tmp/zwo/Image/upload.txt`. A normally constructed record is one JSON object followed by a newline, containing an event-name string in `event`, local time in `date` formatted `YYYY-MM-DD HH:MM:SS`, and the caller's JSON object in `content`. Device-use, sensor, stack, view-duration and plan reports have direct writer calls. The append path requests flushing and filesystem synchronization; actual I/O completion is not guaranteed.
+
+Firmware 9.75, 64-bit imager (READ): The writer does not parse previous records, delete or drain the journal, or apply a size or rotation limit. No dedicated imager reader of this filename was identified. Firmware 9.75, 64-bit imager (INFERRED): a later successful append recreates the file after deletion. Boot retention, other retention paths and synchronization with external readers are unresolved.
+
+Firmware 9.75, 64-bit HTTP server (READ): When setup succeeds, `/ai_process` is mounted on `/tmp/zwo/Image` for ordinary static-file serving, so GET `/ai_process/upload.txt` returns the file content without parsing the records. POST `/ai_process` accepts multipart field `file`, and PUT `/ai_process/<path>` streams supplied bytes to its requested temporary-directory path, subject to path validation and I/O checks. Neither handler appends telemetry for ordinary image uploads. A deliberately supplied `upload.txt` filename has ordinary upload handling and can replace its bytes, so the pathname is not globally append-only.
+
+Firmware 9.75, 64-bit HTTP server (READ): If `/tmp/zwo/Image/upload.txt` is absent, GET `/ai_process/upload.txt` falls through to the image-store handler, which checks `/boot/Image/ai_process/upload.txt`. When both are absent it returns HTTP 404, `text/plain`, body `File not found`. Absence of the temporary file alone does not establish 404.
+
+Firmware 9.75, 64-bit imager (READ): `remove_file` requires string `params.name` and passes that pathname directly to filesystem removal, with no image-store prefix check, canonicalization or camera/plan gate. It returns result 0 on success and also when removal reports a missing path or a nonempty directory; a missing or non-string `name` and other removal failures return 105. Firmware 9.75, 64-bit imager (INFERRED): result 0 does not prove a file existed or was deleted, and implies no recursive deletion or upload/AI cancellation.
+
+Firmware 9.75, 64-bit imager and HTTP server (OBSERVED 2026-10-22, iOS app, version unknown; INFERRED meaning): on connect the app sent HTTP GET `/ai_process/upload.txt` and then `remove_file` on `/tmp/zwo/Image/upload.txt`. Reading and then removing the journal is consistent with collecting and clearing records. The inspected paths establish no transactional acknowledgement, cloud delivery or AI-job completion meaning, and the app's use of the records is unresolved.
+
 ## Open questions
 
 - Album file `type` values and date format.

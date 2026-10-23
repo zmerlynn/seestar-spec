@@ -338,6 +338,8 @@ some view modes) saves a still. READ:
 - otherwise the normal image save runs;
 - with no frame available it returns 207.
 
+Firmware 9.75, 64-bit imager (READ): RTSP startup chooses port 4554 for the main process and 4555 for the auxiliary process from process identity. Firmware 9.75, 64-bit imager (INFERRED): changing `selected_cam` does not directly swap those ports or retarget an existing RTSP connection.
+
 ## Open questions
 
 - Terminal `AviRecord` behaviour on start paths other than those inspected. unresolved.
