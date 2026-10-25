@@ -100,6 +100,14 @@ R8. Fields apps send but the parser never reads include `camera`, `camera.exp_ms
 `second_camera.exp_ms` and `second_camera.stack.scene_*`. Clients MUST NOT assume they were
 applied. READ.
 
+Firmware 9.75, 64-bit (READ): The inspected ViewPlan target parser does not consume `camera`, `camera.exp_ms` or `second_camera.exp_ms` as exposure overrides. Tele and dual targets read the current global tele manual exposure during stack admission, after applicable initialization and pre-stack autofocus. The inspected tele target lifecycle has no per-target exposure snapshot and restoration. Ordinary manual frame acquisition uses camera-control state rather than rereading the global manual setting for each frame.
+
+Firmware 9.75, 64-bit (INFERRED): A setting accepted before admission samples exposure can affect the current target's upcoming stack, provided no intervening setting or mount reconciliation replaces it. A setting accepted between targets can similarly affect the next stack. These consequences follow from the late global read; they do not establish atomic ordering, guaranteed external transition windows, a queued next-target operation or successful sensor programming. An integer manual-exposure request still gives 259 whenever a matching Stack activity is working, including an interval with no sensor integration.
+
+Firmware 9.75, 64-bit (READ): Dual's ordinary temporary-wide application forces wide capture type and size to stack and 0 while retaining the peer's current manual exposure, automatic-exposure flag and saving options. Its first temporary application saves the complete wide stack settings. Cleanup attempts to reapply the saved settings with persistence suppression; the saved-settings latch is cleared only after successful backend application. An optional positive tele runtime-exposure hint can lower the maximum for eligible wide automatic exposure; it does not assign the wide manual exposure to equal tele exposure.
+
+Firmware 9.75, 64-bit (INFERRED): A wide setting accepted before an outstanding restoration can be overwritten in live settings by that restoration. A change accepted after restoration and before the next snapshot can be inherited by the next wide capture. These are conditional ordering consequences; guaranteed externally available intervals remain unresolved.
+
 R9. `plan_target_af` and `viewplan_gohome` accept boolean or integer (nonzero is true); any
 other type gives 106. When absent, the held values are kept. READ.
 
