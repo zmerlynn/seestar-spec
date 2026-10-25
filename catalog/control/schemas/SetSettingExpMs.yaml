@@ -5,14 +5,26 @@ properties:
     type:
     - boolean
     - integer
-    description: Automatic stack exposure. Malformed 106; 210 on a non-wide camera; 259 while stacking.
-      Ignored on the 32-bit build. Boolean or integer (nonzero is true).
+    description: >-
+      Automatic stack exposure. Malformed 106; 210 on a non-wide camera; 259 while stacking.
+      Ignored on the 32-bit build. Boolean or integer (nonzero is true). Firmware 9.75, 64-bit
+      (READ): tele gives 210 when this branch is reached, including for false. An earlier
+      manual-exposure busy check can return 259 first. Integer conversion tests the low 32 bits.
     x-confidence: READ
     x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
   stack_l:
     type: integer
-    description: Stack exposure; noninteger silently ignored; 259 while stacking. When the auto flag is
-      absent or false it also clears the auto flag.
+    description: >-
+      Stack exposure; noninteger silently ignored; 259 while stacking. When the auto flag is
+      absent or false it also clears the auto flag. Firmware 9.75, 64-bit (READ): milliseconds;
+      integers give 259 while the addressed process has working Stack activity, even for an
+      unchanged value. Tele selections with the retained expert flag true are 2000, 5000, 10000,
+      20000 and 30000; EQ adds 60000, and EQ with more_exposure adds 90000 and 120000. False expert
+      omits 2000 and 5000. The traced ordinary tele initialization sets that flag true. Unsupported
+      signed 32-bit values are normalized, not rejected: they become 10000, except unsupported
+      values above 30000 outside EQ become 30000. Manual application clears automatic exposure
+      unless an explicit automatic-exposure member was successfully handled in the same request.
+      Physical integration bounds remain unresolved.
     x-confidence: READ
     x-basis: static analysis of firmware 9.31, handler @0xedf40 (64-bit build)
   continuous:
@@ -27,7 +39,9 @@ properties:
     description: 'Firmware 9.75, app 3.4.0: extended-exposure option of the stack setting. Boolean or integer
       (nonzero is true), other types 106. Tele camera only: the wide camera gives 210 (get_setting is not
       gated). Applied through the stack-setting path; no running-stack check for this member alone. Meaning
-      beyond the name is INFERRED.'
+      beyond the name is INFERRED. Firmware 9.75, 64-bit (READ): in EQ it adds 90000 and 120000 ms
+      to the retained tele selections; outside EQ selections above 30000 are removed. Application
+      can normalize the held manual value without programming a new sensor duration.'
     x-confidence: READ; meaning INFERRED
     x-basis: static analysis of firmware 9.75, app 3.4.0, resolver report E, set_setting exp_ms branch
       @0x10e308 (64-bit build)
