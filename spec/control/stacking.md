@@ -307,6 +307,12 @@ Firmware 9.75, 64-bit (READ): Dark-library preparation uses the configured manua
 
 Firmware 9.75, 64-bit (READ): The inspected ordinary tele frame loop has no additional per-frame manual exposure-list clamp. The extended-exposure setting changes retained selections rather than multiplying each frame's integration. Changing it alone or reconciling mount mode can alter live configuration without itself programming a new camera exposure. A long-exposure failure alert in the inspected worker does not reduce the configured duration. All indirect driver effects, alternate capture modes, simulation behavior and later restart sequencing remain unresolved.
 
+Firmware 9.75, 64-bit build (READ): A stack start that relaunches star view reaches the startup model-gain request. Reusing an already-running Stack stage does not repeat that startup assignment. The inspected ordinary View/Stack path has no restoration of a gain snapshot taken before star-view startup. Exceptional and additional indirect paths remain unresolved.
+
+Firmware 9.75, 64-bit build (READ): The inspected wide stack automatic-exposure algorithm changes exposure control 1; its direct setter calls do not assign gain control 0. Live-video automatic exposure enables a separate ISP automatic mode. The ISP's gain trajectory and final sensor/ISP allocation remain unresolved.
+
+Firmware 9.75, 64-bit build (READ): Ordinary master-dark creation does not assign gain and samples the current camera gain for saved metadata. The inspected dark selection/application paths check exposure, dimensions and applicable temperature state without requiring gain equality. Separate generic calibration and hot-pixel-table creation paths temporarily request gain and attempt restoration. This does not establish a gain assignment for every app flat-capture interface.
+
 ## Saving
 
 R9. [`save_stack`](../../docs/control/methods/save_stack.md) reads no params. It builds the

@@ -302,6 +302,12 @@ MUST ask its user to confirm before sending it.
 storage link so the port only charges (INFERRED). It blocks until the storage scan finishes. Any
 failure is 207 or a scanner code. READ.
 
+### Saved gain metadata (firmware 9.75)
+
+Firmware 9.75, 64-bit build (READ): FITS writing includes a nonnegative saved image-header gain as integer `GAIN`; `EGAIN` is a separate metadata field. Image filenames can include an optional gain component controlled by the image-name-field setting. Neither field naming nor filename inclusion establishes ISO calibration or a fresh sensor reading at file-write time.
+
+Android supplied decompilation attributed to app 3.3.2, version code 140 (READ): The inspected image-metadata helpers copy selected main/second-camera gain into an ISO-speed-rating field in their applicable branches. iOS app 3.4.1, build 2, arm64 (READ): The inspected EXIF helper writes a nonnegative gain argument as a single ISO-speed-ratings entry. Whole-file/caller coverage and physical ISO calibration remain unresolved for both inputs.
+
 ## Open questions
 
 - Event name of the sleep stage.

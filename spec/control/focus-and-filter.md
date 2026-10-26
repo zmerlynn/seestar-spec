@@ -332,6 +332,8 @@ The relaunched worker does the following before its first frame, in this order. 
    ([stacking.md R6e](stacking.md#sequence)); steps 1 to 3 and the conditions below match on
    both builds.
 
+Firmware 9.75, 64-bit build (READ): The star-view startup sequence requests the model-selected gain after its filter-wheel preamble and before tracking, pre-stack autofocus and stack automatic exposure. The ordinary autofocus worker's inspected control writes change and restore exposure. It has no independent direct gain assignment in the inspected call inventory. Other indirect changes and physical acceptance remain unresolved.
+
 Step 1 runs only when a wheel is fitted, and it does nothing in any of these cases:
 
 - no slot has been saved;
