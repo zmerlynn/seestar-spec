@@ -500,6 +500,34 @@ camera's automatic frame rate. READ. The setter only stores the value; it takes 
 time the preview stream's frame rate is configured, and one view mode forces 30 regardless.
 READ (override) / INFERRED (timing).
 
+### Gain (firmware 9.75)
+
+Firmware 9.75, 64-bit build (READ): `Gain`, `ISP_Gain` and the live-video setting `isp_gain` have different setting paths. `set_control_value` with name `Gain` requests camera control 0 for the locally open camera. The inspected imager path does not compare the requested value with `get_controls` bounds and has no running-stack check. Backend acceptance and the frame of physical application remain unresolved.
+
+Firmware 9.75, 64-bit build (READ): The opened-camera descriptors report gain minimum zero and a maximum obtained from the camera capability data. `ISP_Gain` inherits those bounds. These descriptors and `get_gain_segment` do not supply a physical gain step or a default gain. Per-model and per-port 64-bit maxima, physical units, physical steps and conversion-gain switch points remain unresolved.
+
+Firmware 9.31 and 9.75, 32-bit builds (READ): The compiled camera backend sets maximum gain 400 for the inspected primary-camera model branches and 600 for the Pro secondary-camera branches. These are software capability values; fitted sensors and deployment of every conditional model/architecture combination remain unresolved. The gain setters check the upper bound; they do not establish one common out-of-range policy across all firmware backends.
+
+Firmware 9.75, 64-bit build (READ): `set_control_value` with name `ISP_Gain` reaches a setter that issues no gain update; its getter reads ISP gain. The functional live-video manual-gain route is `set_setting.isp_gain`, which requires a running video worker and manual exposure mode. Settings requests can be routed to the second-camera process according to the active view or `wide_cam`.
+
+Firmware 9.75, 64-bit build (READ): `set_setting.isp_gain` divides its numeric input by ten for the cached manual parameter and multiplies that parameter by ten for application. The ordinary ISP manual branch calculates a gain multiplier as ten raised to the applied gain divided by 200. This establishes the conversion arithmetic; a universal fitted-sensor physical scale, analogue/digital allocation and quantization remain unresolved.
+
+Firmware 9.75, 64-bit build (READ): Low-level `set_control_value` with name `ISP_Exposure` calls the combined ISP exposure/gain operation with gain zero. `set_setting.isp_exp_ms` instead reapplies the cached manual gain with the new exposure.
+
+Firmware 9.31 and 9.75, 64-bit builds (READ): Camera open requests gain zero. Star-view startup requests model gain 200 for the S30 Plus, S30 Pro, S50 Pro, S50N and S80 software branches; the fallback retains initialized gain 80. These are workflow requests rather than sensor capability defaults or observed per-port values.
+
+Firmware 9.31 and 9.75, 32-bit builds (READ): The inspected star-model selection uses 200 for S30, S30 Pro and S50N, 252 for S50 Pro, and initialized fallback 80. The S50 Pro value differs from the 64-bit branch's 200. Applicability of each software branch to deployed hardware remains unresolved.
+
+Firmware 9.75, 64-bit build (READ): A named `Gain` request queues a page/camera-model configuration write before backend application. Internal integer gain requests bypass that named-setting path. Durable commit and automatic gain reload at a later open or view start remain unresolved.
+
+Android supplied decompilation attributed to app 3.3.2, version code 140 (READ): The live-video manual-exposure dialog offers a numeric gain control and sends `set_setting.isp_gain`. It reads the selected main/second-camera `isp_gain` and `isp_range_gain`, with fallback value zero and range zero to 400. Full source/APK equivalence and every upstream mode/model/expert gate remain unresolved; these paths do not establish ordinary star-stack or modern-plan gain UI.
+
+iOS app 3.4.1, build 2, arm64 (READ): The inspected manual live-video interface offers a numeric gain control, takes the selected camera's range from `isp_range_gain` with fallback zero to 400, and sends integer `set_setting.isp_gain`. Scenery and solar main/second-camera adjustment actions wire that callback. The solar main adjustment action has a first-rendered-video-frame gate. Complete mode/model/expert coverage remains unresolved.
+
+iOS app 3.4.0, build 4, arm64 (READ): The inspected gain request builder also sends `set_setting.isp_gain`. Full UI parity with 3.4.1 build 2 remains unresolved.
+
+Firmware 9.75, 64-bit build (READ): Gain-bearing reporting surfaces have distinct sources: `get_setting.isp_gain` prints cached manual state, the Gain and ISP_Gain control getters call their respective backends, and the inspected device-state gain field prints the model star-gain constant. Star-view detail and event-enabled legacy exposure start paths can report sampled camera gain. Complete shot-info/Stack schemas, synchronization between surfaces and correspondence to a particular sensor frame remain unresolved.
+
 ## Interactions
 
 | Action | Stops or blocks |

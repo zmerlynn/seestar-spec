@@ -108,6 +108,10 @@ Firmware 9.75, 64-bit (READ): Dual's ordinary temporary-wide application forces 
 
 Firmware 9.75, 64-bit (INFERRED): A wide setting accepted before an outstanding restoration can be overwritten in live settings by that restoration. A change accepted after restoration and before the next snapshot can be inherited by the next wide capture. These are conditional ordering consequences; guaranteed externally available intervals remain unresolved.
 
+Firmware 9.75, 64-bit build (READ): The inspected modern ViewPlan target parser, its delegated common-target parser and its wide settings/application paths consume no gain override. This finding does not define a per-target gain member. Star-view startup can still assign the model workflow gain.
+
+Firmware 9.75, 64-bit build (READ): Legacy exposure-sequence and legacy-plan sequence records carry `gain`. Their exposure workers apply nonnegative record values; negative values skip the gain assignment. Legacy record support is separate from modern ViewPlan targets. Complete malformed-plan validation and gain restoration after every legacy session remain unresolved.
+
 R9. `plan_target_af` and `viewplan_gohome` accept boolean or integer (nonzero is true); any
 other type gives 106. When absent, the held values are kept. READ.
 

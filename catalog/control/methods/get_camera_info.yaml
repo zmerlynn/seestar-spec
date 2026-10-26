@@ -1,24 +1,29 @@
 kind: method
 name: get_camera_info
 summary: Read static camera information for the open camera or a listed camera.
-description: With no params (or an empty array) returns the currently open camera's info; with an integer
-  ordinal (scalar or first array element) returns the cached discovery metadata of that listed camera
-  without opening it. Fails with 318 when no info is available (camera closed, or ordinal not in the list),
-  and with 200 when the listed camera's id is missing from the info cache. Non-integer params fail with 104.
-  It is a read-only query; it changes no setting, sends no event, persists nothing and moves nothing. Without
-  params it re-reads the open camera's static description from the driver (open, read-direction info ioctl,
-  close) and refreshes the device's cached copy, which is idempotent. Both paths take the camera lock briefly,
-  so the call may wait behind other camera operations (INFERRED from the shared lock). On a live device
-  (2026-10-16) the ordinals 0 and 1 both returned code 0 with all-zero default records (chip [0,0], pixel
-  size 0, all flags false), so both ordinals are listed but their cached metadata was empty at that time
-  (OBSERVED); why it was empty is INFERRED to be a cache that the ordinal path never fills itself. A
-  later no-params call on an idle device returned code 0 with the telescope camera record (chip [2160,3840],
-  pixel 2.9 um, GR, colour, bins [1,2]), and ordinals 0 and 1 stayed all-zero before and after it
-  (OBSERVED 2026-10-16), so the no-params refresh does not fill the ordinal cache.
-  During active imaging (View, Stack and Exposure all working), ordinals 0 and 1 returned the same default
-  records in 11 rounds 60 s apart, while get_device_state in the same session returned filled camera and
-  second_camera snapshots, so imaging does not fill the per-ordinal cache either (OBSERVED 2026-10-18; the
-  session did not record the firmware version, and the device has run 9.75 since 2026-10-16).
+description: >-
+  With no params (or an empty array) returns the currently open camera's info; with an integer
+  ordinal (scalar or first array element) returns the cached discovery metadata of that listed
+  camera without opening it. Fails with 318 when no info is available (camera closed, or ordinal not
+  in the list), and with 200 when the listed camera's id is missing from the info cache. Non-integer
+  params fail with 104. It is a read-only query; it changes no setting, sends no event, persists
+  nothing and moves nothing. Without params it re-reads the open camera's static description from
+  the driver (open, read-direction info ioctl, close) and refreshes the device's cached copy, which
+  is idempotent. Both paths take the camera lock briefly, so the call may wait behind other camera
+  operations (INFERRED from the shared lock). On a live device (2026-10-16) the ordinals 0 and 1
+  both returned code 0 with all-zero default records (chip [0,0], pixel size 0, all flags false), so
+  both ordinals are listed but their cached metadata was empty at that time (OBSERVED); why it was
+  empty is INFERRED to be a cache that the ordinal path never fills itself. A later no-params call
+  on an idle device returned code 0 with the telescope camera record (chip [2160,3840], pixel 2.9
+  um, GR, colour, bins [1,2]), and ordinals 0 and 1 stayed all-zero before and after it (OBSERVED
+  2026-10-16), so the no-params refresh does not fill the ordinal cache. During active imaging
+  (View, Stack and Exposure all working), ordinals 0 and 1 returned the same default records in 11
+  rounds 60 s apart, while get_device_state in the same session returned filled camera and
+  second_camera snapshots, so imaging does not fill the per-ordinal cache either (OBSERVED
+  2026-10-18; the session did not record the firmware version, and the device has run 9.75 since
+  2026-10-16). Firmware 9.75, 64-bit build (READ): The response emits `unity_gain` from camera
+  metadata. The inspected emission does not calculate a conversion-gain threshold. Per-model values,
+  physical interpretation and their relationship to the gain-segment break remain unresolved.
 grade: MUTATOR / established (64-bit build; 32-bit build PURE GETTER, probable)
 side_effect_tier: B
 confidence: READ
