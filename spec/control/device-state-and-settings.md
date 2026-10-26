@@ -338,7 +338,7 @@ Firmware 9.75, 64-bit (READ): `get_setting` reports the normalized live manual e
 
 Firmware 9.75, 64-bit (READ): Ordinary manual exposure changes under simulation have a backend error-524 path. The exposure normalizer itself substitutes selections rather than returning a range error. Other supplied settings and backend failures can still affect a mixed request.
 
-OBSERVED 2026-10-26 (S50 Pro, firmware 9.75): on an idle or parked device `set_setting {exp_ms:{stack_l:N}}` returned code 0 and `get_setting` read back the written value for 60000 to 10000, 10000 to 2000 (not normalized to 10000) and 2000 to 60000; `stack_l_auto` read null. No 259 was returned and no stack was working. Whether 2000 or 10000 ms takes effect in a stack was not observed (no subs were written). The 60000 readback implies EQ mode, which the observer did not report. The plate-solve exposure of the auto-goto step (2000 ms in `Exposure` events) is independent of `stack_l`.
+OBSERVED 2026-10-26 (S50 Pro, firmware 9.75): on an idle or parked device `set_setting {exp_ms:{stack_l:N}}` returned code 0 and `get_setting` read back the written value for 60000 to 10000, 10000 to 2000 (not normalized to 10000) and 2000 to 60000; `stack_l_auto` read null. No 259 was returned and no stack was working. Whether 2000 or 10000 ms takes effect in a stack was not observed (no subs were written). The mount was in EQ mode (the last FITS sub before the writes records `EQMODE` 1, and the night's events all report equatorial mode), so the 60000 readback agrees with the EQ selection list. The plate-solve exposure of the auto-goto step (2000 ms in `Exposure` events) is independent of `stack_l`.
 
 ### Camera selection: selected_cam (firmware 9.75)
 
