@@ -304,6 +304,18 @@ process exists the change is relayed to it, and a relay failure is an error. REA
 SHOULD read `guest_mode` first and send it only when the value changes, because resending the
 current value fails. INFERRED.
 
+Firmware 9.75, 64-bit (READ): `auto_power_off` enables the sampled idle check and defaults to true when no saved value is available. A changed value updates the in-memory setting and attempts a persistent imager-settings write. The setter does not propagate failure of that write, so a successful reply alone does not establish persistence across reboot.
+
+Firmware 9.75, 64-bit (READ): The normal `set_setting` handler accepts a Boolean member. It also accepts the integer tag and converts the stored low 32-bit numeric word to a Boolean; integer 0 and 1 represent false and true. Other member types are skipped by this branch. Invalid whole params have a separate error path. A request changing only this member does not queue the normal changed-key `Setting` event in the examined handler.
+
+Firmware 9.75, 64-bit (READ): Restricted handling of a non-master external guest rejects this member with error 109. The full handler recognizes it. A primary-process change controls the primary idle decision; no member-specific auxiliary relay occurs. A request routed to the wide-camera process does not establish a primary in-memory update.
+
+Android 3.3.2 (READ): The Auto Shut Down toggle sends the selected Boolean through `set_setting` as `auto_power_off`, then updates local state after success. The UI disables the toggle when joined to Telescope Network and separately blocks remote-connected operation through a limitation message. The examined toggle path has no enable/disable confirmation dialog.
+
+iOS 3.4.1 build 2 (READ): The toggle checks availability against `remote_joined`, calls `set_setting` with one `auto_power_off` member constructed using an unsigned-integer NSNumber, and updates local state when the response produces no error string. Its unavailable branch displays a message and reloads the UI. The examined toggle path has no enable/disable confirmation dialog. Exact numeric JSON serialization remains unresolved here.
+
+Android 3.3.2 and iOS 3.4.1 build 2 (READ): The English UI describes shutdown after 15 minutes idle with no user connected and says it is unavailable after joining Telescope Network. That text summarizes the feature; the firmware predicate and configuration-flag qualifications above provide the more precise behavior. App-wide absence of other mode-specific timers remains unresolved.
+
 R18. A request that changes at least one key and succeeds causes a `Setting` event. A request
 that fails sends no `Setting` event, even if earlier members were applied. Clients that receive
 an error from `set_setting` SHOULD re-read `get_setting`. READ (device); advice INFERRED.
