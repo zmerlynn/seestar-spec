@@ -163,6 +163,26 @@ of: an exposure in progress, an open control connection, a client associated wit
 access point, stacking, live streaming, a running view plan or a demonstration. The check runs
 about once a minute, so shutdown comes 15 to 16 minutes after the last activity. READ.
 
+Firmware 9.75, 64-bit (READ): When `auto_power_off` is enabled, the device samples idle conditions about once a minute. The first idle sample starts an in-memory timer. A later idle sample requests ordinary shutdown when more than 900,000 milliseconds have elapsed from that start. Monitoring and shutdown work can add delay; this is not an exact deadline measured from the last request. Disabling the option bypasses the check without clearing an existing timer.
+
+Firmware 9.75, 64-bit (READ): A positive sampled condition clears the timer: current camera capture, an eligible external connection to the control/event server, AP station-dump helper success with more than ten captured bytes, running planet or batch stacking, running RTMP streaming, a working View or demonstration, or a running ViewPlan. A plan waiting in its running worker for a future target still counts. Saved plan data alone is not an activity condition. The AP output is not parsed into a station count, and the helper's success does not require zero command exit status.
+
+Firmware 9.75, 64-bit (READ): The control count excludes connections classified as local by comparison with the resolved localhost address. Brief eligible connections count when present at sampling. SMB traffic, file transfers, mount motion and app touches have no independent term in this predicate; other counted activity can accompany them. Classification of a particular tunneled connection remains unresolved without its device-side connection details.
+
+Firmware 9.75, 64-bit (READ): Successfully loaded remote-configuration state and USB storage/PC-connected state also clear the timer. The remote exemption uses a loaded flag rather than current cloud-session liveness. The idle predicate has no separate condition for external power, charge-online status, charger Full or battery percentage. The precise cable modes setting the PC-connected flag remain unresolved.
+
+Firmware 9.75, 64-bit (READ): The idle decision records a timeout diagnostic and requests normal shutdown. The supplied final shutdown script requests charging-mode reboot when charger status is Charging; otherwise, including Full, it requests ordinary OS shutdown. Actual hardware power-off and wake behavior remain unresolved. Separate voltage, charger-temperature, explicit-command, held-button and capture-completion paths can request shutdown independently of this idle option.
+
+Firmware 9.75, 64-bit (READ): The examined shutdown and plan-wait paths do not arm a scheduled wake. Waiting for a future plan target occurs in a live process. RTC facilities elsewhere in the device, charger/USB/button cold-start policy and charging-mode reboot outcome remain unresolved.
+
+Firmware 9.75 and 9.31, 32-bit and 64-bit (READ): The compared idle routines contain the same threshold and corresponding activity-call sequence. Detailed helper equivalence and hardware behavior across those builds remain unresolved; the 32-bit timestamp arithmetic has a narrower range.
+
+Firmware 9.75, 64-bit (READ): Idle diagnostics include `not_active start`, `not_active %gmin`, `not_active end` and `not_active timeout, shutdown`. The idle decision does not construct a JSON shutdown-warning event. A separate charger-temperature shutdown branch emits `BattHiTempShutdown`; the low-voltage branch records a different diagnostic.
+
+Firmware 9.75, 64-bit (READ): Graceful shutdown attempts to back up logs beneath a server-log backup directory in the device user's home and redirects the final shell-script output to a file named `auto_shutdown.txt` in that directory. Later log handling can move or prune backups. Diagnostic survival and retention from a particular shutdown remain unresolved. The shutdown handoff marker distinguishes shutdown from reboot; it does not distinguish idle, battery and manual causes. A dedicated persisted cause field is not established by the examined paths.
+
+OBSERVED 2026-10-27 (S50 Pro, firmware 9.75; reported by an observer's proxy journal): the device went offline twice on external power with battery 100%, charger Full and `auto_power_off` true, and booted again later (the second boot reportedly a manual power-on). In both cases a long-lived tunnel connection to the control port was open until the drop. In the first, a ViewPlan was armed and working; in the second, the plan and view were cancelled. The device-side cause of neither drop is established. The idle rule above explains the first only if the plan worker was not actually running, and the second only if the tunnel connection was classified as local and no exemption was set.
+
 R19. [`start_view_star_sleep`](../../docs/control/methods/start_view_star_sleep.md) reads no
 params. It requires an open camera (318 otherwise), stops the current view and starts the sleep
 stage of the view worker, then replies. If the sleep stage already runs it replies success at

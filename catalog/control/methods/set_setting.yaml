@@ -1,23 +1,34 @@
 kind: method
 name: set_setting
 summary: Change one or more device settings in a single object, non-transactionally.
-description: 'Required object of optional members, processed in input order. The first checked failure
-  stops later members and earlier writes remain. Ignored helper failures can still end in code 0. A true
-  manual_exp or a calculated mosaic returns early with a result object and skips later members. In process
-  type 1 a true wide_cam forwards the whole request to the peer; ISP-related members may also be forwarded
-  according to view mode. A successful call with changed keys emits a Setting event whose payload is the
-  filtered settings (not an echo of the request); some helpers emit it themselves. Client events are emitted
-  by the guest-mode members. Per key: auto_power_off enables a 15-minute idle shutdown and skips a wrong
-  type silently; guest_mode enabling makes the requester master, disabling requires master and closes
-  the other connections, and resending the current value fails with a stale code; usb_en_eth switches
-  Ethernet over USB-C through the gadget script; dark_mode sets the LED style and is forwarded to the
-  secondary process. master_cli claims (true) or releases (false) master status. The iOS app is observed
-  sending {lang} and {cli_uuid, cli_name} (2026-10-12). 32-bit and 64-bit members differ: wide_4k, main_8k,
-  hdr, rtsp_roi_index and rtsp_roi_scale, stack_l_auto and others are D64 only or differ; the reduced
-  32-bit set is not enumerated here. Firmware 9.75, app 3.4.0 adds keys sky_replay (value ignored, feature force-disabled), annotation
-  (object), preview.raw_bin2, enable_dark_library, can_encrypt (only true, a no-op), motion_monitor (validated object), exp_ms.more_exposure (tele camera only) and the stack members startrail_mode (wide camera only, 0 to 2, a change clears the stack) and startrails_duration_min (wide camera only, 259 while stacking), and drops
-  expert_mode, which now gives 109 although get_setting still emits it; annotation or sky_replay sent
-  together with wide_cam give 102. See the params schema.'
+description: >-
+  Required object of optional members, processed in input order. The first checked failure stops
+  later members and earlier writes remain. Ignored helper failures can still end in code 0. A true
+  manual_exp or a calculated mosaic returns early with a result object and skips later members. In
+  process type 1 a true wide_cam forwards the whole request to the peer; ISP-related members may
+  also be forwarded according to view mode. A successful call with changed keys emits a Setting
+  event whose payload is the filtered settings (not an echo of the request); some helpers emit it
+  themselves. Client events are emitted by the guest-mode members. Per key: auto_power_off enables a
+  15-minute idle shutdown and skips a wrong type silently; guest_mode enabling makes the requester
+  master, disabling requires master and closes the other connections, and resending the current
+  value fails with a stale code; usb_en_eth switches Ethernet over USB-C through the gadget script;
+  dark_mode sets the LED style and is forwarded to the secondary process. master_cli claims (true)
+  or releases (false) master status. The iOS app is observed sending {lang} and {cli_uuid, cli_name}
+  (2026-10-12). 32-bit and 64-bit members differ: wide_4k, main_8k, hdr, rtsp_roi_index and
+  rtsp_roi_scale, stack_l_auto and others are D64 only or differ; the reduced 32-bit set is not
+  enumerated here. Firmware 9.75, app 3.4.0 adds keys sky_replay (value ignored, feature
+  force-disabled), annotation (object), preview.raw_bin2, enable_dark_library, can_encrypt (only
+  true, a no-op), motion_monitor (validated object), exp_ms.more_exposure (tele camera only) and the
+  stack members startrail_mode (wide camera only, 0 to 2, a change clears the stack) and
+  startrails_duration_min (wide camera only, 259 while stacking), and drops expert_mode, which now
+  gives 109 although get_setting still emits it; annotation or sky_replay sent together with
+  wide_cam give 102. See the params schema. Firmware 9.75, 64-bit (READ): The full handler
+  recognizes `params.auto_power_off`. Boolean values enable or disable the idle check;
+  integer-tagged values use a low-32-bit nonzero test. Wrong member types are skipped. The default
+  is enabled. A changed value updates memory and attempts persistence without propagating write
+  failure. Restricted non-master external guest handling rejects this member with 109. A
+  single-member change does not queue the examined ordinary `Setting` notification. Whole-params
+  validation, process routing and errors in other members remain separate behaviors.
 grade: MUTATOR / established (64-bit build; 32-bit build probable)
 side_effect_tier: C
 confidence: READ
