@@ -239,9 +239,9 @@ firmware emitter](events/variants-and-consumers.md#names-without-a-proved-firmwa
    Battery temperature and capacity are raw, unscaled integers (degrees Celsius and a raw
    0-to-100-style capacity reading) taken directly from the platform battery-charge/gauge calls,
    with no device-side scaling; the temperature is compared directly against whole-degree thresholds
-   elsewhere in the same code, supporting plain Celsius. Balance-sensor x/y/z are raw Q30-normalised
-   gravity-vector doubles, likewise unscaled at the point they are packed into `BalanceSensor`.
-   READ.
+   elsewhere in the same code, supporting plain Celsius. Balance-sensor x/y/z are accelerometer
+   readings scaled from counts to multiples of g (INFERRED unit) plus any stored level correction, not Q30 values and not
+   normalized to unit length (corrects earlier wording). READ (firmware 9.31 and 9.75, 64-bit).
 6a. Firmware 9.31: `GuideStep`'s `dx`/`dy` are raw camera pixels. `RADistanceRaw`/`DECDistanceRaw`
     are multiplied once by the camera pixel scale and are arcseconds despite the "Raw" name.
     `RADistanceGuide`/`DECDistanceGuide` are serialized without scaling (probably pixels, INFERRED).
