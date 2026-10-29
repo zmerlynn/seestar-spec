@@ -285,6 +285,8 @@ Errors 214, 223. READ. On models other than the Plus and Mini it first makes the
 supplicant reload its configuration, which can briefly disturb an active station link, so it is
 not a passive read. READ.
 
+Firmware 9.75, 64-bit (READ): The dispatcher table has no dedicated Wi-Fi rejoin, reconnect, AP start or stop, rfkill or numeric-channel method. Station reconnection goes through `pi_station_set`, `pi_station_select`, `pi_station_auto_connect` and `pi_station_open`/`pi_station_close`; AP restarts come from `pi_set_ap`, a changed `pi_set_5g` value (which also disables the station service) and a changed `set_wifi_country` value (both Wi-Fi modes reload; the same value is a no-op). None of these requests an operating-system reboot. A station change can drop the connection the request arrived on. `pi_station_state` reads no parameters and replies with the connected SSID, frequency, signal level, gateway, netmask, key-management type and address data, and no passphrase member; `pi_get_ap` carries a credential member and is sensitive. `pi_station_list` can reconfigure the supplicant on some models, so it is not always a pure read. The firmware's own Wi-Fi recovery restarts the AP and cycles the interfaces on link-down and scan-error conditions; no recovery for a slow or retransmitting link was found in the examined paths.
+
 ## Station event
 
 R26. [`Station`](../../docs/control/events/Station.md) follows a station connection attempt
