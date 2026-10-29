@@ -157,6 +157,12 @@ client                         device
   |        connection closes     |  host restarts
 ```
 
+Firmware 9.75, 64-bit, with the 32-bit build comparable (READ): `pi_reboot` and `pi_shutdown` reach the same final shutdown script, with `pi_reboot` passing a reboot argument and `pi_shutdown` none. The script tests that argument before it reads charger status. With the reboot argument it synchronizes and requests a forced reboot. Only the no-argument case reads charger status, requesting a charging-mode reboot when it reads Charging and an ordinary halt otherwise, so charger Full does not turn `pi_reboot` into a halt (INFERRED from the script; command success and PMIC or bootloader behaviour are unresolved, and the path was not observed on a device). The same ordinary shutdown (charger-dependent) is used by the idle option, the held power key and the autosave completion action. Before the script, cleanup stops an active ViewPlan (recorded as a stopped plan with a shutdown error), closes the camera, backs up logs and moves the focuser to zero.
+
+Firmware 9.75, 64-bit (READ): The cloud `reboot_device` command (the app's "Remote Restart") calls the same explicit-reboot routine as `pi_reboot`. A separate cloud `reboot_process` command only terminates the imager process for its supervisor to restart. The examined cloud connection-loss and relay-idle paths reconnect or stop the tunnel and do not request a host reboot; kernel, MCU and bootloader watchdogs are unresolved.
+
+Firmware 9.75, 64-bit (READ): At startup the device reads a saved ViewPlan snapshot but does not start the plan worker. The snapshot is written once when the plan reaches an overall terminal state, which includes an active plan stopped by a graceful shutdown; loading and individual target completion do not write it. No on-device autonomous plan start after a reboot was found; a plan observed starting after a reboot is unexplained from the device side (a client could have sent the start).
+
 R18. The `auto_power_off` setting (boolean) enables automatic power-off. When it is true the
 device shuts itself down after 15 minutes without activity; the delay is fixed. Activity is any
 of: an exposure in progress, an open control connection, a client associated with the device's
