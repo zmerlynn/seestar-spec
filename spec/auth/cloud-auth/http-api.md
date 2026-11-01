@@ -115,6 +115,8 @@ list and allows a retry. Server behaviour for a page past the last is unresolved
 OBSERVED (2026-10-12): `current`, `pageSize` and `total` were integers and `items` an array; page
 counts were not recorded.
 
+List mode (READ, app 3.3.2): the `isContainShared` query integer carries a five-value list mode, not a flag: 0 owned, 1 owned and shared, 2 shared to me, 3 all, 4 rental. The device-management screen requests 0 (owned) and, when its shared filter is on, 2 (shared to me) as separate lists with separate paging state. The connect-screen list requests 3 (all). The view-model helper that takes a Boolean maps true to 1 and false to 0. READ. Whether a server omits a record the account owns, whether mode 3 includes rental records, and how a server treats a value outside 0 to 4 are unresolved (server-side). A list built from mode 0 or 2 alone omits the other group; a client that wants every telescope the account can connect to sends 3 (INFERRED from the connect screen's choice). The app takes no list filter on `deviceStatus`: a status filter on the list is not documented, and the offline test lives only in the detail precheck (INFERRED from the absence of a list-side filter in the READ screen code).
+
 Each entry is a separate selectable record, and the chosen record supplies the `deviceSn` and
 `deviceModel` sent to detail and reboot. READ. Precheck before allocation (READ, app 3.3.2,
 complete trace of the connect workflow): the app requests detail with the chosen pair and
