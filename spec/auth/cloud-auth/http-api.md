@@ -117,6 +117,14 @@ counts were not recorded.
 
 List mode (READ, app 3.3.2): the `isContainShared` query integer carries a five-value list mode, not a flag: 0 owned, 1 owned and shared, 2 shared to me, 3 all, 4 rental. The device-management screen requests 0 (owned) and, when its shared filter is on, 2 (shared to me) as separate lists with separate paging state. The connect-screen list requests 3 (all). The view-model helper that takes a Boolean maps true to 1 and false to 0. READ. Whether a server omits a record the account owns, whether mode 3 includes rental records, and how a server treats a value outside 0 to 4 are unresolved (server-side). A list built from mode 0 or 2 alone omits the other group; a client that wants every telescope the account can connect to sends 3 (INFERRED from the connect screen's choice). The app takes no list filter on `deviceStatus`: a status filter on the list is not documented, and the offline test lives only in the detail precheck (INFERRED from the absence of a list-side filter in the READ screen code).
 
+OBSERVED (2026-11-01, `GET /v1/my-device`, `pageSize=100`, page 1, one owner account with one owned device and nothing shared): with `isContainShared` omitted, 0, 1 or 3 the reply had `total` 1, one item and `current` 1; with 2 or 4 it had `total` 0 and no items. Each request returned one page. This account cannot tell modes 0, 1 and 3 apart, and it cannot show what the server does when the parameter is omitted beyond that the omitted case matched 0, 1 and 3. Shared and rental behaviour stay unresolved.
+
+Model strings (READ, app 3.3.2): the app compares the record's `deviceModel` by exact string equality with the full names "Seestar S50", "Seestar S50 Pro", "Seestar S30", "Seestar S30 Pro", "Seestar S30 Plus" and "Seestar S80". Any other string shows as an unknown model ("--"). The app sends the device's own model value as `deviceModel` to detail, online-link and reboot.
+
+OBSERVED (2026-11-01, `GET /v1/my-device` with `isContainShared=3`): the one record had `deviceModel` "Seestar S50 Pro" and `subModel` as a present, empty string.
+
+Detail parameters (READ, app 3.3.2): the client declares `deviceSn`, `deviceModel` and `onlyQueryOwner` as nullable and the app's precheck always sends all three, with `onlyQueryOwner=false`. Whether the server requires `deviceModel` with `deviceSn`, and what `onlyQueryOwner=true` changes, are unresolved (server-side); no detail reply has been OBSERVED.
+
 Each entry is a separate selectable record, and the chosen record supplies the `deviceSn` and
 `deviceModel` sent to detail and reboot. READ. Precheck before allocation (READ, app 3.3.2,
 complete trace of the connect workflow): the app requests detail with the chosen pair and
