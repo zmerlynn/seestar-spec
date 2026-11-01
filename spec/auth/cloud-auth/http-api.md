@@ -121,6 +121,10 @@ OBSERVED (2026-11-01, `GET /v1/my-device`, `pageSize=100`, page 1, one owner acc
 
 Model strings (READ, app 3.3.2): the app compares the record's `deviceModel` by exact string equality with the full names "Seestar S50", "Seestar S50 Pro", "Seestar S30", "Seestar S30 Pro", "Seestar S30 Plus" and "Seestar S80". Any other string shows as an unknown model ("--"). The app sends the device's own model value as `deviceModel` to detail, online-link and reboot.
 
+OBSERVED (2026-11-01, `GET /v1/my-device` with `isContainShared=3`): the one record had `deviceModel` "Seestar S50 Pro" and `subModel` as a present, empty string.
+
+Detail parameters (READ, app 3.3.2): the client declares `deviceSn`, `deviceModel` and `onlyQueryOwner` as nullable and the app's precheck always sends all three, with `onlyQueryOwner=false`. Whether the server requires `deviceModel` with `deviceSn`, and what `onlyQueryOwner=true` changes, are unresolved (server-side); no detail reply has been OBSERVED.
+
 Each entry is a separate selectable record, and the chosen record supplies the `deviceSn` and
 `deviceModel` sent to detail and reboot. READ. Precheck before allocation (READ, app 3.3.2,
 complete trace of the connect workflow): the app requests detail with the chosen pair and
