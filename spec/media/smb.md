@@ -121,6 +121,42 @@ three runs, including the observed 2.5 °C selection threshold and a separate pe
 under `Autorun/Dark/`, is in [calibration frames
 R6n](../control/calibration-frames/dark-library.md#building-the-dark-library).
 
+## Image store layout (firmware 9.75)
+
+Firmware 9.75, 64-bit and 32-bit imagers, compared with firmware 9.31 (READ, static reading; no folder below was listed on a device unless marked OBSERVED). A recovered writer shows a possible output, not that the folder exists on a given device. The set is an inventory of recovered path families, not a proof that nothing else is ever written. In this section R is the selected image root.
+
+R13. Folders under R, with their writers (READ):
+
+| Folder | Content and trigger |
+|---|---|
+| `MyWorks/` | Recreated after `format_emmc` and at startup on Seestar models (R9). Holds the observing outputs below. |
+| `MyWorks/<target>/` | Stacked results. A mosaic adds a `mosaic` name part. |
+| `MyWorks/<target>_sub/` | Kept subframes; `_failed` variants for rejected ones. Saved only when the matching retention setting allows it. |
+| `MyWorks/MilkyWay/`, `MilkyWay_sub/`, `MilkyWay_timelapse/`, `MilkyWay_timelapse_sub/` | Wide-camera stack and sub outputs. |
+| `MyWorks/Startrails/`, `Startrails_sub/`, `Startrails_video/` | Star-trail stacks, subs and videos. On the 64-bit build subs go into a per-session subfolder named from the start time; the 32-bit build uses a flat timestamp name. |
+| `MyWorks/Meteor_sub/` | 64-bit only. A meteor save is three separate file copies, so an interruption can leave an incomplete set. |
+| `MyWorks/PhotoMetry/` | Photometry result CSV files. |
+| `MyWorks/<category>_photo/` and `_video/`, with category Scenery, Lunar, Solar or Planetary, | Snapshots and recordings by category. Older category folders are moved to the `_video` name at startup. |
+| `MyWorks/Scenery_motion/` | 64-bit only: motion recordings (files-and-album R16a). |
+| `Autorun/<type>/`, with type Light, Dark, Bias or Flat, | Legacy sequence frames ([sequences R20b](../control/legacy-plans-and-sequences/sequences.md)); light frames add a target folder. `Autorun/Dark` also receives the periodic dark captures (OBSERVED 2026-10-17). |
+| `Plan/` | The multi-target plan worker saves with the Autorun builder under this name. Whether any current app flow reaches it is unresolved. |
+| `Preview/` | The `save_image` single-frame save. |
+| `Video/` | A fallback for recordings and snapshots that have no category. Whether a current app flow reaches it is unresolved. |
+| `log/` | `Autorun_Log_*.txt`. |
+| `dark_test/`, `batch_stack_tmp/`, `.StackReplayTemp/` | Diagnostic and working folders. The replay folder holds numbered JPEG frames that the replay encoder turns into `*_stack_replay.mp4` at 10 frames per second. |
+
+R14. Folders under the fixed `/boot/Image/` path, whichever storage root is selected (READ): `darklibrary/<N>s/` (temperature master darks, R9), `AF_imagelog/` (autofocus `.fit` frames when a diagnostic flag is on), `tmp_stitch/` (mosaic stitch work files), and `solve_fail_img/<page>/` (a failed solver `.fit`, when a diagnostic flag is on). Autofocus diagnostic PNG files with timestamped names can be written directly in the root. `ai_process` is a path the file server maps to a temporary directory, not a folder of the image volume (INFERRED from the mount setup).
+
+R14a. A listing of an S50 Pro share on firmware 9.75 (OBSERVED 2026-11-02 ~17:15Z, reported second-hand by a peer session) showed top-level `Autorun/`, `MyWorks/`, `darklibrary/` and `log/` only, with no `Live`, `Plan` or `Video`. Subfolders were not reported.
+
+R15. `Live` and `Live/Light` are not present as paths in either architecture of 9.75 or 9.31, and nothing was found that writes them. READ. Whether a firmware before 9.31 used them is unresolved. Firmware 9.31 already uses `MyWorks`.
+
+R16. File types (READ): `.fit`; a large `.jpg` and a `_thn.jpg` thumbnail beside a saved frame; `.avi` (raw video is `-RAW.avi`, 8 bits per pixel in the inspected branch) with a small text file of acquisition data; `.mp4`; `*_stack_replay.mp4`; `startrails_video_*.mp4`, with `STS_`-prefixed names for batch tasks; CSV; and `.png` diagnostics. No default MP4 bitrate was recovered. INFERRED arithmetic only: raw 8-bit video at 1920 by 1080 and 30 frames per second is about 3.7 GB per minute, and a compressed stream is about 7.5 MB per minute for each Mbit/s of bitrate. On a FAT-type filesystem the raw AVI writer stops near 4.28 GB; on other filesystems it sets no such limit. READ.
+
+R17. Unfinished writes (READ): the common MP4 recorder writes `<name>.mp4.tmp` and renames it when finished, and a failure removes it, though a crash can leave the temporary file (INFERRED). FITS and AVI files are written under their final names, so a final name does not show that a file is complete, and stable size or modification time does not either (INFERRED). No closed-file marker was found in the inspected album and file-serving paths.
+
+R18. Album reach (READ): an album request with no folder name lists only the `MyWorks` subtree, skips dot-named entries, and hides raw AVI files that have an MP4. `Autorun`, `Plan`, `Preview`, `Video`, `log` and every fixed-path folder above fall outside the default listing; an explicit folder name can still be requested. The app has no root-folder browser. The `.DS_Store` files seen in the OBSERVED listings have no imager writer (INFERRED: left by a macOS client).
+
 ## Reachability
 
 R10. Network reach: TCP 445 is the SMB port (OBSERVED 2026-10-16). TCP 139 also accepts
