@@ -57,3 +57,7 @@ Link to the `v1` branch, e.g. `blob/v1/spec/00-overview.md#reading-guide`. Links
 Covered: spec chapters, reference cards and their indexes, catalog files, README and CONVENTIONS, by file and by section heading. Not covered: line links, query strings, raw/download views and other files. See [Permalink compatibility](CONVENTIONS.md#permalink-compatibility).
 
 License: CC0 1.0 (see [LICENSE](LICENSE)).
+
+## Support this project
+
+Tips are welcome and never required: [GitHub Sponsors](https://github.com/sponsors/zmerlynn) or a [one-time tip](https://buy.stripe.com/bJe3cxgMNaWbgCfe9E5wI00). A tip is a thank-you; it doesn't buy support, priority or features.
