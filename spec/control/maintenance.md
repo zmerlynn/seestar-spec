@@ -159,7 +159,9 @@ with the device's serial (and CPU id, model and location when known) and forward
 values over BLE (R15a). READ (app). On the device, `sn` or `cpuId` must match the hardware identity
 (222 otherwise); `sign` is Base64 and its RSA public-key recovery must equal `auth_code`;
 `digest` is Base64 of an HMAC-SHA256 that the device recomputes and compares. Shell failures give
-214, mismatches 222. READ. Which string the digest covers was not traced. unresolved. The app
+214, mismatches 222. READ. The digest covers the concatenation of the licence `sn`, `cpuId` (when
+non-empty) and `auth_code`, keyed with a fixed HMAC key embedded in the firmware; the device computes
+it with an embedded `openssl dgst -sha256 -hmac` shell step. READ (builds 9.16 and 9.75). The app
 never sends the legacy form; that pair is checked against a value derived from the CPU id and is
 INFERRED to come from a vendor or factory tool. Its format is unresolved. All of these are per-
 device secrets; this specification gives no values, and clients MUST NOT log them.
@@ -328,8 +330,7 @@ A client MUST NOT send `trigger_test_crash` or send `factory_test_control` outsi
 
 ## Open questions
 
-- Issuer and format of the legacy activation pair, and the input to the Plus-form digest.
-  unresolved.
+- Issuer and format of the legacy activation pair. unresolved.
 
 ## Appendix: Validating on a live device (non-normative)
 

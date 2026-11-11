@@ -11,7 +11,8 @@ description: Params are a required object or a one-element array holding it. If 
   location); the app copies the returned sn, cpuId, authCode (as auth_code), digest and sign into a one-element
   array with id 14 over the BLE route (READ, app 3.3.2). The device checks that sn or cpuId matches the hardware identity (222), that
   the RSA public-key recovery of the Base64 sign equals auth_code (222), and that digest (Base64 of an
-  HMAC-SHA256 of a device-side string; which string is unresolved) matches (222); a shell failure in
+  HMAC-SHA256, keyed with a fixed key embedded in the firmware, over the concatenation of the licence sn,
+  cpuId when non-empty and auth_code) matches (222); a shell failure in
   these checks gives 214. The app never sends the legacy pair; its issuer (INFERRED a vendor or factory
   tool) and byte formats are unresolved.
 grade: MUTATOR / probable (64-bit build; 32-bit build probable)
@@ -19,7 +20,9 @@ side_effect_tier: C
 confidence: READ
 basis: static analysis of firmware 9.31, handler @0xce370, manualEncrypt @0x3209e0, verifyPlus @0x31d980
   (64-bit build); app 3.3.2 BleUtilsV2.requestActive and connectBle, SeestarActivationBody, SignResBean, NetUtils.getEncryptSn,
-  ZApiServiceSeeStar.activateDevice
+  ZApiServiceSeeStar.activateDevice; the Plus-form digest input (licence sn, cpuId when present and auth_code
+  concatenated, under a fixed embedded HMAC key) read from the 32-bit build verifyPlus @0x2794c4 (firmware
+  9.16), whose openssl-based digest shell step is byte-identical in the 9.75 build
 side_effects: Writes licence/activation data files and changes the power LED activation state on success.
   No handler timeout.
 request:
